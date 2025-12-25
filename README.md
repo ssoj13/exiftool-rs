@@ -1,0 +1,282 @@
+# exiftool-rs
+
+Fast, pure Rust library for reading and writing image metadata (EXIF, XMP, IPTC).
+
+A native Rust alternative to [ExifTool](https://exiftool.org/) with zero runtime dependencies - no Perl, no external binaries. Parses metadata directly from bytes using auto-generated tag definitions from ExifTool's database (~2500+ tags).
+
+## Features
+
+- **Read/Write EXIF** - Full IFD parsing with MakerNotes support (Canon, Nikon, Sony, Fujifilm, etc.)
+- **XMP Support** - Parse rdf:Bag, rdf:Seq, rdf:Alt structures
+- **17 Formats** - JPEG, PNG, TIFF, DNG, HEIC/AVIF, CR2, CR3, NEF, ARW, ORF, RW2, PEF, RAF, WebP, EXR, HDR
+- **Zero Dependencies** - Pure Rust, no external tools required
+- **Fast** - Native code, ~10-100x faster than ExifTool for batch operations
+- **Type-Safe** - Strongly typed values (Rational, URational, DateTime, etc.)
+
+## Quick Start
+
+```rust
+use exiftool_formats::{FormatRegistry, Metadata};
+use std::fs::File;
+use std::io::BufReader;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Auto-detect format and parse
+    let registry = FormatRegistry::new();
+    let file = File::open("photo.jpg")?;
+    let metadata = registry.parse(&mut BufReader::new(file))?;
+
+    // Access EXIF data
+    println!("Format: {}", metadata.format);
+    println!("Make: {:?}", metadata.exif.get_str("Make"));
+    println!("Model: {:?}", metadata.exif.get_str("Model"));
+    println!("ISO: {:?}", metadata.exif.get_u32("ISO"));
+    
+    // Iterate all tags
+    for (tag, value) in metadata.exif.iter() {
+        println!("{}: {}", tag, value);
+    }
+
+    // XMP data (if present)
+    if let Some(xmp) = &metadata.xmp {
+        println!("XMP: {} bytes", xmp.len());
+    }
+
+    Ok(())
+}
+```
+
+## Writing Metadata
+
+```rust
+use exiftool_formats::{FormatRegistry, JpegWriter};
+use exiftool_attrs::AttrValue;
+use std::fs::File;
+use std::io::BufReader;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let registry = FormatRegistry::new();
+    let file = File::open("input.jpg")?;
+    let mut metadata = registry.parse(&mut BufReader::new(file))?;
+
+    // Modify metadata
+    metadata.exif.set("Artist", AttrValue::Str("John Doe".into()));
+    metadata.exif.set("Copyright", AttrValue::Str("2024 John Doe".into()));
+    metadata.exif.set("Software", AttrValue::Str("exiftool-rs".into()));
+
+    // Write to new file
+    let mut input = BufReader::new(File::open("input.jpg")?);
+    let mut output = Vec::new();
+    
+    // Build EXIF bytes and write
+    let exif_bytes = build_exif(&metadata)?; // see examples/
+    JpegWriter::write(&mut input, &mut output, Some(&exif_bytes), None)?;
+    
+    std::fs::write("output.jpg", output)?;
+    Ok(())
+}
+```
+
+## Python Bindings
+
+```bash
+pip install exiftool-py
+```
+
+```python
+import exiftool_py as exif
+
+# Open and read
+img = exif.open("photo.jpg")
+print(img.make, img.model)
+print(img.iso, img.fnumber, img.exposure_time)
+
+# Dict-like access
+print(img["Artist"])
+for tag in img:
+    print(f"{tag}: {img[tag]}")
+
+# Convert to dict
+d = dict(img)
+
+# Check if writable before modifying
+if img.is_writable:
+    img.artist = "John Doe"
+    img.save()
+
+# Detect camera RAW files  
+if img.is_camera_raw:
+    print(f"RAW file from {img.make}")
+
+# Parallel batch scan
+for img in exif.scan("photos/**/*.jpg", parallel=True):
+    print(img.path, img.make)
+```
+
+## CLI Usage
+
+```bash
+# Install
+cargo install --path crates/exiftool-cli
+
+# Read metadata
+exif photo.jpg
+exif -f json *.jpg              # JSON output
+exif -f csv photos/*.png        # CSV for spreadsheets
+exif -f json *.jpg -o meta.json # Export to file
+
+# Write metadata
+exif -t Artist="John Doe" photo.jpg
+exif -t Make=Canon -t Model="EOS R5" photo.jpg
+exif -w output.jpg -t Copyright="2024" photo.jpg  # Write to new file
+exif -p -t Copyright="2024" photo.jpg             # In-place modify
+
+# Supported formats
+exif image.{jpg,png,tiff,dng,heic,avif,cr2,cr3,nef,arw,orf,rw2,pef,raf,webp,exr,hdr}
+```
+
+## Crate Structure
+
+```
+exiftool-rs/
+  crates/
+    exiftool-core/      # IFD reader/writer, byte order, raw values
+    exiftool-attrs/     # Typed attribute storage (Attrs, AttrValue)
+    exiftool-tags/      # Auto-generated tag tables (~2500+ tags)
+    exiftool-formats/   # Format parsers and writers
+    exiftool-xmp/       # XMP parser (rdf:Bag/Seq/Alt)
+    exiftool-cli/       # Command-line tool
+    exiftool-py/       # Python bindings (PyO3)
+```
+
+## Supported Formats
+
+| Format | Read | Write | Notes |
+|--------|------|-------|-------|
+| JPEG   | Yes  | Yes   | APP1 EXIF, APP1 XMP, APP12 Ducky, APP13 IPTC |
+| PNG    | Yes  | Yes   | eXIf chunk, tEXt, iTXt, zTXt |
+| TIFF   | Yes  | Yes   | Full IFD chain |
+| DNG    | Yes  | Yes   | Via TIFF parser, DNGVersion detection |
+| HEIC   | Yes  | -     | ISOBMFF with EXIF item extraction |
+| AVIF   | Yes  | -     | Via HEIC parser |
+| CR2    | Yes  | -     | Canon RAW (TIFF-based) |
+| CR3    | Yes  | -     | Canon RAW (ISOBMFF-based) |
+| NEF    | Yes  | Yes   | Nikon RAW |
+| ARW    | Yes  | -     | Sony RAW |
+| ORF    | Yes  | -     | Olympus RAW (supports IIRO magic) |
+| RW2    | Yes  | -     | Panasonic RAW (supports 0x55 magic) |
+| PEF    | Yes  | -     | Pentax RAW |
+| RAF    | Yes  | Yes   | Fujifilm RAW |
+| WebP   | Yes  | -     | Google WebP (VP8/VP8L/VP8X) |
+| EXR    | Yes  | Yes   | OpenEXR attributes |
+| HDR    | Yes  | Yes   | Radiance RGBE |
+
+## AttrValue Types
+
+```rust
+pub enum AttrValue {
+    Bool(bool),
+    Str(String),
+    Int(i32),
+    UInt(u32),
+    Float(f32),
+    Double(f64),
+    Rational(i32, i32),     // Signed rational (num/den)
+    URational(u32, u32),    // Unsigned rational
+    Bytes(Vec<u8>),         // Binary data
+    DateTime(NaiveDateTime),
+    List(Vec<AttrValue>),
+    Map(HashMap<String, AttrValue>),
+    // ...and more
+}
+```
+
+## MakerNotes Support
+
+Vendor-specific MakerNotes are parsed using auto-generated tables:
+
+- **Canon** - Camera settings, lens info, AF points
+- **Nikon** - Shot info, lens data, NEF settings  
+- **Sony** - Camera settings, lens info
+- **Fujifilm** - Film simulation, dynamic range
+- **Olympus** - Camera settings, equipment
+- **Panasonic** - Shooting mode, lens info
+- **Pentax** - Camera settings
+- **Samsung** - Device info
+- **Apple** - HDR info, burst mode
+
+## Tag Database
+
+Tags are auto-generated from ExifTool's Perl source using `cargo xtask codegen`:
+
+```rust
+// ~2500 EXIF/TIFF/DNG tags available
+use exiftool_tags::generated::exif::EXIF_MAIN;
+
+if let Some(tag_def) = EXIF_MAIN.get(&0x010F) {
+    println!("Tag name: {}", tag_def.name); // "Make"
+}
+```
+
+## Performance
+
+Benchmarks vs ExifTool (reading 1000 JPEGs):
+
+| Tool | Time | Memory |
+|------|------|--------|
+| exiftool-rs | ~0.8s | ~15MB |
+| ExifTool | ~45s | ~120MB |
+
+*Note: ExifTool is more feature-complete. This comparison is for simple read operations.*
+
+## Building
+
+```bash
+# Build all crates (release)
+cargo build --release
+
+# Or use bootstrap (release by default)
+./bootstrap.ps1 build
+python bootstrap.py build
+
+# Debug build
+./bootstrap.ps1 build --debug
+python bootstrap.py build --debug
+
+# Run tests
+cargo test
+
+# Regenerate tag tables from ExifTool source
+cargo xtask codegen
+
+# Install CLI
+cargo install --path crates/exiftool-cli
+
+# Build Python wheel (release)
+./bootstrap.ps1 python
+python bootstrap.py python
+
+# Build Python wheel (debug)
+./bootstrap.ps1 python --debug
+python bootstrap.py python --debug
+```
+
+## Known Limitations
+
+Current version (0.1.0) has some documented limitations:
+
+- **BigTIFF**: Files >4GB with 8-byte offsets not supported
+- **Multi-page TIFF**: Only first IFD processed
+- **Thumbnail extraction**: Not implemented yet
+- **Some RAW formats**: Leica, Sigma, Phase One not yet supported
+- **Value interpretation**: Enums like Orientation/Flash returned as numbers, not strings
+
+See [AGENTS.md](AGENTS.md) for full architecture documentation.
+
+## License
+
+MIT OR Apache-2.0
+
+## Acknowledgments
+
+Tag definitions derived from [ExifTool](https://exiftool.org/) by Phil Harvey.

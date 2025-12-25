@@ -1,0 +1,10 @@
+[package]
+name = "exiftool-tags"
+description = "EXIF tag definitions (auto-generated)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+exiftool-core.workspace = true
+phf.workspace = true

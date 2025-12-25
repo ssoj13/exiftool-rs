@@ -1,0 +1,12 @@
+[package]
+name = "exiftool-core"
+description = "Core types and IFD parser for EXIF metadata"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest = "1.9"

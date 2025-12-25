@@ -1,0 +1,19 @@
+[package]
+name = "exiftool-cli"
+description = "CLI tool for reading/writing metadata"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "exif"
+path = "src/main.rs"
+
+[dependencies]
+exiftool-core.workspace = true
+exiftool-attrs.workspace = true
+exiftool-formats.workspace = true
+exiftool-xmp.workspace = true
+clap.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true

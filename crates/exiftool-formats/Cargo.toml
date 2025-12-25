@@ -1,0 +1,18 @@
+[package]
+name = "exiftool-formats"
+description = "File format parsers (JPEG, TIFF, PNG, RAW)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+exiftool-core.workspace = true
+exiftool-attrs.workspace = true
+exiftool-tags.workspace = true
+exiftool-xmp.workspace = true
+thiserror.workspace = true
+exr.workspace = true
+flate2.workspace = true
+
+[dev-dependencies]
+proptest = "1.9"

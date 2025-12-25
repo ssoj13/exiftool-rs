@@ -1,0 +1,11 @@
+[package]
+name = "exiftool-xmp"
+description = "XMP (XML) metadata parser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+exiftool-attrs.workspace = true
+quick-xml.workspace = true
+thiserror.workspace = true
