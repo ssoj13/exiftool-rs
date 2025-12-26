@@ -1,5 +1,7 @@
 # exiftool-rs
 
+> **Note:** This is an experimental project implementing a small subset of [ExifTool](https://exiftool.org/) functionality in Rust. It is not intended to replace the original ExifTool, which remains the definitive tool for image metadata manipulation. Use this library for learning, experimentation, or when you need a lightweight pure-Rust solution for basic metadata operations.
+
 Fast, pure Rust library for reading and writing image metadata (EXIF, XMP, IPTC).
 
 A native Rust alternative to [ExifTool](https://exiftool.org/) with zero runtime dependencies - no Perl, no external binaries. Parses metadata directly from bytes using auto-generated tag definitions from ExifTool's database (~2500+ tags).
