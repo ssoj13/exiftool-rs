@@ -122,7 +122,9 @@ for img in exif.scan("photos/**/*.jpg", parallel=True):
 cargo install --path crates/exiftool-cli
 
 # Read metadata
-exif photo.jpg
+exif photo.jpg                  # All tags
+exif -g Model photo.jpg         # Single tag (value only)
+exif -g Make -g Model *.jpg     # Multiple tags
 exif -f json *.jpg              # JSON output
 exif -f csv photos/*.png        # CSV for spreadsheets
 exif -f json *.jpg -o meta.json # Export to file

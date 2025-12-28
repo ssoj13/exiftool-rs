@@ -23,6 +23,8 @@ USAGE:
 
 READ:
     exif photo.jpg                    # show all metadata
+    exif -g Model photo.jpg           # get single tag value
+    exif -g Model -g Make *.jpg       # get multiple tags
     exif -f json *.jpg                # JSON output for batch
     exif -f csv photos/*.png          # CSV for spreadsheet
     exif image.{heic,cr3,nef,arw,orf,rw2,pef,raf,webp}  # RAW formats
@@ -38,6 +40,7 @@ WRITE:
     exif -p -t Software=exif a.jpg              # modify in-place (!)
 
 OPTIONS:
+    -g, --get <TAG>      Get specific tag(s) only (repeatable)
     -f, --format <FMT>   Output: text (default), json, csv
     -o, --output <FILE>  Save metadata to file (for read mode)
     -t, --tag <T=V>      Set tag (repeatable): -t Tag=Value
@@ -141,6 +144,7 @@ fn run() -> Result<()> {
 struct Args {
     files: Vec<PathBuf>,
     format: String,
+    get_tags: Vec<String>,            // -g Tag (filter output)
     tags: Vec<(String, String)>,      // -t Tag=Value
     output: Option<PathBuf>,          // -o metadata output
     write_file: Option<PathBuf>,      // -w image output
@@ -158,6 +162,12 @@ fn parse_args(args: &[String]) -> Result<Args> {
             "-f" | "--format" => {
                 i += 1;
                 parsed.format = args.get(i).cloned().unwrap_or_default();
+            }
+            "-g" | "--get" => {
+                i += 1;
+                if let Some(tag) = args.get(i) {
+                    parsed.get_tags.push(tag.clone());
+                }
             }
             "-t" | "--tag" => {
                 i += 1;
@@ -275,42 +285,82 @@ fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
 
 fn print_metadata(path: &Path, m: &Metadata, args: &Args) {
     match args.format.as_str() {
-        "json" => print_json(path, m),
-        "csv" => print_csv(path, m),
-        _ => print_text(path, m, args.all),
+        "json" => print_json(path, m, &args.get_tags),
+        "csv" => print_csv(path, m, &args.get_tags),
+        _ => print_text(path, m, args.all, &args.get_tags),
     }
 }
 
 fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
     use std::fmt::Write;
+    let filter = &args.get_tags;
+    
     match args.format.as_str() {
         "json" => {
             let mut map = serde_json::Map::new();
-            map.insert("SourceFile".into(), path.display().to_string().into());
-            map.insert("Format".into(), m.format.into());
+            
+            if filter.len() == 1 {
+                if let Some(v) = m.exif.get(&filter[0]) {
+                    let _ = writeln!(out, "{}", serde_json::to_string(&val_json(v)).unwrap());
+                } else {
+                    let _ = writeln!(out, "null");
+                }
+                return;
+            }
+            
+            if filter.is_empty() {
+                map.insert("SourceFile".into(), path.display().to_string().into());
+                map.insert("Format".into(), m.format.into());
+            }
             for (k, v) in m.exif.iter() {
-                map.insert(k.clone(), val_json(v));
+                if filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)) {
+                    map.insert(k.clone(), val_json(v));
+                }
             }
             let _ = writeln!(out, "{}", serde_json::to_string_pretty(
                 &serde_json::Value::Array(vec![serde_json::Value::Object(map)])
             ).unwrap());
         }
         "csv" => {
-            let mut keys: Vec<_> = m.exif.iter().map(|(k, _)| k.clone()).collect();
-            keys.sort();
-            keys.insert(0, "SourceFile".into());
+            let keys: Vec<_> = if filter.is_empty() {
+                let mut k: Vec<_> = m.exif.iter().map(|(k, _)| k.clone()).collect();
+                k.sort();
+                k.insert(0, "SourceFile".into());
+                k
+            } else {
+                filter.clone()
+            };
             let _ = writeln!(out, "{}", keys.join(","));
-            let mut vals = vec![format!("\"{}\"", path.display())];
-            for k in &keys[1..] {
-                vals.push(m.exif.get(k).map(|v| format!("\"{}\"", v)).unwrap_or_default());
-            }
+            let vals: Vec<_> = keys.iter().map(|k| {
+                if k == "SourceFile" {
+                    format!("\"{}\"", path.display())
+                } else {
+                    m.exif.get(k).map(|v| format!("\"{}\"", v)).unwrap_or_default()
+                }
+            }).collect();
             let _ = writeln!(out, "{}", vals.join(","));
         }
         _ => {
-            let _ = writeln!(out, "── {} ──", path.display());
-            let _ = writeln!(out, "{:28} {}", "Format", m.format);
-            let mut entries: Vec<_> = m.exif.iter().collect();
+            // Single tag, single file: just the value
+            if filter.len() == 1 && args.files.len() == 1 {
+                if let Some(v) = m.exif.get(&filter[0]) {
+                    let _ = writeln!(out, "{}", v);
+                }
+                return;
+            }
+            
+            if filter.is_empty() {
+                let _ = writeln!(out, "── {} ──", path.display());
+                let _ = writeln!(out, "{:28} {}", "Format", m.format);
+            } else if args.files.len() > 1 {
+                let _ = writeln!(out, "── {} ──", path.display());
+            }
+            
+            let mut entries: Vec<_> = m.exif.iter()
+                .filter(|(k, _)| filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)))
+                .collect();
             entries.sort_by(|a, b| a.0.cmp(b.0));
+            
             for (k, v) in entries {
                 let vs = v.to_string();
                 if vs.len() > 60 {
@@ -319,19 +369,33 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
                     let _ = writeln!(out, "{:28} {}", k, vs);
                 }
             }
-            if let Some(ref xmp) = m.xmp {
-                let _ = writeln!(out, "{:28} {} bytes", "XMP", xmp.len());
+            if filter.is_empty() {
+                if let Some(ref xmp) = m.xmp {
+                    let _ = writeln!(out, "{:28} {} bytes", "XMP", xmp.len());
+                }
             }
             let _ = writeln!(out);
         }
     }
 }
 
-fn print_text(path: &Path, m: &Metadata, _all: bool) {
-    println!("── {} ──", path.display());
-    println!("{:28} {}", "Format", m.format);
+fn print_text(path: &Path, m: &Metadata, _all: bool, filter: &[String]) {
+    // Single tag: just print value
+    if filter.len() == 1 {
+        if let Some(v) = m.exif.get(&filter[0]) {
+            println!("{}", v);
+        }
+        return;
+    }
     
-    let mut entries: Vec<_> = m.exif.iter().collect();
+    if filter.is_empty() {
+        println!("── {} ──", path.display());
+        println!("{:28} {}", "Format", m.format);
+    }
+    
+    let mut entries: Vec<_> = m.exif.iter()
+        .filter(|(k, _)| filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)))
+        .collect();
     entries.sort_by(|a, b| a.0.cmp(b.0));
     
     for (k, v) in entries {
@@ -343,19 +407,36 @@ fn print_text(path: &Path, m: &Metadata, _all: bool) {
         }
     }
     
-    if let Some(ref xmp) = m.xmp {
-        println!("{:28} {} bytes", "XMP", xmp.len());
+    if filter.is_empty() {
+        if let Some(ref xmp) = m.xmp {
+            println!("{:28} {} bytes", "XMP", xmp.len());
+        }
+        println!();
     }
-    println!();
 }
 
-fn print_json(path: &Path, m: &Metadata) {
+fn print_json(path: &Path, m: &Metadata, filter: &[String]) {
     let mut map = serde_json::Map::new();
-    map.insert("SourceFile".into(), path.display().to_string().into());
-    map.insert("Format".into(), m.format.into());
+    
+    // Single tag: just the value
+    if filter.len() == 1 {
+        if let Some(v) = m.exif.get(&filter[0]) {
+            println!("{}", serde_json::to_string(&val_json(v)).unwrap());
+        } else {
+            println!("null");
+        }
+        return;
+    }
+    
+    if filter.is_empty() {
+        map.insert("SourceFile".into(), path.display().to_string().into());
+        map.insert("Format".into(), m.format.into());
+    }
     
     for (k, v) in m.exif.iter() {
-        map.insert(k.clone(), val_json(v));
+        if filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)) {
+            map.insert(k.clone(), val_json(v));
+        }
     }
     
     println!("{}", serde_json::to_string_pretty(&serde_json::Value::Array(
@@ -363,17 +444,25 @@ fn print_json(path: &Path, m: &Metadata) {
     )).unwrap());
 }
 
-fn print_csv(path: &Path, m: &Metadata) {
-    let mut keys: Vec<_> = m.exif.iter().map(|(k, _)| k.clone()).collect();
-    keys.sort();
-    keys.insert(0, "SourceFile".into());
+fn print_csv(path: &Path, m: &Metadata, filter: &[String]) {
+    let keys: Vec<_> = if filter.is_empty() {
+        let mut k: Vec<_> = m.exif.iter().map(|(k, _)| k.clone()).collect();
+        k.sort();
+        k.insert(0, "SourceFile".into());
+        k
+    } else {
+        filter.to_vec()
+    };
     
     println!("{}", keys.join(","));
     
-    let mut vals = vec![format!("\"{}\"", path.display())];
-    for k in &keys[1..] {
-        vals.push(m.exif.get(k).map(|v| format!("\"{}\"", v)).unwrap_or_default());
-    }
+    let vals: Vec<_> = keys.iter().map(|k| {
+        if k == "SourceFile" {
+            format!("\"{}\"", path.display())
+        } else {
+            m.exif.get(k).map(|v| format!("\"{}\"", v)).unwrap_or_default()
+        }
+    }).collect();
     println!("{}", vals.join(","));
 }
 
