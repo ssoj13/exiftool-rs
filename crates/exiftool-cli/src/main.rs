@@ -15,6 +15,71 @@ use std::env;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/// Simple glob matching for tag names (* = any chars, ? = one char)
+fn glob_match(pattern: &str, text: &str) -> bool {
+    let p: Vec<char> = pattern.chars().collect();
+    let t: Vec<char> = text.chars().collect();
+    glob_match_impl(&p, &t)
+}
+
+fn glob_match_impl(p: &[char], t: &[char]) -> bool {
+    match (p.first(), t.first()) {
+        (None, None) => true,
+        (Some('*'), _) => {
+            // Try matching * with 0 chars or 1+ chars
+            glob_match_impl(&p[1..], t) || (!t.is_empty() && glob_match_impl(p, &t[1..]))
+        }
+        (Some('?'), Some(_)) => glob_match_impl(&p[1..], &t[1..]),
+        (Some(pc), Some(tc)) if pc.eq_ignore_ascii_case(tc) => {
+            glob_match_impl(&p[1..], &t[1..])
+        }
+        _ => false,
+    }
+}
+
+/// Check if tag matches any of the filter patterns
+fn tag_matches(tag: &str, filters: &[String]) -> bool {
+    if filters.is_empty() {
+        return true;
+    }
+    filters.iter().any(|f| {
+        if f.contains('*') || f.contains('?') {
+            glob_match(f, tag)
+        } else {
+            f.eq_ignore_ascii_case(tag)
+        }
+    })
+}
+
+/// Check if filter is a simple tag name (no wildcards)
+fn is_simple_filter(filters: &[String]) -> bool {
+    filters.len() == 1 && !filters[0].contains('*') && !filters[0].contains('?')
+}
+
+/// Check if any filter has wildcards
+fn has_wildcards(filters: &[String]) -> bool {
+    filters.iter().any(|f| f.contains('*') || f.contains('?'))
+}
+
+/// Expand wildcard patterns to actual tag names from metadata
+fn expand_filters(filters: &[String], metadata: &exiftool_formats::Metadata) -> Vec<String> {
+    if filters.is_empty() {
+        return vec![];
+    }
+    if !has_wildcards(filters) {
+        return filters.to_vec();
+    }
+    
+    let mut result = Vec::new();
+    for (tag, _) in metadata.exif.iter() {
+        if tag_matches(tag, filters) && !result.contains(tag) {
+            result.push(tag.clone());
+        }
+    }
+    result.sort();
+    result
+}
+
 const HELP: &str = r#"
 exif - fast image metadata reader/writer
 
@@ -25,6 +90,8 @@ READ:
     exif photo.jpg                    # show all metadata
     exif -g Model photo.jpg           # get single tag value
     exif -g Model -g Make *.jpg       # get multiple tags
+    exif -g Date* photo.jpg           # wildcard: all Date* tags
+    exif -g *Original photo.jpg       # wildcard: *Original tags
     exif -f json *.jpg                # JSON output for batch
     exif -f csv photos/*.png          # CSV for spreadsheet
     exif image.{heic,cr3,nef,arw,orf,rw2,pef,raf,webp}  # RAW formats
@@ -40,7 +107,7 @@ WRITE:
     exif -p -t Software=exif a.jpg              # modify in-place (!)
 
 OPTIONS:
-    -g, --get <TAG>      Get specific tag(s) only (repeatable)
+    -g, --get <PATTERN>  Get tag(s) matching pattern (* and ? wildcards)
     -f, --format <FMT>   Output: text (default), json, csv
     -o, --output <FILE>  Save metadata to file (for read mode)
     -t, --tag <T=V>      Set tag (repeatable): -t Tag=Value
@@ -299,7 +366,7 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
         "json" => {
             let mut map = serde_json::Map::new();
             
-            if filter.len() == 1 {
+            if is_simple_filter(filter) {
                 if let Some(v) = m.exif.get(&filter[0]) {
                     let _ = writeln!(out, "{}", serde_json::to_string(&val_json(v)).unwrap());
                 } else {
@@ -313,7 +380,7 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
                 map.insert("Format".into(), m.format.into());
             }
             for (k, v) in m.exif.iter() {
-                if filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)) {
+                if tag_matches(k, filter) {
                     map.insert(k.clone(), val_json(v));
                 }
             }
@@ -328,7 +395,7 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
                 k.insert(0, "SourceFile".into());
                 k
             } else {
-                filter.clone()
+                expand_filters(filter, m)
             };
             let _ = writeln!(out, "{}", keys.join(","));
             let vals: Vec<_> = keys.iter().map(|k| {
@@ -342,7 +409,7 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
         }
         _ => {
             // Single tag, single file: just the value
-            if filter.len() == 1 && args.files.len() == 1 {
+            if is_simple_filter(filter) && args.files.len() == 1 {
                 if let Some(v) = m.exif.get(&filter[0]) {
                     let _ = writeln!(out, "{}", v);
                 }
@@ -357,7 +424,7 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
             }
             
             let mut entries: Vec<_> = m.exif.iter()
-                .filter(|(k, _)| filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)))
+                .filter(|(k, _)| tag_matches(k, filter))
                 .collect();
             entries.sort_by(|a, b| a.0.cmp(b.0));
             
@@ -381,7 +448,7 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
 
 fn print_text(path: &Path, m: &Metadata, _all: bool, filter: &[String]) {
     // Single tag: just print value
-    if filter.len() == 1 {
+    if is_simple_filter(filter) {
         if let Some(v) = m.exif.get(&filter[0]) {
             println!("{}", v);
         }
@@ -394,7 +461,7 @@ fn print_text(path: &Path, m: &Metadata, _all: bool, filter: &[String]) {
     }
     
     let mut entries: Vec<_> = m.exif.iter()
-        .filter(|(k, _)| filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)))
+        .filter(|(k, _)| tag_matches(k, filter))
         .collect();
     entries.sort_by(|a, b| a.0.cmp(b.0));
     
@@ -419,7 +486,7 @@ fn print_json(path: &Path, m: &Metadata, filter: &[String]) {
     let mut map = serde_json::Map::new();
     
     // Single tag: just the value
-    if filter.len() == 1 {
+    if is_simple_filter(filter) {
         if let Some(v) = m.exif.get(&filter[0]) {
             println!("{}", serde_json::to_string(&val_json(v)).unwrap());
         } else {
@@ -434,7 +501,7 @@ fn print_json(path: &Path, m: &Metadata, filter: &[String]) {
     }
     
     for (k, v) in m.exif.iter() {
-        if filter.is_empty() || filter.iter().any(|f| f.eq_ignore_ascii_case(k)) {
+        if tag_matches(k, filter) {
             map.insert(k.clone(), val_json(v));
         }
     }
@@ -451,7 +518,7 @@ fn print_csv(path: &Path, m: &Metadata, filter: &[String]) {
         k.insert(0, "SourceFile".into());
         k
     } else {
-        filter.to_vec()
+        expand_filters(filter, m)
     };
     
     println!("{}", keys.join(","));

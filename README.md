@@ -125,6 +125,8 @@ cargo install --path crates/exiftool-cli
 exif photo.jpg                  # All tags
 exif -g Model photo.jpg         # Single tag (value only)
 exif -g Make -g Model *.jpg     # Multiple tags
+exif -g "Date*" photo.jpg       # Wildcard: all Date* tags
+exif -g "*Original" photo.jpg   # Wildcard: *Original tags
 exif -f json *.jpg              # JSON output
 exif -f csv photos/*.png        # CSV for spreadsheets
 exif -f json *.jpg -o meta.json # Export to file

@@ -31,6 +31,8 @@ def main():
             print("--- Properties ---")
             print(f"  Make: {img.make}")
             print(f"  Model: {img.model}")
+            print(f"  DateTime: {img.datetime}")
+            print(f"  DateTimeOriginal: {img.datetime_original}")
             print(f"  ISO: {img.iso}")
             print(f"  FNumber: {img.fnumber}")
             print(f"  Exposure: {img.exposure_time}")
