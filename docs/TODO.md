@@ -120,22 +120,26 @@
 - [x] ICO/CUR parser
   - [x] Icon directory
   - [x] Multiple resolutions
-- [ ] PPM/PGM/PBM (Netpbm)
-  - [ ] ASCII/binary variants
-  - [ ] Comment parsing
-- [ ] PCX parser (legacy)
-- [ ] TGA parser
-- [ ] SGI/RGB parser
+- [x] PPM/PGM/PBM/PAM (Netpbm)
+  - [x] P1-P7 formats (ASCII/binary)
+  - [x] Comment parsing
+  - [x] PAM (P7) with TUPLTYPE
+- [x] PCX parser (legacy)
+- [x] TGA parser
+- [x] SGI/RGB parser
 
 ### 2.2 Modern Image Formats
-- [ ] JPEG XL (.jxl)
-  - [ ] Container format
-  - [ ] EXIF box
-  - [ ] XMP box
-- [ ] JPEG 2000 (.jp2, .j2k)
-  - [ ] JP2 container
-  - [ ] XML box
-  - [ ] UUID box (XMP)
+- [x] JPEG XL (.jxl)
+  - [x] Container format (ISOBMFF)
+  - [x] Codestream format
+  - [x] EXIF box (full TIFF parsing)
+  - [x] XMP box (full parsing)
+- [x] JPEG 2000 (.jp2, .jpx, .j2k)
+  - [x] JP2 container
+  - [x] ihdr, colr, ftyp boxes
+  - [x] SIZ marker (codestream)
+  - [x] XML box (XMP parsing)
+  - [x] UUID box (XMP parsing)
 - [x] WebP write support
 - [x] HEIC write support
 - [x] AVIF write support (via HEIC writer)
@@ -157,39 +161,38 @@
 ## Phase 3: RAW Formats (Priority: HIGH)
 
 ### 3.1 Canon Additional
-- [ ] CRW parser (legacy Canon)
-  - [ ] CIFF structure
-  - [ ] Heap parsing
+- [x] CRW parser (legacy Canon)
+  - [x] CIFF structure
+  - [x] Heap parsing
 - [ ] CR3 write support
 
 ### 3.2 Nikon Additional
-- [ ] NRW parser (Nikon coolpix)
+- [x] NRW parser (Nikon coolpix)
 - [ ] NEF encrypted data handling
 
 ### 3.3 Sony Additional
-- [ ] SRF parser (Sony RAW Format)
-- [ ] SR2 parser (Sony RAW 2)
+- [x] SRF parser (Sony RAW Format)
+- [x] SR2 parser (Sony RAW 2)
 - [ ] ARW write support
 
 ### 3.4 Other Manufacturers
-- [ ] X3F parser (Sigma/Foveon)
-  - [ ] Directory structure
-  - [ ] Property list
-- [ ] 3FR parser (Hasselblad)
-  - [ ] TIFF-based structure
-- [ ] IIQ parser (Phase One)
-  - [ ] TIFF variant
-- [ ] FFF parser (Hasselblad/Imacon)
-- [ ] RWL parser (Leica)
-- [ ] DCR parser (Kodak)
-- [ ] KDC parser (Kodak)
-- [ ] K25 parser (Kodak)
-- [ ] MRW parser (Minolta)
-- [ ] ERF parser (Epson)
-- [ ] MEF parser (Mamiya)
-- [ ] MOS parser (Leaf)
-- [ ] SRW parser (Samsung)
-- [ ] NRW parser (Nikon)
+- [x] X3F parser (Sigma/Foveon)
+  - [x] Directory structure
+  - [x] Property list
+- [x] 3FR/FFF parser (Hasselblad)
+  - [x] TIFF-based structure
+- [x] IIQ parser (Phase One)
+  - [x] TIFF variant
+- [x] RWL parser (Leica)
+- [x] DCR parser (Kodak)
+- [x] KDC parser (Kodak)
+- [x] K25 parser (Kodak)
+- [x] MRW parser (Minolta)
+- [x] ERF parser (Epson)
+- [x] MEF parser (Mamiya)
+- [x] SRW parser (Samsung)
+- [x] RWL parser (Leica)
+- [x] MOS parser (Leaf)
 - [ ] RWZ parser (Rawzor)
 
 ### 3.5 DNG Extensions
@@ -276,18 +279,23 @@
 - [ ] HEVC/H.265 metadata (partial)
 
 ### 5.2 AVI/RIFF Family
-- [ ] AVI parser
-  - [ ] RIFF structure
-  - [ ] INFO chunk
-  - [ ] EXIF chunk
+- [x] AVI parser
+  - [x] RIFF structure
+  - [x] avih/strh headers
+  - [x] INFO chunk metadata
+  - [x] EXIF chunk (full TIFF parsing)
+  - [x] XMP chunk
 - [ ] WAV metadata (shared with audio)
 
 ### 5.3 Matroska Family
-- [ ] MKV parser
-  - [ ] EBML structure
-  - [ ] Tags element
-  - [ ] Attachments
-- [ ] WebM parser
+- [x] MKV parser
+  - [x] EBML structure
+  - [x] Info element (duration, title, apps)
+  - [x] Tracks element (video/audio codecs)
+  - [x] Tags element
+  - [x] Chapters (EditionEntry, ChapterAtom)
+  - [x] Attachments (file name, MIME, size)
+- [x] WebM parser (via MKV)
 
 ### 5.4 MPEG Family
 - [ ] MPEG-2 TS (.mts, .m2ts)
@@ -324,28 +332,45 @@
   - [x] VORBIS_COMMENT
   - [x] PICTURE block
 - [ ] ALAC (Apple Lossless)
-- [ ] APE parser (Monkey's Audio)
-- [ ] WavPack parser
+- [x] APE parser (Monkey's Audio)
+  - [x] MAC header
+  - [x] APEv2 tags
+- [x] WavPack parser
+  - [x] wvpk header
+  - [x] Hybrid/lossless mode
 - [ ] TAK parser
 
 ### 6.3 Compressed Audio
 - [ ] MP3 parser (MPEG Layer 3)
 - [ ] AAC parser
-- [ ] OGG Vorbis parser
-- [ ] Opus parser
+- [x] OGG Vorbis parser
+  - [x] OGG page structure
+  - [x] Vorbis comments
+- [x] Opus parser (via OGG)
+  - [x] OpusHead header
+  - [x] OpusTags
 - [ ] WMA parser
 - [ ] M4A parser
 
 ### 6.4 Uncompressed Audio
-- [ ] WAV parser
-  - [ ] RIFF structure
-  - [ ] INFO chunk
-  - [ ] BEXT chunk (broadcast)
-- [ ] AIFF parser
-- [ ] AU parser (Sun Audio)
+- [x] WAV parser
+  - [x] RIFF structure
+  - [x] INFO chunk
+  - [x] BEXT chunk (broadcast)
+- [x] AIFF/AIFC parser
+  - [x] FORM container
+  - [x] COMM chunk (80-bit extended float)
+  - [x] NAME/AUTH/ANNO chunks
+- [x] AU parser (Sun Audio)
+  - [x] .snd magic
+  - [x] Encoding types (mu-law, PCM, etc.)
+  - [x] Annotation field
 
 ### 6.5 Specialized Audio
-- [ ] DSF/DFF (DSD audio)
+- [x] DSF/DFF (DSD audio)
+  - [x] DSF parser (DSD Stream File)
+  - [x] DFF parser (DSDIFF)
+  - [x] DSD64/128/256/512 rate detection
 - [ ] MIDI metadata
 - [ ] Audible (.aa, .aax)
 
@@ -566,6 +591,38 @@
 | Apple.pm | exiftool-formats/makernotes/apple.rs | [x] |
 | QuickTime.pm | exiftool-formats/mp4.rs | [x] |
 | ID3.pm | exiftool-formats/id3.rs | [x] |
+| RIFF.pm | exiftool-formats/avi.rs | [x] |
+| Matroska.pm | exiftool-formats/mkv.rs | [x] |
+| Jpeg2000.pm | exiftool-formats/jp2.rs | [x] |
+| JXL.pm | exiftool-formats/jxl.rs | [x] |
+| PPM.pm | exiftool-formats/pnm.rs | [x] |
+| RIFF.pm (WAV) | exiftool-formats/wav.rs | [x] |
+| TGA.pm | exiftool-formats/tga.rs | [x] |
+| PCX.pm | exiftool-formats/pcx.rs | [x] |
+| SGI.pm | exiftool-formats/sgi.rs | [x] |
+| CanonRaw.pm | exiftool-formats/crw.rs | [x] |
+| NikonCapture.pm | exiftool-formats/nrw.rs | [x] |
+| Sony.pm (SRF/SR2) | exiftool-formats/srf.rs | [x] |
+| SigmaRaw.pm | exiftool-formats/x3f.rs | [x] |
+| AIFF.pm | exiftool-formats/aiff.rs | [x] |
+| MinoltaRaw.pm | exiftool-formats/mrw.rs | [x] |
+| Hasselblad.pm | exiftool-formats/fff.rs | [x] |
+| Epson.pm | exiftool-formats/erf.rs | [x] |
+| MakerNotes/Mamiya.pm | exiftool-formats/mef.rs | [x] |
+| Samsung.pm (SRW) | exiftool-formats/srw.rs | [x] |
+| Panasonic.pm (RWL) | exiftool-formats/rwl.rs | [x] |
+| Kodak.pm (DCR) | exiftool-formats/dcr.rs | [x] |
+| Kodak.pm (KDC) | exiftool-formats/dcr.rs | [x] |
+| Kodak.pm (K25) | exiftool-formats/dcr.rs | [x] |
+| Leaf.pm | exiftool-formats/mos.rs | [x] |
+| PhaseOne.pm | exiftool-formats/iiq.rs | [x] |
+| AU.pm | exiftool-formats/au.rs | [x] |
+| Vorbis.pm | exiftool-formats/ogg.rs | [x] |
+| Opus.pm | exiftool-formats/ogg.rs | [x] |
+| APE.pm | exiftool-formats/ape.rs | [x] |
+| WavPack.pm | exiftool-formats/wv.rs | [x] |
+| DSD.pm (DSF) | exiftool-formats/dsf.rs | [x] |
+| DSD.pm (DFF) | exiftool-formats/dsf.rs | [x] |
 | PDF.pm | - | [ ] |
 | ... | ... | ... |
 
@@ -627,15 +684,15 @@ Last updated: 2025-01-05
 |-------|----------|-------|
 | Phase 0 | 100% | Audit complete |
 | Phase 1 | 90% | IPTC, XMP, ICC, ValueInterp, Thumbnail, BigTIFF, Multi-page done |
-| Phase 2 | 60% | GIF, BMP, ICO, SVG, WebP/HEIC write done |
-| Phase 3 | 40% | Core RAW done |
+| Phase 2 | 80% | GIF, BMP, ICO, SVG, PNM, JXL, JP2, TGA, PCX, SGI, WebP/HEIC write done |
+| Phase 3 | 90% | All RAW formats done except RWZ |
 | Phase 4 | 25% | 11/44 vendors (added DJI, GoPro) |
-| Phase 5 | 40% | MP4/MOV done |
-| Phase 6 | 30% | ID3/FLAC done |
+| Phase 5 | 70% | MP4/MOV, AVI, MKV/WebM done |
+| Phase 6 | 75% | ID3/FLAC/WAV/AIFF/AU/OGG/Opus/APE/WavPack/DSF/DFF done |
 | Phase 7 | 0% | Not started |
 | Phase 8 | 0% | Not started |
 | Phase 9 | 0% | Not started |
 | Phase 10 | 10% | Basic CLI done |
-| Phase 11 | 25% | 132 tests |
+| Phase 11 | 60% | 345 tests (261 formats + 84 other) |
 | Phase 12 | 60% | PyO3 works |
 | Phase 13 | 0% | Not started |

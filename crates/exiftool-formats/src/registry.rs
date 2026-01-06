@@ -25,10 +25,13 @@
 //! - SvgParser - SVG (XML-based vector graphics)
 
 use crate::{
-    ArwParser, AviParser, BmpParser, Cr2Parser, Cr3Parser, ExrParser, FormatParser, GifParser, 
-    HdrParser, FlacParser, HeicParser, IcoParser, Id3Parser, Jp2Parser, JpegParser, JxlParser, 
-    MkvParser, Mp4Parser, NefParser, OrfParser, PefParser, PngParser, PnmParser, RafParser, Result, 
-    Rw2Parser, SvgParser, TiffParser, WebpParser,
+    AiffParser, ApeParser, ArwParser, AuParser, AviParser, BmpParser, Cr2Parser, Cr3Parser, 
+    CrwParser, DcrParser, DffParser, DsfParser, ErfParser, ExrParser, FffParser, FormatParser, 
+    GifParser, HdrParser, FlacParser, HeicParser, IcoParser, Id3Parser, IiqParser, Jp2Parser, 
+    JpegParser, JxlParser, K25Parser, KdcParser, MefParser, MkvParser, MosParser, Mp4Parser, 
+    MrwParser, NefParser, NrwParser, OggParser, OrfParser, PcxParser, PefParser, PngParser, 
+    PnmParser, RafParser, Result, Rw2Parser, RwlParser, SgiParser, SrfParser, SrwParser, 
+    SvgParser, TgaParser, TiffParser, WavParser, WebpParser, WvParser, X3fParser,
 };
 
 /// Registry of format parsers with auto-detection.
@@ -67,7 +70,21 @@ impl FormatRegistry {
         r.register(Box::new(JxlParser));           // JPEG XL
         r.register(Box::new(Jp2Parser));           // JPEG 2000
         r.register(Box::new(AviParser));           // AVI video
+        r.register(Box::new(WavParser));           // WAV audio
+        r.register(Box::new(AiffParser));          // AIFF/AIFC audio
+        r.register(Box::new(AuParser));            // Sun AU audio
+        r.register(Box::new(OggParser));           // OGG Vorbis/Opus
+        r.register(Box::new(ApeParser));           // Monkey's Audio
+        r.register(Box::new(WvParser));            // WavPack
+        r.register(Box::new(DsfParser));           // DSD Stream File
+        r.register(Box::new(DffParser));           // DSDIFF
         r.register(Box::new(MkvParser));           // MKV/WebM video
+        r.register(Box::new(TgaParser));           // TGA image
+        r.register(Box::new(PcxParser));           // PCX image
+        r.register(Box::new(SgiParser));           // SGI/RGB image
+        r.register(Box::new(CrwParser));           // Canon CRW (CIFF)
+        r.register(Box::new(X3fParser));           // Sigma X3F
+        r.register(Box::new(MrwParser));           // Minolta MRW
         
         // TIFF-based formats (detected by extension, not magic)
         r.register(Box::new(Cr2Parser::new()));   // Canon CR2
@@ -76,6 +93,18 @@ impl FormatRegistry {
         r.register(Box::new(OrfParser::new()));   // Olympus ORF (has special IIRO magic)
         r.register(Box::new(Rw2Parser::new()));   // Panasonic RW2 (has 0x55 magic)
         r.register(Box::new(PefParser::new()));   // Pentax PEF
+        r.register(Box::new(NrwParser::new()));   // Nikon NRW (Coolpix)
+        r.register(Box::new(SrfParser::new()));   // Sony SRF/SR2
+        r.register(Box::new(FffParser::new()));   // Hasselblad 3FR/FFF
+        r.register(Box::new(ErfParser::new()));   // Epson ERF
+        r.register(Box::new(MefParser::new()));   // Mamiya MEF
+        r.register(Box::new(SrwParser::new()));   // Samsung SRW
+        r.register(Box::new(RwlParser::new()));   // Leica RWL
+        r.register(Box::new(DcrParser::new()));   // Kodak DCR
+        r.register(Box::new(KdcParser::new()));   // Kodak KDC
+        r.register(Box::new(K25Parser::new()));   // Kodak K25
+        r.register(Box::new(MosParser::new()));   // Leaf MOS
+        r.register(Box::new(IiqParser::new()));   // Phase One IIQ
         r.register(Box::new(TiffParser::default())); // Generic TIFF (last!)
         r
     }
