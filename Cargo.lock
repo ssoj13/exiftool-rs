@@ -259,11 +259,31 @@ version = "0.1.0"
 dependencies = [
  "exiftool-attrs",
  "exiftool-core",
+ "exiftool-icc",
+ "exiftool-iptc",
  "exiftool-tags",
  "exiftool-xmp",
  "exr",
  "flate2",
  "proptest",
+ "thiserror",
+]
+
+[[package]]
+name = "exiftool-icc"
+version = "0.1.0"
+dependencies = [
+ "exiftool-attrs",
+ "phf",
+ "thiserror",
+]
+
+[[package]]
+name = "exiftool-iptc"
+version = "0.1.0"
+dependencies = [
+ "exiftool-attrs",
+ "phf",
  "thiserror",
 ]
 

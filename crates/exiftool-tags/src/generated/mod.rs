@@ -3,8 +3,10 @@
 
 pub mod apple;
 pub mod canon;
+pub mod dji;
 pub mod exif;
 pub mod fujifilm;
+pub mod gopro;
 pub mod gps;
 pub mod nikon;
 pub mod olympus;

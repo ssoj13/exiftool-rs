@@ -3,7 +3,7 @@
 //! Strategy: Copy all segments, replacing APP1 (EXIF) with new data.
 //! Image data (after SOS) is copied verbatim - no recompression.
 
-use crate::{Error, ReadSeek, Result};
+use crate::{Error, Metadata, ReadSeek, Result};
 use std::io::Write;
 
 /// JPEG segment for writing.
@@ -101,6 +101,28 @@ impl JpegWriter {
         }
         
         Ok(())
+    }
+
+    /// Write JPEG with updated metadata (convenience method).
+    ///
+    /// Extracts EXIF and XMP from Metadata struct and writes both.
+    pub fn write_metadata<R, W>(input: &mut R, output: &mut W, metadata: &Metadata) -> Result<()>
+    where
+        R: ReadSeek,
+        W: Write,
+    {
+        // Build EXIF bytes from metadata
+        let exif_bytes = crate::utils::build_exif_bytes(metadata)?;
+        let exif_data = if exif_bytes.is_empty() {
+            None
+        } else {
+            Some(exif_bytes.as_slice())
+        };
+
+        // Get XMP string from metadata
+        let xmp_data = metadata.xmp.as_deref();
+
+        Self::write(input, output, exif_data, xmp_data)
     }
     
     /// Parse JPEG into segments.
@@ -236,25 +258,73 @@ impl JpegWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use exiftool_attrs::AttrValue;
     use std::io::Cursor;
     
-    #[test]
-    fn write_preserves_image() {
-        // Minimal valid JPEG: SOI + APP0 + DQT + SOF + DHT + SOS + EOI
-        let input: Vec<u8> = vec![
+    fn make_minimal_jpeg() -> Vec<u8> {
+        vec![
             0xFF, 0xD8, // SOI
             0xFF, 0xE0, 0x00, 0x10, // APP0 JFIF header
             b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
-            0xFF, 0xD9, // EOI (minimal, no actual image)
-        ];
+            0xFF, 0xDA, 0x00, 0x02, // SOS with minimal 2-byte length (length field only)
+            0xFF, 0xD9, // EOI
+        ]
+    }
+    
+    #[test]
+    fn write_preserves_image() {
+        let input = make_minimal_jpeg();
+        let mut cursor = Cursor::new(&input);
+        let mut output = Vec::new();
+        
+        JpegWriter::write(&mut cursor, &mut output, None, None).unwrap();
+        assert_eq!(&output[0..2], &[0xFF, 0xD8]);
+    }
+
+    #[test]
+    fn write_xmp_to_jpeg() {
+        let input = make_minimal_jpeg();
+        let xmp = r#"<?xml version="1.0"?><x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF/></x:xmpmeta>"#;
         
         let mut cursor = Cursor::new(&input);
         let mut output = Vec::new();
         
-        // Write without changes
-        JpegWriter::write(&mut cursor, &mut output, None, None).unwrap();
+        JpegWriter::write(&mut cursor, &mut output, None, Some(xmp)).unwrap();
         
-        // Should start with SOI
-        assert_eq!(&output[0..2], &[0xFF, 0xD8]);
+        // Find XMP APP1 segment
+        let xmp_header = b"http://ns.adobe.com/xap/1.0/\x00";
+        let found = output
+            .windows(xmp_header.len())
+            .any(|w| w == xmp_header);
+        
+        assert!(found, "XMP APP1 segment not found");
+        
+        // Verify XMP content is in output
+        let output_str = String::from_utf8_lossy(&output);
+        assert!(output_str.contains("xmpmeta"), "XMP content not found");
+    }
+
+    #[test]
+    fn write_metadata_with_xmp() {
+        let input = make_minimal_jpeg();
+        
+        let mut metadata = Metadata::new("JPEG");
+        metadata.exif.set("Make", AttrValue::Str("TestCam".into()));
+        metadata.xmp = Some(r#"<?xml version="1.0"?><x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF/></x:xmpmeta>"#.to_string());
+        
+        let mut cursor = Cursor::new(&input);
+        let mut output = Vec::new();
+        
+        JpegWriter::write_metadata(&mut cursor, &mut output, &metadata).unwrap();
+        
+        // Check EXIF is present
+        let exif_header = b"Exif\x00\x00";
+        let has_exif = output.windows(6).any(|w| w == exif_header);
+        assert!(has_exif, "EXIF not found");
+        
+        // Check XMP is present
+        let xmp_header = b"http://ns.adobe.com/xap/1.0/\x00";
+        let has_xmp = output.windows(xmp_header.len()).any(|w| w == xmp_header);
+        assert!(has_xmp, "XMP not found");
     }
 }

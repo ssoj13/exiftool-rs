@@ -1,0 +1,16 @@
+[package]
+name = "exiftool-iptc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "IPTC-IIM metadata parser and writer"
+keywords = ["iptc", "metadata", "exif", "image"]
+categories = ["multimedia::images", "parser-implementations"]
+
+[dependencies]
+exiftool-attrs = { workspace = true }
+thiserror = { workspace = true }
+phf = { workspace = true }
+
+[dev-dependencies]

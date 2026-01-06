@@ -26,9 +26,13 @@
 
 mod error;
 mod parser;
+mod sidecar;
+mod writer;
 
 pub use error::{Error, Result};
 pub use parser::XmpParser;
+pub use sidecar::XmpSidecar;
+pub use writer::XmpWriter;
 
 /// XMP namespace URIs.
 pub mod ns {

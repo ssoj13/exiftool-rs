@@ -13,6 +13,8 @@ use crate::{makernotes, Error, FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
 use exiftool_core::{ByteOrder, IfdReader, RawValue};
 use exiftool_xmp::XmpParser;
+use crate::iptc::IptcParser;
+use exiftool_icc::IccParser;
 use std::io::SeekFrom;
 
 /// JPEG format parser.
@@ -278,7 +280,7 @@ fn parse_sof(marker: u8, data: &[u8], metadata: &mut Metadata) {
     metadata.exif.set("Compression", AttrValue::Str(compression.to_string()));
 }
 
-/// Parse ICC profile chunks.
+/// Parse ICC profile chunks using exiftool-icc crate.
 fn parse_icc_profile(chunks: &mut [(u8, u8, Vec<u8>)], metadata: &mut Metadata) {
     // Sort by chunk number
     chunks.sort_by_key(|(num, _, _)| *num);
@@ -289,89 +291,17 @@ fn parse_icc_profile(chunks: &mut [(u8, u8, Vec<u8>)], metadata: &mut Metadata) 
         profile_data.extend_from_slice(data);
     }
     
-    if profile_data.len() < 128 {
-        metadata.exif.set("ICCProfile", AttrValue::Str(format!("{} bytes", profile_data.len())));
-        return;
-    }
-    
-    // Parse ICC header (first 128 bytes)
-    // Bytes 4-7: preferred CMM type
-    // Bytes 8-11: profile version
-    // Bytes 12-15: profile/device class
-    // Bytes 16-19: color space
-    // Bytes 20-23: PCS (Profile Connection Space)
-    // Bytes 48-51: primary platform
-    // Bytes 80-83: profile creator
-    
-    let profile_size = u32::from_be_bytes([profile_data[0], profile_data[1], profile_data[2], profile_data[3]]);
-    metadata.exif.set("ICCProfileSize", AttrValue::UInt(profile_size));
-    
-    // Profile class
-    if let Ok(class) = std::str::from_utf8(&profile_data[12..16]) {
-        let class_name = match class.trim() {
-            "scnr" => "Input Device",
-            "mntr" => "Display Device",
-            "prtr" => "Output Device",
-            "link" => "DeviceLink",
-            "spac" => "ColorSpace Conversion",
-            "abst" => "Abstract",
-            "nmcl" => "Named Color",
-            _ => class,
-        };
-        metadata.exif.set("ICCDeviceClass", AttrValue::Str(class_name.to_string()));
-    }
-    
-    // Color space
-    if let Ok(space) = std::str::from_utf8(&profile_data[16..20]) {
-        let space_name = match space.trim() {
-            "RGB" => "RGB",
-            "GRAY" => "Grayscale",
-            "CMYK" => "CMYK",
-            "Lab" => "Lab",
-            "XYZ" => "XYZ",
-            _ => space,
-        };
-        metadata.exif.set("ICCColorSpace", AttrValue::Str(space_name.to_string()));
-    }
-    
-    // Profile description (tag 'desc' at offset in tag table)
-    // Tag table starts at offset 128, each entry is 12 bytes
-    let tag_count = u32::from_be_bytes([profile_data[128], profile_data[129], profile_data[130], profile_data[131]]) as usize;
-    
-    for i in 0..tag_count.min(50) {
-        let tag_offset = 132 + i * 12;
-        if tag_offset + 12 > profile_data.len() {
-            break;
-        }
-        
-        let sig = &profile_data[tag_offset..tag_offset + 4];
-        if sig == b"desc" {
-            let data_offset = u32::from_be_bytes([
-                profile_data[tag_offset + 4],
-                profile_data[tag_offset + 5],
-                profile_data[tag_offset + 6],
-                profile_data[tag_offset + 7],
-            ]) as usize;
-            let data_size = u32::from_be_bytes([
-                profile_data[tag_offset + 8],
-                profile_data[tag_offset + 9],
-                profile_data[tag_offset + 10],
-                profile_data[tag_offset + 11],
-            ]) as usize;
-            
-            if data_offset + data_size <= profile_data.len() && data_size > 12 {
-                // 'desc' tag: 4 bytes type + 4 bytes reserved + 4 bytes length + ASCII string
-                let desc_data = &profile_data[data_offset..data_offset + data_size];
-                if desc_data.starts_with(b"desc") && desc_data.len() > 12 {
-                    let str_len = u32::from_be_bytes([desc_data[8], desc_data[9], desc_data[10], desc_data[11]]) as usize;
-                    if str_len > 0 && 12 + str_len <= desc_data.len() {
-                        if let Ok(desc) = std::str::from_utf8(&desc_data[12..12 + str_len - 1]) {
-                            metadata.exif.set("ICCProfileName", AttrValue::Str(desc.to_string()));
-                        }
-                    }
-                }
+    // Parse with IccParser
+    match IccParser::parse(&profile_data) {
+        Ok(icc_attrs) => {
+            // Copy all ICC attributes to metadata
+            for (key, value) in icc_attrs.iter() {
+                metadata.exif.set(key.clone(), value.clone());
             }
-            break;
+        }
+        Err(_) => {
+            // Fallback: just store size
+            metadata.exif.set("ICC:ProfileSize", AttrValue::UInt(profile_data.len() as u32));
         }
     }
 }
@@ -480,94 +410,13 @@ fn parse_photoshop_irb(data: &[u8], metadata: &mut Metadata) {
     }
 }
 
-/// Parse IPTC-NAA record.
+/// Parse IPTC-NAA record using exiftool-iptc crate.
 fn parse_iptc(data: &[u8], metadata: &mut Metadata) {
-    let mut pos = 0;
-    
-    while pos + 5 <= data.len() {
-        // IPTC tag marker
-        if data[pos] != 0x1C {
-            pos += 1;
-            continue;
+    if let Ok(iptc_attrs) = IptcParser::parse(data) {
+        // Merge IPTC attrs into metadata
+        for (key, value) in iptc_attrs.iter() {
+            metadata.exif.set(key, value.clone());
         }
-        
-        let record = data[pos + 1];
-        let dataset = data[pos + 2];
-        let size = u16::from_be_bytes([data[pos + 3], data[pos + 4]]) as usize;
-        pos += 5;
-        
-        if pos + size > data.len() {
-            break;
-        }
-        
-        let value_data = &data[pos..pos + size];
-        
-        // Only process application record (2:xx)
-        if record == 2 {
-            if let Ok(value) = String::from_utf8(value_data.to_vec()) {
-                let value = value.trim();
-                if !value.is_empty() {
-                    let tag_name = iptc_tag_name(dataset);
-                    metadata.exif.set(format!("IPTC:{}", tag_name), AttrValue::Str(value.to_string()));
-                }
-            }
-        }
-        
-        pos += size;
-    }
-}
-
-/// Get IPTC tag name.
-fn iptc_tag_name(dataset: u8) -> &'static str {
-    match dataset {
-        0 => "RecordVersion",
-        3 => "ObjectType",
-        4 => "ObjectAttribute",
-        5 => "ObjectName",
-        7 => "EditStatus",
-        10 => "Urgency",
-        12 => "SubjectReference",
-        15 => "Category",
-        20 => "SupplementalCategories",
-        22 => "FixtureIdentifier",
-        25 => "Keywords",
-        26 => "ContentLocationCode",
-        27 => "ContentLocationName",
-        30 => "ReleaseDate",
-        35 => "ReleaseTime",
-        37 => "ExpirationDate",
-        38 => "ExpirationTime",
-        40 => "SpecialInstructions",
-        45 => "ReferenceService",
-        47 => "ReferenceDate",
-        50 => "ReferenceNumber",
-        55 => "DateCreated",
-        60 => "TimeCreated",
-        62 => "DigitalCreationDate",
-        63 => "DigitalCreationTime",
-        65 => "OriginatingProgram",
-        70 => "ProgramVersion",
-        75 => "ObjectCycle",
-        80 => "Byline",
-        85 => "BylineTitle",
-        90 => "City",
-        92 => "Sublocation",
-        95 => "Province-State",
-        100 => "Country-PrimaryLocationCode",
-        101 => "Country-PrimaryLocationName",
-        103 => "OriginalTransmissionReference",
-        105 => "Headline",
-        110 => "Credit",
-        115 => "Source",
-        116 => "CopyrightNotice",
-        118 => "Contact",
-        120 => "Caption-Abstract",
-        121 => "LocalCaption",
-        122 => "Writer-Editor",
-        130 => "ImageType",
-        131 => "ImageOrientation",
-        135 => "LanguageIdentifier",
-        _ => "Unknown",
     }
 }
 
@@ -602,6 +451,11 @@ fn decode_utf16(data: &[u8]) -> Option<String> {
     String::from_utf16(&u16_iter.collect::<Vec<_>>()).ok()
 }
 
+// Thumbnail-related tags (IFD1)
+const TAG_THUMBNAIL_OFFSET: u16 = 0x0201;     // JPEGInterchangeFormat
+const TAG_THUMBNAIL_LENGTH: u16 = 0x0202;     // JPEGInterchangeFormatLength
+const TAG_COMPRESSION: u16 = 0x0103;          // Compression type
+
 /// Parse EXIF TIFF data into metadata.
 fn parse_exif(tiff_data: &[u8], metadata: &mut Metadata) -> Result<()> {
     if tiff_data.len() < 8 {
@@ -614,7 +468,7 @@ fn parse_exif(tiff_data: &[u8], metadata: &mut Metadata) -> Result<()> {
     let reader = IfdReader::new(tiff_data, byte_order, 0);
     let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
 
-    let (entries, _next_ifd) = reader.read_ifd(ifd0_offset).map_err(Error::Core)?;
+    let (entries, next_ifd) = reader.read_ifd(ifd0_offset).map_err(Error::Core)?;
 
     // First pass: extract Make to detect vendor
     let mut vendor = makernotes::Vendor::Unknown;
@@ -673,7 +527,61 @@ fn parse_exif(tiff_data: &[u8], metadata: &mut Metadata) -> Result<()> {
         }
     }
 
+    // IFD1 = thumbnail IFD
+    if next_ifd != 0 {
+        if let Ok((ifd1_entries, _)) = reader.read_ifd(next_ifd) {
+            extract_thumbnail_from_ifd1(&ifd1_entries, &reader, metadata);
+        }
+    }
+
     Ok(())
+}
+
+/// Extract thumbnail from IFD1 entries.
+fn extract_thumbnail_from_ifd1(
+    entries: &[exiftool_core::IfdEntry],
+    reader: &IfdReader,
+    metadata: &mut Metadata,
+) {
+    let mut thumb_offset: Option<u32> = None;
+    let mut thumb_length: Option<u32> = None;
+    let mut compression: Option<u16> = None;
+
+    // Collect thumbnail-related tags
+    for entry in entries {
+        match entry.tag {
+            TAG_THUMBNAIL_OFFSET => {
+                thumb_offset = entry.value.as_u32();
+            }
+            TAG_THUMBNAIL_LENGTH => {
+                thumb_length = entry.value.as_u32();
+            }
+            TAG_COMPRESSION => {
+                if let RawValue::UInt16(v) = &entry.value {
+                    compression = v.first().copied();
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Extract JPEG thumbnail (compression = 6 is JPEG)
+    if let (Some(offset), Some(length)) = (thumb_offset, thumb_length) {
+        // Validate: compression should be JPEG (6) or old-JPEG (7), or not specified
+        let is_jpeg = compression.map(|c| c == 6 || c == 7).unwrap_or(true);
+        
+        if is_jpeg && length > 0 && length < 1_000_000 {
+            let offset = offset as usize;
+            let length = length as usize;
+            
+            if let Some(data) = reader.get_bytes(offset, length) {
+                // Verify JPEG signature (0xFFD8)
+                if data.len() >= 2 && data[0] == 0xFF && data[1] == 0xD8 {
+                    metadata.thumbnail = Some(data.to_vec());
+                }
+            }
+        }
+    }
 }
 
 // Use shared entry_to_attr from crate::utils

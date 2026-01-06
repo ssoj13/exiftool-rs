@@ -106,13 +106,18 @@ WRITE:
     exif -w out.jpg -t Copyright="(C) Me" a.jpg # write to new file
     exif -p -t Software=exif a.jpg              # modify in-place (!)
 
+THUMBNAIL:
+    exif -T photo.jpg                           # extract thumbnail to photo_thumb.jpg
+    exif -T -o thumb.jpg photo.jpg              # extract to specific file
+
 OPTIONS:
     -g, --get <PATTERN>  Get tag(s) matching pattern (* and ? wildcards)
     -f, --format <FMT>   Output: text (default), json, csv
-    -o, --output <FILE>  Save metadata to file (for read mode)
+    -o, --output <FILE>  Save metadata/thumbnail to file
     -t, --tag <T=V>      Set tag (repeatable): -t Tag=Value
     -w, --write <FILE>   Output image file (for write mode)
     -p, --inplace        Modify original file in-place
+    -T, --thumbnail      Extract embedded thumbnail
     -a, --all            Include binary/large tags
     -h, --help, /?       Show this help
     -v, --version        Show version
@@ -171,6 +176,11 @@ fn run() -> Result<()> {
         return write_image(&parsed, &registry);
     }
 
+    // Thumbnail extraction mode
+    if parsed.thumbnail {
+        return extract_thumbnails(&parsed, &registry);
+    }
+
     // Read mode
     if parsed.files.is_empty() {
         anyhow::bail!("No input files specified.\n\nUsage: exif [OPTIONS] <FILES>...\n       exif --help for more options");
@@ -216,6 +226,7 @@ struct Args {
     output: Option<PathBuf>,          // -o metadata output
     write_file: Option<PathBuf>,      // -w image output
     inplace: bool,                    // -p modify in-place
+    thumbnail: bool,                  // -T extract thumbnail
     all: bool,
 }
 
@@ -255,6 +266,7 @@ fn parse_args(args: &[String]) -> Result<Args> {
                 parsed.write_file = args.get(i).map(PathBuf::from);
             }
             "-p" | "--inplace" => parsed.inplace = true,
+            "-T" | "--thumbnail" => parsed.thumbnail = true,
             "-a" | "--all" => parsed.all = true,
             _ if arg.starts_with('-') => {
                 // Check for combined -tTag=Value
@@ -345,6 +357,41 @@ fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
         }
 
         eprintln!("Wrote: {} ({} bytes)", output_path.display(), output_data.len());
+    }
+
+    Ok(())
+}
+
+fn extract_thumbnails(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    if args.files.is_empty() {
+        anyhow::bail!("No input file specified for thumbnail extraction.\n\nUsage: exif -T <FILE>");
+    }
+
+    for path in &args.files {
+        let file = File::open(path)
+            .with_context(|| format!("Cannot open: {}", path.display()))?;
+        let mut reader = BufReader::new(file);
+
+        let metadata = registry.parse(&mut reader)
+            .with_context(|| format!("Cannot parse: {}", path.display()))?;
+
+        if let Some(ref thumb_data) = metadata.thumbnail {
+            // Determine output path
+            let output_path = if let Some(ref out) = args.output {
+                out.clone()
+            } else {
+                // Default: input_thumb.jpg
+                let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+                path.with_file_name(format!("{}_thumb.jpg", stem))
+            };
+
+            std::fs::write(&output_path, thumb_data)
+                .with_context(|| format!("Cannot write: {}", output_path.display()))?;
+            
+            eprintln!("Thumbnail: {} ({} bytes)", output_path.display(), thumb_data.len());
+        } else {
+            eprintln!("{}: no embedded thumbnail found", path.display());
+        }
     }
 
     Ok(())
@@ -478,6 +525,25 @@ fn print_text(path: &Path, m: &Metadata, _all: bool, filter: &[String]) {
         if let Some(ref xmp) = m.xmp {
             println!("{:28} {} bytes", "XMP", xmp.len());
         }
+        // Multi-page info
+        if m.pages.len() > 1 {
+            println!("{:28} {}", "Pages", m.pages.len());
+            for page in &m.pages {
+                let desc = if page.is_thumbnail() {
+                    "(thumbnail)"
+                } else if page.is_page() {
+                    "(page)"
+                } else {
+                    ""
+                };
+                println!("  Page {:2}: {}x{} {}bpp {}", 
+                    page.index, page.width, page.height, page.bits_per_sample, desc);
+            }
+        }
+        // Thumbnail info
+        if let Some(ref thumb) = m.thumbnail {
+            println!("{:28} {} bytes", "Thumbnail", thumb.len());
+        }
         println!();
     }
 }
@@ -498,6 +564,25 @@ fn print_json(path: &Path, m: &Metadata, filter: &[String]) {
     if filter.is_empty() {
         map.insert("SourceFile".into(), path.display().to_string().into());
         map.insert("Format".into(), m.format.into());
+        // Page count for multi-page TIFF
+        if m.pages.len() > 1 {
+            map.insert("PageCount".into(), (m.pages.len() as i64).into());
+            let pages_arr: Vec<_> = m.pages.iter().map(|p| {
+                serde_json::json!({
+                    "index": p.index,
+                    "width": p.width,
+                    "height": p.height,
+                    "bitsPerSample": p.bits_per_sample,
+                    "compression": p.compression,
+                    "subfileType": p.subfile_type
+                })
+            }).collect();
+            map.insert("Pages".into(), serde_json::Value::Array(pages_arr));
+        }
+        // Thumbnail size
+        if let Some(ref thumb) = m.thumbnail {
+            map.insert("ThumbnailSize".into(), (thumb.len() as i64).into());
+        }
     }
     
     for (k, v) in m.exif.iter() {

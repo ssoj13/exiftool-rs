@@ -23,11 +23,15 @@
 //! - Pentax: Main tags + LensInfo
 //! - Samsung: Main tags
 //! - Apple: Main tags
+//! - DJI: Drone telemetry (SpeedX/Y/Z, Pitch/Yaw/Roll, CameraPitch/Yaw/Roll)
+//! - GoPro: GPMF format (Accelerometer, Gyroscope, GPS, Temperature, etc.)
 
 mod canon;
+mod dji;
 mod nikon;
 mod sony;
 mod fujifilm;
+mod gopro;
 mod olympus;
 mod panasonic;
 mod pentax;
@@ -35,9 +39,11 @@ mod samsung;
 mod apple;
 
 pub use canon::CanonParser;
+pub use dji::DjiParser;
 pub use nikon::NikonParser;
 pub use sony::SonyParser;
 pub use fujifilm::FujifilmParser;
+pub use gopro::GoProParser;
 pub use olympus::OlympusParser;
 pub use panasonic::PanasonicParser;
 pub use pentax::PentaxParser;
@@ -51,9 +57,11 @@ use exiftool_core::ByteOrder;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Vendor {
     Canon,
+    Dji,
     Nikon,
     Sony,
     Fujifilm,
+    GoPro,
     Olympus,
     Panasonic,
     Pentax,
@@ -84,6 +92,10 @@ impl Vendor {
             Vendor::Samsung
         } else if make_lower.contains("apple") {
             Vendor::Apple
+        } else if make_lower.contains("dji") {
+            Vendor::Dji
+        } else if make_lower.contains("gopro") {
+            Vendor::GoPro
         } else {
             Vendor::Unknown
         }
@@ -101,6 +113,8 @@ impl Vendor {
             Vendor::Pentax => "Pentax",
             Vendor::Samsung => "Samsung",
             Vendor::Apple => "Apple",
+            Vendor::Dji => "DJI",
+            Vendor::GoPro => "GoPro",
             Vendor::Unknown => "Unknown",
         }
     }
@@ -153,6 +167,8 @@ pub fn parse(data: &[u8], vendor: Vendor, parent_byte_order: ByteOrder) -> Optio
         Vendor::Pentax => &PentaxParser,
         Vendor::Samsung => &SamsungParser,
         Vendor::Apple => &AppleParser,
+        Vendor::Dji => &DjiParser,
+        Vendor::GoPro => &GoProParser,
         Vendor::Unknown => return None,
     };
 
@@ -185,6 +201,8 @@ mod tests {
         assert_eq!(Vendor::from_make("RICOH IMAGING"), Vendor::Pentax);
         assert_eq!(Vendor::from_make("SAMSUNG"), Vendor::Samsung);
         assert_eq!(Vendor::from_make("Apple"), Vendor::Apple);
+        assert_eq!(Vendor::from_make("DJI"), Vendor::Dji);
+        assert_eq!(Vendor::from_make("GoPro"), Vendor::GoPro);
         assert_eq!(Vendor::from_make("Unknown Brand"), Vendor::Unknown);
     }
 }

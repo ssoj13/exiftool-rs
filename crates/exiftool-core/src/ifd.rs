@@ -46,6 +46,8 @@ pub struct IfdReader<'a> {
     byte_order: ByteOrder,
     /// Base offset for relative calculations (usually 0 for TIFF, APP1 offset for JPEG).
     base_offset: usize,
+    /// BigTIFF mode (8-byte offsets, 20-byte entries)
+    is_bigtiff: bool,
 }
 
 impl<'a> IfdReader<'a> {
@@ -59,7 +61,23 @@ impl<'a> IfdReader<'a> {
             data,
             byte_order,
             base_offset,
+            is_bigtiff: false,
         }
+    }
+
+    /// Create new IFD reader with BigTIFF mode.
+    pub fn new_bigtiff(data: &'a [u8], byte_order: ByteOrder, base_offset: usize) -> Self {
+        Self {
+            data,
+            byte_order,
+            base_offset,
+            is_bigtiff: true,
+        }
+    }
+
+    /// Check if this is BigTIFF mode.
+    pub fn is_bigtiff(&self) -> bool {
+        self.is_bigtiff
     }
 
     /// Get the byte order.
@@ -75,6 +93,16 @@ impl<'a> IfdReader<'a> {
     /// Check if data is empty.
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
+    }
+
+    /// Get raw bytes at offset (for thumbnail extraction).
+    /// Returns None if offset+len exceeds data bounds.
+    pub fn get_bytes(&self, offset: usize, len: usize) -> Option<&'a [u8]> {
+        if offset + len <= self.data.len() {
+            Some(&self.data[offset..offset + len])
+        } else {
+            None
+        }
     }
 
     /// Read bytes at offset, with bounds checking.
@@ -111,15 +139,36 @@ impl<'a> IfdReader<'a> {
             .read_i32([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 
+    /// Read u64 at offset (for BigTIFF).
+    fn read_u64(&self, offset: usize) -> Result<u64> {
+        let bytes = self.read_bytes(offset, 8)?;
+        Ok(self.byte_order.read_u64([
+            bytes[0], bytes[1], bytes[2], bytes[3],
+            bytes[4], bytes[5], bytes[6], bytes[7],
+        ]))
+    }
+
     /// Parse TIFF header and return first IFD offset.
     ///
     /// TIFF header structure (8 bytes):
     /// - Byte order marker: "II" or "MM" (2 bytes)
     /// - Magic number: 42 (0x002A) for TIFF, 43 (0x002B) for BigTIFF (2 bytes)
-    /// - First IFD offset (4 bytes)
+    /// - First IFD offset (4 bytes for TIFF, 8 bytes for BigTIFF)
+    ///
+    /// BigTIFF header structure (16 bytes):
+    /// - Byte order marker: "II" or "MM" (2 bytes)
+    /// - Magic number: 43 (0x002B) (2 bytes)
+    /// - Offset byte size: 8 (2 bytes)
+    /// - Reserved: 0 (2 bytes)
+    /// - First IFD offset (8 bytes)
     pub fn parse_header(&self) -> Result<u32> {
         // Standard TIFF magic: 42 (TIFF), 43 (BigTIFF)
         self.parse_header_with_magic(&[42, 43])
+    }
+
+    /// Parse header and return (ifd_offset, is_bigtiff).
+    pub fn parse_header_ex(&self) -> Result<(u64, bool)> {
+        self.parse_header_ex_with_magic(&[42, 43])
     }
     
     /// Parse header with custom allowed magic values.
@@ -128,6 +177,13 @@ impl<'a> IfdReader<'a> {
     /// - Panasonic RW2: 0x55 (85)
     /// - Olympus ORF: 0x4F52 ("OR") or 0x5352 ("SR")
     pub fn parse_header_with_magic(&self, allowed_magic: &[u16]) -> Result<u32> {
+        let (offset, _is_bigtiff) = self.parse_header_ex_with_magic(allowed_magic)?;
+        // For compatibility, return u32 (will be fine for non-BigTIFF)
+        Ok(offset as u32)
+    }
+
+    /// Parse header with extended info (BigTIFF support).
+    pub fn parse_header_ex_with_magic(&self, allowed_magic: &[u16]) -> Result<(u64, bool)> {
         if self.data.len() < 8 {
             return Err(Error::UnexpectedEof {
                 need: 8,
@@ -150,14 +206,45 @@ impl<'a> IfdReader<'a> {
             return Err(Error::InvalidTiffMagic(magic));
         }
 
-        // First IFD offset
-        self.read_u32(4)
+        // BigTIFF has magic = 43
+        if magic == 43 {
+            // BigTIFF header is 16 bytes
+            if self.data.len() < 16 {
+                return Err(Error::UnexpectedEof {
+                    need: 16,
+                    have: self.data.len(),
+                });
+            }
+            // Offset byte size should be 8
+            let offset_size = self.read_u16(4)?;
+            if offset_size != 8 {
+                return Err(Error::InvalidTiffMagic(offset_size)); // Unexpected offset size
+            }
+            // Reserved should be 0 (bytes 6-7), we ignore it
+            // First IFD offset is at bytes 8-15
+            let offset = self.read_u64(8)?;
+            Ok((offset, true))
+        } else {
+            // Standard TIFF
+            let offset = self.read_u32(4)? as u64;
+            Ok((offset, false))
+        }
     }
 
     /// Read all entries from an IFD at given offset.
     ///
     /// Returns (entries, next_ifd_offset). Next offset is 0 if no more IFDs.
     pub fn read_ifd(&self, offset: u32) -> Result<(Vec<IfdEntry>, u32)> {
+        if self.is_bigtiff {
+            let (entries, next) = self.read_ifd_bigtiff(offset as u64)?;
+            Ok((entries, next as u32))
+        } else {
+            self.read_ifd_standard(offset)
+        }
+    }
+
+    /// Read IFD (standard TIFF format).
+    fn read_ifd_standard(&self, offset: u32) -> Result<(Vec<IfdEntry>, u32)> {
         let offset = offset as usize;
 
         if offset >= self.data.len() {
@@ -188,6 +275,44 @@ impl<'a> IfdReader<'a> {
         let next_offset_pos = offset + 2 + (count as usize) * 12;
         let next_ifd = if next_offset_pos + 4 <= self.data.len() {
             self.read_u32(next_offset_pos)?
+        } else {
+            0
+        };
+
+        Ok((entries, next_ifd))
+    }
+
+    /// Read IFD (BigTIFF format - 8-byte offsets, 20-byte entries).
+    fn read_ifd_bigtiff(&self, offset: u64) -> Result<(Vec<IfdEntry>, u64)> {
+        let offset = offset as usize;
+
+        if offset >= self.data.len() {
+            return Err(Error::IfdOffsetOutOfBounds(offset as u32, self.data.len()));
+        }
+
+        // Number of entries (8 bytes for BigTIFF)
+        let count = self.read_u64(offset)? as usize;
+        if count > MAX_IFD_ENTRIES as usize {
+            return Err(Error::TooManyIfdEntries(count as u16, MAX_IFD_ENTRIES));
+        }
+
+        let mut entries = Vec::with_capacity(count);
+
+        // Each entry is 20 bytes in BigTIFF
+        for i in 0..count {
+            let entry_offset = offset + 8 + i * 20;
+            match self.read_entry_bigtiff(entry_offset) {
+                Ok(entry) => entries.push(entry),
+                Err(e) => {
+                    eprintln!("Warning: failed to read BigTIFF IFD entry {}: {}", i, e);
+                }
+            }
+        }
+
+        // Next IFD offset is after all entries (8 bytes)
+        let next_offset_pos = offset + 8 + count * 20;
+        let next_ifd = if next_offset_pos + 8 <= self.data.len() {
+            self.read_u64(next_offset_pos)?
         } else {
             0
         };
@@ -237,6 +362,53 @@ impl<'a> IfdReader<'a> {
             tag,
             format,
             count,
+            value,
+            value_offset,
+        })
+    }
+
+    /// Read single IFD entry at offset (BigTIFF format).
+    /// Entry structure: tag(2) + type(2) + count(8) + value/offset(8) = 20 bytes
+    fn read_entry_bigtiff(&self, offset: usize) -> Result<IfdEntry> {
+        let tag = self.read_u16(offset)?;
+        let format_id = self.read_u16(offset + 2)?;
+        let count = self.read_u64(offset + 4)?;
+        let value_field = self.read_u64(offset + 12)?;
+
+        let format = ExifFormat::from_u16(format_id)?;
+        // Use checked arithmetic to prevent overflow
+        let value_size = format.size()
+            .checked_mul(count as usize)
+            .ok_or(Error::ValueSizeOverflow {
+                format_size: format.size(),
+                count: count as u32,
+            })?;
+
+        // BigTIFF inline value threshold is 8 bytes
+        let (value_data, value_offset) = if value_size <= 8 {
+            // Value fits inline in the 8-byte field
+            let inline_bytes = self.read_bytes(offset + 12, 8)?;
+            (inline_bytes, None)
+        } else {
+            // Value is at an offset
+            let data_offset = value_field as usize;
+            if data_offset + value_size > self.data.len() {
+                return Err(Error::ValueOutOfBounds(
+                    value_field as u32,
+                    value_size,
+                    self.data.len(),
+                ));
+            }
+            let data = &self.data[data_offset..data_offset + value_size];
+            (data, Some(value_field as u32))
+        };
+
+        let value = self.parse_value(format, count as u32, value_data)?;
+
+        Ok(IfdEntry {
+            tag,
+            format,
+            count: count as u32,
             value,
             value_offset,
         })
@@ -517,5 +689,39 @@ mod tests {
         let reader = IfdReader::new(&data, ByteOrder::BigEndian, 0);
         let offset = reader.parse_header().unwrap();
         assert_eq!(offset, 8);
+    }
+
+    #[test]
+    fn parse_bigtiff_header() {
+        // BigTIFF header (16 bytes): II, 43, offset_size=8, reserved=0, offset=16
+        let data = [
+            0x49, 0x49, // "II" = little-endian
+            0x2B, 0x00, // 43 in LE (BigTIFF magic)
+            0x08, 0x00, // offset byte size = 8
+            0x00, 0x00, // reserved
+            0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // offset 16 in LE (8 bytes)
+        ];
+
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let (offset, is_bigtiff) = reader.parse_header_ex().unwrap();
+        assert!(is_bigtiff);
+        assert_eq!(offset, 16);
+    }
+
+    #[test]
+    fn parse_bigtiff_header_be() {
+        // BigTIFF header big-endian
+        let data = [
+            0x4D, 0x4D, // "MM" = big-endian
+            0x00, 0x2B, // 43 in BE (BigTIFF magic)
+            0x00, 0x08, // offset byte size = 8
+            0x00, 0x00, // reserved
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, // offset 16 in BE (8 bytes)
+        ];
+
+        let reader = IfdReader::new(&data, ByteOrder::BigEndian, 0);
+        let (offset, is_bigtiff) = reader.parse_header_ex().unwrap();
+        assert!(is_bigtiff);
+        assert_eq!(offset, 16);
     }
 }

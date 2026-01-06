@@ -3,6 +3,9 @@
 //! Registered parsers:
 //! - JpegParser - JPEG with EXIF/XMP
 //! - PngParser - PNG with eXIf/tEXt/iTXt chunks  
+//! - GifParser - GIF87a/GIF89a
+//! - BmpParser - Windows Bitmap
+//! - IcoParser - Windows Icon/Cursor
 //! - TiffParser - TIFF/DNG
 //! - Cr2Parser - Canon CR2 (TIFF-based)
 //! - Cr3Parser - Canon CR3 (ISOBMFF)
@@ -16,11 +19,15 @@
 //! - ExrParser - OpenEXR
 //! - HdrParser - Radiance HDR/RGBE
 //! - HeicParser - HEIC/HEIF/AVIF
+//! - Mp4Parser - MP4/MOV/M4A/3GP
+//! - Id3Parser - MP3 (ID3v1/v2)
+//! - FlacParser - FLAC audio
+//! - SvgParser - SVG (XML-based vector graphics)
 
 use crate::{
-    ArwParser, Cr2Parser, Cr3Parser, ExrParser, FormatParser, HdrParser, 
-    HeicParser, JpegParser, NefParser, OrfParser, PefParser, PngParser, 
-    RafParser, Result, Rw2Parser, TiffParser, WebpParser,
+    ArwParser, BmpParser, Cr2Parser, Cr3Parser, ExrParser, FormatParser, GifParser, HdrParser, 
+    FlacParser, HeicParser, IcoParser, Id3Parser, JpegParser, Mp4Parser, NefParser, OrfParser, PefParser, PngParser, 
+    RafParser, Result, Rw2Parser, SvgParser, TiffParser, WebpParser,
 };
 
 /// Registry of format parsers with auto-detection.
@@ -42,12 +49,19 @@ impl FormatRegistry {
         // Formats with unique magic bytes
         r.register(Box::new(JpegParser));
         r.register(Box::new(PngParser));
+        r.register(Box::new(GifParser));          // GIF87a/GIF89a magic
+        r.register(Box::new(BmpParser));          // BM magic
+        r.register(Box::new(IcoParser));          // ICO/CUR magic
         r.register(Box::new(WebpParser::new()));  // RIFF/WEBP magic
         r.register(Box::new(RafParser));          // FUJIFILM magic
         r.register(Box::new(ExrParser));
         r.register(Box::new(HdrParser));
         r.register(Box::new(Cr3Parser));          // ISOBMFF with ftypcrx
-        r.register(Box::new(HeicParser));         // ISOBMFF with ftyp
+        r.register(Box::new(HeicParser));         // ISOBMFF with ftyp (heic/avif)
+        r.register(Box::new(Mp4Parser));           // ISOBMFF with ftyp (mp4/mov)
+        r.register(Box::new(Id3Parser));           // MP3 with ID3 tags
+        r.register(Box::new(FlacParser));          // FLAC audio
+        r.register(Box::new(SvgParser));           // SVG vector graphics
         
         // TIFF-based formats (detected by extension, not magic)
         r.register(Box::new(Cr2Parser::new()));   // Canon CR2

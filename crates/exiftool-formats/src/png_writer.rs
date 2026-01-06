@@ -3,6 +3,7 @@
 //! PNG writing strategy:
 //! - Parse chunks from source
 //! - Replace/add eXIf chunk with new EXIF data
+//! - Replace/add iTXt chunk for XMP data (keyword: XML:com.adobe.xmp)
 //! - Recalculate CRCs for modified chunks
 //! - Preserve all other chunks (including image data)
 
@@ -12,13 +13,20 @@ use std::io::Write;
 /// PNG magic signature.
 const PNG_SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
 
+/// XMP iTXt keyword.
+const XMP_KEYWORD: &[u8] = b"XML:com.adobe.xmp";
+
+/// iTXt header for XMP: keyword + null + compression_flag(0) + compression_method(0) + lang_tag(null) + translated_keyword(null)
+const XMP_ITXT_PREFIX: &[u8] = b"XML:com.adobe.xmp\0\0\0\0\0";
+
 /// PNG format writer.
 pub struct PngWriter;
 
 impl PngWriter {
-    /// Write PNG with updated EXIF data.
+    /// Write PNG with updated EXIF and XMP data.
     ///
     /// - Replaces existing eXIf chunk or inserts new one after IHDR
+    /// - Replaces existing XMP iTXt chunk or inserts new one after IHDR
     /// - Preserves all other chunks including image data
     pub fn write<R, W>(
         input: &mut R,
@@ -39,12 +47,16 @@ impl PngWriter {
         // Build EXIF bytes
         let exif_bytes = crate::utils::build_exif_bytes(metadata)?;
 
+        // Build XMP bytes
+        let xmp_bytes = Self::build_xmp_chunk(metadata);
+
         // Write PNG signature
         output.write_all(&PNG_SIGNATURE)?;
 
         // Parse and rewrite chunks
         let mut pos = 8;
         let mut wrote_exif = false;
+        let mut wrote_xmp = false;
         let mut after_ihdr = false;
 
         while pos + 12 <= data.len() {
@@ -63,18 +75,36 @@ impl PngWriter {
                     Self::write_chunk(output, b"IHDR", chunk_data)?;
                     after_ihdr = true;
 
-                    // Insert eXIf right after IHDR (before other chunks)
+                    // Insert eXIf right after IHDR
                     if !exif_bytes.is_empty() {
                         Self::write_chunk(output, b"eXIf", &exif_bytes)?;
                         wrote_exif = true;
                     }
+
+                    // Insert XMP iTXt right after EXIF
+                    if !xmp_bytes.is_empty() {
+                        Self::write_chunk(output, b"iTXt", &xmp_bytes)?;
+                        wrote_xmp = true;
+                    }
                 }
                 b"eXIf" => {
                     // Skip old eXIf - we already wrote new one after IHDR
-                    // If we haven't written yet (shouldn't happen), write now
                     if !wrote_exif && !exif_bytes.is_empty() {
                         Self::write_chunk(output, b"eXIf", &exif_bytes)?;
                         wrote_exif = true;
+                    }
+                }
+                b"iTXt" => {
+                    // Check if this is XMP iTXt chunk
+                    if Self::is_xmp_itxt(chunk_data) {
+                        // Skip old XMP - we already wrote new one after IHDR
+                        if !wrote_xmp && !xmp_bytes.is_empty() {
+                            Self::write_chunk(output, b"iTXt", &xmp_bytes)?;
+                            wrote_xmp = true;
+                        }
+                    } else {
+                        // Not XMP, copy as-is
+                        Self::write_chunk(output, b"iTXt", chunk_data)?;
                     }
                 }
                 b"IEND" => {
@@ -84,10 +114,16 @@ impl PngWriter {
                 }
                 _ => {
                     // Copy other chunks as-is
-                    // If we're after IHDR and haven't written EXIF yet, do it now
-                    if after_ihdr && !wrote_exif && !exif_bytes.is_empty() {
-                        Self::write_chunk(output, b"eXIf", &exif_bytes)?;
-                        wrote_exif = true;
+                    // If we're after IHDR and haven't written metadata yet, do it now
+                    if after_ihdr {
+                        if !wrote_exif && !exif_bytes.is_empty() {
+                            Self::write_chunk(output, b"eXIf", &exif_bytes)?;
+                            wrote_exif = true;
+                        }
+                        if !wrote_xmp && !xmp_bytes.is_empty() {
+                            Self::write_chunk(output, b"iTXt", &xmp_bytes)?;
+                            wrote_xmp = true;
+                        }
                     }
                     Self::write_chunk(output, chunk_type, chunk_data)?;
                 }
@@ -97,6 +133,26 @@ impl PngWriter {
         }
 
         Ok(())
+    }
+
+    /// Build XMP iTXt chunk data.
+    fn build_xmp_chunk(metadata: &Metadata) -> Vec<u8> {
+        // Get XMP string from metadata
+        if let Some(xmp) = metadata.xmp.as_ref() {
+            if !xmp.is_empty() {
+                let mut chunk_data = Vec::with_capacity(XMP_ITXT_PREFIX.len() + xmp.len());
+                chunk_data.extend_from_slice(XMP_ITXT_PREFIX);
+                chunk_data.extend_from_slice(xmp.as_bytes());
+                return chunk_data;
+            }
+        }
+        
+        Vec::new()
+    }
+
+    /// Check if iTXt chunk contains XMP data.
+    fn is_xmp_itxt(chunk_data: &[u8]) -> bool {
+        chunk_data.starts_with(XMP_KEYWORD)
     }
 
     /// Write a PNG chunk with CRC.
@@ -238,5 +294,100 @@ mod tests {
         // Known PNG CRC for IEND chunk (empty data)
         let crc = PngWriter::calc_crc(b"IEND", &[]);
         assert_eq!(crc, 0xAE426082);
+    }
+
+    #[test]
+    fn write_xmp_to_png() {
+        let png = make_minimal_png();
+        
+        let mut metadata = Metadata::new("PNG");
+        let xmp_content = r#"<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description rdf:about=""
+      xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <dc:creator>Test Creator</dc:creator>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>"#;
+        metadata.xmp = Some(xmp_content.to_string());
+
+        let mut input = Cursor::new(&png);
+        let mut output = Vec::new();
+
+        PngWriter::write(&mut input, &mut output, &metadata).unwrap();
+
+        // Check PNG signature
+        assert_eq!(&output[0..8], &PNG_SIGNATURE);
+
+        // Find iTXt chunk with XMP
+        let mut pos = 8;
+        let mut found_xmp = false;
+        while pos + 12 <= output.len() {
+            let length = u32::from_be_bytes([output[pos], output[pos+1], output[pos+2], output[pos+3]]) as usize;
+            let chunk_type = &output[pos + 4..pos + 8];
+            
+            if chunk_type == b"iTXt" {
+                let chunk_data = &output[pos + 8..pos + 8 + length];
+                // Check if it starts with XMP keyword
+                if chunk_data.starts_with(XMP_KEYWORD) {
+                    found_xmp = true;
+                    // Verify XMP content is present
+                    let xmp_start = XMP_ITXT_PREFIX.len();
+                    let xmp_data = &chunk_data[xmp_start..];
+                    let xmp_str = String::from_utf8_lossy(xmp_data);
+                    assert!(xmp_str.contains("Test Creator"));
+                    break;
+                }
+            }
+            
+            pos += 12 + length;
+        }
+        
+        assert!(found_xmp, "XMP iTXt chunk not found in output");
+    }
+
+    #[test]
+    fn write_exif_and_xmp_to_png() {
+        let png = make_minimal_png();
+        
+        let mut metadata = Metadata::new("PNG");
+        metadata.exif.set("Make", AttrValue::Str("TestCam".into()));
+        metadata.xmp = Some(r#"<?xml version="1.0"?><x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description/></rdf:RDF></x:xmpmeta>"#.to_string());
+
+        let mut input = Cursor::new(&png);
+        let mut output = Vec::new();
+
+        PngWriter::write(&mut input, &mut output, &metadata).unwrap();
+
+        // Find both chunks
+        let mut pos = 8;
+        let mut found_exif = false;
+        let mut found_xmp = false;
+        let mut exif_pos = 0;
+        let mut xmp_pos = 0;
+        
+        while pos + 12 <= output.len() {
+            let length = u32::from_be_bytes([output[pos], output[pos+1], output[pos+2], output[pos+3]]) as usize;
+            let chunk_type = &output[pos + 4..pos + 8];
+            
+            if chunk_type == b"eXIf" {
+                found_exif = true;
+                exif_pos = pos;
+            } else if chunk_type == b"iTXt" {
+                let chunk_data = &output[pos + 8..pos + 8 + length];
+                if chunk_data.starts_with(XMP_KEYWORD) {
+                    found_xmp = true;
+                    xmp_pos = pos;
+                }
+            }
+            
+            pos += 12 + length;
+        }
+        
+        assert!(found_exif, "eXIf chunk not found");
+        assert!(found_xmp, "XMP iTXt chunk not found");
+        // eXIf should come before XMP (both after IHDR)
+        assert!(exif_pos < xmp_pos, "eXIf should come before XMP");
     }
 }

@@ -13,6 +13,9 @@ pub enum Error {
 
     #[error("XML error: {0}")]
     Xml(#[from] quick_xml::Error),
+
+    #[error("IO error: {0}")]
+    Io(String),
 }
 
 /// Result type alias.

@@ -8,6 +8,7 @@
 
 mod exif;
 pub mod generated;
+pub mod interp;
 
 pub use exif::{TagDef, TagGroup, EXIF_TAGS, GPS_TAGS, IFD0_TAGS};
 
