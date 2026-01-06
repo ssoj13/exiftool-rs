@@ -174,8 +174,29 @@ impl VendorParser for PentaxParser {
 
         let mut attrs = Attrs::new();
 
+        // First pass: collect preview offset/length
+        let mut preview_length: Option<u32> = None;
+        let mut preview_start: Option<u32> = None;
+        
+        for entry in &entries {
+            match entry.tag {
+                0x0003 => preview_length = entry.value.as_u32(),
+                0x0004 => preview_start = entry.value.as_u32(),
+                _ => {}
+            }
+        }
+        
+        // Store preview info if found
+        if let (Some(off), Some(len)) = (preview_start, preview_length) {
+            attrs.set("PreviewImageStart", AttrValue::UInt(off));
+            attrs.set("PreviewImageLength", AttrValue::UInt(len));
+        }
+
         for entry in entries {
             match entry.tag {
+                0x0003 | 0x0004 => {
+                    // Already handled above
+                }
                 0x0207 => {
                     // LensInfo sub-IFD
                     if let Some(offset) = entry.value.as_u32() {

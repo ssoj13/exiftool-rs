@@ -20,6 +20,10 @@ const TAG_THUMBNAIL_OFFSET: u16 = 0x0201;     // JPEGInterchangeFormat
 const TAG_THUMBNAIL_LENGTH: u16 = 0x0202;     // JPEGInterchangeFormatLength
 const TAG_COMPRESSION: u16 = 0x0103;          // Compression type
 
+// Preview-related tags (IFD0 for CR2, etc.)
+const TAG_STRIP_OFFSETS: u16 = 0x0111;        // StripOffsets
+const TAG_STRIP_BYTE_COUNTS: u16 = 0x0117;    // StripByteCounts
+
 // Multi-page TIFF tags
 const TAG_NEW_SUBFILE_TYPE: u16 = 0x00FE;     // NewSubfileType
 const TAG_SUBFILE_TYPE: u16 = 0x00FF;         // SubfileType (older)
@@ -182,6 +186,11 @@ impl TiffParser {
                 page_index += 1;
             }
 
+            // Extract preview from IFD0 for RAW formats (CR2 has JPEG in IFD0)
+            if ifd_index == 0 && self.config.format_name != "TIFF" {
+                self.extract_preview(&entries, reader, metadata);
+            }
+
             // Process entries based on IFD index
             for entry in &entries {
                 self.process_entry(entry, reader, metadata, ifd_index, vendor)?;
@@ -191,7 +200,37 @@ impl TiffParser {
             ifd_index += 1;
         }
 
+        // Extract preview from MakerNotes-derived offsets (NEF, ARW, etc.)
+        // Only if we don't already have a preview from IFD0 strips
+        if metadata.preview.is_none() {
+            self.extract_makernotes_preview(reader, metadata);
+        }
+
         Ok(())
+    }
+
+    /// Extract preview using PreviewImageStart/Length from MakerNotes.
+    fn extract_makernotes_preview(&self, reader: &IfdReader, metadata: &mut Metadata) {
+        // Check if MakerNotes provided preview offset/length
+        let preview_start = metadata.exif.get("PreviewImageStart")
+            .and_then(|v| v.as_u32());
+        let preview_length = metadata.exif.get("PreviewImageLength")
+            .and_then(|v| v.as_u32());
+
+        if let (Some(offset), Some(length)) = (preview_start, preview_length) {
+            // Sanity check: preview should be reasonable size
+            if length < 100 || length > 50_000_000 {
+                return;
+            }
+
+            // Read preview data from TIFF data at given offset
+            if let Some(data) = self.read_bytes_at(reader, offset as usize, length as usize) {
+                // Verify JPEG signature
+                if data.len() >= 2 && data[0] == 0xFF && data[1] == 0xD8 {
+                    metadata.preview = Some(data);
+                }
+            }
+        }
     }
 
     /// Extract page info from IFD entries.
@@ -297,6 +336,81 @@ impl TiffParser {
     /// Read bytes from IfdReader's underlying data.
     fn read_bytes_at(&self, reader: &IfdReader, offset: usize, length: usize) -> Option<Vec<u8>> {
         reader.get_bytes(offset, length).map(|b| b.to_vec())
+    }
+
+    /// Extract preview JPEG from IFD0 (for RAW formats like CR2).
+    /// Uses StripOffsets/StripByteCounts when compression is JPEG.
+    fn extract_preview(
+        &self,
+        entries: &[IfdEntry],
+        reader: &IfdReader,
+        metadata: &mut Metadata,
+    ) {
+        let mut strip_offsets: Option<Vec<u32>> = None;
+        let mut strip_byte_counts: Option<Vec<u32>> = None;
+        let mut compression: Option<u16> = None;
+
+        for entry in entries {
+            match entry.tag {
+                TAG_STRIP_OFFSETS => {
+                    strip_offsets = entry.value.as_u32_vec();
+                }
+                TAG_STRIP_BYTE_COUNTS => {
+                    strip_byte_counts = entry.value.as_u32_vec();
+                }
+                TAG_COMPRESSION => {
+                    if let RawValue::UInt16(v) = &entry.value {
+                        compression = v.first().copied();
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Only extract if compression is JPEG (6 or 7)
+        let is_jpeg = compression.map(|c| c == 6 || c == 7).unwrap_or(false);
+        if !is_jpeg {
+            return;
+        }
+
+        // Extract preview data from strips
+        if let (Some(offsets), Some(counts)) = (strip_offsets, strip_byte_counts) {
+            if offsets.len() != counts.len() || offsets.is_empty() {
+                return;
+            }
+
+            // Calculate total size
+            let total_size: usize = counts.iter().map(|&c| c as usize).sum();
+            if total_size == 0 || total_size > 50_000_000 {
+                return; // Sanity check: max 50MB preview
+            }
+
+            // If single strip, read directly
+            if offsets.len() == 1 {
+                let offset = offsets[0] as usize;
+                let length = counts[0] as usize;
+                if let Some(data) = self.read_bytes_at(reader, offset, length) {
+                    // Verify JPEG signature
+                    if data.len() >= 2 && data[0] == 0xFF && data[1] == 0xD8 {
+                        metadata.preview = Some(data);
+                    }
+                }
+            } else {
+                // Multiple strips - concatenate
+                let mut preview_data = Vec::with_capacity(total_size);
+                for (offset, count) in offsets.iter().zip(counts.iter()) {
+                    if let Some(data) = self.read_bytes_at(reader, *offset as usize, *count as usize) {
+                        preview_data.extend_from_slice(&data);
+                    } else {
+                        return; // Failed to read strip
+                    }
+                }
+                // Verify JPEG signature
+                if preview_data.len() >= 2 && preview_data[0] == 0xFF && preview_data[1] == 0xD8 {
+                    metadata.preview = Some(preview_data);
+                }
+            }
+        }
     }
 
     /// Process a single IFD entry.

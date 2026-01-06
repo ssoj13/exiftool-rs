@@ -104,6 +104,29 @@ impl AttrValue {
         }
     }
 
+    /// Try to get as i64 (converts from all integer types).
+    pub fn as_i64(&self) -> Option<i64> {
+        match self {
+            AttrValue::Int64(v) => Some(*v),
+            AttrValue::Int(v) => Some(*v as i64),
+            AttrValue::Int8(v) => Some(*v as i64),
+            AttrValue::UInt(v) => Some(*v as i64),
+            AttrValue::UInt64(v) => Some(*v as i64),
+            _ => None,
+        }
+    }
+
+    /// Try to get as u64 (converts from compatible numeric types).
+    pub fn as_u64(&self) -> Option<u64> {
+        match self {
+            AttrValue::UInt64(v) => Some(*v),
+            AttrValue::UInt(v) => Some(*v as u64),
+            AttrValue::Int(v) if *v >= 0 => Some(*v as u64),
+            AttrValue::Int64(v) if *v >= 0 => Some(*v as u64),
+            _ => None,
+        }
+    }
+
     /// Try to get as f64 (converts from any numeric).
     pub fn as_f64(&self) -> Option<f64> {
         match self {

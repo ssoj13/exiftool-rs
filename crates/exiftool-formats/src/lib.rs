@@ -73,6 +73,7 @@ mod au;
 mod avi;
 mod bmp;
 mod braw;
+mod composite;
 mod cr2;
 mod cr3;
 mod crw;
@@ -93,6 +94,7 @@ mod hdr_writer;
 mod heic;
 mod ico;
 mod id3;
+mod id3_writer;
 mod iiq;
 mod iptc;
 mod jp2;
@@ -155,6 +157,7 @@ pub use au::AuParser;
 pub use avi::AviParser;
 pub use bmp::BmpParser;
 pub use braw::BrawParser;
+pub use composite::add_composite_tags;
 pub use cr2::Cr2Parser;
 pub use cr3::Cr3Parser;
 pub use crw::CrwParser;
@@ -173,6 +176,7 @@ pub use hdr::HdrParser;
 pub use heic::HeicParser;
 pub use ico::IcoParser;
 pub use id3::Id3Parser;
+pub use id3_writer::Id3Writer;
 pub use iiq::IiqParser;
 pub use iptc::{IptcParser, IptcWriter};
 pub use jp2::Jp2Parser;
@@ -268,8 +272,10 @@ pub struct Metadata {
     pub exif_offset: Option<usize>,
     /// XMP data (if present).
     pub xmp: Option<String>,
-    /// Thumbnail data (if present).
+    /// Thumbnail data (if present) - small embedded preview.
     pub thumbnail: Option<Vec<u8>>,
+    /// Preview data (if present) - larger embedded JPEG (RAW files).
+    pub preview: Option<Vec<u8>>,
     /// Pages/subfiles info (multi-page TIFF).
     pub pages: Vec<PageInfo>,
 }
@@ -283,6 +289,7 @@ impl Metadata {
             exif_offset: None,
             xmp: None,
             thumbnail: None,
+            preview: None,
             pages: Vec::new(),
         }
     }

@@ -270,15 +270,29 @@ impl CrwParser {
                 };
                 meta.exif.set("CRW:ShutterReleaseMethod", AttrValue::Str(name.to_string()));
             }
+            // ThumbnailImage - embedded JPEG thumbnail
+            0x2003 => {
+                if size > 100 && size < 1_000_000 && data.len() >= 2 {
+                    if data[0] == 0xFF && data[1] == 0xD8 {
+                        meta.thumbnail = Some(data.clone());
+                    }
+                }
+            }
             // RawData offset
             0x2005 => {
                 meta.exif.set("CRW:RawDataOffset", AttrValue::UInt64(offset));
                 meta.exif.set("CRW:RawDataLength", AttrValue::UInt(size));
             }
-            // JpgFromRaw offset
+            // JpgFromRaw - embedded JPEG preview
             0x2007 => {
                 meta.exif.set("CRW:JpgFromRawOffset", AttrValue::UInt64(offset));
                 meta.exif.set("CRW:JpgFromRawLength", AttrValue::UInt(size));
+                // Extract preview data
+                if size > 100 && size < 50_000_000 && data.len() >= 2 {
+                    if data[0] == 0xFF && data[1] == 0xD8 {
+                        meta.preview = Some(data.clone());
+                    }
+                }
             }
             // Description
             0x0805 => {

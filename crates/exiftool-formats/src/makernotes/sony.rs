@@ -81,6 +81,22 @@ impl VendorParser for SonyParser {
                         attrs.set("FocusInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
+                0x2001 => {
+                    // PreviewImage - direct preview data or offset
+                    // For ARW files, this contains the preview image data directly
+                    if let Some(bytes) = entry.value.as_bytes() {
+                        // Check if it's a JPEG (starts with FFD8)
+                        if bytes.len() >= 2 && bytes[0] == 0xFF && bytes[1] == 0xD8 {
+                            // Direct JPEG data - store length for extraction
+                            attrs.set("PreviewImageData", AttrValue::UInt(bytes.len() as u32));
+                        }
+                    }
+                    // Also store offset if available (value_offset)
+                    if let Some(offset) = entry.value_offset {
+                        attrs.set("PreviewImageStart", AttrValue::UInt(offset as u32));
+                        attrs.set("PreviewImageLength", AttrValue::UInt(entry.count as u32));
+                    }
+                }
                 0x9405 => {
                     // Tag9405 - DistortionCorrection info
                     if let Some(sub_attrs) = parse_tag9405(&entry.value.as_bytes()?, byte_order) {

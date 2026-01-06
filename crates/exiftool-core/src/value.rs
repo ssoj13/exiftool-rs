@@ -151,6 +151,17 @@ impl RawValue {
         }
     }
 
+    /// Try to get as Vec<u32> (for StripOffsets/StripByteCounts).
+    pub fn as_u32_vec(&self) -> Option<Vec<u32>> {
+        match self {
+            RawValue::UInt8(v) => Some(v.iter().map(|&x| x as u32).collect()),
+            RawValue::UInt16(v) => Some(v.iter().map(|&x| x as u32).collect()),
+            RawValue::UInt32(v) => Some(v.clone()),
+            RawValue::UInt64(v) => Some(v.iter().map(|&x| x as u32).collect()),
+            _ => None,
+        }
+    }
+
     /// Try to get as a string.
     pub fn as_str(&self) -> Option<&str> {
         match self {

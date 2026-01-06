@@ -89,7 +89,16 @@
 ### 1.5 Thumbnail Support
 - [x] EXIF thumbnail extraction (IFD1)
 - [x] JPEG embedded thumbnail
-- [ ] RAW preview extraction
+- [x] RAW preview extraction
+  - [x] CR2 (JPEG in IFD0 strips)
+  - [x] RAF (fixed header offsets)
+  - [x] NEF (PreviewIFD in MakerNotes)
+  - [x] ARW (MakerNotes tag 0x2001)
+  - [x] PEF (MakerNotes tags 0x0003/0x0004)
+  - [x] CRW (JpgFromRaw tag 0x2007)
+  - [x] CR3 (THMB/PRVW boxes)
+  - [x] ORF/RW2 (via TIFF IFD0 strips)
+- [x] CLI preview extraction (-P flag)
 - [ ] Thumbnail write/update
 
 ### 1.6 BigTIFF Support
@@ -323,7 +332,7 @@
 - [x] ID3v1 parser
 - [x] ID3v2.2/2.3/2.4 parser
 - [x] ID3 frame types (TIT2, TPE1, etc.)
-- [ ] ID3 write support
+- [x] ID3 write support
 - [x] APIC (embedded image) extraction
 
 ### 6.2 Lossless Audio
@@ -518,6 +527,7 @@
 ### 11.2 Compatibility Testing
 - [ ] Compare output with exiftool
 - [ ] Test with ExifTool test images
+- [ ] **Collect high-quality original test files for each supported format** (from dpreview, professional sources)
 - [ ] Real-world sample collection
 - [ ] Edge case database
 
@@ -678,21 +688,21 @@
 
 ## Progress Tracking
 
-Last updated: 2025-01-05
+Last updated: 2025-01-06
 
 | Phase | Progress | Notes |
 |-------|----------|-------|
 | Phase 0 | 100% | Audit complete |
-| Phase 1 | 90% | IPTC, XMP, ICC, ValueInterp, Thumbnail, BigTIFF, Multi-page done |
+| Phase 1 | 95% | IPTC, XMP, ICC, ValueInterp, Thumbnail, RAW Preview, BigTIFF, Multi-page done |
 | Phase 2 | 100% | All image formats complete |
 | Phase 3 | 100% | All RAW formats complete (RWZ skipped) |
 | Phase 4 | 25% | 11/44 vendors (added DJI, GoPro) |
 | Phase 5 | 100% | All video formats complete |
-| Phase 6 | 95% | All audio formats complete, only ID3 write pending |
+| Phase 6 | 100% | All audio formats complete |
 | Phase 7 | 0% | Not started |
 | Phase 8 | 0% | Not started |
 | Phase 9 | 0% | Not started |
 | Phase 10 | 10% | Basic CLI done |
-| Phase 11 | 65% | 363 tests (335 formats + 28 other) |
+| Phase 11 | 65% | 419 tests total |
 | Phase 12 | 60% | PyO3 works |
 | Phase 13 | 0% | Not started |

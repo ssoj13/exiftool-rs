@@ -158,6 +158,31 @@ impl VendorParser for NikonParser {
 
         for entry in entries {
             match entry.tag {
+                0x0011 => {
+                    // PreviewIFD - sub-IFD containing preview image offsets
+                    // Note: offsets in PreviewIFD are relative to TIFF base (file start)
+                    if let Some(offset) = entry.value.as_u32() {
+                        if let Ok((preview_entries, _)) = reader.read_ifd(offset) {
+                            // Extract preview offset/length from sub-IFD
+                            let mut preview_offset: Option<u32> = None;
+                            let mut preview_length: Option<u32> = None;
+                            
+                            for pe in &preview_entries {
+                                match pe.tag {
+                                    0x0201 => preview_offset = pe.value.as_u32(), // PreviewImageStart
+                                    0x0202 => preview_length = pe.value.as_u32(), // PreviewImageLength  
+                                    _ => {}
+                                }
+                            }
+                            
+                            // Store as MakerNotes attrs for extraction by TiffParser
+                            if let (Some(off), Some(len)) = (preview_offset, preview_length) {
+                                attrs.set("PreviewImageStart", AttrValue::UInt(off));
+                                attrs.set("PreviewImageLength", AttrValue::UInt(len));
+                            }
+                        }
+                    }
+                }
                 0x0025 => {
                     // ISOInfo
                     if let Some(sub_attrs) = parse_iso_info(&entry.value.as_bytes()?, byte_order) {
@@ -502,6 +527,7 @@ fn read_u16(data: &[u8], offset: usize, byte_order: ByteOrder) -> u16 {
 
 /// Read u32 from byte slice with byte order.
 #[inline]
+#[allow(dead_code)]
 fn read_u32(data: &[u8], offset: usize, byte_order: ByteOrder) -> u32 {
     if offset + 4 > data.len() {
         return 0;

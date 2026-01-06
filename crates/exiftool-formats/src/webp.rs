@@ -263,6 +263,7 @@ impl FormatParser for WebpParser {
             exif: attrs,
             xmp: xmp_data,
             thumbnail: None,
+            preview: None,
             exif_offset: None,
             pages: Vec::new(),
         })

@@ -62,10 +62,13 @@ impl FormatParser for RafParser {
         reader.read_exact(&mut jpeg_data)?;
 
         // Parse embedded JPEG for metadata
-        let mut jpeg_reader = std::io::Cursor::new(jpeg_data);
+        let mut jpeg_reader = std::io::Cursor::new(&jpeg_data);
         let jpeg_parser = JpegParser;
 
         let mut metadata = jpeg_parser.parse(&mut jpeg_reader)?;
+
+        // Store JPEG preview data
+        metadata.preview = Some(jpeg_data);
 
         // Update format to RAF
         metadata.format = "RAF";

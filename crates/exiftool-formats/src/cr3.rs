@@ -223,8 +223,45 @@ impl Cr3Parser {
                     self.parse_cmt_box(reader, pos + 8, box_size - 8, metadata, "GPS")?;
                 }
                 b"THMB" => {
-                    // Thumbnail
+                    // Thumbnail - JPEG data inside THMB box
+                    // THMB format: 16-byte header + JPEG data
+                    let thumb_size = (box_size - 8) as usize;
+                    if thumb_size > 16 && thumb_size < 5_000_000 {
+                        reader.seek(SeekFrom::Start(pos + 8))?;
+                        // Skip 16-byte THMB header
+                        let header_skip = 16usize.min(thumb_size);
+                        reader.seek(SeekFrom::Current(header_skip as i64))?;
+                        let jpeg_size = thumb_size - header_skip;
+                        if jpeg_size > 100 {
+                            let mut thumb_data = vec![0u8; jpeg_size];
+                            if reader.read_exact(&mut thumb_data).is_ok() {
+                                if thumb_data.len() >= 2 && thumb_data[0] == 0xFF && thumb_data[1] == 0xD8 {
+                                    metadata.thumbnail = Some(thumb_data);
+                                }
+                            }
+                        }
+                    }
                     metadata.exif.set("ThumbnailSize", AttrValue::UInt((box_size - 8) as u32));
+                }
+                b"PRVW" => {
+                    // Preview - larger JPEG preview
+                    // PRVW format: 16-byte header + JPEG data
+                    let preview_size = (box_size - 8) as usize;
+                    if preview_size > 16 && preview_size < 50_000_000 {
+                        reader.seek(SeekFrom::Start(pos + 8))?;
+                        let header_skip = 16usize.min(preview_size);
+                        reader.seek(SeekFrom::Current(header_skip as i64))?;
+                        let jpeg_size = preview_size - header_skip;
+                        if jpeg_size > 100 {
+                            let mut preview_data = vec![0u8; jpeg_size];
+                            if reader.read_exact(&mut preview_data).is_ok() {
+                                if preview_data.len() >= 2 && preview_data[0] == 0xFF && preview_data[1] == 0xD8 {
+                                    metadata.preview = Some(preview_data);
+                                }
+                            }
+                        }
+                    }
+                    metadata.exif.set("PreviewSize", AttrValue::UInt((box_size - 8) as u32));
                 }
                 _ => {}
             }

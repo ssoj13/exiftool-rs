@@ -2,16 +2,19 @@
 //!
 //! Supports: JPEG, PNG, TIFF, DNG, CR2, CR3, NEF, ARW, ORF, RW2, PEF, RAF, WebP, HEIC, AVIF, EXR, HDR
 
+mod xml_output;
+
 use anyhow::{Context, Result};
 use exiftool_attrs::AttrValue;
 use exiftool_formats::{
-    build_exif_bytes, FormatRegistry, JpegWriter, Metadata, PngWriter, TiffWriter,
-    HdrWriter, ExrWriter,
+    add_composite_tags, build_exif_bytes, FormatRegistry, JpegWriter, Metadata, 
+    PngWriter, TiffWriter, HdrWriter, ExrWriter,
 };
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::env;
+use walkdir::WalkDir;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -94,7 +97,10 @@ READ:
     exif -g *Original photo.jpg       # wildcard: *Original tags
     exif -f json *.jpg                # JSON output for batch
     exif -f csv photos/*.png          # CSV for spreadsheet
+    exif -X photo.jpg                 # XML output (ExifTool compatible)
     exif image.{heic,cr3,nef,arw,orf,rw2,pef,raf,webp}  # RAW formats
+    exif -r photos/                   # recursive directory scan
+    exif -r -e jpg,png photos/        # recursive with extension filter
 
 OUTPUT:
     exif -f json photo.jpg -o meta.json   # save metadata to file
@@ -106,18 +112,25 @@ WRITE:
     exif -w out.jpg -t Copyright="(C) Me" a.jpg # write to new file
     exif -p -t Software=exif a.jpg              # modify in-place (!)
 
-THUMBNAIL:
+THUMBNAIL/PREVIEW:
     exif -T photo.jpg                           # extract thumbnail to photo_thumb.jpg
     exif -T -o thumb.jpg photo.jpg              # extract to specific file
+    exif -P photo.cr2                           # extract RAW preview to photo_preview.jpg
+    exif -P -o preview.jpg photo.raf            # extract preview to specific file
 
 OPTIONS:
     -g, --get <PATTERN>  Get tag(s) matching pattern (* and ? wildcards)
-    -f, --format <FMT>   Output: text (default), json, csv
+    -f, --format <FMT>   Output: text (default), json, csv, xml
+    -X, --xml            XML output (shortcut for -f xml)
     -o, --output <FILE>  Save metadata/thumbnail to file
     -t, --tag <T=V>      Set tag (repeatable): -t Tag=Value
     -w, --write <FILE>   Output image file (for write mode)
     -p, --inplace        Modify original file in-place
     -T, --thumbnail      Extract embedded thumbnail
+    -P, --preview        Extract embedded preview (larger, from RAW files)
+    -r, --recursive      Recursively scan directories
+    -e, --ext <EXTS>     Filter by extensions (comma-separated): jpg,png,cr2
+    -c, --composite      Add composite/calculated tags (ImageSize, Megapixels, etc.)
     -a, --all            Include binary/large tags
     -h, --help, /?       Show this help
     -v, --version        Show version
@@ -181,22 +194,44 @@ fn run() -> Result<()> {
         return extract_thumbnails(&parsed, &registry);
     }
 
+    // Preview extraction mode (RAW files)
+    if parsed.preview {
+        return extract_previews(&parsed, &registry);
+    }
+
+    // Expand paths (handle directories if recursive)
+    let files = expand_paths(&parsed.files, parsed.recursive, &parsed.extensions);
+    
     // Read mode
-    if parsed.files.is_empty() {
-        anyhow::bail!("No input files specified.\n\nUsage: exif [OPTIONS] <FILES>...\n       exif --help for more options");
+    if files.is_empty() {
+        if parsed.files.is_empty() {
+            anyhow::bail!("No input files specified.\n\nUsage: exif [OPTIONS] <FILES>...\n       exif --help for more options");
+        } else {
+            anyhow::bail!("No matching files found.");
+        }
+    }
+
+    // Show count in recursive mode
+    if parsed.recursive && files.len() > 1 {
+        eprintln!("Processing {} files...", files.len());
     }
 
     // Collect output for potential file write
     let mut output_buf = String::new();
     let write_to_file = parsed.output.is_some();
 
-    for path in &parsed.files {
+    for path in &files {
         let file = File::open(path)
             .with_context(|| format!("Cannot open: {}", path.display()))?;
         let mut reader = BufReader::new(file);
 
         match registry.parse(&mut reader) {
-            Ok(metadata) => {
+            Ok(mut metadata) => {
+                // Add composite tags if requested
+                if parsed.composite {
+                    add_composite_tags(&mut metadata);
+                }
+                
                 if write_to_file {
                     format_metadata(path, &metadata, &parsed, &mut output_buf);
                 } else {
@@ -227,7 +262,81 @@ struct Args {
     write_file: Option<PathBuf>,      // -w image output
     inplace: bool,                    // -p modify in-place
     thumbnail: bool,                  // -T extract thumbnail
+    preview: bool,                    // -P extract preview (RAW)
+    recursive: bool,                  // -r recursive directory scan
+    extensions: Vec<String>,          // -e extension filter
+    composite: bool,                  // -c add composite tags
     all: bool,
+}
+
+/// Expand paths: if recursive, walk directories; filter by extensions.
+fn expand_paths(paths: &[PathBuf], recursive: bool, extensions: &[String]) -> Vec<PathBuf> {
+    let mut result = Vec::new();
+    
+    // Known image/media extensions for recursive mode
+    let default_exts: Vec<&str> = vec![
+        // Images
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp", "heic", "heif", "avif",
+        "jxl", "jp2", "j2k", "jpx", "exr", "hdr", "ppm", "pgm", "pbm", "pam", "ico",
+        "tga", "pcx", "sgi", "rgb", "svg", "eps", "ai", "psd", "dpx",
+        // RAW
+        "cr2", "cr3", "nef", "arw", "orf", "rw2", "pef", "raf", "dng", "srw", "srf",
+        "sr2", "crw", "dcr", "kdc", "k25", "erf", "mef", "mos", "mrw", "nrw", "rwl",
+        "x3f", "3fr", "fff", "iiq", "braw",
+        // Video
+        "mp4", "mov", "m4v", "3gp", "3g2", "avi", "mkv", "webm", "mxf", "r3d",
+        "mts", "m2ts", "ts", "flv", "wmv", "asf",
+        // Audio
+        "mp3", "flac", "m4a", "aac", "ogg", "opus", "wav", "aiff", "aif", "ape",
+        "wv", "dsf", "dff", "tak", "wma", "mid", "midi", "au",
+    ];
+    
+    for path in paths {
+        if path.is_dir() {
+            if recursive {
+                // Walk directory recursively
+                for entry in WalkDir::new(path)
+                    .follow_links(true)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                {
+                    let p = entry.path();
+                    if p.is_file() {
+                        if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
+                            let ext_lower = ext.to_lowercase();
+                            // Check against filter or defaults
+                            let matches = if extensions.is_empty() {
+                                default_exts.contains(&ext_lower.as_str())
+                            } else {
+                                extensions.iter().any(|e| e == &ext_lower)
+                            };
+                            if matches {
+                                result.push(p.to_path_buf());
+                            }
+                        }
+                    }
+                }
+            } else {
+                eprintln!("Warning: {} is a directory. Use -r for recursive scan.", path.display());
+            }
+        } else if path.is_file() {
+            // Check extension filter if specified
+            if !extensions.is_empty() {
+                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                    if !extensions.iter().any(|e| e == &ext.to_lowercase()) {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+            }
+            result.push(path.clone());
+        }
+    }
+    
+    // Sort for consistent output
+    result.sort();
+    result
 }
 
 fn parse_args(args: &[String]) -> Result<Args> {
@@ -265,8 +374,21 @@ fn parse_args(args: &[String]) -> Result<Args> {
                 i += 1;
                 parsed.write_file = args.get(i).map(PathBuf::from);
             }
+            "-X" | "--xml" => parsed.format = "xml".into(),
             "-p" | "--inplace" => parsed.inplace = true,
             "-T" | "--thumbnail" => parsed.thumbnail = true,
+            "-P" | "--preview" => parsed.preview = true,
+            "-r" | "--recursive" => parsed.recursive = true,
+            "-e" | "--ext" => {
+                i += 1;
+                if let Some(exts) = args.get(i) {
+                    parsed.extensions = exts.split(',')
+                        .map(|s| s.trim().to_lowercase())
+                        .filter(|s| !s.is_empty())
+                        .collect();
+                }
+            }
+            "-c" | "--composite" => parsed.composite = true,
             "-a" | "--all" => parsed.all = true,
             _ if arg.starts_with('-') => {
                 // Check for combined -tTag=Value
@@ -397,10 +519,46 @@ fn extract_thumbnails(args: &Args, registry: &FormatRegistry) -> Result<()> {
     Ok(())
 }
 
+fn extract_previews(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    if args.files.is_empty() {
+        anyhow::bail!("No input file specified for preview extraction.\n\nUsage: exif -P <FILE>");
+    }
+
+    for path in &args.files {
+        let file = File::open(path)
+            .with_context(|| format!("Cannot open: {}", path.display()))?;
+        let mut reader = BufReader::new(file);
+
+        let metadata = registry.parse(&mut reader)
+            .with_context(|| format!("Cannot parse: {}", path.display()))?;
+
+        if let Some(ref preview_data) = metadata.preview {
+            // Determine output path
+            let output_path = if let Some(ref out) = args.output {
+                out.clone()
+            } else {
+                // Default: input_preview.jpg
+                let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+                path.with_file_name(format!("{}_preview.jpg", stem))
+            };
+
+            std::fs::write(&output_path, preview_data)
+                .with_context(|| format!("Cannot write: {}", output_path.display()))?;
+            
+            eprintln!("Preview: {} ({} bytes)", output_path.display(), preview_data.len());
+        } else {
+            eprintln!("{}: no embedded preview found", path.display());
+        }
+    }
+
+    Ok(())
+}
+
 fn print_metadata(path: &Path, m: &Metadata, args: &Args) {
     match args.format.as_str() {
         "json" => print_json(path, m, &args.get_tags),
         "csv" => print_csv(path, m, &args.get_tags),
+        "xml" => xml_output::print_xml(path, m, &args.get_tags),
         _ => print_text(path, m, args.all, &args.get_tags),
     }
 }
@@ -410,6 +568,9 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
     let filter = &args.get_tags;
     
     match args.format.as_str() {
+        "xml" => {
+            xml_output::format_xml(path, m, filter, out);
+        }
         "json" => {
             let mut map = serde_json::Map::new();
             
