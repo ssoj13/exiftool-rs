@@ -11,7 +11,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::SeekFrom;
 
 // MXF Partition Pack Key prefix (first 13 bytes)
 const PARTITION_PACK_KEY: [u8; 13] = [

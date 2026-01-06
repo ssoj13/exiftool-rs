@@ -12,7 +12,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::SeekFrom;
 
 const TS_PACKET_SIZE: usize = 188;
 const M2TS_PACKET_SIZE: usize = 192;

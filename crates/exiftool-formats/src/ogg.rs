@@ -12,7 +12,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result, Error};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, SeekFrom, Seek};
+use std::io::SeekFrom;
 
 /// OGG format parser.
 pub struct OggParser;

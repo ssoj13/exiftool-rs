@@ -16,7 +16,7 @@
 //! - COMM: Comment
 
 use crate::{Error, Metadata, ReadSeek, Result};
-use std::io::{Seek, SeekFrom, Write};
+use std::io::{SeekFrom, Write};
 
 /// ID3v2.3 writer.
 pub struct Id3Writer;

@@ -9,7 +9,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::SeekFrom;
 
 /// FLV format parser.
 pub struct FlvParser;

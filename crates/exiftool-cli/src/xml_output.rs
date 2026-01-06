@@ -127,6 +127,7 @@ fn determine_namespace(tag: &str) -> &'static str {
 }
 
 /// Format multiple files as XML (batch mode).
+#[allow(dead_code)]
 pub fn format_xml_batch(files: &[(std::path::PathBuf, Metadata)], filter: &[String], out: &mut String) {
     let _ = writeln!(out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
     let _ = writeln!(out, "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"");

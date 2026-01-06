@@ -15,7 +15,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::SeekFrom;
 
 const DPX_MAGIC_BE: u32 = 0x53445058; // "SDPX"
 const DPX_MAGIC_LE: u32 = 0x58504453; // "XPDS"

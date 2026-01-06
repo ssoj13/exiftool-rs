@@ -16,7 +16,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, SeekFrom, Seek};
+use std::io::SeekFrom;
 
 /// AU format parser.
 pub struct AuParser;

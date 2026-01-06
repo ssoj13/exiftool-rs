@@ -11,7 +11,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::SeekFrom;
 
 /// MIDI file parser.
 pub struct MidiParser;

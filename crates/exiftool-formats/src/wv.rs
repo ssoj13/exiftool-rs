@@ -5,7 +5,7 @@
 
 use crate::{FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
-use std::io::{Read, SeekFrom, Seek};
+use std::io::SeekFrom;
 
 /// WavPack format parser.
 pub struct WvParser;
