@@ -242,7 +242,7 @@ impl FormatParser for DffParser {
 
 /// Parse DFF PROP chunk.
 fn parse_dff_prop(reader: &mut dyn ReadSeek, size: u64, meta: &mut Metadata) -> Result<()> {
-    let start = reader.seek(SeekFrom::Current(0))?;
+    let start = reader.stream_position()?;
     
     // Property type (4 bytes) - should be "SND "
     let mut prop_type = [0u8; 4];

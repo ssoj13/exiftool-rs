@@ -21,13 +21,13 @@ use crate::{makernotes, FormatParser, Metadata, ReadSeek, Result, TiffConfig, Ti
 /// STUB: Currently wraps TiffParser. Full Nikon MakerNotes parsing
 /// requires extensive reverse-engineering of Nikon's proprietary format.
 pub struct NefParser {
-    tiff_parser: TiffParser,
+    tiff: TiffParser,
 }
 
 impl NefParser {
     pub fn new() -> Self {
         Self {
-            tiff_parser: TiffParser::with_config(TiffConfig {
+            tiff: TiffParser::with_config(TiffConfig {
                 format_name: "NEF",
                 allowed_magic: &[42, 43],
                 vendor: Some(makernotes::Vendor::Nikon),
@@ -77,7 +77,7 @@ impl FormatParser for NefParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         // Parse as TIFF - all NEF metadata is in standard TIFF/EXIF tags
-        let mut metadata = self.tiff_parser.parse(reader)?;
+        let mut metadata = self.tiff.parse(reader)?;
         
         // Override format name
         metadata.format = "NEF";

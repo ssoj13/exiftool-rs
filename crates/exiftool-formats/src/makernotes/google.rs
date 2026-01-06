@@ -25,7 +25,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::Attrs;
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 
 /// Google Pixel MakerNotes parser.
 pub struct GoogleParser;
@@ -58,13 +58,8 @@ impl VendorParser for GoogleParser {
     }
 
     fn parse(&self, data: &[u8], parent_byte_order: ByteOrder) -> Option<Attrs> {
-        if data.len() < 6 {
-            return None;
-        }
-
         // Google uses standard TIFF IFD format
-        let reader = IfdReader::new(data, parent_byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        let entries = super::parse_ifd_entries(data, parent_byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 

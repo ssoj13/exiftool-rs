@@ -125,7 +125,7 @@ impl FormatParser for HeicParser {
         
         // Parse remaining boxes
         reader.seek(SeekFrom::Start(ftyp_size))?;
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         reader.seek(SeekFrom::Start(ftyp_size))?;
         
         while reader.stream_position()? < file_size {

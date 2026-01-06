@@ -241,9 +241,7 @@ fn parse_gps_coord(coord: Option<&AttrValue>, ref_val: Option<&str>) -> Option<f
 /// Parse DMS string like "51 deg 30' 26.13\"" to decimal degrees.
 fn parse_dms_string(s: &str) -> Option<f64> {
     // Remove common separators and try to extract numbers
-    let s = s.replace("deg", " ").replace('°', " ")
-             .replace('\'', " ").replace('"', " ")
-             .replace(',', " ");
+    let s = s.replace("deg", " ").replace(['°', '\'', '"', ','], " ");
     
     let parts: Vec<f64> = s.split_whitespace()
         .filter_map(|p| p.parse::<f64>().ok())

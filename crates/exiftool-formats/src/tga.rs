@@ -166,7 +166,7 @@ impl FormatParser for TgaParser {
 impl TgaParser {
     /// Parse TGA 2.0 footer (26 bytes from EOF).
     fn parse_footer(&self, reader: &mut dyn ReadSeek, metadata: &mut Metadata) -> Result<()> {
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         if file_size < 26 {
             return Ok(());
         }

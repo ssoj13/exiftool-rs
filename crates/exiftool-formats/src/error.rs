@@ -22,6 +22,15 @@ pub enum Error {
 
     #[error("file too large: {0} bytes exceeds limit of {1} bytes")]
     FileTooLarge(u64, u64),
+
+    #[error("XMP error: {0}")]
+    Xmp(#[from] exiftool_xmp::Error),
+
+    #[error("ICC error: {0}")]
+    Icc(#[from] exiftool_icc::Error),
+
+    #[error("IPTC error: {0}")]
+    Iptc(#[from] exiftool_iptc::Error),
 }
 
 /// Result type alias.

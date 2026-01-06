@@ -103,14 +103,13 @@ impl WebpWriter {
                 }
                 b"VP8 " => {
                     // Lossy VP8 - extract dimensions if no VP8X
-                    if canvas_width == 0 && chunk_data.len() >= 10 {
-                        if chunk_data[3] == 0x9D && chunk_data[4] == 0x01 && chunk_data[5] == 0x2A {
+                    if canvas_width == 0 && chunk_data.len() >= 10
+                        && chunk_data[3] == 0x9D && chunk_data[4] == 0x01 && chunk_data[5] == 0x2A {
                             canvas_width =
                                 (u16::from_le_bytes([chunk_data[6], chunk_data[7]]) & 0x3FFF) as u32;
                             canvas_height =
                                 (u16::from_le_bytes([chunk_data[8], chunk_data[9]]) & 0x3FFF) as u32;
                         }
-                    }
                     chunks.push(Chunk {
                         id: chunk_id,
                         data: chunk_data,
@@ -118,8 +117,8 @@ impl WebpWriter {
                 }
                 b"VP8L" => {
                     // Lossless VP8L - extract dimensions if no VP8X
-                    if canvas_width == 0 && chunk_data.len() >= 5 {
-                        if chunk_data[0] == 0x2F {
+                    if canvas_width == 0 && chunk_data.len() >= 5
+                        && chunk_data[0] == 0x2F {
                             let bits = u32::from_le_bytes([
                                 chunk_data[1],
                                 chunk_data[2],
@@ -131,7 +130,6 @@ impl WebpWriter {
                             // Check alpha flag in VP8L
                             has_alpha_in_vp8l = (bits & 0x100000) != 0;
                         }
-                    }
                     chunks.push(Chunk {
                         id: chunk_id,
                         data: chunk_data,
@@ -330,7 +328,7 @@ impl WebpWriter {
         output.write_all(data)?;
 
         // Pad to even byte boundary
-        if data.len() % 2 != 0 {
+        if !data.len().is_multiple_of(2) {
             output.write_all(&[0])?;
         }
 

@@ -30,7 +30,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::{AttrValue, Attrs};
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 use exiftool_tags::generated::sony;
 
 /// Sony MakerNotes parser.
@@ -62,8 +62,7 @@ impl VendorParser for SonyParser {
             (data, parent_byte_order)
         };
 
-        let reader = IfdReader::new(ifd_data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 
@@ -71,13 +70,13 @@ impl VendorParser for SonyParser {
             match entry.tag {
                 0x0010 => {
                     // CameraSettings
-                    if let Some(sub_attrs) = parse_camera_settings(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_camera_settings(entry.value.as_bytes()?, byte_order) {
                         attrs.set("CameraSettings", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0020 => {
                     // FocusInfo
-                    if let Some(sub_attrs) = parse_focus_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_focus_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("FocusInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
@@ -93,13 +92,13 @@ impl VendorParser for SonyParser {
                     }
                     // Also store offset if available (value_offset)
                     if let Some(offset) = entry.value_offset {
-                        attrs.set("PreviewImageStart", AttrValue::UInt(offset as u32));
-                        attrs.set("PreviewImageLength", AttrValue::UInt(entry.count as u32));
+                        attrs.set("PreviewImageStart", AttrValue::UInt(offset));
+                        attrs.set("PreviewImageLength", AttrValue::UInt(entry.count));
                     }
                 }
                 0x9405 => {
                     // Tag9405 - DistortionCorrection info
-                    if let Some(sub_attrs) = parse_tag9405(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_tag9405(entry.value.as_bytes()?, byte_order) {
                         attrs.set("Tag9405", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }

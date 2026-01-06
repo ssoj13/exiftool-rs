@@ -163,7 +163,7 @@ impl FormatParser for PcxParser {
 impl PcxParser {
     /// Check for 256-color VGA palette at end of file.
     fn check_vga_palette(&self, reader: &mut dyn ReadSeek, metadata: &mut Metadata) -> Result<()> {
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         if file_size < 769 {
             return Ok(());
         }

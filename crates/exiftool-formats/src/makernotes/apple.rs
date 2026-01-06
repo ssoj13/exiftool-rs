@@ -52,7 +52,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::{AttrValue, Attrs};
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 use exiftool_tags::generated::apple;
 
 /// Apple MakerNotes parser.
@@ -80,8 +80,7 @@ impl VendorParser for AppleParser {
             (data, parent_byte_order)
         };
 
-        let reader = IfdReader::new(ifd_data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 

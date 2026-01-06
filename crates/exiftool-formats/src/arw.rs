@@ -10,13 +10,13 @@ use crate::{makernotes, FormatParser, Metadata, ReadSeek, Result, TiffConfig, Ti
 
 /// Sony ARW format parser.
 pub struct ArwParser {
-    tiff_parser: TiffParser,
+    tiff: TiffParser,
 }
 
 impl ArwParser {
     pub fn new() -> Self {
         Self {
-            tiff_parser: TiffParser::with_config(TiffConfig {
+            tiff: TiffParser::with_config(TiffConfig {
                 format_name: "ARW",
                 allowed_magic: &[42, 43],
                 vendor: Some(makernotes::Vendor::Sony),
@@ -59,7 +59,7 @@ impl FormatParser for ArwParser {
     }
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
-        let mut metadata = self.tiff_parser.parse(reader)?;
+        let mut metadata = self.tiff.parse(reader)?;
         metadata.format = "ARW";
         
         // Sony MakerNotes will be parsed via the MakerNotes module

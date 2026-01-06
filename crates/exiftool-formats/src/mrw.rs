@@ -50,7 +50,7 @@ impl FormatParser for MrwParser {
         meta.exif.set("MRW:DataOffset", AttrValue::UInt64(prd_offset));
 
         // File size
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
 
         // Parse blocks starting at offset 8

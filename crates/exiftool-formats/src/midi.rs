@@ -75,7 +75,7 @@ impl FormatParser for MidiParser {
         }
 
         // File size
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
 
         // Parse tracks for metadata

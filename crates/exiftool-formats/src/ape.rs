@@ -117,7 +117,7 @@ impl FormatParser for ApeParser {
         }
 
         // Try to read APEv2 tag at end of file
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
 
         // APEv2 tag footer is 32 bytes before end (or before ID3v1 if present)

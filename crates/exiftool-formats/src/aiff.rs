@@ -133,7 +133,7 @@ impl AiffParser {
 
             // Move to next chunk (pad to even boundary)
             pos = data_start + chunk_size;
-            if chunk_size % 2 != 0 {
+            if !chunk_size.is_multiple_of(2) {
                 pos += 1;
             }
         }
@@ -236,7 +236,7 @@ impl AiffParser {
             }
 
             // Pad to even
-            if text_len % 2 != 0 {
+            if !text_len.is_multiple_of(2) {
                 let mut pad = [0u8; 1];
                 let _ = reader.read_exact(&mut pad);
             }

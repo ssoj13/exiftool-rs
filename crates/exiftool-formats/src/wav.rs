@@ -57,16 +57,9 @@ impl WavParser {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
-            let mut chunk_id = [0u8; 4];
-            if reader.read_exact(&mut chunk_id).is_err() {
+            let Some((chunk_id, chunk_size)) = crate::riff::read_chunk_header(reader) else {
                 break;
-            }
-
-            let mut size_buf = [0u8; 4];
-            if reader.read_exact(&mut size_buf).is_err() {
-                break;
-            }
-            let chunk_size = u32::from_le_bytes(size_buf) as u64;
+            };
 
             match &chunk_id {
                 b"fmt " => {
@@ -88,7 +81,7 @@ impl WavParser {
                     let list_end = chunk_start + 8 + chunk_size;
 
                     if &form_type == b"INFO" {
-                        self.parse_info(reader, list_end, metadata)?;
+                        crate::riff::parse_info(reader, list_end, metadata)?;
                     } else {
                         reader.seek(SeekFrom::Start(list_end))?;
                     }
@@ -354,75 +347,7 @@ impl WavParser {
         Ok(())
     }
 
-    /// Parse INFO list (metadata).
-    fn parse_info(&self, reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metadata) -> Result<()> {
-        while reader.stream_position()? < end_pos {
-            let chunk_start = reader.stream_position()?;
 
-            let mut chunk_id = [0u8; 4];
-            if reader.read_exact(&mut chunk_id).is_err() {
-                break;
-            }
-
-            let mut size_buf = [0u8; 4];
-            if reader.read_exact(&mut size_buf).is_err() {
-                break;
-            }
-            let chunk_size = u32::from_le_bytes(size_buf) as u64;
-
-            if chunk_size > 0 && chunk_size < 64 * 1024 {
-                let mut data = vec![0u8; chunk_size as usize];
-                reader.read_exact(&mut data)?;
-                let value = String::from_utf8_lossy(&data)
-                    .trim_end_matches('\0')
-                    .to_string();
-
-                if !value.is_empty() {
-                    let tag_name = self.info_tag_name(&chunk_id);
-                    metadata.exif.set(&format!("RIFF:{}", tag_name), AttrValue::Str(value));
-                }
-            } else {
-                reader.seek(SeekFrom::Current(chunk_size as i64))?;
-            }
-
-            // Word alignment
-            let current = reader.stream_position()?;
-            if current % 2 != 0 {
-                reader.seek(SeekFrom::Current(1))?;
-            }
-
-            if reader.stream_position()? <= chunk_start {
-                break;
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Get human-readable name for INFO tag.
-    fn info_tag_name(&self, tag: &[u8; 4]) -> &'static str {
-        match tag {
-            b"INAM" => "Title",
-            b"IART" => "Artist",
-            b"ICMT" => "Comment",
-            b"ICOP" => "Copyright",
-            b"ICRD" => "DateCreated",
-            b"IGNR" => "Genre",
-            b"IKEY" => "Keywords",
-            b"IMED" => "Medium",
-            b"IPRD" => "Product",
-            b"ISBJ" => "Subject",
-            b"ISFT" => "Software",
-            b"ISRC" => "Source",
-            b"ISRF" => "SourceForm",
-            b"ITCH" => "Technician",
-            b"IENG" => "Engineer",
-            b"IDIT" => "DateTimeOriginal",
-            b"ILNG" => "Language",
-            b"ITRK" => "TrackNumber",
-            _ => "Unknown",
-        }
-    }
 }
 
 #[cfg(test)]

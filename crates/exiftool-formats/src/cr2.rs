@@ -15,7 +15,7 @@ use crate::{makernotes, Error, FormatParser, Metadata, ReadSeek, Result, TiffCon
 /// 
 /// Extends TiffParser with Canon-specific detection and metadata.
 pub struct Cr2Parser {
-    tiff_parser: TiffParser,
+    tiff: TiffParser,
 }
 
 impl Default for Cr2Parser {
@@ -27,7 +27,7 @@ impl Default for Cr2Parser {
 impl Cr2Parser {
     pub fn new() -> Self {
         Self {
-            tiff_parser: TiffParser::with_config(TiffConfig {
+            tiff: TiffParser::with_config(TiffConfig {
                 format_name: "CR2",
                 allowed_magic: &[42, 43],
                 vendor: Some(makernotes::Vendor::Canon),
@@ -77,7 +77,7 @@ impl FormatParser for Cr2Parser {
 
         // Reset to start and use TIFF parser
         reader.seek(std::io::SeekFrom::Start(0))?;
-        let mut metadata = self.tiff_parser.parse(reader)?;
+        let mut metadata = self.tiff.parse(reader)?;
 
         // Update format to CR2
         metadata.format = "CR2";

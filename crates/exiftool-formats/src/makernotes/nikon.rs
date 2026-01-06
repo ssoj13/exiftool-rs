@@ -185,55 +185,55 @@ impl VendorParser for NikonParser {
                 }
                 0x0025 => {
                     // ISOInfo
-                    if let Some(sub_attrs) = parse_iso_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_iso_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("ISOInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x002B => {
                     // DistortInfo
-                    if let Some(sub_attrs) = parse_distort_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_distort_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("DistortInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x002C => {
                     // HDRInfo
-                    if let Some(sub_attrs) = parse_hdr_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_hdr_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("HDRInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0035 => {
                     // LocationInfo
-                    if let Some(sub_attrs) = parse_location_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_location_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("LocationInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0037 => {
                     // BarometerInfo  
-                    if let Some(sub_attrs) = parse_barometer_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_barometer_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("BarometerInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0039 | 0x00B7 => {
                     // AFInfo2
-                    if let Some(sub_attrs) = parse_af_info2(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_af_info2(entry.value.as_bytes()?, byte_order) {
                         attrs.set("AFInfo2", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0088 => {
                     // AFInfo (old format)
-                    if let Some(sub_attrs) = parse_af_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_af_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("AFInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x00A8 => {
                     // FlashInfo
-                    if let Some(sub_attrs) = parse_flash_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_flash_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("FlashInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x00B9 => {
                     // AFTune
-                    if let Some(sub_attrs) = parse_af_tune(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_af_tune(entry.value.as_bytes()?, byte_order) {
                         attrs.set("AFTune", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }

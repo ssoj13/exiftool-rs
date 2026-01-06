@@ -580,7 +580,7 @@ impl MkvParser {
         }
 
         if let (Some(n), Some(v)) = (name, value) {
-            metadata.exif.set(&format!("MKV:{}", n), AttrValue::Str(v));
+            metadata.exif.set(format!("MKV:{}", n), AttrValue::Str(v));
         }
 
         Ok(())
@@ -669,7 +669,7 @@ impl MkvParser {
         if !chapters.is_empty() {
             // Store first few chapter titles
             for (i, title) in chapters.iter().take(10).enumerate() {
-                metadata.exif.set(&format!("MKV:Chapter{}Title", i + 1), AttrValue::Str(title.clone()));
+                metadata.exif.set(format!("MKV:Chapter{}Title", i + 1), AttrValue::Str(title.clone()));
             }
         }
 
@@ -799,9 +799,9 @@ impl MkvParser {
         }
         // Store first few attachment names
         for (i, (name, mime, size)) in attachments.iter().take(10).enumerate() {
-            metadata.exif.set(&format!("MKV:Attachment{}Name", i + 1), AttrValue::Str(name.clone()));
-            metadata.exif.set(&format!("MKV:Attachment{}MIMEType", i + 1), AttrValue::Str(mime.clone()));
-            metadata.exif.set(&format!("MKV:Attachment{}Size", i + 1), AttrValue::UInt(*size as u32));
+            metadata.exif.set(format!("MKV:Attachment{}Name", i + 1), AttrValue::Str(name.clone()));
+            metadata.exif.set(format!("MKV:Attachment{}MIMEType", i + 1), AttrValue::Str(mime.clone()));
+            metadata.exif.set(format!("MKV:Attachment{}Size", i + 1), AttrValue::UInt(*size as u32));
         }
 
         Ok(())

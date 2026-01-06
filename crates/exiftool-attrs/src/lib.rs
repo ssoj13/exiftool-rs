@@ -309,7 +309,7 @@ impl Attrs {
     pub fn group_mut(&mut self, key: &str) -> &mut Attrs {
         // Ensure the key exists with a Group value
         if !matches!(self.map.get(key), Some(AttrValue::Group(_))) {
-            self.map.insert(key.to_string(), AttrValue::Group(Box::new(Attrs::new())));
+            self.map.insert(key.to_string(), AttrValue::Group(Box::default()));
         }
         
         match self.map.get_mut(key) {

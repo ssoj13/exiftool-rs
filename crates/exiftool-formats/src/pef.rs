@@ -10,13 +10,13 @@ use crate::{makernotes, FormatParser, Metadata, ReadSeek, Result, TiffConfig, Ti
 
 /// Pentax PEF format parser.
 pub struct PefParser {
-    tiff_parser: TiffParser,
+    tiff: TiffParser,
 }
 
 impl PefParser {
     pub fn new() -> Self {
         Self {
-            tiff_parser: TiffParser::with_config(TiffConfig {
+            tiff: TiffParser::with_config(TiffConfig {
                 format_name: "PEF",
                 allowed_magic: &[42, 43],
                 vendor: Some(makernotes::Vendor::Pentax),
@@ -58,7 +58,7 @@ impl FormatParser for PefParser {
     }
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
-        let mut metadata = self.tiff_parser.parse(reader)?;
+        let mut metadata = self.tiff.parse(reader)?;
         metadata.format = "PEF";
         
         // Pentax MakerNotes contain:

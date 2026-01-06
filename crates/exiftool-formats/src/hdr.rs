@@ -22,7 +22,6 @@ use exiftool_attrs::AttrValue;
 use std::io::{BufRead, BufReader};
 
 /// Radiance HDR magic signature.
-#[allow(dead_code)]
 const HDR_MAGIC: &[u8; 2] = b"#?";
 
 /// HDR (Radiance RGBE) format parser.
@@ -31,7 +30,7 @@ pub struct HdrParser;
 impl FormatParser for HdrParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         // Must start with "#?" (Radiance signature)
-        header.len() >= 2 && header[0] == b'#' && header[1] == b'?'
+        header.len() >= 2 && header[..2] == *HDR_MAGIC
     }
 
     fn format_name(&self) -> &'static str {

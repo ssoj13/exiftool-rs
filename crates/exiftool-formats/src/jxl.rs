@@ -82,7 +82,7 @@ impl JxlParser {
     fn parse_container(&self, reader: &mut dyn ReadSeek, metadata: &mut Metadata) -> Result<()> {
         reader.seek(SeekFrom::Start(12))?; // Skip file type box
 
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         reader.seek(SeekFrom::Start(12))?;
 
         while reader.stream_position()? < file_size {
@@ -163,7 +163,7 @@ impl JxlParser {
 
     /// Parse EXIF box.
     fn parse_exif_box(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
-        if size < 8 || size > 10 * 1024 * 1024 {
+        if !(8..=10 * 1024 * 1024).contains(&size) {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
         }

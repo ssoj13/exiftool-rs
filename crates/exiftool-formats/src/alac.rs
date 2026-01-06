@@ -52,7 +52,7 @@ impl FormatParser for CafParser {
         meta.exif.set("CAF:Version", AttrValue::UInt(version as u32));
 
         // Parse chunks
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
         
         let mut pos = 8u64;

@@ -76,7 +76,7 @@ impl FormatParser for Cr3Parser {
         // Parse boxes after ftyp
         reader.seek(SeekFrom::Start(ftyp_size))?;
         
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         reader.seek(SeekFrom::Start(ftyp_size))?;
         
         while reader.stream_position()? < file_size {
@@ -234,11 +234,10 @@ impl Cr3Parser {
                         let jpeg_size = thumb_size - header_skip;
                         if jpeg_size > 100 {
                             let mut thumb_data = vec![0u8; jpeg_size];
-                            if reader.read_exact(&mut thumb_data).is_ok() {
-                                if thumb_data.len() >= 2 && thumb_data[0] == 0xFF && thumb_data[1] == 0xD8 {
+                            if reader.read_exact(&mut thumb_data).is_ok()
+                                && thumb_data.len() >= 2 && thumb_data[0] == 0xFF && thumb_data[1] == 0xD8 {
                                     metadata.thumbnail = Some(thumb_data);
                                 }
-                            }
                         }
                     }
                     metadata.exif.set("ThumbnailSize", AttrValue::UInt((box_size - 8) as u32));
@@ -254,11 +253,10 @@ impl Cr3Parser {
                         let jpeg_size = preview_size - header_skip;
                         if jpeg_size > 100 {
                             let mut preview_data = vec![0u8; jpeg_size];
-                            if reader.read_exact(&mut preview_data).is_ok() {
-                                if preview_data.len() >= 2 && preview_data[0] == 0xFF && preview_data[1] == 0xD8 {
+                            if reader.read_exact(&mut preview_data).is_ok()
+                                && preview_data.len() >= 2 && preview_data[0] == 0xFF && preview_data[1] == 0xD8 {
                                     metadata.preview = Some(preview_data);
                                 }
-                            }
                         }
                     }
                     metadata.exif.set("PreviewSize", AttrValue::UInt((box_size - 8) as u32));

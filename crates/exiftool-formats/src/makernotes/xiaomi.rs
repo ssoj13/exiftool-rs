@@ -27,7 +27,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::Attrs;
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 
 /// Xiaomi MakerNotes parser.
 pub struct XiaomiParser;
@@ -62,13 +62,8 @@ impl VendorParser for XiaomiParser {
     }
 
     fn parse(&self, data: &[u8], parent_byte_order: ByteOrder) -> Option<Attrs> {
-        if data.len() < 6 {
-            return None;
-        }
-
-        // Xiaomi uses standard TIFF IFD format  
-        let reader = IfdReader::new(data, parent_byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        // Xiaomi uses standard TIFF IFD format
+        let entries = super::parse_ifd_entries(data, parent_byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 

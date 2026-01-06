@@ -134,7 +134,7 @@ impl FormatParser for Mp4Parser {
 
         // Parse remaining boxes
         reader.seek(SeekFrom::Start(ftyp_size))?;
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         reader.seek(SeekFrom::Start(ftyp_size))?;
 
         while reader.stream_position()? < file_size {
@@ -1129,7 +1129,7 @@ fn days_to_ymd(days: u64) -> (u32, u32, u32) {
 }
 
 fn is_leap_year(year: u32) -> bool {
-    (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
 }
 
 /// Format duration in seconds to human-readable string.

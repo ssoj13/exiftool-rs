@@ -43,7 +43,7 @@ impl FormatParser for AacParser {
         reader.seek(SeekFrom::Start(0))?;
 
         // File size
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
 
         reader.seek(SeekFrom::Start(0))?;
@@ -178,7 +178,7 @@ fn count_adts_frames(reader: &mut dyn ReadSeek, file_size: u64, max_frames: u32)
             | ((header[4] as u64) << 3)
             | ((header[5] >> 5) as u64);
 
-        if frame_length < 7 || frame_length > 8192 {
+        if !(7..=8192).contains(&frame_length) {
             break;
         }
 

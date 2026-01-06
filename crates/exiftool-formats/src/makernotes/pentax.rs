@@ -115,7 +115,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::{AttrValue, Attrs};
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 use exiftool_tags::generated::pentax;
 
 /// Pentax MakerNotes parser.
@@ -169,8 +169,7 @@ impl VendorParser for PentaxParser {
             (data, parent_byte_order)
         };
 
-        let reader = IfdReader::new(ifd_data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 
@@ -229,12 +228,7 @@ impl VendorParser for PentaxParser {
 
 /// Parse Pentax LensInfo sub-IFD (tag 0x0207).
 fn parse_lens_info(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<Attrs> {
-    if (offset as usize) >= data.len() {
-        return None;
-    }
-
-    let reader = IfdReader::new(data, byte_order, 0);
-    let (entries, _) = reader.read_ifd(offset).ok()?;
+    let entries = super::parse_ifd_entries(data, byte_order, offset)?;
 
     let mut attrs = Attrs::new();
 
@@ -250,12 +244,7 @@ fn parse_lens_info(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<At
 
 /// Parse Pentax AFInfo sub-IFD (tag 0x0215).
 fn parse_af_info(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<Attrs> {
-    if (offset as usize) >= data.len() {
-        return None;
-    }
-
-    let reader = IfdReader::new(data, byte_order, 0);
-    let (entries, _) = reader.read_ifd(offset).ok()?;
+    let entries = super::parse_ifd_entries(data, byte_order, offset)?;
 
     let mut attrs = Attrs::new();
 

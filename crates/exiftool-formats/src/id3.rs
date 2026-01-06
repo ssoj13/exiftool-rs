@@ -69,7 +69,7 @@ impl FormatParser for Id3Parser {
         }
 
         // Also try ID3v1 (last 128 bytes)
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         if file_size >= 128 {
             reader.seek(SeekFrom::End(-128))?;
             let mut id3v1 = [0u8; 128];

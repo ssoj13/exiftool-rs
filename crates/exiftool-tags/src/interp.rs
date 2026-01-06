@@ -91,9 +91,7 @@ pub fn format_gps_coord(degrees: f64, is_latitude: bool) -> String {
 
     let dir = if is_latitude {
         if degrees >= 0.0 { "N" } else { "S" }
-    } else {
-        if degrees >= 0.0 { "E" } else { "W" }
-    };
+    } else if degrees >= 0.0 { "E" } else { "W" };
 
     format!("{}° {}' {:.2}\" {}", d, m, s, dir)
 }

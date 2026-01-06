@@ -74,7 +74,7 @@ impl IptcParser {
             pos += 1;
             pos += name_len;
             // Pad to even
-            if (1 + name_len) % 2 != 0 {
+            if !(1 + name_len).is_multiple_of(2) {
                 pos += 1;
             }
 
@@ -98,7 +98,7 @@ impl IptcParser {
 
             // Skip resource data (padded to even)
             pos += size;
-            if size % 2 != 0 {
+            if !size.is_multiple_of(2) {
                 pos += 1;
             }
         }
@@ -314,7 +314,7 @@ impl IptcParser {
             let name_len = data[pos] as usize;
             pos += 1;
             pos += name_len;
-            if (1 + name_len) % 2 != 0 {
+            if !(1 + name_len).is_multiple_of(2) {
                 pos += 1;
             }
 
@@ -334,7 +334,7 @@ impl IptcParser {
             }
 
             pos += size;
-            if size % 2 != 0 {
+            if !size.is_multiple_of(2) {
                 pos += 1;
             }
         }
@@ -410,7 +410,7 @@ impl IptcWriter {
         data.extend_from_slice(&iptc_data);
 
         // Pad to even
-        if iptc_data.len() % 2 != 0 {
+        if !iptc_data.len().is_multiple_of(2) {
             data.push(0);
         }
 

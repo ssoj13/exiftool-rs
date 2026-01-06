@@ -83,11 +83,10 @@ impl FormatParser for SrfParser {
             .map(|m| m.to_lowercase().contains("sony"))
             .unwrap_or(false);
 
-        if !is_sony {
-            if meta.exif.get_str("Make").is_none() {
+        if !is_sony
+            && meta.exif.get_str("Make").is_none() {
                 meta.exif.set("Make", AttrValue::Str("SONY".to_string()));
             }
-        }
 
         Ok(meta)
     }

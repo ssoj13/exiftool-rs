@@ -71,7 +71,24 @@ pub use sony::SonyParser;
 pub use xiaomi::XiaomiParser;
 
 use exiftool_attrs::{Attrs, AttrValue};
-use exiftool_core::ByteOrder;
+use exiftool_core::{ByteOrder, IfdEntry, IfdReader};
+
+/// Parse IFD entries from raw data.
+///
+/// Common helper for vendor parsers that read IFD structures.
+/// - `data`: Raw bytes containing IFD
+/// - `byte_order`: Endianness for parsing
+/// - `ifd_offset`: Offset to IFD within data (usually 0)
+///
+/// Returns None if data is too small or IFD parsing fails.
+pub fn parse_ifd_entries(data: &[u8], byte_order: ByteOrder, ifd_offset: u32) -> Option<Vec<IfdEntry>> {
+    if data.len() < 2 {
+        return None;
+    }
+    let reader = IfdReader::new(data, byte_order, 0);
+    let (entries, _) = reader.read_ifd(ifd_offset).ok()?;
+    Some(entries)
+}
 
 /// Detected camera vendor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

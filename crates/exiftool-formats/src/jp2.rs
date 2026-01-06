@@ -39,7 +39,7 @@ impl FormatParser for Jp2Parser {
         // JP2 container: starts with signature box "jP  " followed by signature
         if header.len() >= 12 {
             // Check for JP2 signature box
-            if &header[0..4] == &[0x00, 0x00, 0x00, 0x0C]  // size = 12
+            if header[0..4] == [0x00, 0x00, 0x00, 0x0C]  // size = 12
                 && &header[4..8] == b"jP  "
                 && &header[8..12] == JP2_SIGNATURE {
                 return true;
@@ -70,7 +70,7 @@ impl FormatParser for Jp2Parser {
 
         // Check format type
         if bytes_read >= 12
-            && &header[0..4] == &[0x00, 0x00, 0x00, 0x0C]
+            && header[0..4] == [0x00, 0x00, 0x00, 0x0C]
             && &header[4..8] == b"jP  "
             && &header[8..12] == JP2_SIGNATURE
         {
@@ -91,7 +91,7 @@ impl FormatParser for Jp2Parser {
 impl Jp2Parser {
     /// Parse JP2 container format.
     fn parse_jp2_container(&self, reader: &mut dyn ReadSeek, metadata: &mut Metadata) -> Result<()> {
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         reader.seek(SeekFrom::Start(0))?;
 
         while reader.stream_position()? < file_size {
@@ -390,11 +390,11 @@ impl Jp2Parser {
 
                     let prefix = if &sub_type == b"resc" { "Capture" } else { "Display" };
                     metadata.exif.set(
-                        &format!("JP2:{}XResolution", prefix),
+                        format!("JP2:{}XResolution", prefix),
                         AttrValue::Float(h_res as f32),
                     );
                     metadata.exif.set(
-                        &format!("JP2:{}YResolution", prefix),
+                        format!("JP2:{}YResolution", prefix),
                         AttrValue::Float(v_res as f32),
                     );
                 }

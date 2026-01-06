@@ -21,7 +21,7 @@ impl FormatParser for EpsParser {
             return true;
         }
         // Check for DOS EPS (binary header + PS)
-        if header.len() >= 4 && &header[0..4] == &[0xC5, 0xD0, 0xD3, 0xC6] {
+        if header.len() >= 4 && header[0..4] == [0xC5, 0xD0, 0xD3, 0xC6] {
             return true;
         }
         false
@@ -43,7 +43,7 @@ impl FormatParser for EpsParser {
         reader.read_to_end(&mut data)?;
 
         // Handle DOS EPS (binary header)
-        let ps_data = if data.len() >= 4 && &data[0..4] == &[0xC5, 0xD0, 0xD3, 0xC6] {
+        let ps_data = if data.len() >= 4 && data[0..4] == [0xC5, 0xD0, 0xD3, 0xC6] {
             // DOS EPS header: 4-byte magic + 4-byte PS offset + 4-byte PS length
             if data.len() < 12 {
                 return Ok(meta);

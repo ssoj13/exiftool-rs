@@ -121,7 +121,7 @@ impl HeicWriter {
         );
         if !is_heic {
             return Err(Error::InvalidStructure(
-                format!("Unknown brand: {:?}", String::from_utf8_lossy(brand)).into(),
+                format!("Unknown brand: {:?}", String::from_utf8_lossy(brand)),
             ));
         }
 

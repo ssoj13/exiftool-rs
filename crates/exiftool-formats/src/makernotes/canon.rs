@@ -64,7 +64,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::{AttrValue, Attrs};
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 use exiftool_tags::generated::canon;
 
 /// Canon MakerNotes parser.
@@ -76,12 +76,7 @@ impl VendorParser for CanonParser {
     }
 
     fn parse(&self, data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
-        if data.len() < 2 {
-            return None;
-        }
-
-        let reader = IfdReader::new(data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        let entries = super::parse_ifd_entries(data, byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 
@@ -90,43 +85,43 @@ impl VendorParser for CanonParser {
             match entry.tag {
                 0x0001 => {
                     // CameraSettings - binary array with specific format
-                    if let Some(sub_attrs) = parse_camera_settings(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_camera_settings(entry.value.as_bytes()?, byte_order) {
                         attrs.set("CameraSettings", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0002 => {
                     // FocalLength
-                    if let Some(sub_attrs) = parse_focal_length(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_focal_length(entry.value.as_bytes()?, byte_order) {
                         attrs.set("FocalLength", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0004 => {
                     // ShotInfo - binary array
-                    if let Some(sub_attrs) = parse_shot_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_shot_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("ShotInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0012 => {
                     // AFInfo
-                    if let Some(sub_attrs) = parse_af_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_af_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("AFInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0026 => {
                     // AFInfo2
-                    if let Some(sub_attrs) = parse_af_info2(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_af_info2(entry.value.as_bytes()?, byte_order) {
                         attrs.set("AFInfo2", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0093 => {
                     // FileInfo
-                    if let Some(sub_attrs) = parse_file_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_file_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("FileInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x00A0 => {
                     // ProcessingInfo
-                    if let Some(sub_attrs) = parse_processing_info(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_processing_info(entry.value.as_bytes()?, byte_order) {
                         attrs.set("ProcessingInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }

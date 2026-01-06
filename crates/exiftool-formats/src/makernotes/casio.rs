@@ -50,7 +50,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::Attrs;
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 
 /// Casio MakerNotes parser.
 pub struct CasioParser;
@@ -115,14 +115,13 @@ impl VendorParser for CasioParser {
         // Check for Type2 header "QVC\0\0\0"
         let (ifd_data, tags, byte_order) = if data.starts_with(b"QVC\0\0\0") {
             // Type2: Skip 6-byte header
-            (&data[6..], &CASIO_TYPE2_TAGS[..], ByteOrder::LittleEndian)
+            (&data[6..], CASIO_TYPE2_TAGS, ByteOrder::LittleEndian)
         } else {
             // Type1: Direct IFD
-            (data, &CASIO_TYPE1_TAGS[..], parent_byte_order)
+            (data, CASIO_TYPE1_TAGS, parent_byte_order)
         };
 
-        let reader = IfdReader::new(ifd_data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 

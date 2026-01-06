@@ -19,7 +19,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::{AttrValue, Attrs};
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 use exiftool_tags::generated::dji;
 
 /// DJI MakerNotes parser.
@@ -31,12 +31,7 @@ impl VendorParser for DjiParser {
     }
 
     fn parse(&self, data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
-        if data.len() < 8 {
-            return None;
-        }
-
-        let reader = IfdReader::new(data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(0).ok()?;
+        let entries = super::parse_ifd_entries(data, byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 

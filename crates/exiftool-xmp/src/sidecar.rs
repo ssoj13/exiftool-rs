@@ -3,7 +3,7 @@
 //! XMP sidecar files store metadata externally alongside image files.
 //! Common pattern: photo.jpg -> photo.xmp
 
-use crate::{Error, Result, XmpParser, XmpWriter};
+use crate::{Result, XmpParser, XmpWriter};
 use exiftool_attrs::Attrs;
 use std::path::Path;
 
@@ -43,8 +43,7 @@ impl XmpSidecar {
 
     /// Read XMP from .xmp file directly.
     pub fn read_file(xmp_path: &Path) -> Result<Attrs> {
-        let content = std::fs::read_to_string(xmp_path)
-            .map_err(|e| Error::Io(e.to_string()))?;
+        let content = std::fs::read_to_string(xmp_path)?;
         XmpParser::parse(&content)
     }
 
@@ -59,8 +58,7 @@ impl XmpSidecar {
     /// Write XMP to .xmp file directly.
     pub fn write_file(xmp_path: &Path, attrs: &Attrs) -> Result<()> {
         let xmp_xml = XmpWriter::write(attrs)?;
-        std::fs::write(xmp_path, xmp_xml)
-            .map_err(|e| Error::Io(e.to_string()))?;
+        std::fs::write(xmp_path, xmp_xml)?;
         Ok(())
     }
 

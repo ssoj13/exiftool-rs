@@ -306,14 +306,13 @@ fn parse_mdpr(data: &[u8], meta: &mut Metadata) {
             }
 
             // Store stream duration if video
-            if mime.starts_with("video") && stream_duration_ms > 0 {
-                if meta.exif.get("VideoDuration").is_none() {
+            if mime.starts_with("video") && stream_duration_ms > 0
+                && meta.exif.get("VideoDuration").is_none() {
                     meta.exif.set(
                         "VideoDuration",
                         AttrValue::Double(stream_duration_ms as f64 / 1000.0),
                     );
                 }
-            }
         }
     }
 }

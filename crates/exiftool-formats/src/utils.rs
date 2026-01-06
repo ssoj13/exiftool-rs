@@ -9,6 +9,16 @@ use std::io::SeekFrom;
 /// Maximum file size to read into memory (100 MB).
 pub const MAX_FILE_SIZE: u64 = 100 * 1024 * 1024;
 
+/// Get file size without changing stream position.
+///
+/// Single source of truth for file size retrieval used by all format parsers.
+pub fn get_file_size<R: ReadSeek + ?Sized>(reader: &mut R) -> Result<u64> {
+    let current = reader.stream_position()?;
+    let size = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(current))?;
+    Ok(size)
+}
+
 /// Read entire file into memory with size limit check.
 ///
 /// Returns error if file exceeds MAX_FILE_SIZE to prevent OOM attacks.

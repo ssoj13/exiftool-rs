@@ -349,9 +349,9 @@ pub fn all_application_tags() -> impl Iterator<Item = &'static str> {
 /// Check if a tag supports list values.
 pub fn is_list_tag(record: u8, tag: u8) -> bool {
     match record {
-        1 => ENVELOPE_TAGS.get(&tag).map_or(false, |t| t.is_list),
-        2 => APPLICATION_TAGS.get(&tag).map_or(false, |t| t.is_list),
-        3 => NEWSPHOTO_TAGS.get(&tag).map_or(false, |t| t.is_list),
+        1 => ENVELOPE_TAGS.get(&tag).is_some_and(|t| t.is_list),
+        2 => APPLICATION_TAGS.get(&tag).is_some_and(|t| t.is_list),
+        3 => NEWSPHOTO_TAGS.get(&tag).is_some_and(|t| t.is_list),
         _ => false,
     }
 }

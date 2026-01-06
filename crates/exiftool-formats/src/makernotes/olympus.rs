@@ -25,7 +25,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::{AttrValue, Attrs};
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 use exiftool_tags::generated::olympus;
 
 /// Olympus MakerNotes parser.
@@ -72,8 +72,7 @@ impl VendorParser for OlympusParser {
             (data, parent_byte_order, 0)
         };
 
-        let reader = IfdReader::new(ifd_data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(ifd_offset as u32).ok()?;
+        let entries = super::parse_ifd_entries(ifd_data, byte_order, ifd_offset as u32)?;
 
         let mut attrs = Attrs::new();
 
@@ -127,12 +126,7 @@ impl VendorParser for OlympusParser {
 
 /// Parse Olympus Equipment sub-IFD (tag 0x2010).
 fn parse_equipment_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<Attrs> {
-    if (offset as usize) >= data.len() {
-        return None;
-    }
-
-    let reader = IfdReader::new(data, byte_order, 0);
-    let (entries, _) = reader.read_ifd(offset).ok()?;
+    let entries = super::parse_ifd_entries(data, byte_order, offset)?;
 
     let mut attrs = Attrs::new();
 
@@ -148,12 +142,7 @@ fn parse_equipment_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) -> Optio
 
 /// Parse Olympus CameraSettings sub-IFD (tag 0x2020).
 fn parse_camera_settings_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<Attrs> {
-    if (offset as usize) >= data.len() {
-        return None;
-    }
-
-    let reader = IfdReader::new(data, byte_order, 0);
-    let (entries, _) = reader.read_ifd(offset).ok()?;
+    let entries = super::parse_ifd_entries(data, byte_order, offset)?;
 
     let mut attrs = Attrs::new();
 
@@ -169,12 +158,7 @@ fn parse_camera_settings_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) ->
 
 /// Parse Olympus ImageProcessing sub-IFD (tag 0x2040).
 fn parse_image_processing_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<Attrs> {
-    if (offset as usize) >= data.len() {
-        return None;
-    }
-
-    let reader = IfdReader::new(data, byte_order, 0);
-    let (entries, _) = reader.read_ifd(offset).ok()?;
+    let entries = super::parse_ifd_entries(data, byte_order, offset)?;
 
     let mut attrs = Attrs::new();
 
@@ -190,12 +174,7 @@ fn parse_image_processing_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) -
 
 /// Parse Olympus FocusInfo sub-IFD (tag 0x2050).
 fn parse_focus_info_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<Attrs> {
-    if (offset as usize) >= data.len() {
-        return None;
-    }
-
-    let reader = IfdReader::new(data, byte_order, 0);
-    let (entries, _) = reader.read_ifd(offset).ok()?;
+    let entries = super::parse_ifd_entries(data, byte_order, offset)?;
 
     let mut attrs = Attrs::new();
 

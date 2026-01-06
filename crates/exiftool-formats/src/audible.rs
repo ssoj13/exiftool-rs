@@ -29,14 +29,13 @@ impl FormatParser for AudibleParser {
         }
         // Version 4+: has ftyp box with "aax " or "aaxc"
         // (handled by Mp4Parser, but we check anyway)
-        if &header[4..8] == b"ftyp" {
-            if header.len() >= 12 {
+        if &header[4..8] == b"ftyp"
+            && header.len() >= 12 {
                 let brand = &header[8..12];
                 if brand == b"aax " || brand == b"aaxc" || brand == b"M4A " {
                     return true;
                 }
             }
-        }
         false
     }
 
@@ -60,7 +59,7 @@ impl FormatParser for AudibleParser {
         reader.read_exact(&mut header)?;
 
         // File size
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
 
         // Check if MPEG-4 based (AAX)

@@ -83,11 +83,10 @@ impl FormatParser for FffParser {
             })
             .unwrap_or(false);
 
-        if !is_hasselblad {
-            if meta.exif.get_str("Make").is_none() {
+        if !is_hasselblad
+            && meta.exif.get_str("Make").is_none() {
                 meta.exif.set("Make", AttrValue::Str("Hasselblad".to_string()));
             }
-        }
 
         Ok(meta)
     }

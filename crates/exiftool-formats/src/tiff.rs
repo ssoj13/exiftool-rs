@@ -56,6 +56,7 @@ impl Default for TiffConfig {
 /// 
 /// Handles standard TIFF files and serves as base for TIFF-based RAW formats.
 /// Use `with_config()` to customize for vendor-specific formats.
+#[derive(Default)]
 pub struct TiffParser {
     config: TiffConfig,
 }
@@ -67,11 +68,6 @@ impl TiffParser {
     }
 }
 
-impl Default for TiffParser {
-    fn default() -> Self {
-        Self { config: TiffConfig::default() }
-    }
-}
 
 impl FormatParser for TiffParser {
     fn can_parse(&self, header: &[u8]) -> bool {
@@ -219,7 +215,7 @@ impl TiffParser {
 
         if let (Some(offset), Some(length)) = (preview_start, preview_length) {
             // Sanity check: preview should be reasonable size
-            if length < 100 || length > 50_000_000 {
+            if !(100..=50_000_000).contains(&length) {
                 return;
             }
 

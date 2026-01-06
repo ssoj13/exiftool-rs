@@ -85,7 +85,7 @@ impl FormatParser for CrwParser {
         );
 
         // File size
-        let file_size = reader.seek(SeekFrom::End(0))?;
+        let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
 
         // Read root heap directory (at end of file)
@@ -272,11 +272,10 @@ impl CrwParser {
             }
             // ThumbnailImage - embedded JPEG thumbnail
             0x2003 => {
-                if size > 100 && size < 1_000_000 && data.len() >= 2 {
-                    if data[0] == 0xFF && data[1] == 0xD8 {
+                if size > 100 && size < 1_000_000 && data.len() >= 2
+                    && data[0] == 0xFF && data[1] == 0xD8 {
                         meta.thumbnail = Some(data.clone());
                     }
-                }
             }
             // RawData offset
             0x2005 => {
@@ -288,11 +287,10 @@ impl CrwParser {
                 meta.exif.set("CRW:JpgFromRawOffset", AttrValue::UInt64(offset));
                 meta.exif.set("CRW:JpgFromRawLength", AttrValue::UInt(size));
                 // Extract preview data
-                if size > 100 && size < 50_000_000 && data.len() >= 2 {
-                    if data[0] == 0xFF && data[1] == 0xD8 {
+                if size > 100 && size < 50_000_000 && data.len() >= 2
+                    && data[0] == 0xFF && data[1] == 0xD8 {
                         meta.preview = Some(data.clone());
                     }
-                }
             }
             // Description
             0x0805 => {

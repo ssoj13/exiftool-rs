@@ -72,7 +72,7 @@
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
 use exiftool_attrs::{AttrValue, Attrs};
-use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_core::ByteOrder;
 use exiftool_tags::generated::fujifilm;
 
 /// Fujifilm MakerNotes parser.
@@ -100,14 +100,9 @@ impl VendorParser for FujifilmParser {
         let byte_order = ByteOrder::LittleEndian;
 
         // IFD offset at bytes 8-11
-        let ifd_offset = u32::from_le_bytes([data[8], data[9], data[10], data[11]]) as usize;
-        
-        if ifd_offset >= data.len() {
-            return None;
-        }
+        let ifd_offset = u32::from_le_bytes([data[8], data[9], data[10], data[11]]);
 
-        let reader = IfdReader::new(data, byte_order, 0);
-        let (entries, _) = reader.read_ifd(ifd_offset as u32).ok()?;
+        let entries = super::parse_ifd_entries(data, byte_order, ifd_offset)?;
 
         let mut attrs = Attrs::new();
 
@@ -115,7 +110,7 @@ impl VendorParser for FujifilmParser {
             match entry.tag {
                 0x102E => {
                     // AFCSettings
-                    if let Some(sub_attrs) = parse_afc_settings(&entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_afc_settings(entry.value.as_bytes()?, byte_order) {
                         attrs.set("AFCSettings", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }

@@ -72,16 +72,16 @@ impl PyGPS {
         use pyo3::types::PyDict;
         let dict = PyDict::new(py);
         if let Some(lat) = self.lat {
-            dict.set_item("latitude", lat).unwrap();
+            let _ = dict.set_item("latitude", lat);
         }
         if let Some(lon) = self.lon {
-            dict.set_item("longitude", lon).unwrap();
+            let _ = dict.set_item("longitude", lon);
         }
         if let Some(alt) = self.alt {
-            dict.set_item("altitude", alt).unwrap();
+            let _ = dict.set_item("altitude", alt);
         }
         if let Some(ref ts) = self.timestamp {
-            dict.set_item("timestamp", ts).unwrap();
+            let _ = dict.set_item("timestamp", ts);
         }
         dict.into_any().unbind()
     }

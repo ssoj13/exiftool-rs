@@ -61,17 +61,9 @@ impl AviParser {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
-            // Read chunk header
-            let mut chunk_id = [0u8; 4];
-            if reader.read_exact(&mut chunk_id).is_err() {
+            let Some((chunk_id, chunk_size)) = crate::riff::read_chunk_header(reader) else {
                 break;
-            }
-
-            let mut size_buf = [0u8; 4];
-            if reader.read_exact(&mut size_buf).is_err() {
-                break;
-            }
-            let chunk_size = u32::from_le_bytes(size_buf) as u64;
+            };
 
             match &chunk_id {
                 b"LIST" => {
@@ -90,7 +82,7 @@ impl AviParser {
                         }
                         b"INFO" => {
                             // Metadata info list
-                            self.parse_info(reader, list_end, metadata)?;
+                            crate::riff::parse_info(reader, list_end, metadata)?;
                         }
                         b"strl" => {
                             // Stream header list
@@ -148,16 +140,9 @@ impl AviParser {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
-            let mut chunk_id = [0u8; 4];
-            if reader.read_exact(&mut chunk_id).is_err() {
+            let Some((chunk_id, chunk_size)) = crate::riff::read_chunk_header(reader) else {
                 break;
-            }
-
-            let mut size_buf = [0u8; 4];
-            if reader.read_exact(&mut size_buf).is_err() {
-                break;
-            }
-            let chunk_size = u32::from_le_bytes(size_buf) as u64;
+            };
 
             match &chunk_id {
                 b"avih" => {
@@ -259,16 +244,9 @@ impl AviParser {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
-            let mut chunk_id = [0u8; 4];
-            if reader.read_exact(&mut chunk_id).is_err() {
+            let Some((chunk_id, chunk_size)) = crate::riff::read_chunk_header(reader) else {
                 break;
-            }
-
-            let mut size_buf = [0u8; 4];
-            if reader.read_exact(&mut size_buf).is_err() {
-                break;
-            }
-            let chunk_size = u32::from_le_bytes(size_buf) as u64;
+            };
 
             match &chunk_id {
                 b"strh" => {
@@ -350,54 +328,10 @@ impl AviParser {
         Ok(())
     }
 
-    /// Parse INFO list (metadata).
-    fn parse_info(&self, reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metadata) -> Result<()> {
-        while reader.stream_position()? < end_pos {
-            let chunk_start = reader.stream_position()?;
-
-            let mut chunk_id = [0u8; 4];
-            if reader.read_exact(&mut chunk_id).is_err() {
-                break;
-            }
-
-            let mut size_buf = [0u8; 4];
-            if reader.read_exact(&mut size_buf).is_err() {
-                break;
-            }
-            let chunk_size = u32::from_le_bytes(size_buf) as u64;
-
-            if chunk_size > 0 && chunk_size < 64 * 1024 {
-                let mut data = vec![0u8; chunk_size as usize];
-                reader.read_exact(&mut data)?;
-                let value = String::from_utf8_lossy(&data)
-                    .trim_end_matches('\0')
-                    .to_string();
-
-                if !value.is_empty() {
-                    let tag_name = self.info_tag_name(&chunk_id);
-                    metadata.exif.set(&format!("RIFF:{}", tag_name), AttrValue::Str(value));
-                }
-            } else {
-                reader.seek(SeekFrom::Current(chunk_size as i64))?;
-            }
-
-            // Word alignment
-            let current = reader.stream_position()?;
-            if current % 2 != 0 {
-                reader.seek(SeekFrom::Current(1))?;
-            }
-
-            if reader.stream_position()? <= chunk_start {
-                break;
-            }
-        }
-
-        Ok(())
-    }
 
     /// Parse EXIF chunk.
     fn parse_exif_chunk(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
-        if size < 8 || size > 10 * 1024 * 1024 {
+        if !(8..=10 * 1024 * 1024).contains(&size) {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
         }
@@ -533,38 +467,7 @@ impl AviParser {
         Ok(())
     }
 
-    /// Get human-readable name for INFO tag.
-    fn info_tag_name(&self, tag: &[u8; 4]) -> &'static str {
-        match tag {
-            b"INAM" => "Title",
-            b"IART" => "Artist",
-            b"ICMT" => "Comment",
-            b"ICOP" => "Copyright",
-            b"ICRD" => "DateCreated",
-            b"IGNR" => "Genre",
-            b"IKEY" => "Keywords",
-            b"IMED" => "Medium",
-            b"IPRD" => "Product",
-            b"ISBJ" => "Subject",
-            b"ISFT" => "Software",
-            b"ISRC" => "Source",
-            b"ISRF" => "SourceForm",
-            b"ITCH" => "Technician",
-            b"IENG" => "Engineer",
-            b"IDIM" => "Dimensions",
-            b"IDIT" => "DateTimeOriginal",
-            b"ILNG" => "Language",
-            b"IPLT" => "Palette",
-            b"IPRT" => "Part",
-            b"IWRI" => "WrittenBy",
-            b"IWMU" => "WatermarkURL",
-            _ => {
-                // Return tag as-is for unknown
-                // Can't return dynamic string from &'static str, so just "Unknown"
-                "Unknown"
-            }
-        }
-    }
+
 }
 
 #[cfg(test)]

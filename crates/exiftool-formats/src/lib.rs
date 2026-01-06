@@ -124,6 +124,7 @@ mod r3d;
 mod rm;
 mod raf;
 mod raf_writer;
+mod riff;
 mod registry;
 mod rw2;
 mod rwl;
@@ -168,6 +169,7 @@ pub use eps::EpsParser;
 pub use erf::ErfParser;
 pub use fff::FffParser;
 pub use error::{Error, Result};
+use exiftool_attrs::AttrValue;
 pub use exr::ExrParser;
 pub use flac::FlacParser;
 pub use flv::FlvParser;
@@ -352,7 +354,7 @@ impl Metadata {
         // Try to get numeric value for interpretation
         if let Some(num) = self.exif.get_i32(key) {
             // Strip group prefix for interpretation lookup
-            let tag_name = key.split(':').last().unwrap_or(key);
+            let tag_name = key.split(':').next_back().unwrap_or(key);
             if let Some(interpreted) = exiftool_tags::interp::interpret_value(tag_name, num as i64) {
                 return Some(interpreted);
             }
@@ -369,7 +371,7 @@ impl Metadata {
     /// - FocalLength -> "50 mm"
     /// - GPS coordinates -> "40° 42' 46.08" N"
     pub fn get_display(&self, key: &str) -> Option<String> {
-        let tag_name = key.split(':').last().unwrap_or(key);
+        let tag_name = key.split(':').next_back().unwrap_or(key);
 
         match tag_name {
             "ExposureTime" => {
@@ -389,5 +391,13 @@ impl Metadata {
             }
             _ => self.get_interpreted(key),
         }
+    }
+
+    /// Set file type and MIME type attributes.
+    ///
+    /// Single source of truth for file type setting used by all format parsers.
+    pub fn set_file_type(&mut self, file_type: &str, mime_type: &str) {
+        self.exif.set("File:FileType", AttrValue::Str(file_type.to_string()));
+        self.exif.set("File:MIMEType", AttrValue::Str(mime_type.to_string()));
     }
 }
