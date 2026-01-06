@@ -25,13 +25,13 @@
 //! - SvgParser - SVG (XML-based vector graphics)
 
 use crate::{
-    AiffParser, ApeParser, ArwParser, AuParser, AviParser, BmpParser, Cr2Parser, Cr3Parser, 
-    CrwParser, DcrParser, DffParser, DsfParser, ErfParser, ExrParser, FffParser, FormatParser, 
-    GifParser, HdrParser, FlacParser, HeicParser, IcoParser, Id3Parser, IiqParser, Jp2Parser, 
-    JpegParser, JxlParser, K25Parser, KdcParser, MefParser, MkvParser, MosParser, Mp4Parser, 
-    MrwParser, NefParser, NrwParser, OggParser, OrfParser, PcxParser, PefParser, PngParser, 
-    PnmParser, RafParser, Result, Rw2Parser, RwlParser, SgiParser, SrfParser, SrwParser, 
-    SvgParser, TgaParser, TiffParser, WavParser, WebpParser, WvParser, X3fParser,
+    AacParser, AiParser, AiffParser, ApeParser, ArwParser, AsfParser, AuParser, AudibleParser, AviParser, BmpParser, BrawParser, CafParser, Cr2Parser, 
+    Cr3Parser, CrwParser, DcrParser, DffParser, DpxParser, DsfParser, EpsParser, ErfParser, ExrParser, FffParser, 
+    FlvParser, FormatParser, GifParser, HdrParser, FlacParser, HeicParser, IcoParser, Id3Parser, IiqParser, 
+    Jp2Parser, JpegParser, JxlParser, K25Parser, KdcParser, MefParser, MkvParser, MosParser, 
+    MidiParser, Mp4Parser, MpegTsParser, MrwParser, MxfParser, NefParser, NrwParser, OggParser, OrfParser, PcxParser, PefParser, 
+    PngParser, PnmParser, R3dParser, RmParser, RafParser, Result, Rw2Parser, RwlParser, SgiParser, SrfParser, SrwParser, 
+    SvgParser, TakParser, TgaParser, TiffParser, WavParser, WebpParser, WvParser, X3fParser,
 };
 
 /// Registry of format parsers with auto-detection.
@@ -66,6 +66,8 @@ impl FormatRegistry {
         r.register(Box::new(Id3Parser));           // MP3 with ID3 tags
         r.register(Box::new(FlacParser));          // FLAC audio
         r.register(Box::new(SvgParser));           // SVG vector graphics
+        r.register(Box::new(EpsParser));           // EPS/PostScript
+        r.register(Box::new(AiParser));            // Adobe Illustrator
         r.register(Box::new(PnmParser));           // PPM/PGM/PBM/PAM
         r.register(Box::new(JxlParser));           // JPEG XL
         r.register(Box::new(Jp2Parser));           // JPEG 2000
@@ -78,6 +80,19 @@ impl FormatRegistry {
         r.register(Box::new(WvParser));            // WavPack
         r.register(Box::new(DsfParser));           // DSD Stream File
         r.register(Box::new(DffParser));           // DSDIFF
+        r.register(Box::new(CafParser));           // Core Audio Format (ALAC)
+        r.register(Box::new(TakParser));           // TAK lossless
+        r.register(Box::new(MidiParser));          // MIDI
+        r.register(Box::new(AudibleParser));       // Audible AA/AAX
+        r.register(Box::new(AacParser));           // AAC ADTS
+        r.register(Box::new(AsfParser));           // ASF/WMA/WMV
+        r.register(Box::new(MpegTsParser));        // MPEG-TS/M2TS
+        r.register(Box::new(DpxParser));           // DPX film scan
+        r.register(Box::new(FlvParser));           // Flash Video
+        r.register(Box::new(MxfParser));           // MXF broadcast
+        r.register(Box::new(R3dParser));           // RED R3D
+        r.register(Box::new(BrawParser));          // Blackmagic RAW
+        r.register(Box::new(RmParser));            // Real Media
         r.register(Box::new(MkvParser));           // MKV/WebM video
         r.register(Box::new(TgaParser));           // TGA image
         r.register(Box::new(PcxParser));           // PCX image
