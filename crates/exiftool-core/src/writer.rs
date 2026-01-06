@@ -53,6 +53,11 @@ pub mod tags {
     pub const GPS_LONGITUDE: u16 = 0x0004;
     pub const GPS_ALTITUDE_REF: u16 = 0x0005;
     pub const GPS_ALTITUDE: u16 = 0x0006;
+    
+    // IFD1 (Thumbnail) tags
+    pub const COMPRESSION: u16 = 0x0103;
+    pub const JPEG_INTERCHANGE_FORMAT: u16 = 0x0201;
+    pub const JPEG_INTERCHANGE_FORMAT_LENGTH: u16 = 0x0202;
 }
 
 /// IFD entry for writing.
@@ -165,6 +170,8 @@ pub struct ExifWriter {
     ifd0: Vec<WriteEntry>,
     exif_ifd: Vec<WriteEntry>,
     gps_ifd: Vec<WriteEntry>,
+    ifd1: Vec<WriteEntry>,
+    thumbnail: Option<Vec<u8>>,
 }
 
 impl ExifWriter {
@@ -175,6 +182,8 @@ impl ExifWriter {
             ifd0: Vec::new(),
             exif_ifd: Vec::new(),
             gps_ifd: Vec::new(),
+            ifd1: Vec::new(),
+            thumbnail: None,
         }
     }
     
@@ -198,6 +207,22 @@ impl ExifWriter {
         self.gps_ifd.push(entry);
     }
     
+    /// Add entry to IFD1 (thumbnail IFD).
+    pub fn add_ifd1(&mut self, entry: WriteEntry) {
+        self.ifd1.push(entry);
+    }
+    
+    /// Set JPEG thumbnail data.
+    /// This automatically sets up IFD1 with proper compression and offset tags.
+    pub fn set_thumbnail(&mut self, jpeg_data: &[u8]) {
+        if !jpeg_data.is_empty() {
+            self.thumbnail = Some(jpeg_data.to_vec());
+            // Compression = 6 (JPEG)
+            self.ifd1.retain(|e| e.tag != tags::COMPRESSION);
+            self.ifd1.push(WriteEntry::from_u16(tags::COMPRESSION, 6));
+        }
+    }
+    
     /// Serialize to TIFF bytes.
     pub fn serialize(&self) -> Result<Vec<u8>> {
         let mut buf = Vec::with_capacity(4096);
@@ -205,46 +230,56 @@ impl ExifWriter {
         // Write header
         self.write_header(&mut buf)?;
         
-        // Calculate offsets
-        // Header = 8 bytes
-        // IFD0 starts at offset 8
+        // Header = 8 bytes, IFD0 starts at offset 8
         let ifd0_offset = 8u32;
         
         // Build IFD0 with pointers to ExifIFD and GPSIFD
         let mut ifd0_entries = self.ifd0.clone();
-        ifd0_entries.sort_by_key(|e| e.tag);
         
-        // Calculate where ExifIFD will be
-        let ifd0_size = self.calc_ifd_size(&ifd0_entries)?;
+        // Calculate where ExifIFD will be (after IFD0)
+        let _ifd0_base_size = self.calc_ifd_size(&ifd0_entries)?;
+        
+        // Add ExifIFD pointer if needed
         let exif_ifd_offset = if !self.exif_ifd.is_empty() {
-            ifd0_offset + ifd0_size
+            ifd0_entries.retain(|e| e.tag != tags::EXIF_IFD);
+            ifd0_entries.push(WriteEntry::from_u32(tags::EXIF_IFD, 0)); // placeholder
+            ifd0_offset + self.calc_ifd_size(&ifd0_entries)?
         } else {
             0
         };
         
-        // Add ExifIFD pointer to IFD0
-        if exif_ifd_offset > 0 {
-            ifd0_entries.push(WriteEntry::from_u32(tags::EXIF_IFD, exif_ifd_offset));
-            ifd0_entries.sort_by_key(|e| e.tag);
-        }
-        
-        // Recalculate IFD0 size after adding ExifIFD pointer
-        let ifd0_size = self.calc_ifd_size(&ifd0_entries)?;
-        let exif_ifd_offset = if !self.exif_ifd.is_empty() {
-            ifd0_offset + ifd0_size
-        } else {
-            0
-        };
-        
-        // Update ExifIFD pointer
-        if let Some(entry) = ifd0_entries.iter_mut().find(|e| e.tag == tags::EXIF_IFD) {
-            entry.data = exif_ifd_offset.to_le_bytes().to_vec();
-        }
-        
-        // Calculate GPSIFD offset
+        // Add GPSIFD pointer if needed
         let mut exif_entries = self.exif_ifd.clone();
         exif_entries.sort_by_key(|e| e.tag);
         let exif_ifd_size = self.calc_ifd_size(&exif_entries)?;
+        
+        let _gps_ifd_offset = if !self.gps_ifd.is_empty() {
+            ifd0_entries.retain(|e| e.tag != tags::GPS_IFD);
+            ifd0_entries.push(WriteEntry::from_u32(tags::GPS_IFD, 0)); // placeholder
+            if exif_ifd_offset > 0 {
+                exif_ifd_offset + exif_ifd_size
+            } else {
+                ifd0_offset + self.calc_ifd_size(&ifd0_entries)?
+            }
+        } else {
+            0
+        };
+        
+        // Recalculate final IFD0 size with all pointers
+        ifd0_entries.sort_by_key(|e| e.tag);
+        let ifd0_size = self.calc_ifd_size(&ifd0_entries)?;
+        
+        // Recalculate ExifIFD offset
+        let exif_ifd_offset = if !self.exif_ifd.is_empty() {
+            ifd0_offset + ifd0_size
+        } else {
+            0
+        };
+        
+        // Recalculate GPSIFD offset
+        let mut gps_entries = self.gps_ifd.clone();
+        gps_entries.sort_by_key(|e| e.tag);
+        let gps_ifd_size = self.calc_ifd_size(&gps_entries)?;
         
         let gps_ifd_offset = if !self.gps_ifd.is_empty() {
             if exif_ifd_offset > 0 {
@@ -256,17 +291,58 @@ impl ExifWriter {
             0
         };
         
-        // Add GPSIFD pointer to IFD0
-        if gps_ifd_offset > 0 {
-            ifd0_entries.push(WriteEntry::from_u32(tags::GPS_IFD, gps_ifd_offset));
-            ifd0_entries.sort_by_key(|e| e.tag);
+        // Calculate IFD1 offset (for thumbnail)
+        let has_ifd1 = self.thumbnail.is_some() || !self.ifd1.is_empty();
+        let last_ifd_end = if gps_ifd_offset > 0 {
+            gps_ifd_offset + gps_ifd_size
+        } else if exif_ifd_offset > 0 {
+            exif_ifd_offset + exif_ifd_size
+        } else {
+            ifd0_offset + ifd0_size
+        };
+        
+        let ifd1_offset = if has_ifd1 { last_ifd_end } else { 0 };
+        
+        // Build IFD1 entries with thumbnail offset/length
+        let mut ifd1_entries = self.ifd1.clone();
+        if let Some(ref thumb) = self.thumbnail {
+            // JPEGInterchangeFormat (offset) - placeholder, will be calculated
+            ifd1_entries.retain(|e| e.tag != tags::JPEG_INTERCHANGE_FORMAT && e.tag != tags::JPEG_INTERCHANGE_FORMAT_LENGTH);
+            ifd1_entries.push(WriteEntry::from_u32(tags::JPEG_INTERCHANGE_FORMAT, 0)); // placeholder
+            ifd1_entries.push(WriteEntry::from_u32(tags::JPEG_INTERCHANGE_FORMAT_LENGTH, thumb.len() as u32));
+        }
+        ifd1_entries.sort_by_key(|e| e.tag);
+        let ifd1_size = self.calc_ifd_size(&ifd1_entries)?;
+        
+        // Thumbnail data offset (right after IFD1)
+        let thumb_offset = if has_ifd1 { ifd1_offset + ifd1_size } else { 0 };
+        
+        // Update JPEGInterchangeFormat with actual offset
+        if let Some(entry) = ifd1_entries.iter_mut().find(|e| e.tag == tags::JPEG_INTERCHANGE_FORMAT) {
+            entry.data = match self.byte_order {
+                ByteOrder::LittleEndian => thumb_offset.to_le_bytes().to_vec(),
+                ByteOrder::BigEndian => thumb_offset.to_be_bytes().to_vec(),
+            };
         }
         
-        // Final recalculation (ensure entries are sorted)
-        let _ = self.calc_ifd_size(&ifd0_entries)?;
+        // Update ExifIFD pointer in IFD0
+        if let Some(entry) = ifd0_entries.iter_mut().find(|e| e.tag == tags::EXIF_IFD) {
+            entry.data = match self.byte_order {
+                ByteOrder::LittleEndian => exif_ifd_offset.to_le_bytes().to_vec(),
+                ByteOrder::BigEndian => exif_ifd_offset.to_be_bytes().to_vec(),
+            };
+        }
         
-        // Write IFD0
-        self.write_ifd(&mut buf, &ifd0_entries, ifd0_offset)?;
+        // Update GPSIFD pointer in IFD0
+        if let Some(entry) = ifd0_entries.iter_mut().find(|e| e.tag == tags::GPS_IFD) {
+            entry.data = match self.byte_order {
+                ByteOrder::LittleEndian => gps_ifd_offset.to_le_bytes().to_vec(),
+                ByteOrder::BigEndian => gps_ifd_offset.to_be_bytes().to_vec(),
+            };
+        }
+        
+        // Write IFD0 (with next_ifd pointing to IFD1 if present)
+        self.write_ifd_with_next(&mut buf, &ifd0_entries, ifd0_offset, ifd1_offset)?;
         
         // Write ExifIFD
         if !exif_entries.is_empty() {
@@ -274,10 +350,18 @@ impl ExifWriter {
         }
         
         // Write GPSIFD
-        if !self.gps_ifd.is_empty() {
-            let mut gps_entries = self.gps_ifd.clone();
-            gps_entries.sort_by_key(|e| e.tag);
+        if !gps_entries.is_empty() {
             self.write_ifd(&mut buf, &gps_entries, gps_ifd_offset)?;
+        }
+        
+        // Write IFD1
+        if has_ifd1 {
+            self.write_ifd(&mut buf, &ifd1_entries, ifd1_offset)?;
+        }
+        
+        // Write thumbnail data
+        if let Some(ref thumb) = self.thumbnail {
+            buf.write_all(thumb)?;
         }
         
         Ok(buf)
@@ -316,8 +400,13 @@ impl ExifWriter {
         u32::try_from(total).map_err(|_| Error::IfdTooLarge(total))
     }
     
-    /// Write IFD to buffer.
+    /// Write IFD to buffer (next IFD = 0).
     fn write_ifd(&self, buf: &mut Vec<u8>, entries: &[WriteEntry], ifd_offset: u32) -> Result<()> {
+        self.write_ifd_with_next(buf, entries, ifd_offset, 0)
+    }
+    
+    /// Write IFD to buffer with specified next IFD offset.
+    fn write_ifd_with_next(&self, buf: &mut Vec<u8>, entries: &[WriteEntry], ifd_offset: u32, next_ifd: u32) -> Result<()> {
         // Entry count
         self.write_u16(buf, entries.len() as u16)?;
         
@@ -347,8 +436,8 @@ impl ExifWriter {
             }
         }
         
-        // Next IFD offset (0 = no more IFDs)
-        self.write_u32(buf, 0)?;
+        // Next IFD offset
+        self.write_u32(buf, next_ifd)?;
         
         // Write data area
         buf.write_all(&data_area)?;
@@ -380,7 +469,7 @@ impl ExifWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::IfdReader;
+    use crate::{IfdReader, RawValue};
     
     #[test]
     fn serialize_simple_exif() {
@@ -424,5 +513,55 @@ mod tests {
         
         // Should have IFD0 entries + ExifIFD pointer
         assert!(entries.len() >= 4);
+    }
+    
+    #[test]
+    fn write_thumbnail() {
+        let mut writer = ExifWriter::new_le();
+        writer.add_ifd0(WriteEntry::from_str(tags::MAKE, "TestCam"));
+        
+        // Minimal valid JPEG (SOI + EOI)
+        let thumb_data = vec![0xFF, 0xD8, 0xFF, 0xD9];
+        writer.set_thumbnail(&thumb_data);
+        
+        let bytes = writer.serialize().unwrap();
+        
+        // Parse IFD0
+        let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian, 0);
+        let offset = reader.parse_header().unwrap();
+        let (ifd0_entries, next_ifd) = reader.read_ifd(offset).unwrap();
+        
+        // IFD0 should have Make entry
+        assert!(!ifd0_entries.is_empty());
+        
+        // Should point to IFD1
+        assert!(next_ifd > 0, "IFD0 should point to IFD1");
+        
+        // Parse IFD1
+        let (ifd1_entries, _) = reader.read_ifd(next_ifd).unwrap();
+        
+        // IFD1 should have Compression, JPEGInterchangeFormat, JPEGInterchangeFormatLength
+        assert!(ifd1_entries.len() >= 3, "IFD1 should have at least 3 entries");
+        
+        // Find thumbnail offset and verify data
+        let thumb_offset_entry = ifd1_entries.iter()
+            .find(|e| e.tag == tags::JPEG_INTERCHANGE_FORMAT)
+            .expect("Should have JPEGInterchangeFormat");
+        let thumb_offset = match &thumb_offset_entry.value {
+            RawValue::UInt32(v) if !v.is_empty() => v[0] as usize,
+            _ => panic!("Expected UInt32 for JPEGInterchangeFormat"),
+        };
+        
+        let thumb_len_entry = ifd1_entries.iter()
+            .find(|e| e.tag == tags::JPEG_INTERCHANGE_FORMAT_LENGTH)
+            .expect("Should have JPEGInterchangeFormatLength");
+        let thumb_len = match &thumb_len_entry.value {
+            RawValue::UInt32(v) if !v.is_empty() => v[0] as usize,
+            _ => panic!("Expected UInt32 for JPEGInterchangeFormatLength"),
+        };
+        
+        // Verify thumbnail data
+        assert_eq!(thumb_len, 4);
+        assert_eq!(&bytes[thumb_offset..thumb_offset + thumb_len], &thumb_data);
     }
 }

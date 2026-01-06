@@ -99,7 +99,7 @@
   - [x] CR3 (THMB/PRVW boxes)
   - [x] ORF/RW2 (via TIFF IFD0 strips)
 - [x] CLI preview extraction (-P flag)
-- [ ] Thumbnail write/update
+- [x] Thumbnail write/update (IFD1 support in ExifWriter)
 
 ### 1.6 BigTIFF Support
 - [x] 8-byte offset handling
@@ -215,22 +215,22 @@
 ## Phase 4: MakerNotes Expansion (Priority: MEDIUM)
 
 ### 4.1 Major Manufacturers (Missing)
-- [ ] Minolta MakerNotes
-  - [ ] Main tags
-  - [ ] CameraSettings
-  - [ ] MinoltaRaw specifics
-- [ ] Sigma MakerNotes
-  - [ ] Main tags
-  - [ ] X3F specifics
-- [ ] Kodak MakerNotes
-  - [ ] Main tags
-  - [ ] IFD structure
-- [ ] Casio MakerNotes
-  - [ ] Type 1 (QV series)
-  - [ ] Type 2 (EX series)
-- [ ] Ricoh MakerNotes
-  - [ ] Main tags
-  - [ ] GR series specifics
+- [x] Minolta MakerNotes
+  - [x] Main tags
+  - [x] CameraSettings
+  - [x] MinoltaRaw specifics
+- [x] Sigma MakerNotes
+  - [x] Main tags
+  - [x] X3F specifics
+- [x] Kodak MakerNotes
+  - [x] Main tags
+  - [x] IFD structure
+- [x] Casio MakerNotes
+  - [x] Type 1 (QV series)
+  - [x] Type 2 (EX series)
+- [x] Ricoh MakerNotes
+  - [x] Main tags
+  - [x] GR series specifics
 
 ### 4.2 Action Cameras/Drones
 - [x] DJI MakerNotes
@@ -243,10 +243,10 @@
 - [ ] Insta360 MakerNotes
 
 ### 4.3 Medium Format
-- [ ] Phase One MakerNotes
-- [ ] Hasselblad MakerNotes
-- [ ] Mamiya MakerNotes
-- [ ] Leaf MakerNotes
+- [x] Phase One MakerNotes
+- [x] Hasselblad MakerNotes
+- [x] Mamiya MakerNotes (via Phase One)
+- [x] Leaf MakerNotes (via Phase One)
 
 ### 4.4 Legacy/Other
 - [ ] HP MakerNotes
@@ -257,11 +257,11 @@
 - [ ] FLIR MakerNotes (thermal)
 - [ ] Parrot MakerNotes (drones)
 - [ ] Qualcomm MakerNotes (phones)
-- [ ] Google MakerNotes (Pixel)
+- [x] Google MakerNotes (Pixel)
 - [ ] Motorola MakerNotes
 - [ ] LG MakerNotes
-- [ ] Huawei MakerNotes
-- [ ] Xiaomi MakerNotes
+- [x] Huawei MakerNotes (includes Honor)
+- [x] Xiaomi MakerNotes (includes Redmi, Poco)
 - [ ] OnePlus MakerNotes
 
 ### 4.5 MakerNotes Infrastructure
@@ -693,10 +693,10 @@ Last updated: 2025-01-06
 | Phase | Progress | Notes |
 |-------|----------|-------|
 | Phase 0 | 100% | Audit complete |
-| Phase 1 | 95% | IPTC, XMP, ICC, ValueInterp, Thumbnail, RAW Preview, BigTIFF, Multi-page done |
+| Phase 1 | 100% | IPTC, XMP, ICC, ValueInterp, Thumbnail extract+write, RAW Preview, BigTIFF, Multi-page done |
 | Phase 2 | 100% | All image formats complete |
 | Phase 3 | 100% | All RAW formats complete (RWZ skipped) |
-| Phase 4 | 25% | 11/44 vendors (added DJI, GoPro) |
+| Phase 4 | 50% | 21/44 vendors (Minolta, Sigma, Kodak, Casio, Ricoh, PhaseOne, Hasselblad, Google, Huawei, Xiaomi) |
 | Phase 5 | 100% | All video formats complete |
 | Phase 6 | 100% | All audio formats complete |
 | Phase 7 | 0% | Not started |

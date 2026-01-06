@@ -26,29 +26,49 @@
 //! - DJI: Drone telemetry (SpeedX/Y/Z, Pitch/Yaw/Roll, CameraPitch/Yaw/Roll)
 //! - GoPro: GPMF format (Accelerometer, Gyroscope, GPS, Temperature, etc.)
 
+mod apple;
 mod canon;
+mod casio;
 mod dji;
-mod nikon;
-mod sony;
 mod fujifilm;
+mod google;
 mod gopro;
+mod hasselblad;
+mod huawei;
+mod kodak;
+mod minolta;
+mod nikon;
 mod olympus;
 mod panasonic;
 mod pentax;
+mod phaseone;
+mod ricoh;
 mod samsung;
-mod apple;
+mod sigma;
+mod sony;
+mod xiaomi;
 
+pub use apple::AppleParser;
 pub use canon::CanonParser;
+pub use casio::CasioParser;
 pub use dji::DjiParser;
-pub use nikon::NikonParser;
-pub use sony::SonyParser;
 pub use fujifilm::FujifilmParser;
+pub use google::GoogleParser;
 pub use gopro::GoProParser;
+pub use hasselblad::HasselbladParser;
+pub use huawei::HuaweiParser;
+pub use kodak::KodakParser;
+pub use minolta::MinoltaParser;
+pub use nikon::NikonParser;
 pub use olympus::OlympusParser;
 pub use panasonic::PanasonicParser;
 pub use pentax::PentaxParser;
+pub use phaseone::PhaseOneParser;
+pub use ricoh::RicohParser;
 pub use samsung::SamsungParser;
-pub use apple::AppleParser;
+pub use sigma::SigmaParser;
+pub use sony::SonyParser;
+pub use xiaomi::XiaomiParser;
 
 use exiftool_attrs::{Attrs, AttrValue};
 use exiftool_core::ByteOrder;
@@ -56,17 +76,27 @@ use exiftool_core::ByteOrder;
 /// Detected camera vendor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Vendor {
+    Apple,
     Canon,
+    Casio,
     Dji,
-    Nikon,
-    Sony,
     Fujifilm,
+    Google,
     GoPro,
+    Hasselblad,
+    Huawei,
+    Kodak,
+    Minolta,
+    Nikon,
     Olympus,
     Panasonic,
     Pentax,
+    PhaseOne,
+    Ricoh,
     Samsung,
-    Apple,
+    Sigma,
+    Sony,
+    Xiaomi,
     Unknown,
 }
 
@@ -86,8 +116,11 @@ impl Vendor {
             Vendor::Olympus
         } else if make_lower.contains("panasonic") || make_lower.contains("leica") {
             Vendor::Panasonic
-        } else if make_lower.contains("pentax") || make_lower.contains("ricoh") {
+        } else if make_lower.contains("pentax") {
             Vendor::Pentax
+        } else if make_lower.contains("ricoh") {
+            // Ricoh cameras (not Pentax-based)
+            Vendor::Ricoh
         } else if make_lower.contains("samsung") {
             Vendor::Samsung
         } else if make_lower.contains("apple") {
@@ -96,6 +129,24 @@ impl Vendor {
             Vendor::Dji
         } else if make_lower.contains("gopro") {
             Vendor::GoPro
+        } else if make_lower.contains("minolta") || make_lower.contains("konica") {
+            Vendor::Minolta
+        } else if make_lower.contains("sigma") || make_lower.contains("foveon") {
+            Vendor::Sigma
+        } else if make_lower.contains("kodak") {
+            Vendor::Kodak
+        } else if make_lower.contains("casio") {
+            Vendor::Casio
+        } else if make_lower.contains("hasselblad") {
+            Vendor::Hasselblad
+        } else if make_lower.contains("phase one") || make_lower.contains("phaseone") || make_lower.contains("leaf") || make_lower.contains("mamiya") {
+            Vendor::PhaseOne
+        } else if make_lower.contains("huawei") || make_lower.contains("honor") {
+            Vendor::Huawei
+        } else if make_lower.contains("xiaomi") || make_lower.contains("redmi") || make_lower.contains("poco") {
+            Vendor::Xiaomi
+        } else if make_lower.contains("google") {
+            Vendor::Google
         } else {
             Vendor::Unknown
         }
@@ -104,17 +155,27 @@ impl Vendor {
     /// Get vendor name as string.
     pub fn name(&self) -> &'static str {
         match self {
+            Vendor::Apple => "Apple",
             Vendor::Canon => "Canon",
-            Vendor::Nikon => "Nikon",
-            Vendor::Sony => "Sony",
+            Vendor::Casio => "Casio",
+            Vendor::Dji => "DJI",
             Vendor::Fujifilm => "Fujifilm",
+            Vendor::Google => "Google",
+            Vendor::GoPro => "GoPro",
+            Vendor::Hasselblad => "Hasselblad",
+            Vendor::Huawei => "Huawei",
+            Vendor::Kodak => "Kodak",
+            Vendor::Minolta => "Minolta",
+            Vendor::Nikon => "Nikon",
             Vendor::Olympus => "Olympus",
             Vendor::Panasonic => "Panasonic",
             Vendor::Pentax => "Pentax",
+            Vendor::PhaseOne => "Phase One",
+            Vendor::Ricoh => "Ricoh",
             Vendor::Samsung => "Samsung",
-            Vendor::Apple => "Apple",
-            Vendor::Dji => "DJI",
-            Vendor::GoPro => "GoPro",
+            Vendor::Sigma => "Sigma",
+            Vendor::Sony => "Sony",
+            Vendor::Xiaomi => "Xiaomi",
             Vendor::Unknown => "Unknown",
         }
     }
@@ -158,17 +219,27 @@ pub fn parse(data: &[u8], vendor: Vendor, parent_byte_order: ByteOrder) -> Optio
     }
 
     let parser: &dyn VendorParser = match vendor {
+        Vendor::Apple => &AppleParser,
         Vendor::Canon => &CanonParser,
-        Vendor::Nikon => &NikonParser,
-        Vendor::Sony => &SonyParser,
+        Vendor::Casio => &CasioParser,
+        Vendor::Dji => &DjiParser,
         Vendor::Fujifilm => &FujifilmParser,
+        Vendor::Google => &GoogleParser,
+        Vendor::GoPro => &GoProParser,
+        Vendor::Hasselblad => &HasselbladParser,
+        Vendor::Huawei => &HuaweiParser,
+        Vendor::Kodak => &KodakParser,
+        Vendor::Minolta => &MinoltaParser,
+        Vendor::Nikon => &NikonParser,
         Vendor::Olympus => &OlympusParser,
         Vendor::Panasonic => &PanasonicParser,
         Vendor::Pentax => &PentaxParser,
+        Vendor::PhaseOne => &PhaseOneParser,
+        Vendor::Ricoh => &RicohParser,
         Vendor::Samsung => &SamsungParser,
-        Vendor::Apple => &AppleParser,
-        Vendor::Dji => &DjiParser,
-        Vendor::GoPro => &GoProParser,
+        Vendor::Sigma => &SigmaParser,
+        Vendor::Sony => &SonyParser,
+        Vendor::Xiaomi => &XiaomiParser,
         Vendor::Unknown => return None,
     };
 
@@ -198,7 +269,20 @@ mod tests {
         assert_eq!(Vendor::from_make("Panasonic"), Vendor::Panasonic);
         assert_eq!(Vendor::from_make("LEICA"), Vendor::Panasonic);
         assert_eq!(Vendor::from_make("PENTAX"), Vendor::Pentax);
-        assert_eq!(Vendor::from_make("RICOH IMAGING"), Vendor::Pentax);
+        assert_eq!(Vendor::from_make("RICOH IMAGING"), Vendor::Ricoh);
+        assert_eq!(Vendor::from_make("MINOLTA"), Vendor::Minolta);
+        assert_eq!(Vendor::from_make("KONICA MINOLTA"), Vendor::Minolta);
+        assert_eq!(Vendor::from_make("SIGMA"), Vendor::Sigma);
+        assert_eq!(Vendor::from_make("KODAK"), Vendor::Kodak);
+        assert_eq!(Vendor::from_make("CASIO"), Vendor::Casio);
+        assert_eq!(Vendor::from_make("HASSELBLAD"), Vendor::Hasselblad);
+        assert_eq!(Vendor::from_make("Phase One"), Vendor::PhaseOne);
+        assert_eq!(Vendor::from_make("Leaf"), Vendor::PhaseOne);
+        assert_eq!(Vendor::from_make("HUAWEI"), Vendor::Huawei);
+        assert_eq!(Vendor::from_make("HONOR"), Vendor::Huawei);
+        assert_eq!(Vendor::from_make("Xiaomi"), Vendor::Xiaomi);
+        assert_eq!(Vendor::from_make("Redmi"), Vendor::Xiaomi);
+        assert_eq!(Vendor::from_make("Google"), Vendor::Google);
         assert_eq!(Vendor::from_make("SAMSUNG"), Vendor::Samsung);
         assert_eq!(Vendor::from_make("Apple"), Vendor::Apple);
         assert_eq!(Vendor::from_make("DJI"), Vendor::Dji);
