@@ -25,9 +25,10 @@
 //! - SvgParser - SVG (XML-based vector graphics)
 
 use crate::{
-    ArwParser, BmpParser, Cr2Parser, Cr3Parser, ExrParser, FormatParser, GifParser, HdrParser, 
-    FlacParser, HeicParser, IcoParser, Id3Parser, JpegParser, Mp4Parser, NefParser, OrfParser, PefParser, PngParser, 
-    RafParser, Result, Rw2Parser, SvgParser, TiffParser, WebpParser,
+    ArwParser, AviParser, BmpParser, Cr2Parser, Cr3Parser, ExrParser, FormatParser, GifParser, 
+    HdrParser, FlacParser, HeicParser, IcoParser, Id3Parser, Jp2Parser, JpegParser, JxlParser, 
+    MkvParser, Mp4Parser, NefParser, OrfParser, PefParser, PngParser, PnmParser, RafParser, Result, 
+    Rw2Parser, SvgParser, TiffParser, WebpParser,
 };
 
 /// Registry of format parsers with auto-detection.
@@ -62,6 +63,11 @@ impl FormatRegistry {
         r.register(Box::new(Id3Parser));           // MP3 with ID3 tags
         r.register(Box::new(FlacParser));          // FLAC audio
         r.register(Box::new(SvgParser));           // SVG vector graphics
+        r.register(Box::new(PnmParser));           // PPM/PGM/PBM/PAM
+        r.register(Box::new(JxlParser));           // JPEG XL
+        r.register(Box::new(Jp2Parser));           // JPEG 2000
+        r.register(Box::new(AviParser));           // AVI video
+        r.register(Box::new(MkvParser));           // MKV/WebM video
         
         // TIFF-based formats (detected by extension, not magic)
         r.register(Box::new(Cr2Parser::new()));   // Canon CR2
