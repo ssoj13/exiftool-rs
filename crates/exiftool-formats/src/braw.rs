@@ -137,8 +137,7 @@ fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata
                     let mut data = [0u8; 84];
                     reader.read_exact(&mut data)?;
                     
-                    let version = data[0];
-                    let (width_off, height_off) = if version == 1 { (76, 80) } else { (76, 80) };
+                    let (width_off, height_off) = (76, 80);
                     
                     // Width/height are 16.16 fixed point
                     let width = u32::from_be_bytes([
