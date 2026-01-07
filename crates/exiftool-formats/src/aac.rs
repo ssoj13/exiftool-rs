@@ -36,8 +36,7 @@ impl FormatParser for AacParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("AAC");
-        meta.exif.set("File:FileType", AttrValue::Str("AAC".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/aac".to_string()));
+        meta.set_file_type("AAC", "audio/aac");
         meta.exif.set("Audio:Codec", AttrValue::Str("AAC".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;

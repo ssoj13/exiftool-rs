@@ -40,8 +40,7 @@ impl FormatParser for AuParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("AU");
-        meta.exif.set("File:FileType", AttrValue::Str("AU".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/basic".to_string()));
+        meta.set_file_type("AU", "audio/basic");
 
         // Read header (24 bytes minimum)
         let mut header = [0u8; 24];

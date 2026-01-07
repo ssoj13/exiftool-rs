@@ -46,8 +46,7 @@ impl FormatParser for OggParser {
         if first_page.len() >= 7 {
             if &first_page[1..7] == b"vorbis" {
                 meta.format = "OGG";
-                meta.exif.set("File:FileType", AttrValue::Str("OGG".to_string()));
-                meta.exif.set("File:MIMEType", AttrValue::Str("audio/ogg".to_string()));
+                meta.set_file_type("OGG", "audio/ogg");
                 meta.exif.set("Audio:Codec", AttrValue::Str("Vorbis".to_string()));
                 
                 // Parse Vorbis identification header
@@ -56,8 +55,7 @@ impl FormatParser for OggParser {
                 }
             } else if &first_page[0..8] == b"OpusHead" {
                 meta.format = "OPUS";
-                meta.exif.set("File:FileType", AttrValue::Str("OPUS".to_string()));
-                meta.exif.set("File:MIMEType", AttrValue::Str("audio/opus".to_string()));
+                meta.set_file_type("OPUS", "audio/opus");
                 meta.exif.set("Audio:Codec", AttrValue::Str("Opus".to_string()));
                 
                 // Parse Opus header
@@ -66,13 +64,11 @@ impl FormatParser for OggParser {
                 }
             } else if &first_page[0..5] == b"\x7fFLAC" {
                 meta.format = "OGG";
-                meta.exif.set("File:FileType", AttrValue::Str("OGG".to_string()));
-                meta.exif.set("File:MIMEType", AttrValue::Str("audio/ogg".to_string()));
+                meta.set_file_type("OGG", "audio/ogg");
                 meta.exif.set("Audio:Codec", AttrValue::Str("FLAC".to_string()));
             } else if &first_page[1..7] == b"theora" {
                 meta.format = "OGV";
-                meta.exif.set("File:FileType", AttrValue::Str("OGV".to_string()));
-                meta.exif.set("File:MIMEType", AttrValue::Str("video/ogg".to_string()));
+                meta.set_file_type("OGV", "video/ogg");
                 meta.exif.set("Video:Codec", AttrValue::Str("Theora".to_string()));
             }
         }

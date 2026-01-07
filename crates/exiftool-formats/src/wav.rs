@@ -41,8 +41,7 @@ impl FormatParser for WavParser {
         let file_size = u32::from_le_bytes([header[4], header[5], header[6], header[7]]) as u64 + 8;
 
         let mut metadata = Metadata::new("WAV");
-        metadata.exif.set("File:FileType", AttrValue::Str("WAV".to_string()));
-        metadata.exif.set("File:MIMEType", AttrValue::Str("audio/wav".to_string()));
+        metadata.set_file_type("WAV", "audio/wav");
         metadata.exif.set("File:FileSize", AttrValue::UInt(file_size as u32));
 
         self.parse_chunks(reader, file_size, &mut metadata)?;

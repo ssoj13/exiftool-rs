@@ -31,8 +31,7 @@ impl FormatParser for MidiParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("MIDI");
-        meta.exif.set("File:FileType", AttrValue::Str("MIDI".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/midi".to_string()));
+        meta.set_file_type("MIDI", "audio/midi");
 
         reader.seek(SeekFrom::Start(0))?;
 

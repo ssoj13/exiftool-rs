@@ -49,8 +49,7 @@ impl FormatParser for AudibleParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("AA");
-        meta.exif.set("File:FileType", AttrValue::Str("AA".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/vnd.audible.aax".to_string()));
+        meta.set_file_type("AA", "audio/vnd.audible.aax");
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -65,7 +64,7 @@ impl FormatParser for AudibleParser {
         // Check if MPEG-4 based (AAX)
         if &header[4..8] == b"ftyp" {
             meta.format = "AAX";
-            meta.exif.set("File:FileType", AttrValue::Str("AAX".to_string()));
+            meta.set_file_type("AAX", "audio/vnd.audible.aax");
             meta.exif.set("Audible:Format", AttrValue::Str("AAX (MPEG-4)".to_string()));
             // AAX parsing is handled better by Mp4Parser
             return Ok(meta);

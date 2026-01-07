@@ -31,8 +31,7 @@ impl FormatParser for MrwParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("MRW");
-        meta.exif.set("File:FileType", AttrValue::Str("MRW".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("image/x-minolta-mrw".to_string()));
+        meta.set_file_type("MRW", "image/x-minolta-mrw");
         meta.exif.set("Make", AttrValue::Str("Minolta".to_string()));
 
         // Read header

@@ -38,8 +38,7 @@ impl FormatParser for CafParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("CAF");
-        meta.exif.set("File:FileType", AttrValue::Str("CAF".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/x-caf".to_string()));
+        meta.set_file_type("CAF", "audio/x-caf");
 
         reader.seek(SeekFrom::Start(0))?;
 

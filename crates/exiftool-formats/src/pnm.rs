@@ -121,7 +121,7 @@ impl FormatParser for PnmParser {
         let mut metadata = Metadata::new(pnm_type.name());
 
         // Set format info
-        metadata.exif.set("File:FileType", AttrValue::Str(pnm_type.name().to_string()));
+        metadata.set_file_type(pnm_type.name(), "image/x-portable-anymap");
         metadata.exif.set("File:ColorType", AttrValue::Str(pnm_type.color_type().to_string()));
         metadata.exif.set("File:Encoding", AttrValue::Str(pnm_type.encoding().to_string()));
 

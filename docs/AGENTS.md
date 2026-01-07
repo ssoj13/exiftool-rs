@@ -1,7 +1,9 @@
 # ExifTool-RS: Architecture & Dataflow Documentation
 
 > Auto-generated documentation for AI agents and developers.
-> Last updated: 2026-01-06
+> Last updated: 2026-01-06 (Bug Hunt #2)
+>
+> **STATUS**: Most issues from plan1.md have been FIXED. See plan2.md for current state.
 
 ## Table of Contents
 
@@ -511,6 +513,9 @@ impl ArwParser {
     │   • Core(exiftool_core::Error)     ← #[from]    │
     │   • Io(std::io::Error)             ← #[from]    │
     │   • FileTooLarge(u64, u64)                      │
+    │   • Xmp(exiftool_xmp::Error)       ← #[from] ✓ FIXED
+    │   • Icc(exiftool_icc::Error)       ← #[from] ✓ FIXED
+    │   • Iptc(exiftool_iptc::Error)     ← #[from] ✓ FIXED
     └─────────────────────────────────────────────────┘
                               │
                               │ (CLI consumes)
@@ -521,16 +526,12 @@ impl ArwParser {
                     └─────────────────────┘
 
 
-  ⚠️ KNOWN ISSUES:
-  
-  1. exiftool_xmp::Error::Io(String) - NOT using #[from]!
-     Should be: Io(#[from] std::io::Error)
-     
-  2. No From impl: exiftool_xmp::Error → exiftool_formats::Error
-  
-  3. No From impl: exiftool_icc::Error → exiftool_formats::Error
-  
-  4. No From impl: exiftool_iptc::Error → exiftool_formats::Error
+  ✅ FIXED ISSUES (from plan1.md):
+
+  1. ✓ exiftool_xmp::Error::Io - NOW uses #[from] std::io::Error
+  2. ✓ From impl: exiftool_xmp::Error → exiftool_formats::Error (line 27)
+  3. ✓ From impl: exiftool_icc::Error → exiftool_formats::Error (line 30)
+  4. ✓ From impl: exiftool_iptc::Error → exiftool_formats::Error (line 33)
 ```
 
 ### Error Handling Best Practices
@@ -638,33 +639,34 @@ registry.rs:FormatRegistry::default()
 
 ## Known Issues & TODOs
 
-### Active TODOs in Code
+### Active TODOs in Code (2 items)
 
-| Location | Issue |
-|----------|-------|
-| `exiftool-py/src/scan.rs:62` | `TODO: collect errors for reporting` |
-| `exiftool-formats/src/heic_writer.rs:861` | `TODO: Full implementation would...` |
+| Location | Issue | Status |
+|----------|-------|--------|
+| `exiftool-py/src/scan.rs:62` | `TODO: collect errors for reporting` | OPEN |
+| `exiftool-formats/src/heic_writer.rs:861` | `TODO: Full implementation would...` | LOW PRIORITY |
 
 ### Architecture Issues
 
 1. **FormatWriter trait not implemented** - Writers use standalone functions
 2. **Inconsistent writer signatures** - JpegWriter differs from others
 3. **No writer registry** - CLI uses match statement
-4. **TIFF parsers can_parse() returns false** - Rely on extension fallback
-5. **Dead code with #[allow(dead_code)]** - 14 locations need cleanup
+4. **set_file_type() method unused** - Added at `lib.rs:399` but 90+ parsers use old pattern
+5. **Dead code with #[allow(dead_code)]** - 13 locations (some justified, see plan2.md)
 
-### Error Handling Issues
+### ✅ FIXED Issues (plan1.md)
 
-1. **XMP: Io(String)** - Should use `#[from] std::io::Error`
-2. **PyO3 unwrap()** - `gps.rs:75-84` may panic
-3. **Missing From impls** - XMP/ICC/IPTC errors don't convert to formats::Error
+1. ✓ **XMP: Io(String)** - NOW uses `#[from] std::io::Error`
+2. ✓ **PyO3 unwrap()** - NOW uses `let _ = dict.set_item()` pattern
+3. ✓ **Missing From impls** - XMP/ICC/IPTC errors NOW convert to formats::Error
+4. ✓ **MakerNotes IFD parsing** - `parse_ifd_entries()` helper added, used by 26+ parsers
+5. ✓ **get_file_size()** helper added to utils.rs, used by 27+ parsers
+6. ✓ **RIFF parsing** - `riff.rs` module created with common parsing
 
-### Code Duplication
+### Remaining Code Patterns to Unify
 
-1. **MakerNotes IFD parsing** - 26 similar implementations
-2. **Reader initialization** - `seek(0)` + file size pattern (46+ times)
-3. **File type setting** - `set("File:FileType", ...)` (90+ times)
-4. **RIFF parsing** - WAV and AVI duplicate logic
+1. **File type setting** - `set("File:FileType", ...)` (90+ times) → should use `set_file_type()`
+2. **nikon.rs** - Line 154 still uses `IfdReader::new` directly instead of helper
 
 ---
 

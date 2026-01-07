@@ -41,8 +41,7 @@ impl FormatParser for CrwParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("CRW");
-        meta.exif.set("File:FileType", AttrValue::Str("CRW".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("image/x-canon-crw".to_string()));
+        meta.set_file_type("CRW", "image/x-canon-crw");
 
         // Read header
         let mut header = [0u8; 26];

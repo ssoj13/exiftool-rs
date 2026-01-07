@@ -47,8 +47,7 @@ impl FormatParser for MpegTsParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("MPEG-TS");
-        meta.exif.set("File:FileType", AttrValue::Str("MPEG-TS".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("video/mp2t".to_string()));
+        meta.set_file_type("MPEG-TS", "video/mp2t");
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -66,7 +65,7 @@ impl FormatParser for MpegTsParser {
             (TS_PACKET_SIZE, false)
         } else if probe[4] == SYNC_BYTE {
             meta.format = "M2TS";
-            meta.exif.set("File:FileType", AttrValue::Str("M2TS".to_string()));
+            meta.set_file_type("M2TS", "");
             meta.exif.set("MPEG:Container", AttrValue::Str("BDAV (Blu-ray)".to_string()));
             (M2TS_PACKET_SIZE, true)
         } else {

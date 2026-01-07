@@ -66,7 +66,6 @@ impl FormatParser for Jp2Parser {
         reader.seek(SeekFrom::Start(0))?;
 
         let mut metadata = Metadata::new("JP2");
-        metadata.exif.set("File:MIMEType", AttrValue::Str("image/jp2".to_string()));
 
         // Check format type
         if bytes_read >= 12
@@ -74,11 +73,10 @@ impl FormatParser for Jp2Parser {
             && &header[4..8] == b"jP  "
             && &header[8..12] == JP2_SIGNATURE
         {
-            metadata.exif.set("File:FileType", AttrValue::Str("JP2".to_string()));
+            metadata.set_file_type("JP2", "image/jp2");
             self.parse_jp2_container(reader, &mut metadata)?;
         } else if bytes_read >= 2 && &header[0..2] == J2K_SOC_MARKER {
-            metadata.exif.set("File:FileType", AttrValue::Str("J2K".to_string()));
-            metadata.exif.set("File:MIMEType", AttrValue::Str("image/j2c".to_string()));
+            metadata.set_file_type("J2K", "image/j2c");
             self.parse_codestream(reader, &mut metadata)?;
         } else {
             return Err(Error::InvalidStructure("Invalid JPEG 2000 signature".into()));
@@ -179,7 +177,7 @@ impl Jp2Parser {
             }
             "jpx " | "jpx" => {
                 metadata.format = "JPX";
-                metadata.exif.set("File:FileType", AttrValue::Str("JPX".to_string()));
+                metadata.set_file_type("JPX", "image/jpx");
             }
             _ => {}
         }

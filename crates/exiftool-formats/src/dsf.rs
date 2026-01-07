@@ -36,8 +36,7 @@ impl FormatParser for DsfParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("DSF");
-        meta.exif.set("File:FileType", AttrValue::Str("DSF".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/x-dsf".to_string()));
+        meta.set_file_type("DSF", "audio/x-dsf");
         meta.exif.set("Audio:Codec", AttrValue::Str("DSD".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;
@@ -178,8 +177,7 @@ impl FormatParser for DffParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("DFF");
-        meta.exif.set("File:FileType", AttrValue::Str("DFF".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/x-dff".to_string()));
+        meta.set_file_type("DFF", "audio/x-dff");
         meta.exif.set("Audio:Codec", AttrValue::Str("DSD".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;

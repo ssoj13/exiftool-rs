@@ -203,15 +203,13 @@ impl MkvParser {
                     match doc_type.as_str() {
                         "webm" => {
                             metadata.format = "WebM";
-                            metadata.exif.set("File:FileType", AttrValue::Str("WebM".to_string()));
-                            metadata.exif.set("File:MIMEType", AttrValue::Str("video/webm".to_string()));
+                            metadata.set_file_type("WebM", "video/webm");
                         }
                         "matroska" => {
-                            metadata.exif.set("File:FileType", AttrValue::Str("MKV".to_string()));
-                            metadata.exif.set("File:MIMEType", AttrValue::Str("video/x-matroska".to_string()));
+                            metadata.set_file_type("MKV", "video/x-matroska");
                         }
                         _ => {
-                            metadata.exif.set("File:FileType", AttrValue::Str("MKV".to_string()));
+                            metadata.set_file_type("MKV", "");
                         }
                     }
                 }

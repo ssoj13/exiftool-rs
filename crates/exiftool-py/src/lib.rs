@@ -24,6 +24,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<rational::PyRational>()?;
     m.add_class::<gps::PyGPS>()?;
     m.add_class::<scan::PyScanResult>()?;
+    m.add_class::<scan::ScanError>()?;
 
     // Exceptions
     m.add("ExifError", m.py().get_type::<error::ExifError>())?;

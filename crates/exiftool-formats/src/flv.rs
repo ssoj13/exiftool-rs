@@ -29,8 +29,7 @@ impl FormatParser for FlvParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("FLV");
-        meta.exif.set("File:FileType", AttrValue::Str("FLV".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("video/x-flv".to_string()));
+        meta.set_file_type("FLV", "video/x-flv");
 
         reader.seek(SeekFrom::Start(0))?;
 

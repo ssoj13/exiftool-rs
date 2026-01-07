@@ -31,8 +31,7 @@ impl FormatParser for ApeParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("APE");
-        meta.exif.set("File:FileType", AttrValue::Str("APE".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/x-ape".to_string()));
+        meta.set_file_type("APE", "audio/x-ape");
         meta.exif.set("Audio:Codec", AttrValue::Str("Monkey's Audio".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;

@@ -34,8 +34,7 @@ impl FormatParser for TakParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("TAK");
-        meta.exif.set("File:FileType", AttrValue::Str("TAK".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/x-tak".to_string()));
+        meta.set_file_type("TAK", "audio/x-tak");
         meta.exif.set("Audio:Codec", AttrValue::Str("TAK".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;

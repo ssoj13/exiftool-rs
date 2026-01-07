@@ -57,8 +57,7 @@ impl FormatParser for AiffParser {
         let is_aifc = &header[8..12] == b"AIFC";
         let format_name = if is_aifc { "AIFC" } else { "AIFF" };
         meta.format = if is_aifc { "AIFC" } else { "AIFF" };
-        meta.exif.set("File:FileType", AttrValue::Str(format_name.to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/aiff".to_string()));
+        meta.set_file_type(format_name, "audio/aiff");
 
         // Parse chunks
         self.parse_chunks(reader, &mut meta, 12, file_size)?;

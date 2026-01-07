@@ -135,7 +135,6 @@ pub fn tag_name(sig: &str) -> &str {
 }
 
 /// Technology type values.
-#[allow(dead_code)]
 pub fn technology_name(sig: &str) -> &'static str {
     match sig {
         "fscn" => "Film Scanner",

@@ -39,8 +39,7 @@ impl FormatParser for BrawParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("BRAW");
-        meta.exif.set("File:FileType", AttrValue::Str("BRAW".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("video/x-blackmagic-raw".to_string()));
+        meta.set_file_type("BRAW", "video/x-blackmagic-raw");
         meta.exif.set("Video:Codec", AttrValue::Str("Blackmagic RAW".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;

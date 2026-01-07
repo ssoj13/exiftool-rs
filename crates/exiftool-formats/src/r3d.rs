@@ -34,8 +34,7 @@ impl FormatParser for R3dParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("R3D");
-        meta.exif.set("File:FileType", AttrValue::Str("R3D".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("video/x-red-r3d".to_string()));
+        meta.set_file_type("R3D", "video/x-red-r3d");
         meta.exif.set("Video:Codec", AttrValue::Str("REDCODE RAW".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;

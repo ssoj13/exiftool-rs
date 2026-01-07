@@ -66,8 +66,7 @@ impl FormatParser for NrwParser {
 
         // Override format name
         meta.format = "NRW";
-        meta.exif.set("File:FileType", AttrValue::Str("NRW".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("image/x-nikon-nrw".to_string()));
+        meta.set_file_type("NRW", "image/x-nikon-nrw");
 
         // Verify this is actually Nikon
         let is_nikon = meta

@@ -62,8 +62,7 @@ impl FormatParser for PcxParser {
         reader.read_exact(&mut header)?;
 
         let mut metadata = Metadata::new("PCX");
-        metadata.exif.set("File:FileType", AttrValue::Str("PCX".to_string()));
-        metadata.exif.set("File:MIMEType", AttrValue::Str("image/x-pcx".to_string()));
+        metadata.set_file_type("PCX", "image/x-pcx");
 
         // Parse header
         let version = header[1];

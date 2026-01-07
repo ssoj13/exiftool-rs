@@ -73,8 +73,7 @@ impl FormatParser for TgaParser {
         reader.read_exact(&mut header)?;
 
         let mut metadata = Metadata::new("TGA");
-        metadata.exif.set("File:FileType", AttrValue::Str("TGA".to_string()));
-        metadata.exif.set("File:MIMEType", AttrValue::Str("image/x-tga".to_string()));
+        metadata.set_file_type("TGA", "image/x-tga");
 
         // Parse header
         let id_length = header[0] as usize;

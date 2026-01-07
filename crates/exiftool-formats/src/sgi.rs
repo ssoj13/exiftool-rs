@@ -77,8 +77,7 @@ impl FormatParser for SgiParser {
             return Err(crate::Error::InvalidStructure("Not a valid SGI file".to_string()));
         }
 
-        meta.exif.set("File:FileType", AttrValue::Str("SGI".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("image/x-sgi".to_string()));
+        meta.set_file_type("SGI", "image/x-sgi");
 
         // Storage type
         let storage = header[2];

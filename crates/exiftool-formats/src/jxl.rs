@@ -60,8 +60,7 @@ impl FormatParser for JxlParser {
         reader.seek(SeekFrom::Start(0))?;
 
         let mut metadata = Metadata::new("JXL");
-        metadata.exif.set("File:FileType", AttrValue::Str("JXL".to_string()));
-        metadata.exif.set("File:MIMEType", AttrValue::Str("image/jxl".to_string()));
+        metadata.set_file_type("JXL", "image/jxl");
 
         if bytes_read >= 12 && header[..12] == *JXL_CONTAINER_MAGIC {
             metadata.exif.set("JXL:ContainerFormat", AttrValue::Str("ISOBMFF".to_string()));

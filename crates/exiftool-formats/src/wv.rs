@@ -29,8 +29,7 @@ impl FormatParser for WvParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("WV");
-        meta.exif.set("File:FileType", AttrValue::Str("WV".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("audio/x-wavpack".to_string()));
+        meta.set_file_type("WV", "audio/x-wavpack");
         meta.exif.set("Audio:Codec", AttrValue::Str("WavPack".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;

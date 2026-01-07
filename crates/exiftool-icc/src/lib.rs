@@ -132,7 +132,13 @@ impl IccParser {
             b"sig " => {
                 if data.len() >= 12 {
                     let sig_val = String::from_utf8_lossy(&data[8..12]).trim().to_string();
-                    attrs.set(format!("ICC:{}", tag_name), AttrValue::Str(sig_val));
+                    // Decode technology signatures to human-readable names
+                    let display_val = if tag_name == "Technology" {
+                        tags::technology_name(&sig_val).to_string()
+                    } else {
+                        sig_val
+                    };
+                    attrs.set(format!("ICC:{}", tag_name), AttrValue::Str(display_val));
                 }
             }
             // Curve type (curv)

@@ -162,7 +162,6 @@ impl FormatParser for Mp4Parser {
                     self.parse_moov_box(reader, pos, box_size, &mut metadata, &mut state)?;
                 }
                 b"mdat" => {
-                    state.mdat_offset = Some(pos + 8);
                     let mdat_size = box_size.saturating_sub(8);
                     metadata.exif.set("MediaDataSize", AttrValue::UInt64(mdat_size));
                 }
@@ -192,8 +191,6 @@ impl FormatParser for Mp4Parser {
 /// Parser state for collecting info across boxes.
 #[derive(Default)]
 struct ParseState {
-    #[allow(dead_code)]
-    mdat_offset: Option<u64>,
     video_tracks: u32,
     audio_tracks: u32,
     timescale: u32,

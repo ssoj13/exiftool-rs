@@ -67,11 +67,8 @@ impl FormatParser for FffParser {
         let format = detect_hasselblad_format(&meta);
         meta.format = format;
 
-        meta.exif.set("File:FileType", AttrValue::Str(format.to_string()));
-        meta.exif.set(
-            "File:MIMEType",
-            AttrValue::Str(format!("image/x-hasselblad-{}", format.to_lowercase())),
-        );
+        let mime_type = format!("image/x-hasselblad-{}", format.to_lowercase());
+        meta.set_file_type(format, &mime_type);
 
         // Verify/set Make
         let is_hasselblad = meta

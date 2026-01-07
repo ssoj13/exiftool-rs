@@ -40,8 +40,7 @@ impl FormatParser for X3fParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("X3F");
-        meta.exif.set("File:FileType", AttrValue::Str("X3F".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("image/x-sigma-x3f".to_string()));
+        meta.set_file_type("X3F", "image/x-sigma-x3f");
         meta.exif.set("Make", AttrValue::Str("SIGMA".to_string()));
 
         // Read header

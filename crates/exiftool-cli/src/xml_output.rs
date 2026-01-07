@@ -126,53 +126,6 @@ fn determine_namespace(tag: &str) -> &'static str {
     "EXIF"
 }
 
-/// Format multiple files as XML (batch mode).
-#[allow(dead_code)]
-pub fn format_xml_batch(files: &[(std::path::PathBuf, Metadata)], filter: &[String], out: &mut String) {
-    let _ = writeln!(out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-    let _ = writeln!(out, "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"");
-    let _ = writeln!(out, "         xmlns:et=\"http://ns.exiftool.org/1.0/\"");
-    let _ = writeln!(out, "         xmlns:ExifTool=\"http://ns.exiftool.org/ExifTool/1.0/\"");
-    let _ = writeln!(out, "         xmlns:System=\"http://ns.exiftool.org/File/System/1.0/\"");
-    let _ = writeln!(out, "         xmlns:File=\"http://ns.exiftool.org/File/1.0/\"");
-    let _ = writeln!(out, "         xmlns:EXIF=\"http://ns.exiftool.org/EXIF/1.0/\"");
-    let _ = writeln!(out, "         xmlns:XMP=\"http://ns.exiftool.org/XMP/1.0/\"");
-    let _ = writeln!(out, "         xmlns:IPTC=\"http://ns.exiftool.org/IPTC/1.0/\"");
-    let _ = writeln!(out, "         xmlns:ICC=\"http://ns.exiftool.org/ICC_Profile/1.0/\"");
-    let _ = writeln!(out, "         xmlns:Composite=\"http://ns.exiftool.org/Composite/1.0/\">");
-    
-    for (path, m) in files {
-        let _ = writeln!(out, " <rdf:Description rdf:about=\"{}\"", xml_escape(&path.display().to_string()));
-        let _ = writeln!(out, "  et:toolkit=\"exiftool-rs\">");
-        
-        let _ = writeln!(out, "  <File:FileType>{}</File:FileType>", m.format);
-        
-        let mut entries: Vec<_> = m.exif.iter()
-            .filter(|(k, _)| filter.is_empty() || super::tag_matches(k, filter))
-            .collect();
-        entries.sort_by(|a, b| a.0.cmp(b.0));
-        
-        for (k, v) in entries {
-            let ns = determine_namespace(k);
-            let _ = writeln!(out, "  <{}:{}>{}</{}:{}>", ns, k, val_to_xml(v), ns, k);
-        }
-        
-        if let Some(ref xmp) = m.xmp {
-            let _ = writeln!(out, "  <File:XMPSize>{}</File:XMPSize>", xmp.len());
-        }
-        if let Some(ref thumb) = m.thumbnail {
-            let _ = writeln!(out, "  <File:ThumbnailSize>{}</File:ThumbnailSize>", thumb.len());
-        }
-        if m.pages.len() > 1 {
-            let _ = writeln!(out, "  <File:PageCount>{}</File:PageCount>", m.pages.len());
-        }
-        
-        let _ = writeln!(out, " </rdf:Description>");
-    }
-    
-    let _ = writeln!(out, "</rdf:RDF>");
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

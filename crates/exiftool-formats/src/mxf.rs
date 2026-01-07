@@ -53,8 +53,7 @@ impl FormatParser for MxfParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("MXF");
-        meta.exif.set("File:FileType", AttrValue::Str("MXF".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("application/mxf".to_string()));
+        meta.set_file_type("MXF", "application/mxf");
 
         reader.seek(SeekFrom::Start(0))?;
 

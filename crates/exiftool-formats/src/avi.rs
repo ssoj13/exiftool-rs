@@ -44,8 +44,7 @@ impl FormatParser for AviParser {
         let file_size = u32::from_le_bytes([header[4], header[5], header[6], header[7]]) as u64 + 8;
 
         let mut metadata = Metadata::new("AVI");
-        metadata.exif.set("File:FileType", AttrValue::Str("AVI".to_string()));
-        metadata.exif.set("File:MIMEType", AttrValue::Str("video/avi".to_string()));
+        metadata.set_file_type("AVI", "video/avi");
         metadata.exif.set("File:FileSize", AttrValue::UInt(file_size as u32));
 
         // Parse RIFF chunks

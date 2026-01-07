@@ -61,7 +61,7 @@ impl FormatParser for AsfParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("ASF");
-        meta.exif.set("File:FileType", AttrValue::Str("ASF".to_string()));
+        meta.set_file_type("ASF", "");
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -132,12 +132,10 @@ impl FormatParser for AsfParser {
         // Determine if audio or video
         if meta.exif.get_str("ASF:VideoCodec").is_some() {
             meta.format = "WMV";
-            meta.exif.set("File:FileType", AttrValue::Str("WMV".to_string()));
-            meta.exif.set("File:MIMEType", AttrValue::Str("video/x-ms-wmv".to_string()));
+            meta.set_file_type("WMV", "video/x-ms-wmv");
         } else {
             meta.format = "WMA";
-            meta.exif.set("File:FileType", AttrValue::Str("WMA".to_string()));
-            meta.exif.set("File:MIMEType", AttrValue::Str("audio/x-ms-wma".to_string()));
+            meta.set_file_type("WMA", "audio/x-ms-wma");
         }
 
         Ok(meta)

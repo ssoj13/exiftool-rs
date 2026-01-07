@@ -42,8 +42,7 @@ impl FormatParser for DpxParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("DPX");
-        meta.exif.set("File:FileType", AttrValue::Str("DPX".to_string()));
-        meta.exif.set("File:MIMEType", AttrValue::Str("image/x-dpx".to_string()));
+        meta.set_file_type("DPX", "image/x-dpx");
 
         reader.seek(SeekFrom::Start(0))?;
 
