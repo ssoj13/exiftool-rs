@@ -20,7 +20,7 @@
 //!     0x08, 0x00, 0x00, 0x00, // IFD0 offset = 8
 //! ];
 //!
-//! let reader = IfdReader::new(&tiff_data, ByteOrder::LittleEndian, 0);
+//! let reader = IfdReader::new(&tiff_data, ByteOrder::LittleEndian);
 //! let ifd_offset = reader.parse_header().unwrap();
 //! assert_eq!(ifd_offset, 8);
 //! ```

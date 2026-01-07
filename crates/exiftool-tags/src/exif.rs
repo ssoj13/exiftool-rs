@@ -207,13 +207,4 @@ pub static GPS_TAGS: phf::Map<u16, TagDef> = phf_map! {
     0x001F_u16 => TagDef::new("GPSHPositioningError", TagGroup::GpsIfd),
 };
 
-/// Lookup tag name by ID in any table.
-#[allow(dead_code)] // Public API for future use
-pub fn lookup_tag(tag_id: u16, group: TagGroup) -> Option<&'static TagDef> {
-    match group {
-        TagGroup::Ifd0 | TagGroup::Ifd1 => IFD0_TAGS.get(&tag_id),
-        TagGroup::ExifIfd => EXIF_TAGS.get(&tag_id),
-        TagGroup::GpsIfd => GPS_TAGS.get(&tag_id),
-        _ => None,
-    }
-}
+

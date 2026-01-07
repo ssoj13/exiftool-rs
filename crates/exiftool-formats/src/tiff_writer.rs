@@ -100,7 +100,7 @@ impl TiffWriter {
             return Err(Error::InvalidStructure("invalid TIFF byte order".into()));
         };
         
-        let reader = IfdReader::new(data, byte_order, 0);
+        let reader = IfdReader::new(data, byte_order);
         let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
         
         let mut chunks = Vec::new();

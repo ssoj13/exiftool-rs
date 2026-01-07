@@ -9,7 +9,7 @@ proptest! {
     /// IFD parser should never panic on arbitrary byte sequences.
     #[test]
     fn ifd_parser_no_panic(data in prop::collection::vec(any::<u8>(), 0..1024)) {
-        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
         // Should return Ok or Err, never panic
         let _ = reader.parse_header();
     }
@@ -25,7 +25,7 @@ proptest! {
         } else {
             ByteOrder::LittleEndian
         };
-        let reader = IfdReader::new(&data, order, 0);
+        let reader = IfdReader::new(&data, order);
         let _ = reader.parse_header();
     }
 
@@ -50,7 +50,7 @@ proptest! {
         // Pad to offset
         data.resize(offset as usize + 2, 0);
 
-        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
         let result = reader.parse_header();
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), offset);
@@ -64,28 +64,28 @@ mod edge_cases {
     #[test]
     fn empty_data() {
         let data: &[u8] = &[];
-        let reader = IfdReader::new(data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(data, ByteOrder::LittleEndian);
         assert!(reader.parse_header().is_err());
     }
 
     #[test]
     fn too_short_header() {
         let data = [0x49, 0x49, 0x2A]; // Missing offset
-        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
         assert!(reader.parse_header().is_err());
     }
 
     #[test]
     fn invalid_magic() {
         let data = [0x49, 0x49, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00];
-        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
         assert!(reader.parse_header().is_err());
     }
 
     #[test]
     fn offset_beyond_data() {
         let data = [0x49, 0x49, 0x2A, 0x00, 0xFF, 0xFF, 0x00, 0x00];
-        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
         // Header parses, but offset is invalid
         let result = reader.parse_header();
         // Parser should accept header, further reading will fail

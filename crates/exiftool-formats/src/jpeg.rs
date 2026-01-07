@@ -465,7 +465,7 @@ fn parse_exif(tiff_data: &[u8], metadata: &mut Metadata) -> Result<()> {
     let byte_order =
         ByteOrder::from_marker([tiff_data[0], tiff_data[1]]).map_err(Error::Core)?;
 
-    let reader = IfdReader::new(tiff_data, byte_order, 0);
+    let reader = IfdReader::new(tiff_data, byte_order);
     let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
 
     let (entries, next_ifd) = reader.read_ifd(ifd0_offset).map_err(Error::Core)?;

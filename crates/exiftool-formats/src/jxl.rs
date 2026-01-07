@@ -240,7 +240,7 @@ impl JxlParser {
             Err(_) => return Ok(()),
         };
 
-        let reader = IfdReader::new(tiff_data, byte_order, 0);
+        let reader = IfdReader::new(tiff_data, byte_order);
         let ifd0_offset = match reader.parse_header() {
             Ok(o) => o,
             Err(_) => return Ok(()),

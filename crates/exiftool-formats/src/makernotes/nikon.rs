@@ -151,7 +151,7 @@ impl VendorParser for NikonParser {
 
         let _ = base_offset; // Used for offset calculations if needed
         
-        let reader = IfdReader::new(ifd_data, byte_order, 0);
+        let reader = IfdReader::new(ifd_data, byte_order);
         let (entries, _) = reader.read_ifd(0).ok()?;
 
         let mut attrs = Attrs::new();

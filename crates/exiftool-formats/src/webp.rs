@@ -55,7 +55,7 @@ impl WebpParser {
         let byte_order = ByteOrder::from_marker([data[0], data[1]])
             .map_err(|_| Error::InvalidStructure("Invalid EXIF byte order".into()))?;
 
-        let reader = IfdReader::new(data, byte_order, 0);
+        let reader = IfdReader::new(data, byte_order);
         let ifd_offset = reader.parse_header()
             .map_err(|e| Error::InvalidStructure(format!("EXIF header: {}", e)))?;
 

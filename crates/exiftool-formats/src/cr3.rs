@@ -295,7 +295,7 @@ impl Cr3Parser {
             Err(_) => return Ok(()), // Invalid TIFF header
         };
         
-        let ifd_reader = IfdReader::new(&tiff_data, byte_order, 0);
+        let ifd_reader = IfdReader::new(&tiff_data, byte_order);
         
         // Parse TIFF header to get IFD offset
         let ifd_offset = match ifd_reader.parse_header() {

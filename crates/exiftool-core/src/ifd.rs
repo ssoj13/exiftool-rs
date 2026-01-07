@@ -38,14 +38,11 @@ pub struct IfdEntry {
 }
 
 /// IFD reader for parsing TIFF/EXIF structures.
-#[allow(dead_code)] // base_offset used for JPEG APP1 positioning
 pub struct IfdReader<'a> {
     /// Raw data buffer.
     data: &'a [u8],
     /// Byte order for multi-byte values.
     byte_order: ByteOrder,
-    /// Base offset for relative calculations (usually 0 for TIFF, APP1 offset for JPEG).
-    base_offset: usize,
     /// BigTIFF mode (8-byte offsets, 20-byte entries)
     is_bigtiff: bool,
 }
@@ -55,22 +52,19 @@ impl<'a> IfdReader<'a> {
     ///
     /// - `data`: Complete TIFF data starting from byte order marker
     /// - `byte_order`: Parsed from TIFF header
-    /// - `base_offset`: Offset of TIFF header in original file (0 for standalone TIFF)
-    pub fn new(data: &'a [u8], byte_order: ByteOrder, base_offset: usize) -> Self {
+    pub fn new(data: &'a [u8], byte_order: ByteOrder) -> Self {
         Self {
             data,
             byte_order,
-            base_offset,
             is_bigtiff: false,
         }
     }
 
     /// Create new IFD reader with BigTIFF mode.
-    pub fn new_bigtiff(data: &'a [u8], byte_order: ByteOrder, base_offset: usize) -> Self {
+    pub fn new_bigtiff(data: &'a [u8], byte_order: ByteOrder) -> Self {
         Self {
             data,
             byte_order,
-            base_offset,
             is_bigtiff: true,
         }
     }
@@ -128,15 +122,6 @@ impl<'a> IfdReader<'a> {
         Ok(self
             .byte_order
             .read_u32([bytes[0], bytes[1], bytes[2], bytes[3]]))
-    }
-
-    /// Read i32 at offset.
-    #[allow(dead_code)] // Will be used for signed EXIF values
-    fn read_i32(&self, offset: usize) -> Result<i32> {
-        let bytes = self.read_bytes(offset, 4)?;
-        Ok(self
-            .byte_order
-            .read_i32([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 
     /// Read u64 at offset (for BigTIFF).
@@ -672,7 +657,7 @@ mod tests {
             0x08, 0x00, 0x00, 0x00, // offset 8 in LE
         ];
 
-        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
         let offset = reader.parse_header().unwrap();
         assert_eq!(offset, 8);
     }
@@ -686,7 +671,7 @@ mod tests {
             0x00, 0x00, 0x00, 0x08, // offset 8 in BE
         ];
 
-        let reader = IfdReader::new(&data, ByteOrder::BigEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::BigEndian);
         let offset = reader.parse_header().unwrap();
         assert_eq!(offset, 8);
     }
@@ -702,7 +687,7 @@ mod tests {
             0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // offset 16 in LE (8 bytes)
         ];
 
-        let reader = IfdReader::new(&data, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
         let (offset, is_bigtiff) = reader.parse_header_ex().unwrap();
         assert!(is_bigtiff);
         assert_eq!(offset, 16);
@@ -719,7 +704,7 @@ mod tests {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, // offset 16 in BE (8 bytes)
         ];
 
-        let reader = IfdReader::new(&data, ByteOrder::BigEndian, 0);
+        let reader = IfdReader::new(&data, ByteOrder::BigEndian);
         let (offset, is_bigtiff) = reader.parse_header_ex().unwrap();
         assert!(is_bigtiff);
         assert_eq!(offset, 16);

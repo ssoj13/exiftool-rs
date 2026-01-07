@@ -107,7 +107,7 @@ impl FormatParser for TiffParser {
         let byte_order = ByteOrder::from_marker([data[0], data[1]]).map_err(Error::Core)?;
 
         // Create temporary reader to detect BigTIFF
-        let temp_reader = IfdReader::new(&data, byte_order, 0);
+        let temp_reader = IfdReader::new(&data, byte_order);
         let (ifd0_offset, is_bigtiff) = temp_reader
             .parse_header_ex_with_magic(self.config.allowed_magic)
             .map_err(Error::Core)?;
@@ -115,9 +115,9 @@ impl FormatParser for TiffParser {
         // Create IFD reader with correct mode
         let ifd_reader = if is_bigtiff {
             metadata.format = "BigTIFF";
-            IfdReader::new_bigtiff(&data, byte_order, 0)
+            IfdReader::new_bigtiff(&data, byte_order)
         } else {
-            IfdReader::new(&data, byte_order, 0)
+            IfdReader::new(&data, byte_order)
         };
 
         // Parse IFD chain

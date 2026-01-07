@@ -217,7 +217,7 @@ impl PngParser {
 
         // eXIf contains raw TIFF data (byte order + IFDs)
         let byte_order = ByteOrder::from_marker([data[0], data[1]]).map_err(Error::Core)?;
-        let reader = IfdReader::new(data, byte_order, 0);
+        let reader = IfdReader::new(data, byte_order);
         let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
 
         // Parse IFD0

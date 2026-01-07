@@ -486,7 +486,7 @@ mod tests {
         assert_eq!(bytes[3], 0x00); // Magic high byte
         
         // Parse back to verify
-        let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian);
         let offset = reader.parse_header().unwrap();
         let (entries, _) = reader.read_ifd(offset).unwrap();
         
@@ -507,7 +507,7 @@ mod tests {
         let bytes = writer.serialize().unwrap();
         
         // Parse and verify
-        let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian);
         let offset = reader.parse_header().unwrap();
         let (entries, _) = reader.read_ifd(offset).unwrap();
         
@@ -527,7 +527,7 @@ mod tests {
         let bytes = writer.serialize().unwrap();
         
         // Parse IFD0
-        let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian, 0);
+        let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian);
         let offset = reader.parse_header().unwrap();
         let (ifd0_entries, next_ifd) = reader.read_ifd(offset).unwrap();
         
