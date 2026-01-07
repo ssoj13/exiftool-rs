@@ -137,7 +137,7 @@ switch ($Command) {
             Write-Host ''
         }
         
-        $bookDir = 'docs\book'
+        $bookDir = 'docs'
         $subCmd = if ($Args.Count -gt 0) { $Args[0] } else { '' }
         
         switch ($subCmd) {

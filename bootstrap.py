@@ -148,7 +148,7 @@ def cmd_book(args: argparse.Namespace) -> None:
         print_color("[OK] mdbook installed", Colors.GREEN)
         print()
 
-    book_dir = Path("docs/book")
+    book_dir = Path("docs")
     subcmd = args.subcmd if args.subcmd else ""
 
     if subcmd == "serve":
