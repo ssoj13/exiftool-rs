@@ -4,6 +4,7 @@
 
 mod error;
 mod gps;
+mod gpx;
 mod image;
 mod rational;
 mod scan;
@@ -26,6 +27,8 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<gps::PyGPS>()?;
     m.add_class::<scan::PyScanResult>()?;
     m.add_class::<scan::ScanError>()?;
+    m.add_class::<gpx::PyGpxTrack>()?;
+    m.add_class::<gpx::PyTrackPoint>()?;
 
     // Exceptions
     m.add("ExifError", m.py().get_type::<error::ExifError>())?;

@@ -14,6 +14,9 @@ A native Rust alternative to [ExifTool](https://exiftool.org/) with zero runtime
 - **Zero Dependencies** - Pure Rust, no external tools required
 - **Fast** - Native code, ~10-100x faster than ExifTool for batch operations
 - **Type-Safe** - Strongly typed values (Rational, URational, DateTime, etc.)
+- **Geotagging** - Add GPS coordinates from GPX track files
+- **Time Shift** - Bulk adjust DateTime tags
+- **ICC Profiles** - Read/embed color profiles
 
 ## Quick Start
 
@@ -98,13 +101,28 @@ print(img["Artist"])
 for tag in img:
     print(f"{tag}: {img[tag]}")
 
-# Convert to dict
-d = dict(img)
-
 # Check if writable before modifying
 if img.is_writable:
     img.artist = "John Doe"
     img.save()
+
+# Time shift (+2 hours)
+img.shift_time("+2:00")
+img.save()
+
+# Geotagging from GPX
+coords = img.geotag("track.gpx")
+if coords:
+    print(f"Geotagged to {coords}")
+img.save()
+
+# ICC profile
+img.set_icc_from_file("sRGB.icc")
+img.save()
+
+# Composite tags
+img.add_composite()
+print(img["ImageSize"], img["Megapixels"])
 
 # Detect camera RAW files  
 if img.is_camera_raw:
@@ -122,20 +140,41 @@ for img in exif.scan("photos/**/*.jpg", parallel=True):
 cargo install --path crates/exiftool-cli
 
 # Read metadata
-exif photo.jpg                  # All tags
-exif -g Model photo.jpg         # Single tag (value only)
-exif -g Make -g Model *.jpg     # Multiple tags
-exif -g "Date*" photo.jpg       # Wildcard: all Date* tags
-exif -g "*Original" photo.jpg   # Wildcard: *Original tags
-exif -f json *.jpg              # JSON output
-exif -f csv photos/*.png        # CSV for spreadsheets
-exif -f json *.jpg -o meta.json # Export to file
+exif photo.jpg                        # All tags
+exif -g Model photo.jpg               # Single tag (value only)
+exif -g Make -g Model *.jpg           # Multiple tags
+exif -g "Date*" photo.jpg             # Wildcard: all Date* tags
+exif -f json *.jpg                    # JSON output
+exif -f csv photos/*.png              # CSV for spreadsheets
+exif -f html *.jpg -o report.html     # HTML output
+exif -f json *.jpg -o meta.json       # Export to file
 
 # Write metadata
 exif -t Artist="John Doe" photo.jpg
 exif -t Make=Canon -t Model="EOS R5" photo.jpg
 exif -w output.jpg -t Copyright="2024" photo.jpg  # Write to new file
 exif -p -t Copyright="2024" photo.jpg             # In-place modify
+
+# Time shift
+exif --shift "+2:00" -p photo.jpg     # Add 2 hours
+exif --shift "-30" -p photo.jpg       # Subtract 30 minutes
+
+# Geotagging
+exif --geotag track.gpx -p photo.jpg  # Add GPS from GPX
+
+# ICC profile
+exif --icc sRGB.icc -p photo.jpg      # Embed color profile
+
+# File filtering
+exif -r photos/                       # Recursive scan
+exif -r -e jpg,png photos/            # Filter by extension
+exif -r -x "*_thumb*" photos/         # Exclude pattern
+exif -r --newer 2024-01-01 photos/    # Date filter
+exif -r --minsize 1M photos/          # Size filter
+
+# Thumbnail/preview extraction
+exif -T photo.jpg                     # Extract thumbnail
+exif -P photo.cr2                     # Extract RAW preview
 
 # Supported formats
 exif image.{jpg,png,tiff,dng,heic,avif,cr2,cr3,nef,arw,orf,rw2,pef,raf,webp,exr,hdr}
@@ -152,7 +191,7 @@ exiftool-rs/
     exiftool-formats/   # Format parsers and writers
     exiftool-xmp/       # XMP parser (rdf:Bag/Seq/Alt)
     exiftool-cli/       # Command-line tool
-    exiftool-py/       # Python bindings (PyO3)
+    exiftool-py/        # Python bindings (PyO3)
 ```
 
 ## Supported Formats
@@ -163,8 +202,8 @@ exiftool-rs/
 | PNG    | Yes  | Yes   | eXIf chunk, tEXt, iTXt, zTXt |
 | TIFF   | Yes  | Yes   | Full IFD chain |
 | DNG    | Yes  | Yes   | Via TIFF parser, DNGVersion detection |
-| HEIC   | Yes  | -     | ISOBMFF with EXIF item extraction |
-| AVIF   | Yes  | -     | Via HEIC parser |
+| HEIC   | Yes  | Yes   | ISOBMFF with EXIF item extraction |
+| AVIF   | Yes  | Yes   | Via HEIC parser |
 | CR2    | Yes  | -     | Canon RAW (TIFF-based) |
 | CR3    | Yes  | -     | Canon RAW (ISOBMFF-based) |
 | NEF    | Yes  | Yes   | Nikon RAW |
@@ -173,7 +212,7 @@ exiftool-rs/
 | RW2    | Yes  | -     | Panasonic RAW (supports 0x55 magic) |
 | PEF    | Yes  | -     | Pentax RAW |
 | RAF    | Yes  | Yes   | Fujifilm RAW |
-| WebP   | Yes  | -     | Google WebP (VP8/VP8L/VP8X) |
+| WebP   | Yes  | Yes   | Google WebP (VP8/VP8L/VP8X) |
 | EXR    | Yes  | Yes   | OpenEXR attributes |
 | HDR    | Yes  | Yes   | Radiance RGBE |
 
@@ -252,6 +291,9 @@ python bootstrap.py build --debug
 # Run tests
 cargo test
 
+# Run benchmarks
+cargo bench -p exiftool-formats
+
 # Regenerate tag tables from ExifTool source
 cargo xtask codegen
 
@@ -265,6 +307,78 @@ python bootstrap.py python
 # Build Python wheel (debug)
 ./bootstrap.ps1 python --debug
 python bootstrap.py python --debug
+```
+
+## Fuzz Testing
+
+Fuzz testing helps find crashes, panics, and edge cases by feeding random/mutated data to parsers. This project includes fuzz targets for all major format parsers.
+
+### Prerequisites
+
+```bash
+# Install cargo-fuzz (requires nightly Rust)
+rustup install nightly
+cargo +nightly install cargo-fuzz
+```
+
+### Available Targets
+
+| Target | Description |
+|--------|-------------|
+| `fuzz_jpeg` | JPEG parser with APP segments |
+| `fuzz_png` | PNG parser with chunks |
+| `fuzz_tiff` | TIFF/DNG IFD parser |
+| `fuzz_webp` | WebP container parser |
+| `fuzz_heic` | HEIC/AVIF ISOBMFF parser |
+| `fuzz_cr3` | Canon CR3 parser |
+| `fuzz_registry` | Auto-detection across all formats |
+
+### Running Fuzz Tests
+
+```bash
+cd fuzz
+
+# Run single target (runs indefinitely until Ctrl+C)
+cargo +nightly fuzz run fuzz_jpeg
+
+# Run with timeout (e.g., 60 seconds)
+cargo +nightly fuzz run fuzz_jpeg -- -max_total_time=60
+
+# Run with specific number of iterations
+cargo +nightly fuzz run fuzz_jpeg -- -runs=10000
+
+# Run all targets sequentially (quick smoke test)
+for target in fuzz_jpeg fuzz_png fuzz_tiff fuzz_webp fuzz_heic fuzz_cr3 fuzz_registry; do
+    cargo +nightly fuzz run $target -- -max_total_time=30
+done
+```
+
+### What to Expect
+
+- **Normal output**: Lines showing `#12345` (iteration count), `cov:` (coverage), `ft:` (features)
+- **No crashes = good**: Parsers handle malformed input gracefully
+- **Crash found**: Fuzzer saves crashing input to `fuzz/artifacts/<target>/`
+- **Slow start**: First run builds corpus; subsequent runs are faster
+
+### Reproducing Crashes
+
+If a crash is found:
+
+```bash
+# Reproduce crash
+cargo +nightly fuzz run fuzz_jpeg fuzz/artifacts/fuzz_jpeg/crash-xxxxx
+
+# Minimize crash input
+cargo +nightly fuzz tmin fuzz_jpeg fuzz/artifacts/fuzz_jpeg/crash-xxxxx
+```
+
+### Corpus
+
+Fuzzer builds a corpus of interesting inputs in `fuzz/corpus/<target>/`. You can seed it with real files:
+
+```bash
+mkdir -p fuzz/corpus/fuzz_jpeg
+cp testdata/*.jpg fuzz/corpus/fuzz_jpeg/
 ```
 
 ## Known Limitations

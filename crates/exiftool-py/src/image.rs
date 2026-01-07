@@ -2,11 +2,12 @@
 
 use crate::error::{to_py_err, write_not_supported};
 use crate::gps::PyGPS;
+use crate::gpx::{parse_exif_datetime, shift_datetime, PyGpxTrack};
 use crate::rational::PyRational;
 use crate::value::{display_value, from_python, to_python};
 use exiftool_attrs::AttrValue;
 use exiftool_formats::{
-    build_exif_bytes, ExrWriter, FormatRegistry, HdrWriter, HeicWriter,
+    add_composite_tags, build_exif_bytes, ExrWriter, FormatRegistry, HdrWriter, HeicWriter,
     JpegWriter, Metadata, PageInfo, PngWriter, TiffWriter, WebpWriter,
 };
 use pyo3::exceptions::PyKeyError;
@@ -314,6 +315,126 @@ impl PyImage {
         self.metadata.exif.clear();
     }
 
+    /// Shift all DateTime tags by offset.
+    ///
+    /// Args:
+    ///     offset: Offset string like "+2:30" (hours:minutes) or "-30" (minutes)
+    ///
+    /// Example:
+    ///     img.shift_time("+2:00")  # Add 2 hours
+    ///     img.shift_time("-30")    # Subtract 30 minutes
+    fn shift_time(&mut self, offset: &str) -> PyResult<()> {
+        let offset_secs = parse_shift(offset).ok_or_else(|| {
+            pyo3::exceptions::PyValueError::new_err(
+                format!("Invalid offset format: {}. Use +/-HH:MM or +/-MM", offset)
+            )
+        })?;
+
+        let datetime_tags = [
+            "DateTime", "DateTimeOriginal", "CreateDate", "ModifyDate",
+            "DateTimeDigitized", "GPSDateTime", "GPSDateStamp",
+        ];
+
+        for tag in &datetime_tags {
+            if let Some(val) = self.metadata.exif.get(*tag) {
+                if let Some(s) = val.as_str() {
+                    if let Some(shifted) = shift_datetime(s, offset_secs) {
+                        self.metadata.exif.set(*tag, AttrValue::Str(shifted));
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Add GPS coordinates from a GPX track file.
+    ///
+    /// Matches photo timestamp (DateTimeOriginal) to track points.
+    ///
+    /// Args:
+    ///     gpx_path: Path to GPX file
+    ///
+    /// Returns:
+    ///     Tuple of (lat, lon) if matched, None if no match
+    ///
+    /// Example:
+    ///     coords = img.geotag("track.gpx")
+    ///     if coords:
+    ///         print(f"Geotagged to {coords[0]}, {coords[1]}")
+    fn geotag(&mut self, gpx_path: &str) -> PyResult<Option<(f64, f64)>> {
+        let track = PyGpxTrack::from_file(gpx_path)?;
+
+        // Get photo timestamp
+        let timestamp = self.metadata.exif.get("DateTimeOriginal")
+            .or_else(|| self.metadata.exif.get("CreateDate"))
+            .and_then(|v| v.as_str())
+            .and_then(|s| parse_exif_datetime(s));
+
+        let ts = match timestamp {
+            Some(t) => t,
+            None => return Ok(None),
+        };
+
+        if let Some((lat, lon, ele)) = track.find_position(ts) {
+            let lat_ref = if lat >= 0.0 { "N" } else { "S" };
+            let lon_ref = if lon >= 0.0 { "E" } else { "W" };
+
+            self.metadata.exif.set("GPSLatitude", AttrValue::Double(f64::abs(lat)));
+            self.metadata.exif.set("GPSLatitudeRef", AttrValue::Str(lat_ref.to_string()));
+            self.metadata.exif.set("GPSLongitude", AttrValue::Double(f64::abs(lon)));
+            self.metadata.exif.set("GPSLongitudeRef", AttrValue::Str(lon_ref.to_string()));
+
+            if let Some(altitude) = ele {
+                let alt_ref = if altitude >= 0.0 { 0u32 } else { 1u32 };
+                self.metadata.exif.set("GPSAltitude", AttrValue::Double(f64::abs(altitude)));
+                self.metadata.exif.set("GPSAltitudeRef", AttrValue::UInt(alt_ref));
+            }
+
+            Ok(Some((lat, lon)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Set ICC color profile.
+    ///
+    /// Args:
+    ///     data: ICC profile bytes, or None to remove
+    #[setter]
+    fn set_icc(&mut self, data: Option<Vec<u8>>) {
+        self.metadata.icc = data;
+    }
+
+    /// Get ICC color profile bytes.
+    #[getter]
+    fn icc(&self) -> Option<Vec<u8>> {
+        self.metadata.icc.clone()
+    }
+
+    /// Load and set ICC profile from file.
+    ///
+    /// Args:
+    ///     path: Path to .icc or .icm profile file
+    fn set_icc_from_file(&mut self, path: &str) -> PyResult<()> {
+        let data = std::fs::read(path).map_err(|e| {
+            pyo3::exceptions::PyIOError::new_err(format!("Cannot read ICC profile: {}", e))
+        })?;
+        self.metadata.icc = Some(data);
+        Ok(())
+    }
+
+    /// Add computed/composite tags (ImageSize, Megapixels, etc.).
+    ///
+    /// Adds tags like:
+    /// - ImageSize: "4000x3000"
+    /// - Megapixels: 12.0
+    /// - GPSAltitude (combined with ref)
+    /// - DateTimeOriginal (with SubSec)
+    fn add_composite(&mut self) {
+        add_composite_tags(&mut self.metadata);
+    }
+
     /// Create Image from bytes.
     ///
     /// Args:
@@ -571,6 +692,36 @@ impl From<&PageInfo> for PyPageInfo {
             compression: p.compression,
             subfile_type: p.subfile_type,
         }
+    }
+}
+
+/// Parse time shift string to seconds.
+/// Formats: "+2:30" (hours:minutes), "-30" (minutes), "+1" (minutes)
+fn parse_shift(s: &str) -> Option<i64> {
+    let s = s.trim();
+    if s.is_empty() {
+        return None;
+    }
+
+    let (sign, rest) = if s.starts_with('+') {
+        (1i64, &s[1..])
+    } else if s.starts_with('-') {
+        (-1i64, &s[1..])
+    } else {
+        (1i64, s)
+    };
+
+    if rest.contains(':') {
+        let parts: Vec<&str> = rest.split(':').collect();
+        if parts.len() != 2 {
+            return None;
+        }
+        let hours: i64 = parts[0].parse().ok()?;
+        let minutes: i64 = parts[1].parse().ok()?;
+        Some(sign * (hours * 3600 + minutes * 60))
+    } else {
+        let minutes: i64 = rest.parse().ok()?;
+        Some(sign * minutes * 60)
     }
 }
 

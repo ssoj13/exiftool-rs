@@ -1,0 +1,67 @@
+[package]
+name = "exiftool-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.exiftool-formats]
+path = "../crates/exiftool-formats"
+
+# Fuzz targets
+
+[[bin]]
+name = "fuzz_jpeg"
+path = "fuzz_targets/fuzz_jpeg.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_png"
+path = "fuzz_targets/fuzz_png.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_tiff"
+path = "fuzz_targets/fuzz_tiff.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_webp"
+path = "fuzz_targets/fuzz_webp.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_heic"
+path = "fuzz_targets/fuzz_heic.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_cr3"
+path = "fuzz_targets/fuzz_cr3.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_registry"
+path = "fuzz_targets/fuzz_registry.rs"
+test = false
+doc = false
+bench = false

@@ -25,11 +25,17 @@ pub fn add_composite_tags(meta: &mut Metadata) {
     // GPSPosition: decimal degrees
     add_gps_position(meta);
     
+    // GPSAltitude: with reference (above/below sea level)
+    add_gps_altitude(meta);
+    
     // LensID: combined lens info
     add_lens_id(meta);
     
     // Duration: HH:MM:SS format for video
     add_duration(meta);
+    
+    // DateTimeOriginal: with subsec precision
+    add_datetime_original(meta);
 }
 
 /// ImageSize: "WxH" format.
@@ -255,6 +261,37 @@ fn parse_dms_string(s: &str) -> Option<f64> {
     }
 }
 
+/// GPSAltitude: altitude with reference (above/below sea level).
+fn add_gps_altitude(meta: &mut Metadata) {
+    // Get altitude value
+    let altitude = meta.exif.get("GPSAltitude").and_then(|v| match v {
+        AttrValue::URational(n, d) if *d > 0 => Some(*n as f64 / *d as f64),
+        AttrValue::Rational(n, d) if *d != 0 => Some(*n as f64 / *d as f64),
+        AttrValue::Float(f) => Some(*f as f64),
+        AttrValue::Double(d) => Some(*d),
+        AttrValue::UInt(n) => Some(*n as f64),
+        AttrValue::Int(n) => Some(*n as f64),
+        AttrValue::Str(s) => s.trim().replace("m", "").trim().parse::<f64>().ok(),
+        _ => None,
+    });
+    
+    if let Some(alt) = altitude {
+        // GPSAltitudeRef: 0 = above sea level, 1 = below sea level
+        let below_sea = meta.exif.get("GPSAltitudeRef")
+            .map(|v| match v {
+                AttrValue::UInt(n) => *n == 1,
+                AttrValue::Int(n) => *n == 1,
+                AttrValue::Str(s) => s == "1" || s.to_lowercase().contains("below"),
+                _ => false,
+            })
+            .unwrap_or(false);
+        
+        let signed_alt = if below_sea { -alt } else { alt };
+        let display = format!("{:.1} m", signed_alt);
+        meta.exif.set("GPSAltitudeFormatted", AttrValue::Str(display));
+    }
+}
+
 /// LensID: combined lens identification.
 fn add_lens_id(meta: &mut Metadata) {
     // Check if LensModel or LensID already exists
@@ -311,6 +348,46 @@ fn add_duration(meta: &mut Metadata) {
             };
             meta.exif.set("DurationFormatted", AttrValue::Str(display));
         }
+    }
+}
+
+/// DateTimeOriginal: combine with SubSecTimeOriginal for full precision.
+fn add_datetime_original(meta: &mut Metadata) {
+    // Get base datetime - clone to avoid borrow issues
+    let datetime = meta.exif.get_str("DateTimeOriginal")
+        .or_else(|| meta.exif.get_str("CreateDate"))
+        .map(|s| s.to_string());
+    
+    let Some(dt) = datetime else { return };
+    
+    // Get subsec if available
+    let subsec = meta.exif.get_str("SubSecTimeOriginal")
+        .or_else(|| meta.exif.get_str("SubSecTime"))
+        .map(|s| s.to_string());
+    
+    // Get timezone offset if available
+    let tz_offset = meta.exif.get_str("OffsetTimeOriginal")
+        .or_else(|| meta.exif.get_str("OffsetTime"))
+        .map(|s| s.to_string());
+    
+    // Add full datetime with subsec
+    if let Some(ref ss) = subsec {
+        let ss_clean = ss.trim_start_matches('0').trim_start_matches('.');
+        let ss_part = if ss_clean.is_empty() { ss.as_str() } else { ss_clean };
+        let full = format!("{}.{}", dt, ss_part);
+        meta.exif.set("DateTimeOriginalFull", AttrValue::Str(full));
+    }
+    
+    // Add datetime with timezone
+    if let Some(tz) = tz_offset {
+        let with_tz = if let Some(ref ss) = subsec {
+            let ss_clean = ss.trim_start_matches('0').trim_start_matches('.');
+            let ss_part = if ss_clean.is_empty() { ss.as_str() } else { ss_clean };
+            format!("{}.{}{}", dt, ss_part, tz)
+        } else {
+            format!("{}{}", dt, tz)
+        };
+        meta.exif.set("DateTimeOriginalTZ", AttrValue::Str(with_tz));
     }
 }
 
@@ -373,5 +450,50 @@ mod tests {
         add_composite_tags(&mut meta);
         
         assert_eq!(meta.exif.get_str("DurationFormatted"), Some("1:02:05"));
+    }
+    
+    #[test]
+    fn test_gps_altitude_above_sea() {
+        let mut meta = Metadata::new("JPEG");
+        meta.exif.set("GPSAltitude", AttrValue::URational(1234, 10)); // 123.4m
+        meta.exif.set("GPSAltitudeRef", AttrValue::UInt(0)); // above sea level
+        
+        add_composite_tags(&mut meta);
+        
+        assert_eq!(meta.exif.get_str("GPSAltitudeFormatted"), Some("123.4 m"));
+    }
+    
+    #[test]
+    fn test_gps_altitude_below_sea() {
+        let mut meta = Metadata::new("JPEG");
+        meta.exif.set("GPSAltitude", AttrValue::Double(50.0));
+        meta.exif.set("GPSAltitudeRef", AttrValue::UInt(1)); // below sea level
+        
+        add_composite_tags(&mut meta);
+        
+        assert_eq!(meta.exif.get_str("GPSAltitudeFormatted"), Some("-50.0 m"));
+    }
+    
+    #[test]
+    fn test_datetime_original_with_subsec() {
+        let mut meta = Metadata::new("JPEG");
+        meta.exif.set("DateTimeOriginal", AttrValue::Str("2024:06:15 14:30:25".into()));
+        meta.exif.set("SubSecTimeOriginal", AttrValue::Str("123".into()));
+        
+        add_composite_tags(&mut meta);
+        
+        assert_eq!(meta.exif.get_str("DateTimeOriginalFull"), Some("2024:06:15 14:30:25.123"));
+    }
+    
+    #[test]
+    fn test_datetime_original_with_timezone() {
+        let mut meta = Metadata::new("JPEG");
+        meta.exif.set("DateTimeOriginal", AttrValue::Str("2024:06:15 14:30:25".into()));
+        meta.exif.set("SubSecTimeOriginal", AttrValue::Str("500".into()));
+        meta.exif.set("OffsetTimeOriginal", AttrValue::Str("+03:00".into()));
+        
+        add_composite_tags(&mut meta);
+        
+        assert_eq!(meta.exif.get_str("DateTimeOriginalTZ"), Some("2024:06:15 14:30:25.500+03:00"));
     }
 }

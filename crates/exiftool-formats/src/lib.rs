@@ -278,6 +278,8 @@ pub struct Metadata {
     pub thumbnail: Option<Vec<u8>>,
     /// Preview data (if present) - larger embedded JPEG (RAW files).
     pub preview: Option<Vec<u8>>,
+    /// ICC color profile data (if present).
+    pub icc: Option<Vec<u8>>,
     /// Pages/subfiles info (multi-page TIFF).
     pub pages: Vec<PageInfo>,
 }
@@ -292,6 +294,7 @@ impl Metadata {
             xmp: None,
             thumbnail: None,
             preview: None,
+            icc: None,
             pages: Vec::new(),
         }
     }

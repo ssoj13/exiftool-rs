@@ -31,3 +31,4 @@
 
 - [Contributing](./contributing.md)
 - [Building from Source](./building.md)
+- [Fuzz Testing](./fuzz-testing.md)
