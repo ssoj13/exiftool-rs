@@ -133,6 +133,43 @@ def cmd_codegen(args: argparse.Namespace) -> None:
     print_color("Regenerating tag tables...", Colors.CYAN)
     sys.exit(run(["cargo", "xtask", "codegen"], check=False))
 
+def cmd_book(args: argparse.Namespace) -> None:
+    """Build documentation book."""
+    print_color("Building documentation book...", Colors.CYAN)
+    print()
+
+    # Check mdbook
+    if not shutil.which("mdbook"):
+        print("Installing mdbook...")
+        code = run(["cargo", "install", "mdbook"], check=False)
+        if code != 0:
+            print_color("Error: Failed to install mdbook", Colors.RED)
+            sys.exit(1)
+        print_color("[OK] mdbook installed", Colors.GREEN)
+        print()
+
+    book_dir = Path("docs/book")
+    subcmd = args.subcmd if args.subcmd else ""
+
+    if subcmd == "serve":
+        print("Starting local server at http://localhost:3000...")
+        code = run(["mdbook", "serve", str(book_dir)], check=False)
+    elif subcmd == "clean":
+        print("Cleaning book output...")
+        output_dir = book_dir / "book"
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        print_color("[OK] Cleaned", Colors.GREEN)
+        code = 0
+    else:
+        code = run(["mdbook", "build", str(book_dir)], check=False)
+        if code == 0:
+            print()
+            print_color("[OK] Book built!", Colors.GREEN)
+            print(f"Output: {book_dir / 'book' / 'index.html'}")
+
+    sys.exit(code)
+
 def show_help() -> None:
     """Show help message."""
     print_color("exiftool-rs bootstrap script", Colors.CYAN)
@@ -149,6 +186,8 @@ def show_help() -> None:
     print("  python install     Build and pip install (release)")
     print("  test               Run tests")
     print("  codegen            Regenerate tag tables from ExifTool")
+    print("  book               Build documentation (mdbook)")
+    print("  book serve         Start local server at localhost:3000")
     print()
     print("EXAMPLES:")
     print("  python bootstrap.py build")
@@ -181,6 +220,8 @@ def main() -> None:
             cmd_test(args)
         case "codegen":
             cmd_codegen(args)
+        case "book":
+            cmd_book(args)
         case "help" | "-h" | "--help" | "":
             show_help()
         case _:

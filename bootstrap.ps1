@@ -121,6 +121,47 @@ switch ($Command) {
         exit $LASTEXITCODE
     }
     
+    'book' {
+        Write-Host 'Building documentation book...' -ForegroundColor Cyan
+        Write-Host ''
+        
+        # Check mdbook
+        if (-not (Get-Command mdbook -ErrorAction SilentlyContinue)) {
+            Write-Host 'Installing mdbook...'
+            cargo install mdbook
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host 'Error: Failed to install mdbook' -ForegroundColor Red
+                exit 1
+            }
+            Write-Host '[OK] mdbook installed' -ForegroundColor Green
+            Write-Host ''
+        }
+        
+        $bookDir = 'docs\book'
+        $subCmd = if ($Args.Count -gt 0) { $Args[0] } else { '' }
+        
+        switch ($subCmd) {
+            'serve' {
+                Write-Host 'Starting local server at http://localhost:3000...'
+                mdbook serve $bookDir
+            }
+            'clean' {
+                Write-Host 'Cleaning book output...'
+                Remove-Item -Recurse -Force "$bookDir\book" -ErrorAction SilentlyContinue
+                Write-Host '[OK] Cleaned' -ForegroundColor Green
+            }
+            default {
+                mdbook build $bookDir
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host ''
+                    Write-Host '[OK] Book built!' -ForegroundColor Green
+                    Write-Host "Output: $bookDir\book\index.html"
+                }
+            }
+        }
+        exit $LASTEXITCODE
+    }
+    
     default {
         Write-Host 'exiftool-rs bootstrap script' -ForegroundColor Cyan
         Write-Host ''
@@ -136,6 +177,8 @@ switch ($Command) {
         Write-Host '  python install     Build and pip install (release)'
         Write-Host '  test               Run tests'
         Write-Host '  codegen            Regenerate tag tables from ExifTool'
+        Write-Host '  book               Build documentation (mdbook)'
+        Write-Host '  book serve         Start local server at localhost:3000'
         Write-Host ''
         Write-Host 'EXAMPLES:'
         Write-Host '  .\bootstrap.ps1 build'

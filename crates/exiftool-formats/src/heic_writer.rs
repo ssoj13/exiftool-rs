@@ -33,33 +33,38 @@ struct BoxInfo {
     header_size: u8, // 8 or 16 for extended size
 }
 
-/// Item location entry from iloc box
+/// Item location entry from iloc box (ISO/IEC 14496-12).
+/// 
+/// Fields are parsed per spec for format completeness. Not all fields
+/// are used in current write implementation, but kept for future
+/// extension (e.g., adding EXIF to files without existing metadata).
 #[derive(Debug, Clone, Default)]
 struct ItemLocation {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Parsed per spec, used for item lookup
     item_id: u32,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // HEIF spec field, needed for full iloc rebuild
     construction_method: u8,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // HEIF spec field, needed for full iloc rebuild  
     data_ref_index: u16,
     base_offset: u64,
     extents: Vec<ItemExtent>,
 }
 
+/// Single extent within an item location.
 #[derive(Debug, Clone, Default)]
 struct ItemExtent {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // HEIF spec field, needed for multi-extent items
     index: u64,
     offset: u64,
     length: u64,
 }
 
-/// Item info from iinf box
+/// Item info from iinf box.
 #[derive(Debug, Clone)]
 struct ItemInfo {
     item_id: u32,
     item_type: [u8; 4],
-    #[allow(dead_code)]
+    #[allow(dead_code)] // HEIF spec field, useful for debugging
     content_type: Option<String>,
 }
 
@@ -489,7 +494,10 @@ impl HeicWriter {
         }
     }
 
-    /// Write variable-size integer.
+    /// Write variable-size integer (for iloc offset patching).
+    /// 
+    /// Currently unused - will be needed when implementing full
+    /// iloc box rebuild for adding EXIF to files without metadata.
     #[allow(dead_code)]
     fn write_var_int(val: u64, size: u8) -> Vec<u8> {
         match size {

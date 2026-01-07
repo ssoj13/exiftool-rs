@@ -1,0 +1,20 @@
+[book]
+title = "exiftool-rs"
+authors = ["exiftool-rs contributors"]
+description = "Fast image metadata library for Rust with Python bindings"
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+create-missing = true
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/user/exiftool-rs"
+edit-url-template = "https://github.com/user/exiftool-rs/edit/main/docs/book/{path}"
+
+[output.html.fold]
+enable = true
+level = 1
