@@ -219,7 +219,7 @@ pub use tak::TakParser;
 pub use wv::WvParser;
 pub use x3f::X3fParser;
 pub use registry::FormatRegistry;
-pub use traits::{FormatParser, FormatWriter, ReadSeek};
+pub use traits::{FormatParser, ReadSeek};
 pub use jpeg_writer::JpegWriter;
 pub use tiff_writer::TiffWriter;
 pub use png_writer::PngWriter;

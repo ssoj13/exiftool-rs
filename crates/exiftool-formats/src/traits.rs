@@ -3,7 +3,7 @@
 //! Unified interface for reading/writing metadata across file formats.
 
 use crate::{Metadata, Result};
-use std::io::{Read, Seek, Write};
+use std::io::{Read, Seek};
 
 /// Combined trait for Read + Seek (needed for trait objects).
 /// Rust doesn't allow `dyn Read + Seek` directly, so we need this wrapper.
@@ -27,20 +27,3 @@ pub trait FormatParser: Send + Sync {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata>;
 }
 
-/// Writer for a specific file format.
-pub trait FormatWriter: FormatParser {
-    /// Check if this format supports writing.
-    fn can_write(&self) -> bool {
-        true
-    }
-
-    /// Write metadata to file.
-    ///
-    /// Reads from `source`, writes to `dest` with updated metadata.
-    fn write(
-        &self,
-        source: &mut dyn ReadSeek,
-        dest: &mut dyn Write,
-        metadata: &Metadata,
-    ) -> Result<()>;
-}

@@ -527,7 +527,6 @@ fn read_u16(data: &[u8], offset: usize, byte_order: ByteOrder) -> u16 {
 
 /// Read u32 from byte slice with byte order.
 #[inline]
-#[allow(dead_code)]
 fn read_u32(data: &[u8], offset: usize, byte_order: ByteOrder) -> u32 {
     if offset + 4 > data.len() {
         return 0;
