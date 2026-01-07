@@ -35,15 +35,13 @@ impl VendorParser for GoProParser {
         }
 
         let mut attrs = Attrs::new();
-        let start_offset;
 
-        // APP6 starts with "GoPro\0"
-        if data.len() >= 6 && &data[0..6] == b"GoPro\0" {
-            start_offset = 6;
+        // APP6 starts with "GoPro\0", raw GPMF data (from MP4) starts at 0
+        let start_offset = if data.len() >= 6 && &data[0..6] == b"GoPro\0" {
+            6
         } else {
-            // Raw GPMF data (from MP4)
-            start_offset = 0;
-        }
+            0
+        };
 
         // Parse GPMF KLV entries
         parse_gpmf(&data[start_offset..], &mut attrs, "");

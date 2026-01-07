@@ -165,6 +165,7 @@ impl CrwParser {
     }
 
     /// Parse individual CIFF tag.
+    #[allow(clippy::too_many_arguments)]
     fn parse_tag(
         &self,
         reader: &mut dyn ReadSeek,

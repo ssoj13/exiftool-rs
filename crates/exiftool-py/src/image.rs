@@ -5,12 +5,15 @@ use crate::gps::PyGPS;
 use crate::rational::PyRational;
 use crate::value::{display_value, from_python, to_python};
 use exiftool_attrs::AttrValue;
-use exiftool_formats::{build_exif_bytes, FormatRegistry, JpegWriter, Metadata, PngWriter, TiffWriter};
+use exiftool_formats::{
+    build_exif_bytes, ExrWriter, FormatRegistry, HdrWriter, HeicWriter,
+    JpegWriter, Metadata, PageInfo, PngWriter, TiffWriter, WebpWriter,
+};
 use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Cursor};
 use std::path::PathBuf;
 
 /// Image metadata object.
@@ -176,10 +179,28 @@ impl PyImage {
         self.metadata.xmp.clone()
     }
 
-    /// Thumbnail bytes.
+    /// Thumbnail bytes (small preview, typically 160x120).
     #[getter]
     fn thumbnail(&self) -> Option<Vec<u8>> {
         self.metadata.thumbnail.clone()
+    }
+
+    /// Preview image bytes (larger preview from RAW files).
+    #[getter]
+    fn preview(&self) -> Option<Vec<u8>> {
+        self.metadata.preview.clone()
+    }
+
+    /// Number of pages/frames in the file.
+    #[getter]
+    fn page_count(&self) -> usize {
+        self.metadata.page_count()
+    }
+
+    /// Check if file has multiple pages (multi-page TIFF, etc.).
+    #[getter]
+    fn is_multi_page(&self) -> bool {
+        self.metadata.is_multi_page()
     }
 
     /// Check if this is a camera RAW file.
@@ -198,6 +219,18 @@ impl PyImage {
     #[getter]
     fn is_writable(&self) -> bool {
         self.metadata.is_writable()
+    }
+
+    /// Page info for multi-page files (TIFF, etc.).
+    #[getter]
+    fn pages(&self) -> Vec<PyPageInfo> {
+        self.metadata.pages.iter().map(PyPageInfo::from).collect()
+    }
+
+    /// Raw EXIF data offset in file (if available).
+    #[getter]
+    fn exif_offset(&self) -> Option<usize> {
+        self.metadata.exif_offset
     }
 
     /// Number of tags.
@@ -241,6 +274,22 @@ impl PyImage {
         }
     }
 
+    /// Get human-readable interpretation of a tag value.
+    ///
+    /// Example:
+    ///     img["Orientation"]              # 6 (raw value)
+    ///     img.get_interpreted("Orientation")  # "Rotate 90 CW"
+    fn get_interpreted(&self, key: &str) -> Option<String> {
+        self.metadata.get_interpreted(key)
+    }
+
+    /// Get formatted display value of a tag.
+    ///
+    /// Similar to get_interpreted but with unit formatting.
+    fn get_display(&self, key: &str) -> Option<String> {
+        self.metadata.get_display(key)
+    }
+
     /// Get all tag names.
     fn keys(&self) -> Vec<String> {
         self.metadata.exif.iter().map(|(k, _)| k.clone()).collect()
@@ -258,6 +307,31 @@ impl PyImage {
         self.metadata.exif.iter()
             .map(|(k, v)| Ok((k.clone(), to_python(py, v)?)))
             .collect()
+    }
+
+    /// Clear all EXIF tags.
+    fn clear(&mut self) {
+        self.metadata.exif.clear();
+    }
+
+    /// Create Image from bytes.
+    ///
+    /// Args:
+    ///     data: Raw file bytes
+    ///
+    /// Returns:
+    ///     Image object with parsed metadata
+    #[staticmethod]
+    fn from_bytes(data: &[u8]) -> PyResult<Self> {
+        let mut cursor = Cursor::new(data);
+        let registry = FormatRegistry::new();
+        let metadata = registry.parse(&mut cursor)
+            .map_err(|e| to_py_err(e, None))?;
+
+        Ok(Self {
+            metadata,
+            path: None,
+        })
     }
 
     /// Iterate over tag names.
@@ -330,7 +404,7 @@ impl PyImage {
                 format!("Format {} does not support writing", self.metadata.format)
             };
             return Err(crate::error::WriteError::new_err(format!(
-                "{}. Writable formats: JPEG, PNG, TIFF, DNG, EXR, HDR", reason
+                "{}. Writable formats: JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR", reason
             )));
         }
 
@@ -354,6 +428,22 @@ impl PyImage {
             "TIFF" | "DNG" => {
                 TiffWriter::write(&mut reader, &mut output_data, &self.metadata)
                     .map_err(|e| crate::error::WriteError::new_err(format!("TIFF write failed: {}", e)))?;
+            }
+            "WebP" => {
+                WebpWriter::write(&mut reader, &mut output_data, &self.metadata)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("WebP write failed: {}", e)))?;
+            }
+            "HEIC" | "HEIF" | "AVIF" => {
+                HeicWriter::write(&mut reader, &mut output_data, &self.metadata)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("HEIC write failed: {}", e)))?;
+            }
+            "EXR" => {
+                ExrWriter::write(&mut reader, &mut output_data, &self.metadata)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("EXR write failed: {}", e)))?;
+            }
+            "HDR" => {
+                HdrWriter::write(&mut reader, &mut output_data, &self.metadata)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("HDR write failed: {}", e)))?;
             }
             fmt => return Err(write_not_supported(fmt)),
         }
@@ -427,4 +517,60 @@ impl TagIterator {
     }
 }
 
+/// Page info for multi-page files (TIFF, etc.).
+#[pyclass(name = "PageInfo")]
+#[derive(Clone)]
+pub struct PyPageInfo {
+    /// Page index (0-based).
+    #[pyo3(get)]
+    pub index: usize,
+    /// Image width in pixels.
+    #[pyo3(get)]
+    pub width: u32,
+    /// Image height in pixels.
+    #[pyo3(get)]
+    pub height: u32,
+    /// Bits per sample.
+    #[pyo3(get)]
+    pub bits_per_sample: u16,
+    /// Compression type.
+    #[pyo3(get)]
+    pub compression: u16,
+    /// Subfile type.
+    #[pyo3(get)]
+    pub subfile_type: u32,
+}
+
+#[pymethods]
+impl PyPageInfo {
+    /// Check if this is a thumbnail/reduced resolution image.
+    #[getter]
+    fn is_thumbnail(&self) -> bool {
+        self.subfile_type & 1 != 0
+    }
+
+    /// Check if this is a page of a multi-page document.
+    #[getter]
+    fn is_page(&self) -> bool {
+        self.subfile_type & 2 != 0
+    }
+
+    fn __repr__(&self) -> String {
+        format!("PageInfo(index={}, {}x{}, bits={})",
+            self.index, self.width, self.height, self.bits_per_sample)
+    }
+}
+
+impl From<&PageInfo> for PyPageInfo {
+    fn from(p: &PageInfo) -> Self {
+        Self {
+            index: p.index,
+            width: p.width,
+            height: p.height,
+            bits_per_sample: p.bits_per_sample,
+            compression: p.compression,
+            subfile_type: p.subfile_type,
+        }
+    }
+}
 

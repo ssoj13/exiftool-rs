@@ -128,6 +128,12 @@ impl Attrs {
         self.map.remove(key)
     }
 
+    /// Clear all attributes.
+    pub fn clear(&mut self) {
+        self.map.clear();
+        self.dirty.store(true, Ordering::Relaxed);
+    }
+
     /// Check if attribute exists.
     pub fn contains(&self, key: &str) -> bool {
         self.map.contains_key(key)

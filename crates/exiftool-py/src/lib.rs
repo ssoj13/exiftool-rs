@@ -21,6 +21,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Classes
     m.add_class::<image::PyImage>()?;
+    m.add_class::<image::PyPageInfo>()?;
     m.add_class::<rational::PyRational>()?;
     m.add_class::<gps::PyGPS>()?;
     m.add_class::<scan::PyScanResult>()?;

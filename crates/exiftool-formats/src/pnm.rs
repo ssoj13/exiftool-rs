@@ -196,8 +196,8 @@ impl PnmParser {
 
             let trimmed = line.trim();
 
-            if trimmed.starts_with('#') {
-                comments.push(trimmed[1..].trim().to_string());
+            if let Some(comment) = trimmed.strip_prefix('#') {
+                comments.push(comment.trim().to_string());
                 continue;
             }
 

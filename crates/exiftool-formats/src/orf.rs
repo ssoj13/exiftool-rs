@@ -38,10 +38,8 @@ impl FormatParser for OrfParser {
         }
         
         // Check for Olympus special magic: IIRO or IIRS
-        let is_orf_special = (header[0] == b'I' && header[1] == b'I' 
-            && header[2] == b'R' && header[3] == b'O')
-            || (header[0] == b'I' && header[1] == b'I' 
-            && header[2] == b'R' && header[3] == b'S');
+        let is_orf_special = header[0] == b'I' && header[1] == b'I' 
+            && header[2] == b'R' && (header[3] == b'O' || header[3] == b'S');
         
         if is_orf_special {
             return true;

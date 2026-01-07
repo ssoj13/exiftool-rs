@@ -157,18 +157,14 @@ fn parse_eps_ai(data: &[u8], meta: &mut Metadata) {
 
     // Parse DSC comments
     for line in text.lines() {
-        if line.starts_with("%%Title:") {
-            let value = line[8..].trim();
-            meta.exif.set("Title", AttrValue::Str(clean_ps_string(value)));
-        } else if line.starts_with("%%Creator:") {
-            let value = line[10..].trim();
-            meta.exif.set("Creator", AttrValue::Str(clean_ps_string(value)));
-        } else if line.starts_with("%%CreationDate:") {
-            let value = line[15..].trim();
-            meta.exif.set("CreateDate", AttrValue::Str(value.to_string()));
-        } else if line.starts_with("%%BoundingBox:") {
-            let value = line[14..].trim();
-            if let Some((w, h)) = parse_bbox(value) {
+        if let Some(value) = line.strip_prefix("%%Title:") {
+            meta.exif.set("Title", AttrValue::Str(clean_ps_string(value.trim())));
+        } else if let Some(value) = line.strip_prefix("%%Creator:") {
+            meta.exif.set("Creator", AttrValue::Str(clean_ps_string(value.trim())));
+        } else if let Some(value) = line.strip_prefix("%%CreationDate:") {
+            meta.exif.set("CreateDate", AttrValue::Str(value.trim().to_string()));
+        } else if let Some(value) = line.strip_prefix("%%BoundingBox:") {
+            if let Some((w, h)) = parse_bbox(value.trim()) {
                 meta.exif.set("ImageWidth", AttrValue::UInt(w as u32));
                 meta.exif.set("ImageHeight", AttrValue::UInt(h as u32));
             }

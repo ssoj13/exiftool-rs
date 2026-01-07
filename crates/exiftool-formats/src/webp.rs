@@ -121,12 +121,7 @@ impl FormatParser for WebpParser {
         let mut height: u32 = 0;
 
         // Parse chunks
-        loop {
-            let chunk_id = match Self::read_fourcc(reader) {
-                Ok(id) => id,
-                Err(_) => break,  // EOF
-            };
-
+        while let Ok(chunk_id) = Self::read_fourcc(reader) {
             let chunk_size = match Self::read_u32_le(reader) {
                 Ok(s) => s,
                 Err(_) => break,

@@ -44,8 +44,8 @@ impl IptcParser {
     /// Parse raw IPTC data (datasets without Photoshop/IRB wrapper).
     ///
     /// Use this when you already extracted the IPTC data from APP13.
-    pub fn parse(data: &[u8]) -> Result<Attrs, ()> {
-        Self::parse_iptc_data(data).ok_or(())
+    pub fn parse(data: &[u8]) -> Option<Attrs> {
+        Self::parse_iptc_data(data)
     }
 
     /// Parse IPTC from APP13 segment data (with Photoshop header).

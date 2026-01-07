@@ -412,7 +412,7 @@ fn parse_photoshop_irb(data: &[u8], metadata: &mut Metadata) {
 
 /// Parse IPTC-NAA record using exiftool-iptc crate.
 fn parse_iptc(data: &[u8], metadata: &mut Metadata) {
-    if let Ok(iptc_attrs) = IptcParser::parse(data) {
+    if let Some(iptc_attrs) = IptcParser::parse(data) {
         // Merge IPTC attrs into metadata
         for (key, value) in iptc_attrs.iter() {
             metadata.exif.set(key, value.clone());
