@@ -57,7 +57,7 @@ fn round_trip_exif_write() {
     let mut input_cursor = Cursor::new(&input);
     let mut output = Vec::new();
     
-    JpegWriter::write(&mut input_cursor, &mut output, Some(&exif_bytes), None).unwrap();
+    JpegWriter::write(&mut input_cursor, &mut output, Some(&exif_bytes), None, None).unwrap();
     
     // Verify output is valid JPEG
     assert_eq!(&output[0..2], &[0xFF, 0xD8], "Should start with SOI");
@@ -87,7 +87,7 @@ fn round_trip_with_existing_exif() {
     let mut input_cursor = Cursor::new(&input);
     let mut jpeg_with_exif = Vec::new();
     
-    JpegWriter::write(&mut input_cursor, &mut jpeg_with_exif, Some(&original_exif), None).unwrap();
+    JpegWriter::write(&mut input_cursor, &mut jpeg_with_exif, Some(&original_exif), None, None).unwrap();
     
     // Verify original EXIF
     let registry = FormatRegistry::new();
@@ -106,7 +106,7 @@ fn round_trip_with_existing_exif() {
     let mut jpeg_cursor = Cursor::new(&jpeg_with_exif);
     let mut final_output = Vec::new();
     
-    JpegWriter::write(&mut jpeg_cursor, &mut final_output, Some(&new_exif), None).unwrap();
+    JpegWriter::write(&mut jpeg_cursor, &mut final_output, Some(&new_exif), None, None).unwrap();
     
     // Verify new EXIF replaced old
     let mut final_cursor = Cursor::new(&final_output);
@@ -136,7 +136,7 @@ fn round_trip_with_exif_ifd() {
     let mut input_cursor = Cursor::new(&input);
     let mut output = Vec::new();
     
-    JpegWriter::write(&mut input_cursor, &mut output, Some(&exif_bytes), None).unwrap();
+    JpegWriter::write(&mut input_cursor, &mut output, Some(&exif_bytes), None, None).unwrap();
     
     // Parse and verify
     let registry = FormatRegistry::new();

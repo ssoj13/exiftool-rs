@@ -117,6 +117,11 @@ WRITE:
     exif --shift "+2:00" -p photo.jpg           # shift times +2 hours
     exif --shift "-30" -p photo.jpg             # shift times -30 minutes
 
+IMPORT/COPY:
+    exif --json=tags.json -p *.jpg              # import tags from JSON
+    exif --csv=meta.csv                         # import tags from CSV
+    exif --tagsFromFile src.jpg -p dst.jpg      # copy all tags from src to dst
+
 THUMBNAIL/PREVIEW:
     exif -T photo.jpg                           # extract thumbnail to photo_thumb.jpg
     exif -T -o thumb.jpg photo.jpg              # extract to specific file
@@ -132,6 +137,9 @@ OPTIONS:
     --shift <OFFSET>     Shift all DateTime tags (+/-HH:MM or +/-MM minutes)
     --geotag <GPX>       Add GPS coordinates from GPX track file
     --icc <FILE>         Embed ICC color profile from file
+    --json=<FILE>        Import tags from JSON file
+    --csv=<FILE>         Import tags from CSV file
+    --tagsFromFile <F>   Copy tags from another image file
     -w, --write <FILE>   Output image file (for write mode)
     -p, --inplace        Modify original file in-place
     -T, --thumbnail      Extract embedded thumbnail
@@ -198,8 +206,19 @@ fn run() -> Result<()> {
     let parsed = parse_args(&args[1..])?;
     let registry = FormatRegistry::new();
 
-    // Write mode (modify image tags)
-    if !parsed.tags.is_empty() {
+    // JSON import mode
+    if parsed.json_import.is_some() {
+        return import_from_json(&parsed, &registry);
+    }
+
+    // CSV import mode
+    if parsed.csv_import.is_some() {
+        return import_from_csv(&parsed, &registry);
+    }
+
+    // Write mode (modify image tags or copy from file)
+    if !parsed.tags.is_empty() || parsed.tags_from_file.is_some() || parsed.shift.is_some() 
+        || parsed.geotag.is_some() || parsed.icc_profile.is_some() {
         return write_image(&parsed, &registry);
     }
 
@@ -304,6 +323,11 @@ struct Args {
     composite: bool,                  // -c add composite tags
     charset: String,                  // --charset encoding
     all: bool,
+    // Import/copy options
+    json_import: Option<PathBuf>,     // --json= import tags from JSON
+    csv_import: Option<PathBuf>,      // --csv= import tags from CSV
+    tags_from_file: Option<PathBuf>,  // --tagsFromFile copy from another image
+    copy_tags: Vec<String>,           // tags to copy (empty = all)
 }
 
 /// Parse date string to SystemTime.
@@ -844,6 +868,32 @@ fn parse_args(args: &[String]) -> Result<Args> {
                 }
             }
             "-a" | "--all" => parsed.all = true,
+            _ if arg.starts_with("--json=") => {
+                let path_str = &arg[7..];
+                let path = PathBuf::from(path_str);
+                if !path.exists() {
+                    anyhow::bail!("JSON file not found: {}", path_str);
+                }
+                parsed.json_import = Some(path);
+            }
+            _ if arg.starts_with("--csv=") => {
+                let path_str = &arg[6..];
+                let path = PathBuf::from(path_str);
+                if !path.exists() {
+                    anyhow::bail!("CSV file not found: {}", path_str);
+                }
+                parsed.csv_import = Some(path);
+            }
+            "--tagsFromFile" | "--tagsfromfile" | "-tagsFromFile" => {
+                i += 1;
+                if let Some(src_path) = args.get(i) {
+                    let path = PathBuf::from(src_path);
+                    if !path.exists() {
+                        anyhow::bail!("Source file not found: {}", src_path);
+                    }
+                    parsed.tags_from_file = Some(path);
+                }
+            }
             _ if arg.starts_with('-') => {
                 // Check for combined -tTag=Value
                 if arg.starts_with("-t") && arg.len() > 2 {
@@ -931,7 +981,42 @@ fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
             }
         }
         
-        // Apply tag updates
+        // Copy tags from source file if specified
+        if let Some(ref src_path) = args.tags_from_file {
+            let src_file = File::open(src_path)
+                .with_context(|| format!("Cannot open source: {}", src_path.display()))?;
+            let mut src_reader = BufReader::new(src_file);
+            
+            match registry.parse(&mut src_reader) {
+                Ok(src_meta) => {
+                    let mut copied = 0;
+                    for (tag, value) in src_meta.exif.iter() {
+                        // Skip internal/binary tags
+                        if tag.starts_with("_") || tag == "ThumbnailImage" || tag == "PreviewImage" {
+                            continue;
+                        }
+                        // If copy_tags specified, only copy those
+                        if !args.copy_tags.is_empty() && !args.copy_tags.iter().any(|t| t.eq_ignore_ascii_case(tag)) {
+                            continue;
+                        }
+                        metadata.exif.set(tag, value.clone());
+                        copied += 1;
+                    }
+                    // Also copy XMP if present
+                    if src_meta.xmp.is_some() && (args.copy_tags.is_empty() || args.copy_tags.iter().any(|t| t.eq_ignore_ascii_case("XMP"))) {
+                        metadata.xmp = src_meta.xmp.clone();
+                    }
+                    // Also copy ICC if present
+                    if src_meta.icc.is_some() && (args.copy_tags.is_empty() || args.copy_tags.iter().any(|t| t.eq_ignore_ascii_case("ICC"))) {
+                        metadata.icc = src_meta.icc.clone();
+                    }
+                    eprintln!("  Copied {} tags from {}", copied, src_path.display());
+                }
+                Err(e) => eprintln!("Warning: Cannot parse source file: {}", e),
+            }
+        }
+        
+        // Apply tag updates (override copied tags)
         for (tag, value) in &args.tags {
             metadata.exif.set(tag, AttrValue::Str(value.clone()));
         }
@@ -969,7 +1054,7 @@ fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
         match metadata.format {
             "JPEG" => {
                 let exif = build_exif_bytes(&metadata)?;
-                JpegWriter::write(&mut reader, &mut output_data, Some(&exif), None)?;
+                JpegWriter::write(&mut reader, &mut output_data, Some(&exif), None, None)?;
             }
             "PNG" => PngWriter::write(&mut reader, &mut output_data, &metadata)?,
             "TIFF" | "DNG" => TiffWriter::write(&mut reader, &mut output_data, &metadata)?,
@@ -1387,4 +1472,223 @@ fn val_json(v: &AttrValue) -> serde_json::Value {
         AttrValue::Rational(n, d) if *d != 0 => serde_json::json!(*n as f64 / *d as f64),
         _ => v.to_string().into(),
     }
+}
+
+/// Import tags from JSON file.
+/// JSON format:
+/// ```json
+/// {
+///   "photo1.jpg": { "Artist": "John", "Copyright": "2024" },
+///   "photo2.jpg": { "Artist": "Jane" }
+/// }
+/// ```
+/// Or for single file (use with -p):
+/// ```json
+/// { "Artist": "John", "Copyright": "2024" }
+/// ```
+fn import_from_json(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    let json_path = args.json_import.as_ref().unwrap();
+    let json_str = std::fs::read_to_string(json_path)
+        .with_context(|| format!("Cannot read: {}", json_path.display()))?;
+    
+    let json: serde_json::Value = serde_json::from_str(&json_str)
+        .with_context(|| format!("Invalid JSON in: {}", json_path.display()))?;
+    
+    let obj = json.as_object()
+        .ok_or_else(|| anyhow::anyhow!("JSON must be an object"))?;
+    
+    // Check if it's file-keyed or direct tags
+    let is_file_keyed = obj.values().next()
+        .map(|v| v.is_object())
+        .unwrap_or(false);
+    
+    if is_file_keyed {
+        // Format: { "file.jpg": { "Tag": "Value" } }
+        for (file_path, tags_val) in obj {
+            let path = PathBuf::from(file_path);
+            if !path.exists() {
+                eprintln!("Warning: File not found: {}", file_path);
+                continue;
+            }
+            
+            let tags = tags_val.as_object()
+                .ok_or_else(|| anyhow::anyhow!("Tags for {} must be an object", file_path))?;
+            
+            write_tags_to_file(&path, tags, args, registry)?;
+        }
+    } else {
+        // Format: { "Tag": "Value" } - apply to files in args
+        if args.files.is_empty() {
+            anyhow::bail!("No target files specified. Use: exif --json=tags.json -p photo.jpg");
+        }
+        
+        for path in &args.files {
+            write_tags_to_file(path, obj, args, registry)?;
+        }
+    }
+    
+    Ok(())
+}
+
+/// Import tags from CSV file.
+/// CSV format:
+/// ```csv
+/// SourceFile,Artist,Copyright,Description
+/// photo1.jpg,John Doe,2024,My photo
+/// photo2.jpg,Jane Doe,2024,Another photo
+/// ```
+fn import_from_csv(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    let csv_path = args.csv_import.as_ref().unwrap();
+    let csv_str = std::fs::read_to_string(csv_path)
+        .with_context(|| format!("Cannot read: {}", csv_path.display()))?;
+    
+    let mut lines = csv_str.lines();
+    
+    // Parse header
+    let header_line = lines.next()
+        .ok_or_else(|| anyhow::anyhow!("CSV file is empty"))?;
+    let headers: Vec<&str> = parse_csv_line(header_line);
+    
+    // Find SourceFile column
+    let source_col = headers.iter().position(|h| h.eq_ignore_ascii_case("SourceFile"))
+        .ok_or_else(|| anyhow::anyhow!("CSV must have SourceFile column"))?;
+    
+    // Process data rows
+    for line in lines {
+        if line.trim().is_empty() {
+            continue;
+        }
+        
+        let values: Vec<&str> = parse_csv_line(line);
+        if values.len() <= source_col {
+            continue;
+        }
+        
+        let file_path = values[source_col];
+        let path = PathBuf::from(file_path);
+        
+        if !path.exists() {
+            eprintln!("Warning: File not found: {}", file_path);
+            continue;
+        }
+        
+        // Build tags map
+        let mut tags = serde_json::Map::new();
+        for (i, header) in headers.iter().enumerate() {
+            if i == source_col || *header == "Format" {
+                continue; // Skip SourceFile and Format columns
+            }
+            if let Some(value) = values.get(i) {
+                if !value.is_empty() {
+                    tags.insert(header.to_string(), serde_json::Value::String(value.to_string()));
+                }
+            }
+        }
+        
+        if !tags.is_empty() {
+            write_tags_to_file(&path, &tags, args, registry)?;
+        }
+    }
+    
+    Ok(())
+}
+
+/// Parse a CSV line, handling quoted values.
+fn parse_csv_line(line: &str) -> Vec<&str> {
+    let mut result = Vec::new();
+    let mut start = 0;
+    let mut in_quotes = false;
+    let chars: Vec<char> = line.chars().collect();
+    
+    for (i, &c) in chars.iter().enumerate() {
+        if c == '"' {
+            in_quotes = !in_quotes;
+        } else if c == ',' && !in_quotes {
+            let field = &line[start..i];
+            result.push(field.trim().trim_matches('"'));
+            start = i + 1;
+        }
+    }
+    
+    // Last field
+    if start <= line.len() {
+        result.push(line[start..].trim().trim_matches('"'));
+    }
+    
+    result
+}
+
+/// Write tags to a single file.
+fn write_tags_to_file(
+    path: &Path, 
+    tags: &serde_json::Map<String, serde_json::Value>,
+    args: &Args,
+    registry: &FormatRegistry,
+) -> Result<()> {
+    let file = File::open(path)
+        .with_context(|| format!("Cannot open: {}", path.display()))?;
+    let mut reader = BufReader::new(file);
+
+    let mut metadata = registry.parse(&mut reader)
+        .with_context(|| format!("Cannot parse: {}", path.display()))?;
+
+    // Check if writable
+    if !metadata.is_writable() {
+        eprintln!("Warning: {} is not writable, skipping", path.display());
+        return Ok(());
+    }
+
+    // Apply tags
+    for (tag, value) in tags {
+        let str_val = match value {
+            serde_json::Value::String(s) => s.clone(),
+            serde_json::Value::Number(n) => n.to_string(),
+            serde_json::Value::Bool(b) => b.to_string(),
+            _ => value.to_string(),
+        };
+        metadata.exif.set(tag, AttrValue::Str(str_val));
+    }
+
+    // Output path
+    let output_path = if args.inplace {
+        path.to_path_buf()
+    } else if let Some(ref out) = args.write_file {
+        out.clone()
+    } else {
+        let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+        let ext = path.extension().unwrap_or_default().to_string_lossy();
+        path.with_file_name(format!("{}_modified.{}", stem, ext))
+    };
+
+    // Re-read and write
+    let file = File::open(path)?;
+    let mut reader = BufReader::new(file);
+    let mut output_data = Vec::new();
+
+    match metadata.format {
+        "JPEG" => {
+            let exif = build_exif_bytes(&metadata)?;
+            JpegWriter::write(&mut reader, &mut output_data, Some(&exif), None, None)?;
+        }
+        "PNG" => PngWriter::write(&mut reader, &mut output_data, &metadata)?,
+        "TIFF" | "DNG" => TiffWriter::write(&mut reader, &mut output_data, &metadata)?,
+        "HDR" => HdrWriter::write(&mut reader, &mut output_data, &metadata)?,
+        "EXR" => ExrWriter::write(&mut reader, &mut output_data, &metadata)?,
+        fmt => {
+            eprintln!("Warning: Write not supported for {}: {}", fmt, path.display());
+            return Ok(());
+        }
+    }
+
+    // Atomic write
+    if args.inplace && output_path == *path {
+        let tmp = output_path.with_extension("tmp");
+        std::fs::write(&tmp, &output_data)?;
+        std::fs::rename(&tmp, &output_path)?;
+    } else {
+        std::fs::write(&output_path, &output_data)?;
+    }
+
+    eprintln!("Wrote: {} ({} tags)", output_path.display(), tags.len());
+    Ok(())
 }

@@ -671,7 +671,7 @@ impl PyImage {
             "JPEG" => {
                 let exif = build_exif_bytes(&self.metadata)
                     .map_err(|e| crate::error::WriteError::new_err(format!("EXIF build failed: {}", e)))?;
-                JpegWriter::write(&mut reader, &mut output_data, Some(&exif), None)
+                JpegWriter::write(&mut reader, &mut output_data, Some(&exif), None, None)
                     .map_err(|e| crate::error::WriteError::new_err(format!("JPEG write failed: {}", e)))?;
             }
             "PNG" => {

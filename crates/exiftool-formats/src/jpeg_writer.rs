@@ -1,9 +1,10 @@
-//! JPEG writer - replaces EXIF/XMP segments in JPEG files.
+//! JPEG writer - replaces EXIF/XMP/IPTC segments in JPEG files.
 //!
-//! Strategy: Copy all segments, replacing APP1 (EXIF) with new data.
+//! Strategy: Copy all segments, replacing APP1 (EXIF), APP1 (XMP), APP13 (IPTC) with new data.
 //! Image data (after SOS) is copied verbatim - no recompression.
 
 use crate::{Error, Metadata, ReadSeek, Result};
+use crate::iptc::IptcWriter;
 use std::io::Write;
 
 /// JPEG segment for writing.
@@ -17,17 +18,19 @@ pub struct JpegSegment {
 pub struct JpegWriter;
 
 impl JpegWriter {
-    /// Write JPEG with new EXIF data.
+    /// Write JPEG with new EXIF/XMP/IPTC data.
     /// 
     /// - `input`: source JPEG reader
     /// - `output`: destination writer  
     /// - `exif_data`: new EXIF TIFF bytes (without "Exif\0\0" header)
     /// - `xmp_data`: optional new XMP string
+    /// - `iptc_data`: optional new IPTC APP13 data (with Photoshop header)
     pub fn write<R, W>(
         input: &mut R,
         output: &mut W,
         exif_data: Option<&[u8]>,
         xmp_data: Option<&str>,
+        iptc_data: Option<&[u8]>,
     ) -> Result<()>
     where
         R: ReadSeek,
@@ -48,6 +51,7 @@ impl JpegWriter {
         
         let mut wrote_exif = false;
         let mut wrote_xmp = false;
+        let mut wrote_iptc = false;
         
         for seg in &segments {
             match seg.marker {
@@ -76,6 +80,28 @@ impl JpegWriter {
                         Self::write_segment(output, seg.marker, &seg.data)?;
                     }
                 }
+                0xED => {
+                    // APP13 - IPTC/Photoshop
+                    if seg.data.len() >= 2 {
+                        let len = u16::from_be_bytes([seg.data[0], seg.data[1]]) as usize;
+                        if len >= 2 && seg.data.len() >= len {
+                            let content = &seg.data[2..len];
+                            if content.starts_with(b"Photoshop 3.0\x00") {
+                                // Replace IPTC
+                                if let Some(iptc) = iptc_data {
+                                    if !wrote_iptc {
+                                        Self::write_iptc_segment(output, iptc)?;
+                                        wrote_iptc = true;
+                                    }
+                                }
+                                // Skip original IPTC
+                                continue;
+                            }
+                        }
+                    }
+                    // Other APP13 - copy as-is
+                    Self::write_segment(output, seg.marker, &seg.data)?;
+                }
                 0xDA => {
                     // SOS - write any pending new segments before this
                     if let Some(exif) = exif_data {
@@ -88,6 +114,12 @@ impl JpegWriter {
                         if !wrote_xmp {
                             Self::write_xmp_segment(output, xmp)?;
                             wrote_xmp = true;
+                        }
+                    }
+                    if let Some(iptc) = iptc_data {
+                        if !wrote_iptc {
+                            Self::write_iptc_segment(output, iptc)?;
+                            wrote_iptc = true;
                         }
                     }
                     // Write SOS and rest of file (image data)
@@ -105,7 +137,7 @@ impl JpegWriter {
 
     /// Write JPEG with updated metadata (convenience method).
     ///
-    /// Extracts EXIF and XMP from Metadata struct and writes both.
+    /// Extracts EXIF, XMP and IPTC from Metadata struct and writes all.
     pub fn write_metadata<R, W>(input: &mut R, output: &mut W, metadata: &Metadata) -> Result<()>
     where
         R: ReadSeek,
@@ -121,8 +153,16 @@ impl JpegWriter {
 
         // Get XMP string from metadata
         let xmp_data = metadata.xmp.as_deref();
+        
+        // Build IPTC APP13 from IPTC: prefixed attrs
+        let iptc_bytes = IptcWriter::build_app13(&metadata.exif);
+        let iptc_data = if iptc_bytes.is_empty() {
+            None
+        } else {
+            Some(iptc_bytes.as_slice())
+        };
 
-        Self::write(input, output, exif_data, xmp_data)
+        Self::write(input, output, exif_data, xmp_data, iptc_data)
     }
     
     /// Parse JPEG into segments.
@@ -253,12 +293,28 @@ impl JpegWriter {
         
         Ok(())
     }
+    
+    /// Write IPTC APP13 segment.
+    fn write_iptc_segment<W: Write>(output: &mut W, iptc: &[u8]) -> Result<()> {
+        // APP13 marker
+        output.write_all(&[0xFF, 0xED])?;
+        
+        // Length = 2 + iptc data (which includes Photoshop header)
+        let len = 2 + iptc.len();
+        output.write_all(&(len as u16).to_be_bytes())?;
+        
+        // IPTC data (Photoshop header + IRB + IPTC datasets)
+        output.write_all(iptc)?;
+        
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use exiftool_attrs::AttrValue;
+    use crate::iptc::IptcParser;
     use std::io::Cursor;
     
     fn make_minimal_jpeg() -> Vec<u8> {
@@ -277,7 +333,7 @@ mod tests {
         let mut cursor = Cursor::new(&input);
         let mut output = Vec::new();
         
-        JpegWriter::write(&mut cursor, &mut output, None, None).unwrap();
+        JpegWriter::write(&mut cursor, &mut output, None, None, None).unwrap();
         assert_eq!(&output[0..2], &[0xFF, 0xD8]);
     }
 
@@ -289,7 +345,7 @@ mod tests {
         let mut cursor = Cursor::new(&input);
         let mut output = Vec::new();
         
-        JpegWriter::write(&mut cursor, &mut output, None, Some(xmp)).unwrap();
+        JpegWriter::write(&mut cursor, &mut output, None, Some(xmp), None).unwrap();
         
         // Find XMP APP1 segment
         let xmp_header = b"http://ns.adobe.com/xap/1.0/\x00";
@@ -326,5 +382,41 @@ mod tests {
         let xmp_header = b"http://ns.adobe.com/xap/1.0/\x00";
         let has_xmp = output.windows(xmp_header.len()).any(|w| w == xmp_header);
         assert!(has_xmp, "XMP not found");
+    }
+    
+    #[test]
+    fn write_iptc_to_jpeg() {
+        let input = make_minimal_jpeg();
+        
+        // Build IPTC data
+        let mut attrs = exiftool_attrs::Attrs::new();
+        attrs.set("IPTC:Headline", AttrValue::Str("Test Headline".into()));
+        attrs.set("IPTC:Keywords", AttrValue::List(vec!["rust".into(), "exif".into()]));
+        
+        let iptc_data = IptcWriter::build_app13(&attrs);
+        
+        let mut cursor = Cursor::new(&input);
+        let mut output = Vec::new();
+        
+        JpegWriter::write(&mut cursor, &mut output, None, None, Some(&iptc_data)).unwrap();
+        
+        // Find APP13 segment with Photoshop header
+        let ps_header = b"Photoshop 3.0\x00";
+        let found = output.windows(ps_header.len()).any(|w| w == ps_header);
+        assert!(found, "IPTC APP13 segment not found");
+        
+        // Verify we can parse it back
+        // Find APP13 data in output
+        for i in 0..output.len() - 2 {
+            if output[i] == 0xFF && output[i + 1] == 0xED {
+                let len = u16::from_be_bytes([output[i + 2], output[i + 3]]) as usize;
+                let app13_data = &output[i + 4..i + 2 + len];
+                if let Some(parsed) = IptcParser::parse_app13(app13_data) {
+                    assert_eq!(parsed.get_str("IPTC:Headline"), Some("Test Headline"));
+                    return;
+                }
+            }
+        }
+        panic!("Could not parse IPTC back from output");
     }
 }

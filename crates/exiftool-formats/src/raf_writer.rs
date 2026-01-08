@@ -49,7 +49,7 @@ impl RafWriter {
         // Build new EXIF for JPEG
         let exif_bytes = Self::build_exif(metadata)?;
 
-        JpegWriter::write(&mut jpeg_cursor, &mut new_jpeg, Some(&exif_bytes), None)?;
+        JpegWriter::write(&mut jpeg_cursor, &mut new_jpeg, Some(&exif_bytes), None, None)?;
 
         // Calculate new offsets
         let new_jpeg_length = new_jpeg.len();
