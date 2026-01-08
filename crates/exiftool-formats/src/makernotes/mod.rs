@@ -36,16 +36,22 @@ mod gopro;
 mod hasselblad;
 mod huawei;
 mod kodak;
+mod leica;
 mod minolta;
+mod motorola;
 mod nikon;
 mod olympus;
+mod oneplus;
+mod oppo;
 mod panasonic;
 mod pentax;
 mod phaseone;
+mod realme;
 mod ricoh;
 mod samsung;
 mod sigma;
 mod sony;
+mod vivo;
 mod xiaomi;
 
 pub use apple::AppleParser;
@@ -58,16 +64,22 @@ pub use gopro::GoProParser;
 pub use hasselblad::HasselbladParser;
 pub use huawei::HuaweiParser;
 pub use kodak::KodakParser;
+pub use leica::LeicaParser;
 pub use minolta::MinoltaParser;
+pub use motorola::MotorolaParser;
 pub use nikon::NikonParser;
 pub use olympus::OlympusParser;
+pub use oneplus::OnePlusParser;
+pub use oppo::OppoParser;
 pub use panasonic::PanasonicParser;
 pub use pentax::PentaxParser;
 pub use phaseone::PhaseOneParser;
+pub use realme::RealmeParser;
 pub use ricoh::RicohParser;
 pub use samsung::SamsungParser;
 pub use sigma::SigmaParser;
 pub use sony::SonyParser;
+pub use vivo::VivoParser;
 pub use xiaomi::XiaomiParser;
 
 use exiftool_attrs::{Attrs, AttrValue};
@@ -103,16 +115,22 @@ pub enum Vendor {
     Hasselblad,
     Huawei,
     Kodak,
+    Leica,
     Minolta,
+    Motorola,
     Nikon,
     Olympus,
+    OnePlus,
+    Oppo,
     Panasonic,
     Pentax,
     PhaseOne,
+    Realme,
     Ricoh,
     Samsung,
     Sigma,
     Sony,
+    Vivo,
     Xiaomi,
     Unknown,
 }
@@ -131,8 +149,10 @@ impl Vendor {
             Vendor::Fujifilm
         } else if make_lower.contains("olympus") || make_lower.contains("om digital") {
             Vendor::Olympus
-        } else if make_lower.contains("panasonic") || make_lower.contains("leica") {
+        } else if make_lower.contains("panasonic") {
             Vendor::Panasonic
+        } else if make_lower.contains("leica") {
+            Vendor::Leica
         } else if make_lower.contains("pentax") {
             Vendor::Pentax
         } else if make_lower.contains("ricoh") {
@@ -164,6 +184,16 @@ impl Vendor {
             Vendor::Xiaomi
         } else if make_lower.contains("google") {
             Vendor::Google
+        } else if make_lower.contains("motorola") || make_lower.contains("moto ") {
+            Vendor::Motorola
+        } else if make_lower.contains("oneplus") || make_lower.contains("one plus") {
+            Vendor::OnePlus
+        } else if make_lower.contains("oppo") {
+            Vendor::Oppo
+        } else if make_lower.contains("vivo") || make_lower.contains("iqoo") {
+            Vendor::Vivo
+        } else if make_lower.contains("realme") {
+            Vendor::Realme
         } else {
             Vendor::Unknown
         }
@@ -182,6 +212,7 @@ impl Vendor {
             Vendor::Hasselblad => "Hasselblad",
             Vendor::Huawei => "Huawei",
             Vendor::Kodak => "Kodak",
+            Vendor::Leica => "Leica",
             Vendor::Minolta => "Minolta",
             Vendor::Nikon => "Nikon",
             Vendor::Olympus => "Olympus",
@@ -192,7 +223,12 @@ impl Vendor {
             Vendor::Samsung => "Samsung",
             Vendor::Sigma => "Sigma",
             Vendor::Sony => "Sony",
+            Vendor::Vivo => "Vivo",
             Vendor::Xiaomi => "Xiaomi",
+            Vendor::Motorola => "Motorola",
+            Vendor::OnePlus => "OnePlus",
+            Vendor::Oppo => "Oppo",
+            Vendor::Realme => "Realme",
             Vendor::Unknown => "Unknown",
         }
     }
@@ -246,16 +282,22 @@ pub fn parse(data: &[u8], vendor: Vendor, parent_byte_order: ByteOrder) -> Optio
         Vendor::Hasselblad => &HasselbladParser,
         Vendor::Huawei => &HuaweiParser,
         Vendor::Kodak => &KodakParser,
+        Vendor::Leica => &LeicaParser,
         Vendor::Minolta => &MinoltaParser,
+        Vendor::Motorola => &MotorolaParser,
         Vendor::Nikon => &NikonParser,
         Vendor::Olympus => &OlympusParser,
+        Vendor::OnePlus => &OnePlusParser,
+        Vendor::Oppo => &OppoParser,
         Vendor::Panasonic => &PanasonicParser,
         Vendor::Pentax => &PentaxParser,
         Vendor::PhaseOne => &PhaseOneParser,
+        Vendor::Realme => &RealmeParser,
         Vendor::Ricoh => &RicohParser,
         Vendor::Samsung => &SamsungParser,
         Vendor::Sigma => &SigmaParser,
         Vendor::Sony => &SonyParser,
+        Vendor::Vivo => &VivoParser,
         Vendor::Xiaomi => &XiaomiParser,
         Vendor::Unknown => return None,
     };
@@ -284,7 +326,7 @@ mod tests {
         assert_eq!(Vendor::from_make("OLYMPUS CORPORATION"), Vendor::Olympus);
         assert_eq!(Vendor::from_make("OM Digital Solutions"), Vendor::Olympus);
         assert_eq!(Vendor::from_make("Panasonic"), Vendor::Panasonic);
-        assert_eq!(Vendor::from_make("LEICA"), Vendor::Panasonic);
+        assert_eq!(Vendor::from_make("LEICA"), Vendor::Leica);
         assert_eq!(Vendor::from_make("PENTAX"), Vendor::Pentax);
         assert_eq!(Vendor::from_make("RICOH IMAGING"), Vendor::Ricoh);
         assert_eq!(Vendor::from_make("MINOLTA"), Vendor::Minolta);
@@ -304,6 +346,13 @@ mod tests {
         assert_eq!(Vendor::from_make("Apple"), Vendor::Apple);
         assert_eq!(Vendor::from_make("DJI"), Vendor::Dji);
         assert_eq!(Vendor::from_make("GoPro"), Vendor::GoPro);
+        assert_eq!(Vendor::from_make("motorola"), Vendor::Motorola);
+        assert_eq!(Vendor::from_make("moto g"), Vendor::Motorola);
+        assert_eq!(Vendor::from_make("OnePlus"), Vendor::OnePlus);
+        assert_eq!(Vendor::from_make("OPPO"), Vendor::Oppo);
+        assert_eq!(Vendor::from_make("vivo"), Vendor::Vivo);
+        assert_eq!(Vendor::from_make("iQOO"), Vendor::Vivo);
+        assert_eq!(Vendor::from_make("realme"), Vendor::Realme);
         assert_eq!(Vendor::from_make("Unknown Brand"), Vendor::Unknown);
     }
 }

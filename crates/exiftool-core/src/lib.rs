@@ -26,6 +26,7 @@
 //! ```
 
 mod byte_order;
+pub mod charset;
 mod error;
 mod format;
 pub mod ifd;

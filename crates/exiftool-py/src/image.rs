@@ -10,12 +10,63 @@ use exiftool_formats::{
     add_composite_tags, build_exif_bytes, ExrWriter, FormatRegistry, HdrWriter, HeicWriter,
     JpegWriter, Metadata, PageInfo, PngWriter, TiffWriter, WebpWriter,
 };
+use exiftool_xmp::XmpSidecar;
 use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::fs::File;
 use std::io::{BufReader, Cursor};
 use std::path::PathBuf;
+
+/// Validation issue found in metadata.
+#[pyclass]
+#[derive(Clone)]
+pub struct ValidationIssue {
+    /// Tag name with the issue.
+    #[pyo3(get)]
+    pub tag: String,
+    /// Description of the problem.
+    #[pyo3(get)]
+    pub message: String,
+    /// Severity: "error" or "warning".
+    #[pyo3(get)]
+    pub severity: String,
+}
+
+#[pymethods]
+impl ValidationIssue {
+    fn __repr__(&self) -> String {
+        format!("ValidationIssue({}, {}, {})", self.tag, self.severity, self.message)
+    }
+}
+
+/// Check if datetime string is valid EXIF format.
+/// Accepts: "YYYY:MM:DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS"
+fn is_valid_datetime(s: &str) -> bool {
+    let s = s.trim();
+    if s.len() < 10 {
+        return false;
+    }
+    // EXIF format: YYYY:MM:DD HH:MM:SS or YYYY-MM-DD HH:MM:SS
+    let parts: Vec<&str> = s.split(|c| c == ' ' || c == 'T').collect();
+    if parts.is_empty() {
+        return false;
+    }
+    let date = parts[0];
+    let date_parts: Vec<&str> = date.split(|c| c == ':' || c == '-').collect();
+    if date_parts.len() != 3 {
+        return false;
+    }
+    // Check year, month, day are numbers
+    if date_parts[0].parse::<u16>().is_err() { return false; }
+    if let Ok(m) = date_parts[1].parse::<u8>() {
+        if !(1..=12).contains(&m) { return false; }
+    } else { return false; }
+    if let Ok(d) = date_parts[2].parse::<u8>() {
+        if !(1..=31).contains(&d) { return false; }
+    } else { return false; }
+    true
+}
 
 /// Image metadata object.
 ///
@@ -228,6 +279,17 @@ impl PyImage {
         self.metadata.pages.iter().map(PyPageInfo::from).collect()
     }
 
+    /// Get page info by index.
+    ///
+    /// Args:
+    ///     index: Page index (0-based)
+    ///
+    /// Returns:
+    ///     PageInfo for the specified page, or None if index out of range
+    fn get_page(&self, index: usize) -> Option<PyPageInfo> {
+        self.metadata.pages.get(index).map(PyPageInfo::from)
+    }
+
     /// Raw EXIF data offset in file (if available).
     #[getter]
     fn exif_offset(&self) -> Option<usize> {
@@ -315,6 +377,49 @@ impl PyImage {
         self.metadata.exif.clear();
     }
 
+    /// Remove all metadata (EXIF, XMP, IPTC, ICC).
+    ///
+    /// Use this to strip all metadata from an image before sharing.
+    /// After calling this, you need to call save() to write changes.
+    ///
+    /// Example:
+    ///     img.strip_metadata()
+    ///     img.save()  # Writes file without metadata
+    fn strip_metadata(&mut self) {
+        self.metadata.exif.clear();
+        self.metadata.xmp = None;
+        self.metadata.icc = None;
+        self.metadata.thumbnail = None;
+        self.metadata.preview = None;
+    }
+
+    /// Copy tags from another image.
+    ///
+    /// Args:
+    ///     source: Source image to copy tags from
+    ///     tags: Optional list of tag names to copy. If None, copies all tags.
+    ///
+    /// Example:
+    ///     dst.copy_tags(src)  # Copy all tags
+    ///     dst.copy_tags(src, ["Make", "Model", "DateTimeOriginal"])
+    #[pyo3(signature = (source, tags=None))]
+    fn copy_tags(&mut self, source: &PyImage, tags: Option<Vec<String>>) {
+        match tags {
+            Some(tag_list) => {
+                for tag in tag_list {
+                    if let Some(value) = source.metadata.exif.get(&tag) {
+                        self.metadata.exif.set(&tag, value.clone());
+                    }
+                }
+            }
+            None => {
+                for (key, value) in source.metadata.exif.iter() {
+                    self.metadata.exif.set(key, value.clone());
+                }
+            }
+        }
+    }
+
     /// Shift all DateTime tags by offset.
     ///
     /// Args:
@@ -346,6 +451,33 @@ impl PyImage {
         }
 
         Ok(())
+    }
+
+    /// Set GPS coordinates directly.
+    ///
+    /// Args:
+    ///     lat: Latitude in decimal degrees (negative = South)
+    ///     lon: Longitude in decimal degrees (negative = West)
+    ///     alt: Optional altitude in meters (negative = below sea level)
+    ///
+    /// Example:
+    ///     img.set_gps(55.7558, 37.6173)  # Moscow
+    ///     img.set_gps(51.5074, -0.1278, 11.0)  # London with altitude
+    #[pyo3(signature = (lat, lon, alt=None))]
+    fn set_gps(&mut self, lat: f64, lon: f64, alt: Option<f64>) {
+        let lat_ref = if lat >= 0.0 { "N" } else { "S" };
+        let lon_ref = if lon >= 0.0 { "E" } else { "W" };
+
+        self.metadata.exif.set("GPSLatitude", AttrValue::Double(f64::abs(lat)));
+        self.metadata.exif.set("GPSLatitudeRef", AttrValue::Str(lat_ref.to_string()));
+        self.metadata.exif.set("GPSLongitude", AttrValue::Double(f64::abs(lon)));
+        self.metadata.exif.set("GPSLongitudeRef", AttrValue::Str(lon_ref.to_string()));
+
+        if let Some(altitude) = alt {
+            let alt_ref = if altitude >= 0.0 { 0u32 } else { 1u32 };
+            self.metadata.exif.set("GPSAltitude", AttrValue::Double(f64::abs(altitude)));
+            self.metadata.exif.set("GPSAltitudeRef", AttrValue::UInt(alt_ref));
+        }
     }
 
     /// Add GPS coordinates from a GPX track file.
@@ -592,6 +724,209 @@ impl PyImage {
         _exc_tb: Option<Py<PyAny>>,
     ) -> bool {
         false // Don't suppress exceptions
+    }
+
+    /// Validate metadata for common issues.
+    ///
+    /// Checks:
+    /// - GPS coordinates in valid range (-90/90 lat, -180/180 lon)
+    /// - Orientation value (1-8)
+    /// - ISO reasonable range (1-10000000)
+    /// - DateTime format validity
+    /// - Dimensions > 0
+    ///
+    /// Returns:
+    ///     List of ValidationIssue objects describing problems found.
+    ///     Empty list if no issues detected.
+    ///
+    /// Example:
+    ///     issues = img.validate()
+    ///     for issue in issues:
+    ///         print(f"{issue.tag}: {issue.message}")
+    fn validate(&self) -> Vec<ValidationIssue> {
+        let mut issues = Vec::new();
+
+        // Check GPS latitude (-90 to 90)
+        if let Some(lat) = self.metadata.exif.get("GPSLatitude").and_then(|v| v.as_f64()) {
+            if !(-90.0..=90.0).contains(&lat) {
+                issues.push(ValidationIssue {
+                    tag: "GPSLatitude".into(),
+                    message: format!("Invalid latitude {}: must be -90 to 90", lat),
+                    severity: "error".into(),
+                });
+            }
+        }
+
+        // Check GPS longitude (-180 to 180)
+        if let Some(lon) = self.metadata.exif.get("GPSLongitude").and_then(|v| v.as_f64()) {
+            if !(-180.0..=180.0).contains(&lon) {
+                issues.push(ValidationIssue {
+                    tag: "GPSLongitude".into(),
+                    message: format!("Invalid longitude {}: must be -180 to 180", lon),
+                    severity: "error".into(),
+                });
+            }
+        }
+
+        // Check Orientation (1-8)
+        if let Some(orientation) = self.metadata.exif.get("Orientation").and_then(|v| v.as_u32()) {
+            if !(1..=8).contains(&orientation) {
+                issues.push(ValidationIssue {
+                    tag: "Orientation".into(),
+                    message: format!("Invalid orientation {}: must be 1-8", orientation),
+                    severity: "error".into(),
+                });
+            }
+        }
+
+        // Check ISO (reasonable range)
+        if let Some(iso) = self.metadata.exif.get("ISO").and_then(|v| v.as_u32()) {
+            if iso == 0 || iso > 10_000_000 {
+                issues.push(ValidationIssue {
+                    tag: "ISO".into(),
+                    message: format!("Suspicious ISO value {}", iso),
+                    severity: "warning".into(),
+                });
+            }
+        }
+
+        // Check image dimensions
+        if let Some(width) = self.metadata.exif.get("ImageWidth").and_then(|v| v.as_u32()) {
+            if width == 0 {
+                issues.push(ValidationIssue {
+                    tag: "ImageWidth".into(),
+                    message: "Image width is 0".into(),
+                    severity: "error".into(),
+                });
+            }
+        }
+        if let Some(height) = self.metadata.exif.get("ImageHeight").and_then(|v| v.as_u32()) {
+            if height == 0 {
+                issues.push(ValidationIssue {
+                    tag: "ImageHeight".into(),
+                    message: "Image height is 0".into(),
+                    severity: "error".into(),
+                });
+            }
+        }
+
+        // Check DateTime format
+        for tag in &["DateTime", "DateTimeOriginal", "DateTimeDigitized", "CreateDate", "ModifyDate"] {
+            if let Some(dt) = self.metadata.exif.get(*tag).and_then(|v| v.as_str()) {
+                if !is_valid_datetime(dt) {
+                    issues.push(ValidationIssue {
+                        tag: (*tag).to_string(),
+                        message: format!("Invalid datetime format: {}", dt),
+                        severity: "warning".into(),
+                    });
+                }
+            }
+        }
+
+        // Check ExposureTime > 0
+        if let Some(exp) = self.metadata.exif.get("ExposureTime").and_then(|v| v.as_f64()) {
+            if exp <= 0.0 {
+                issues.push(ValidationIssue {
+                    tag: "ExposureTime".into(),
+                    message: format!("Invalid exposure time: {}", exp),
+                    severity: "error".into(),
+                });
+            }
+        }
+
+        // Check FNumber > 0
+        if let Some(f) = self.metadata.exif.get("FNumber").and_then(|v| v.as_f64()) {
+            if f <= 0.0 {
+                issues.push(ValidationIssue {
+                    tag: "FNumber".into(),
+                    message: format!("Invalid FNumber: {}", f),
+                    severity: "error".into(),
+                });
+            }
+        }
+
+        issues
+    }
+
+    // -------------------------------------------------------------------------
+    // XMP Sidecar Support
+    // -------------------------------------------------------------------------
+
+    /// Check if XMP sidecar file exists for this image.
+    ///
+    /// Sidecar files have the same name but .xmp extension: photo.jpg -> photo.xmp
+    ///
+    /// Returns:
+    ///     True if sidecar file exists.
+    fn has_sidecar(&self) -> bool {
+        match &self.path {
+            Some(p) => XmpSidecar::exists(p),
+            None => false,
+        }
+    }
+
+    /// Get sidecar file path for this image.
+    ///
+    /// Returns:
+    ///     Path to sidecar file (may not exist), or None if image has no path.
+    fn sidecar_path(&self) -> Option<String> {
+        self.path.as_ref().map(|p| {
+            XmpSidecar::sidecar_path(p).to_string_lossy().to_string()
+        })
+    }
+
+    /// Load XMP metadata from sidecar file and merge into current metadata.
+    ///
+    /// Sidecar values override embedded values.
+    ///
+    /// Returns:
+    ///     True if sidecar was loaded, False if no sidecar exists.
+    ///
+    /// Example:
+    ///     if img.load_sidecar():
+    ///         print("Loaded sidecar metadata")
+    fn load_sidecar(&mut self) -> PyResult<bool> {
+        let path = match &self.path {
+            Some(p) => p.clone(),
+            None => return Ok(false),
+        };
+
+        match XmpSidecar::read(&path) {
+            Ok(Some(sidecar_attrs)) => {
+                // Merge sidecar into exif (sidecar wins)
+                for (key, value) in sidecar_attrs.iter() {
+                    self.metadata.exif.set(key, value.clone());
+                }
+                Ok(true)
+            }
+            Ok(None) => Ok(false),
+            Err(e) => Err(crate::error::ExifError::new_err(format!("Failed to read sidecar: {}", e))),
+        }
+    }
+
+    /// Save current XMP metadata to sidecar file.
+    ///
+    /// Creates or overwrites the .xmp file next to the image.
+    ///
+    /// Args:
+    ///     path: Optional explicit path for sidecar. If None, uses image.xmp.
+    ///
+    /// Example:
+    ///     img.save_sidecar()  # Creates photo.xmp next to photo.jpg
+    #[pyo3(signature = (path=None))]
+    fn save_sidecar(&self, path: Option<&str>) -> PyResult<()> {
+        let sidecar_path = match path {
+            Some(p) => PathBuf::from(p),
+            None => match &self.path {
+                Some(p) => XmpSidecar::sidecar_path(p),
+                None => return Err(crate::error::WriteError::new_err(
+                    "Cannot save sidecar: image has no path. Specify path explicitly."
+                )),
+            }
+        };
+
+        XmpSidecar::write_file(&sidecar_path, &self.metadata.exif)
+            .map_err(|e| crate::error::WriteError::new_err(format!("Failed to write sidecar: {}", e)))
     }
 }
 

@@ -50,6 +50,8 @@ pub enum ExifFormat {
     Int64 = 17,
     /// 64-bit IFD pointer (BigTIFF IFD8).
     Ifd64 = 18,
+    /// UTF-8 string (EXIF 3.0, type 129).
+    Utf8 = 129,
 }
 
 impl ExifFormat {
@@ -74,6 +76,7 @@ impl ExifFormat {
             16 => Ok(ExifFormat::UInt64),
             17 => Ok(ExifFormat::Int64),
             18 => Ok(ExifFormat::Ifd64),
+            129 => Ok(ExifFormat::Utf8),
             _ => Err(Error::InvalidFormat(value)),
         }
     }
@@ -102,6 +105,7 @@ impl ExifFormat {
             ExifFormat::UInt64 => 8,
             ExifFormat::Int64 => 8,
             ExifFormat::Ifd64 => 8,
+            ExifFormat::Utf8 => 1,
         }
     }
 
@@ -126,6 +130,7 @@ impl ExifFormat {
             ExifFormat::UInt64 => "int64u",
             ExifFormat::Int64 => "int64s",
             ExifFormat::Ifd64 => "ifd64",
+            ExifFormat::Utf8 => "utf8",
         }
     }
 
@@ -185,7 +190,18 @@ mod tests {
     fn format_parsing() {
         assert_eq!(ExifFormat::from_u16(1).unwrap(), ExifFormat::UInt8);
         assert_eq!(ExifFormat::from_u16(5).unwrap(), ExifFormat::URational);
+        assert_eq!(ExifFormat::from_u16(129).unwrap(), ExifFormat::Utf8);
         assert!(ExifFormat::from_u16(0).is_err());
         assert!(ExifFormat::from_u16(99).is_err());
+    }
+
+    #[test]
+    fn utf8_format() {
+        let utf8 = ExifFormat::Utf8;
+        assert_eq!(utf8.size(), 1);
+        assert_eq!(utf8.name(), "utf8");
+        assert!(!utf8.is_numeric());
+        assert!(!utf8.is_rational());
+        assert!(!utf8.is_ifd_pointer());
     }
 }

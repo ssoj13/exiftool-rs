@@ -43,6 +43,28 @@ pub fn read_with_limit_custom<R: ReadSeek + ?Sized>(reader: &mut R, max_size: u6
     Ok(data)
 }
 
+/// Convert RawValue to AttrValue.
+///
+/// Used by parsers that need to convert raw IFD values directly.
+pub fn raw_value_to_attr(value: &RawValue) -> Option<AttrValue> {
+    Some(match value {
+        RawValue::String(s) => AttrValue::Str(s.clone()),
+        RawValue::UInt8(v) if v.len() == 1 => AttrValue::UInt(v[0] as u32),
+        RawValue::UInt16(v) if v.len() == 1 => AttrValue::UInt(v[0] as u32),
+        RawValue::UInt32(v) if v.len() == 1 => AttrValue::UInt(v[0]),
+        RawValue::Int8(v) if v.len() == 1 => AttrValue::Int(v[0] as i32),
+        RawValue::Int16(v) if v.len() == 1 => AttrValue::Int(v[0] as i32),
+        RawValue::Int32(v) if v.len() == 1 => AttrValue::Int(v[0]),
+        RawValue::URational(v) if v.len() == 1 => AttrValue::URational(v[0].num, v[0].den),
+        RawValue::SRational(v) if v.len() == 1 => AttrValue::Rational(v[0].num, v[0].den),
+        RawValue::Float(v) if v.len() == 1 => AttrValue::Float(v[0]),
+        RawValue::Double(v) if v.len() == 1 => AttrValue::Double(v[0]),
+        RawValue::Undefined(v) => AttrValue::Bytes(v.clone()),
+        // Arrays - convert to string representation
+        _ => AttrValue::Str(value.to_string()),
+    })
+}
+
 /// Convert IFD entry to AttrValue.
 ///
 /// Single source of truth for IFD → Attr conversion used by all format parsers.

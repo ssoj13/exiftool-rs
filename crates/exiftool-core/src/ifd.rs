@@ -588,6 +588,15 @@ impl<'a> IfdReader<'a> {
                 // Rarely used, store as undefined for now
                 Ok(RawValue::Undefined(data[..count * format.size()].to_vec()))
             }
+
+            ExifFormat::Utf8 => {
+                // EXIF 3.0 UTF-8 string, parse as proper UTF-8
+                let bytes = &data[..count];
+                // Trim null terminator if present
+                let len = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
+                let s = String::from_utf8_lossy(&bytes[..len]).into_owned();
+                Ok(RawValue::String(s))
+            }
         }
     }
 }

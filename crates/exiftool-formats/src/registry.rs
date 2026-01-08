@@ -30,7 +30,7 @@ use crate::{
     FlvParser, FormatParser, GifParser, HdrParser, FlacParser, HeicParser, IcoParser, Id3Parser, IiqParser, 
     Jp2Parser, JpegParser, JxlParser, K25Parser, KdcParser, MefParser, MkvParser, MosParser, 
     MidiParser, Mp4Parser, MpegTsParser, MrwParser, MxfParser, NefParser, NrwParser, OggParser, OrfParser, PcxParser, PefParser, 
-    PngParser, PnmParser, R3dParser, RmParser, RafParser, Result, Rw2Parser, RwlParser, SgiParser, SrfParser, SrwParser, 
+    PdfParser, PngParser, PnmParser, PsdParser, R3dParser, RmParser, RafParser, Result, Rw2Parser, RwlParser, SgiParser, SrfParser, SrwParser, 
     SvgParser, TakParser, TgaParser, TiffParser, WavParser, WebpParser, WvParser, X3fParser,
 };
 
@@ -100,6 +100,8 @@ impl FormatRegistry {
         r.register(Box::new(CrwParser));           // Canon CRW (CIFF)
         r.register(Box::new(X3fParser));           // Sigma X3F
         r.register(Box::new(MrwParser));           // Minolta MRW
+        r.register(Box::new(PsdParser));           // Adobe Photoshop PSD/PSB
+        r.register(Box::new(PdfParser));           // Adobe PDF
         
         // TIFF-based formats (detected by extension, not magic)
         r.register(Box::new(Cr2Parser::new()));   // Canon CR2

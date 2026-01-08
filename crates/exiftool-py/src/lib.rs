@@ -29,6 +29,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<scan::ScanError>()?;
     m.add_class::<gpx::PyGpxTrack>()?;
     m.add_class::<gpx::PyTrackPoint>()?;
+    m.add_class::<image::ValidationIssue>()?;
 
     // Exceptions
     m.add("ExifError", m.py().get_type::<error::ExifError>())?;

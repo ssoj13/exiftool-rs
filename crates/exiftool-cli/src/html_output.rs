@@ -48,14 +48,8 @@ pub fn format_html(path: &Path, m: &Metadata, filter: &[String], out: &mut Strin
     entries.sort_by(|a, b| a.0.cmp(b.0));
     
     for (k, v) in entries {
-        let vs = v.to_string();
-        let display_val = if vs.len() > 200 {
-            format!("{}...", &vs[..197])
-        } else {
-            vs
-        };
         let _ = writeln!(out, "    <tr><th>{}</th><td class=\"value\">{}</td></tr>", 
-            escape_html(k), escape_html(&display_val));
+            escape_html(k), escape_html(&v.to_string()));
     }
     
     // Additional info

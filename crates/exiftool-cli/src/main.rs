@@ -1243,12 +1243,7 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
             entries.sort_by(|a, b| a.0.cmp(b.0));
             
             for (k, v) in entries {
-                let vs = v.to_string();
-                if vs.len() > 60 {
-                    let _ = writeln!(out, "{:28} {}...", k, &vs[..57]);
-                } else {
-                    let _ = writeln!(out, "{:28} {}", k, vs);
-                }
+                let _ = writeln!(out, "{:28} {}", k, v);
             }
             if filter.is_empty() {
                 if let Some(ref xmp) = m.xmp {
@@ -1280,12 +1275,7 @@ fn print_text(path: &Path, m: &Metadata, _all: bool, filter: &[String]) {
     entries.sort_by(|a, b| a.0.cmp(b.0));
     
     for (k, v) in entries {
-        let vs = v.to_string();
-        if vs.len() > 60 {
-            println!("{:28} {}...", k, &vs[..57]);
-        } else {
-            println!("{:28} {}", k, vs);
-        }
+        println!("{:28} {}", k, v);
     }
     
     if filter.is_empty() {
