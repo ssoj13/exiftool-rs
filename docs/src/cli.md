@@ -226,6 +226,216 @@ Adds:
 - `GPSAltitude`: Combined value with reference
 - `DateTimeOriginal`: With SubSecTimeOriginal
 
+## Import Metadata
+
+### From JSON
+
+Import tags from a JSON file:
+
+```bash
+exif --json=meta.json -p photo.jpg
+exif --json=tags.json -p *.jpg
+```
+
+JSON format (object or array of objects):
+```json
+{
+  "Artist": "John Doe",
+  "Copyright": "2024 John Doe"
+}
+```
+
+### From CSV
+
+Batch import from CSV (first column = SourceFile):
+
+```bash
+exif --csv=metadata.csv -p *.jpg
+```
+
+CSV format:
+```csv
+SourceFile,Artist,Copyright,Software
+photo1.jpg,John Doe,2024,exif
+photo2.jpg,Jane Doe,2024,exif
+```
+
+### Copy from Another File
+
+Copy metadata from source file:
+
+```bash
+# Copy all metadata
+exif --tagsFromFile source.jpg -p target.jpg
+
+# Copy specific tags only
+exif --tagsFromFile source.jpg -t Make -t Model -t Artist -p target.jpg
+```
+
+## Batch Rename
+
+Rename files using metadata templates:
+
+```bash
+# Basic rename with camera info
+exif --rename "$Make_$Model" -p *.jpg
+# Result: Canon_EOS R5.jpg
+
+# With date/time (strftime format)
+exif --rename "%Y%m%d_%H%M%S" -p *.jpg
+# Result: 20240115_143000.jpg
+
+# Combined template
+exif --rename "$Make_$Model_%Y%m%d" -p *.jpg
+# Result: Canon_EOS R5_20240115.jpg
+
+# Directory organization
+exif --rename "%Y/%m/%d/$filename" -p *.jpg
+# Result: 2024/01/15/photo.jpg (creates directories)
+```
+
+### Template Variables
+
+| Variable | Description | Example |
+|----------|-------------|--------|
+| `$TagName` | Any EXIF tag value | `$Make` -> "Canon" |
+| `$filename` | Original filename (no ext) | `$filename` -> "IMG_1234" |
+| `%Y` | Year (4 digit) | `%Y` -> "2024" |
+| `%m` | Month (2 digit) | `%m` -> "01" |
+| `%d` | Day (2 digit) | `%d` -> "15" |
+| `%H` | Hour (2 digit, 24h) | `%H` -> "14" |
+| `%M` | Minute (2 digit) | `%M` -> "30" |
+| `%S` | Second (2 digit) | `%S` -> "00" |
+| `%e` | Original extension | `%e` -> "jpg" |
+
+Date/time values come from DateTimeOriginal or CreateDate tag.
+
+## Strip Metadata
+
+Remove all metadata from files for privacy:
+
+```bash
+# Strip single file
+exif --delete -p photo.jpg
+
+# Strip to new file
+exif --delete -w clean.jpg photo.jpg
+
+# Strip entire directory
+exif --delete -r -p photos/
+```
+
+Removes: EXIF, XMP, IPTC, ICC profiles, thumbnails.
+
+## Validate Metadata
+
+Check metadata for common issues:
+
+```bash
+# Validate single file
+exif --validate photo.jpg
+
+# Validate directory
+exif --validate -r photos/
+```
+
+Checks:
+- GPS coordinates in valid range (-90/90 lat, -180/180 lon)
+- Orientation value (1-8)
+- ISO reasonable range
+- DateTime format validity
+- Image dimensions > 0
+- ExposureTime > 0
+- FNumber > 0
+
+Returns exit code 1 if issues found.
+
+## Conditional Processing
+
+Process only files matching a condition:
+
+```bash
+# Only Canon cameras
+exif -if "Make eq Canon" -r photos/
+
+# High ISO photos
+exif -if "ISO gt 800" *.jpg
+
+# Model contains "R5"
+exif -if "Model contains R5" *.jpg
+
+# Files with GPS data
+exif -if "GPSLatitude" -r photos/
+
+# Combined with other options
+exif -if "Make eq Canon" -f json -r photos/
+```
+
+### Condition Operators
+
+| Operator | Description | Example |
+|----------|-------------|--------|
+| `eq` | Equals (case-insensitive) | `Make eq Canon` |
+| `ne` | Not equals | `Make ne Canon` |
+| `gt` | Greater than | `ISO gt 800` |
+| `lt` | Less than | `ISO lt 200` |
+| `ge` | Greater or equal | `ISO ge 400` |
+| `le` | Less or equal | `ISO le 1600` |
+| `contains` | Contains substring | `Model contains R5` |
+| `startswith` | Starts with | `Make startswith Can` |
+| `endswith` | Ends with | `Software endswith GIMP` |
+| (tag only) | Tag exists | `GPSLatitude` |
+
+Numeric comparisons work with ratios (1/200, f/2.8) and units (100 mm).
+
+## HTML Dump
+
+Visualize file structure with hex preview:
+
+```bash
+# Single file to stdout
+exif -htmlDump photo.jpg
+
+# Save to file
+exif -htmlDump photo.jpg -o dump.html
+
+# Multiple files
+exif -htmlDump -r photos/ -o structure.html
+```
+
+Output includes:
+- File format detection
+- Structure markers (JPEG markers, PNG chunks)
+- Hex dump of first 256 bytes
+- Metadata summary table
+
+## Find Duplicates
+
+Find duplicate files by various criteria:
+
+```bash
+# Exact content duplicates (hash)
+exif -duplicates hash -r photos/
+exif -duplicates -r photos/           # hash is default
+
+# Same capture DateTime
+exif -duplicates datetime -r photos/
+
+# Same camera + datetime + dimensions
+exif -duplicates metadata -r photos/
+```
+
+### Duplicate Methods
+
+| Method | Description |
+|--------|-------------|
+| `hash` | Exact content match (FNV-1a hash + size) |
+| `content` | Same as hash |
+| `datetime` | Same DateTimeOriginal/CreateDate |
+| `metadata` | Same Make + Model + DateTime + Dimensions |
+
+Output shows duplicate groups with file sizes and total wasted space.
+
 ## All Options
 
 | Option | Description |
@@ -250,7 +460,16 @@ Adds:
 | `--minsize <SIZE>` | Only files larger than SIZE (K/M/G suffix) |
 | `--maxsize <SIZE>` | Only files smaller than SIZE |
 | `-c, --composite` | Add composite/calculated tags |
+| `--json=<FILE>` | Import tags from JSON file |
+| `--csv=<FILE>` | Import tags from CSV file |
+| `--tagsFromFile <SRC>` | Copy tags from source file |
+| `--rename <TEMPLATE>` | Rename files using template |
 | `--charset <ENC>` | Character encoding (utf8, latin1, ascii) |
+| `--delete` | Remove all metadata (EXIF, XMP, IPTC, ICC) |
+| `--validate` | Check metadata for issues |
+| `-if <COND>` | Process only files matching condition |
+| `-htmlDump` | Show file structure with hex preview |
+| `-duplicates [BY]` | Find duplicates (hash/datetime/metadata) |
 | `-a, --all` | Include binary/large tags |
 | `-h, --help` | Show help |
 | `-v, --version` | Show version |
@@ -283,4 +502,13 @@ exif -r --newer 2024-01-01 --minsize 5M -f csv photos/ -o large_2024.csv
 
 # Geotag vacation photos
 exif --geotag vacation.gpx -p photos/*.jpg
+
+# Organize photos by date
+exif --rename "%Y/%m/$Make_%Y%m%d_%H%M%S" -p photos/*.jpg
+
+# Import metadata from spreadsheet
+exif --csv=metadata.csv -p *.jpg
+
+# Copy EXIF from original to edited
+exif --tagsFromFile original.jpg -p edited.jpg
 ```

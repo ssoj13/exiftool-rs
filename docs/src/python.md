@@ -107,6 +107,37 @@ print(f"Time range: {track.time_range}")
 
 # Find position for timestamp
 lat, lon, ele = track.find_position(unix_timestamp)
+
+# Set GPS coordinates directly
+img.set_gps(55.7558, 37.6173)           # Moscow (lat, lon)
+img.set_gps(51.5074, -0.1278, 11.0)     # London with altitude
+img.save()
+```
+
+## Copying Metadata
+
+Copy tags between images:
+
+```python
+src = exif.open("source.jpg")
+dst = exif.open("destination.jpg")
+
+# Copy all tags
+dst.copy_tags(src)
+
+# Copy specific tags only
+dst.copy_tags(src, ["Make", "Model", "DateTimeOriginal"])
+
+dst.save()
+```
+
+## Strip Metadata
+
+Remove all metadata for privacy:
+
+```python
+img.strip_metadata()  # Removes EXIF, XMP, IPTC, ICC
+img.save()
 ```
 
 ## ICC Color Profiles
@@ -141,6 +172,10 @@ print(img["Megapixels"])   # 12.0
 if img.gps:
     print(f"Location: {img.gps.latitude}, {img.gps.longitude}")
     print(f"Altitude: {img.gps.altitude}m")
+
+# Set GPS directly
+img.set_gps(48.8566, 2.3522)  # Paris
+img.set_gps(48.8566, 2.3522, 35.0)  # With altitude
     
     # Decimal degrees
     lat, lon = img.gps.as_decimal()
@@ -202,6 +237,41 @@ if img.thumbnail:
 with exif.open("photo.jpg") as img:
     img["Artist"] = "John Doe"
     img.save()
+```
+
+## Metadata Validation
+
+Check metadata for common issues:
+
+```python
+issues = img.validate()
+for issue in issues:
+    print(f"[{issue.severity}] {issue.tag}: {issue.message}")
+
+# Validation checks:
+# - GPS coordinates in valid range
+# - Orientation value (1-8)
+# - ISO reasonable range
+# - DateTime format validity
+# - Image dimensions > 0
+```
+
+## XMP Sidecar Files
+
+Work with XMP sidecar files (.xmp next to image):
+
+```python
+# Check if sidecar exists
+if img.has_sidecar():
+    print(f"Sidecar at: {img.sidecar_path()}")
+
+# Load metadata from sidecar (overwrites embedded)
+if img.load_sidecar():
+    print("Loaded sidecar metadata")
+
+# Save metadata to sidecar file
+img.save_sidecar()  # Creates photo.xmp
+img.save_sidecar("custom.xmp")  # Explicit path
 ```
 
 ## Error Handling
@@ -273,6 +343,14 @@ except WriteError as e:
 | `geotag(gpx_path)` | Add GPS from GPX |
 | `set_icc_from_file(path)` | Load ICC profile |
 | `add_composite()` | Add computed tags |
+| `set_gps(lat, lon, alt)` | Set GPS coordinates |
+| `copy_tags(src, tags)` | Copy tags from source |
+| `strip_metadata()` | Remove all metadata |
+| `validate()` | Check metadata for issues |
+| `has_sidecar()` | Check if .xmp exists |
+| `sidecar_path()` | Get .xmp file path |
+| `load_sidecar()` | Load from .xmp file |
+| `save_sidecar(path)` | Save to .xmp file |
 
 ### GpxTrack Class
 

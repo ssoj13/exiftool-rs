@@ -162,6 +162,40 @@ exif --shift "-30" -p photo.jpg       # Subtract 30 minutes
 # Geotagging
 exif --geotag track.gpx -p photo.jpg  # Add GPS from GPX
 
+# Import from JSON/CSV
+exif --json=meta.json -p photo.jpg    # Import tags from JSON
+exif --csv=meta.csv -p *.jpg          # Batch import from CSV
+
+# Copy tags between files
+exif --tagsFromFile src.jpg -p dst.jpg  # Copy all tags
+exif --tagsFromFile src.jpg -t Make -t Model -p dst.jpg  # Copy specific
+
+# Batch rename with templates
+exif --rename "$Make_$Model_%Y%m%d" -p *.jpg  # Canon_EOS R5_20240115.jpg
+exif --rename "%Y/%m/%d/$filename" -p *.jpg   # Organize by date folders
+
+# Strip all metadata (privacy)
+exif --delete -p photo.jpg            # Remove EXIF, XMP, IPTC, ICC
+exif --delete -r -p photos/           # Strip entire directory
+
+# Validate metadata
+exif --validate photo.jpg             # Check for issues
+exif --validate -r photos/            # Validate directory
+
+# Conditional processing
+exif -if "Make eq Canon" -r photos/   # Only Canon files
+exif -if "ISO gt 800" *.jpg            # High ISO photos
+exif -if "Model contains R5" *.jpg     # Model contains "R5"
+
+# File analysis
+exif -htmlDump photo.jpg -o dump.html  # Hex dump + structure
+exif -htmlDump -r photos/              # Analyze multiple files
+
+# Find duplicates
+exif -duplicates hash -r photos/       # Exact duplicates (content hash)
+exif -duplicates datetime -r photos/   # Same capture time
+exif -duplicates metadata -r photos/   # Same Make/Model/DateTime/Size
+
 # ICC profile
 exif --icc sRGB.icc -p photo.jpg      # Embed color profile
 

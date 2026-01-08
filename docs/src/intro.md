@@ -18,9 +18,9 @@ formats and tags you'll actually encounter - with clean, maintainable code.
 
 ## What You Get
 
-- **90+ formats** - JPEG, PNG, TIFF, HEIC, RAW (CR2, NEF, ARW, etc.), MP4, MP3, and more
+- **17 formats** - JPEG, PNG, TIFF, HEIC/AVIF, WebP, RAW (CR2, CR3, NEF, ARW, ORF, RW2, PEF, RAF), EXR, HDR
 - **Read & write** - Extract metadata, modify tags, save changes
-- **Python bindings** - `pip install exiftool-rs` and you're done
+- **Python bindings** - `pip install exiftool-py` and you're done
 - **CLI tool** - Drop-in for basic ExifTool usage
 - **Zero unsafe** - Pure Rust, no C dependencies (except optional Python bindings)
 

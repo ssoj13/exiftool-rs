@@ -6,7 +6,7 @@ Writing is supported for:
 
 | Format | Extension | Notes |
 |--------|-----------|-------|
-| JPEG | .jpg, .jpeg | Full EXIF + XMP |
+| JPEG | .jpg, .jpeg | Full EXIF + XMP + IPTC |
 | PNG | .png | tEXt/iTXt chunks |
 | TIFF | .tif, .tiff | Full EXIF |
 | DNG | .dng | Full EXIF |
@@ -39,7 +39,7 @@ let exif_bytes = build_exif_bytes(&metadata)?;
 // Write to new file
 reader.seek(SeekFrom::Start(0))?;
 let mut output = Vec::new();
-JpegWriter::write(&mut reader, &mut output, Some(&exif_bytes), None)?;
+JpegWriter::write(&mut reader, &mut output, Some(&exif_bytes), None, None)?;
 
 std::fs::write("output.jpg", output)?;
 ```
@@ -76,8 +76,8 @@ metadata.exif.clear();
 Each writable format has its own writer:
 
 ```rust
-// JPEG
-JpegWriter::write(&mut reader, &mut output, Some(&exif), Some(&xmp))?;
+// JPEG (exif, xmp, iptc)
+JpegWriter::write(&mut reader, &mut output, Some(&exif), Some(&xmp), Some(&iptc))?;
 
 // PNG  
 PngWriter::write(&mut reader, &mut output, &metadata)?;
@@ -111,7 +111,7 @@ are modified. The image pixels remain untouched.
 ```rust
 // Original file structure is preserved
 // Only EXIF/XMP segments are replaced
-JpegWriter::write(&mut reader, &mut output, Some(&new_exif), None)?;
+JpegWriter::write(&mut reader, &mut output, Some(&new_exif), None, None)?;
 ```
 
 ## Error Handling

@@ -122,6 +122,11 @@ IMPORT/COPY:
     exif --csv=meta.csv                         # import tags from CSV
     exif --tagsFromFile src.jpg -p dst.jpg      # copy all tags from src to dst
 
+RENAME:
+    exif --rename '%Y%m%d_%H%M%S.%e' *.jpg      # rename by date: 20240115_103045.jpg
+    exif --rename '$Make_$Model.%e' *.jpg       # rename by tags: Canon_EOS R5.jpg
+    exif --rename '%Y/%m/%d/$Model.%e' *.jpg    # create dirs + rename
+
 THUMBNAIL/PREVIEW:
     exif -T photo.jpg                           # extract thumbnail to photo_thumb.jpg
     exif -T -o thumb.jpg photo.jpg              # extract to specific file
@@ -140,6 +145,7 @@ OPTIONS:
     --json=<FILE>        Import tags from JSON file
     --csv=<FILE>         Import tags from CSV file
     --tagsFromFile <F>   Copy tags from another image file
+    --rename <TMPL>      Rename files using template ($Tag, %Y%m%d, %e=ext)
     -w, --write <FILE>   Output image file (for write mode)
     -p, --inplace        Modify original file in-place
     -T, --thumbnail      Extract embedded thumbnail
@@ -154,6 +160,13 @@ OPTIONS:
     -c, --composite      Add composite/calculated tags (ImageSize, Megapixels, etc.)
     --charset <ENC>      Character encoding for strings (utf8, latin1, default: utf8)
     -a, --all            Include binary/large tags
+    --delete             Remove all metadata (EXIF, XMP, IPTC, ICC) from files
+    --validate           Check metadata for issues (returns exit code 1 if problems)
+    -if <COND>           Process only files where CONDITION is true
+                         Ops: eq, ne, gt, lt, ge, le, contains, startswith, endswith
+                         Examples: -if "Make eq Canon", -if "ISO gt 800"
+    -htmlDump            Show file structure with hex preview (to HTML)
+    -duplicates [BY]     Find duplicate files (BY: hash, content, datetime, metadata)
     -h, --help, /?       Show this help
     -v, --version        Show version
 
@@ -178,6 +191,219 @@ EXAMPLES:
     # Read RAW files
     exif photo.cr3 photo.nef photo.arw photo.orf photo.rw2 photo.pef
 "#;
+
+// =============================================================================
+// Condition evaluation for -if
+// =============================================================================
+
+/// Condition operator
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum CondOp {
+    Eq,         // eq, =, ==
+    Ne,         // ne, !=, <>
+    Gt,         // gt, >
+    Lt,         // lt, <
+    Ge,         // ge, >=
+    Le,         // le, <=
+    Contains,   // contains, ~
+    StartsWith, // startswith
+    EndsWith,   // endswith
+    Exists,     // tag exists (unary)
+}
+
+impl CondOp {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "eq" | "=" | "==" => Some(CondOp::Eq),
+            "ne" | "!=" | "<>" => Some(CondOp::Ne),
+            "gt" | ">" => Some(CondOp::Gt),
+            "lt" | "<" => Some(CondOp::Lt),
+            "ge" | ">=" => Some(CondOp::Ge),
+            "le" | "<=" => Some(CondOp::Le),
+            "contains" | "~" => Some(CondOp::Contains),
+            "startswith" | "starts" => Some(CondOp::StartsWith),
+            "endswith" | "ends" => Some(CondOp::EndsWith),
+            _ => None,
+        }
+    }
+}
+
+/// Parsed condition
+struct Condition {
+    tag: String,
+    op: CondOp,
+    value: String,
+}
+
+impl Condition {
+    /// Parse condition string: "Tag op Value" or just "Tag" for existence check
+    fn parse(s: &str) -> Option<Self> {
+        let s = s.trim();
+        
+        // Split into parts
+        let parts: Vec<&str> = s.split_whitespace().collect();
+        
+        match parts.len() {
+            // Just tag name = existence check
+            1 => Some(Condition {
+                tag: parts[0].to_string(),
+                op: CondOp::Exists,
+                value: String::new(),
+            }),
+            // Tag op Value
+            n if n >= 3 => {
+                let tag = parts[0].to_string();
+                let op = CondOp::from_str(parts[1])?;
+                // Value is everything after operator (allows spaces in value)
+                let value = parts[2..].join(" ");
+                Some(Condition { tag, op, value })
+            }
+            _ => None,
+        }
+    }
+    
+    /// Evaluate condition against metadata
+    fn eval(&self, metadata: &Metadata) -> bool {
+        // Get tag value from metadata
+        let tag_value = metadata.exif.get(&self.tag)
+            .map(|v| format_attr_value(v))
+            .unwrap_or_default();
+        
+        // Existence check
+        if self.op == CondOp::Exists {
+            return metadata.exif.contains(&self.tag);
+        }
+        
+        // No value = condition fails
+        if tag_value.is_empty() {
+            return false;
+        }
+        
+        // Try numeric comparison
+        let tag_num = parse_number(&tag_value);
+        let val_num = parse_number(&self.value);
+        
+        match self.op {
+            CondOp::Eq => {
+                if let (Some(tn), Some(vn)) = (tag_num, val_num) {
+                    (tn - vn).abs() < 0.001
+                } else {
+                    tag_value.eq_ignore_ascii_case(&self.value)
+                }
+            }
+            CondOp::Ne => {
+                if let (Some(tn), Some(vn)) = (tag_num, val_num) {
+                    (tn - vn).abs() >= 0.001
+                } else {
+                    !tag_value.eq_ignore_ascii_case(&self.value)
+                }
+            }
+            CondOp::Gt => {
+                if let (Some(tn), Some(vn)) = (tag_num, val_num) {
+                    tn > vn
+                } else {
+                    tag_value > self.value
+                }
+            }
+            CondOp::Lt => {
+                if let (Some(tn), Some(vn)) = (tag_num, val_num) {
+                    tn < vn
+                } else {
+                    tag_value < self.value
+                }
+            }
+            CondOp::Ge => {
+                if let (Some(tn), Some(vn)) = (tag_num, val_num) {
+                    tn >= vn
+                } else {
+                    tag_value >= self.value
+                }
+            }
+            CondOp::Le => {
+                if let (Some(tn), Some(vn)) = (tag_num, val_num) {
+                    tn <= vn
+                } else {
+                    tag_value <= self.value
+                }
+            }
+            CondOp::Contains => {
+                tag_value.to_lowercase().contains(&self.value.to_lowercase())
+            }
+            CondOp::StartsWith => {
+                tag_value.to_lowercase().starts_with(&self.value.to_lowercase())
+            }
+            CondOp::EndsWith => {
+                tag_value.to_lowercase().ends_with(&self.value.to_lowercase())
+            }
+            CondOp::Exists => unreachable!(),
+        }
+    }
+}
+
+/// Parse number from string (handles ratios like "1/200", "f/2.8", "100 mm")
+fn parse_number(s: &str) -> Option<f64> {
+    let s = s.trim();
+    
+    // Remove common suffixes
+    let s = s.trim_end_matches(|c: char| c.is_alphabetic() || c == ' ');
+    
+    // Handle f/X notation for aperture
+    let s = s.strip_prefix("f/").unwrap_or(s);
+    let s = s.strip_prefix("F/").unwrap_or(s);
+    
+    // Handle ratios like "1/200"
+    if let Some((num, den)) = s.split_once('/') {
+        let n: f64 = num.trim().parse().ok()?;
+        let d: f64 = den.trim().parse().ok()?;
+        if d != 0.0 {
+            return Some(n / d);
+        }
+    }
+    
+    // Plain number
+    s.parse().ok()
+}
+
+/// Format AttrValue for display/comparison
+fn format_attr_value(v: &AttrValue) -> String {
+    match v {
+        AttrValue::Str(s) => s.clone(),
+        AttrValue::Bool(b) => b.to_string(),
+        AttrValue::Int8(n) => n.to_string(),
+        AttrValue::Int(n) => n.to_string(),
+        AttrValue::UInt(n) => n.to_string(),
+        AttrValue::Int64(n) => n.to_string(),
+        AttrValue::UInt64(n) => n.to_string(),
+        AttrValue::Float(f) => format!("{}", f),
+        AttrValue::Double(f) => format!("{}", f),
+        AttrValue::Rational(n, d) => {
+            if *d == 1 { n.to_string() } else { format!("{}/{}", n, d) }
+        }
+        AttrValue::URational(n, d) => {
+            if *d == 1 { n.to_string() } else { format!("{}/{}", n, d) }
+        }
+        AttrValue::Bytes(b) => format!("({} bytes)", b.len()),
+        AttrValue::DateTime(dt) => dt.to_string(),
+        AttrValue::Uuid(u) => u.to_string(),
+        AttrValue::Json(j) => j.clone(),
+        AttrValue::Vec3(v) => format!("{},{},{}", v[0], v[1], v[2]),
+        AttrValue::Vec4(v) => format!("{},{},{},{}", v[0], v[1], v[2], v[3]),
+        AttrValue::List(l) => format!("[{} items]", l.len()),
+        AttrValue::Map(m) => format!("{{{}}} items", m.len()),
+        AttrValue::Set(s) => format!("{{{} items}}", s.len()),
+        AttrValue::Group(g) => format!("({} attrs)", g.len()),
+    }
+}
+
+/// Check if file matches -if condition
+fn matches_condition(metadata: &Metadata, condition: &str) -> bool {
+    if let Some(cond) = Condition::parse(condition) {
+        cond.eval(metadata)
+    } else {
+        eprintln!("Warning: invalid condition syntax: {}", condition);
+        true // On parse error, include file
+    }
+}
 
 fn main() {
     if let Err(e) = run() {
@@ -214,6 +440,31 @@ fn run() -> Result<()> {
     // CSV import mode
     if parsed.csv_import.is_some() {
         return import_from_csv(&parsed, &registry);
+    }
+
+    // Rename mode
+    if parsed.rename.is_some() {
+        return rename_files(&parsed, &registry);
+    }
+
+    // Delete metadata mode
+    if parsed.delete {
+        return delete_metadata(&parsed, &registry);
+    }
+
+    // Validate metadata mode
+    if parsed.validate {
+        return validate_metadata(&parsed, &registry);
+    }
+
+    // HTML dump mode (show file structure)
+    if parsed.html_dump {
+        return html_dump(&parsed, &registry);
+    }
+
+    // Duplicates mode
+    if parsed.duplicates {
+        return find_duplicates(&parsed, &registry);
     }
 
     // Write mode (modify image tags or copy from file)
@@ -279,6 +530,13 @@ fn run() -> Result<()> {
                     add_composite_tags(&mut metadata);
                 }
                 
+                // Apply -if condition filter
+                if let Some(ref cond) = parsed.if_condition {
+                    if !matches_condition(&metadata, cond) {
+                        continue; // Skip file that doesn't match condition
+                    }
+                }
+                
                 if write_to_file {
                     format_metadata(path, &metadata, &parsed, &mut output_buf);
                 } else {
@@ -328,6 +586,18 @@ struct Args {
     csv_import: Option<PathBuf>,      // --csv= import tags from CSV
     tags_from_file: Option<PathBuf>,  // --tagsFromFile copy from another image
     copy_tags: Vec<String>,           // tags to copy (empty = all)
+    // Rename
+    rename: Option<String>,           // --rename template for batch renaming
+    // Delete/validate
+    delete: bool,                     // --delete remove all metadata
+    validate: bool,                   // --validate check metadata
+    // Conditional processing
+    if_condition: Option<String>,     // -if CONDITION filter by metadata
+    // HTML dump
+    html_dump: bool,                  // -htmlDump show file structure
+    // Duplicates
+    duplicates: bool,                 // -duplicates find duplicate files
+    dup_by: String,                   // hash, content, metadata, datetime
 }
 
 /// Parse date string to SystemTime.
@@ -802,6 +1072,30 @@ fn parse_args(args: &[String]) -> Result<Args> {
             }
             "-X" | "--xml" => parsed.format = "xml".into(),
             "-p" | "--inplace" => parsed.inplace = true,
+            "--delete" | "--strip" => parsed.delete = true,
+            "--validate" => parsed.validate = true,
+            "-if" => {
+                i += 1;
+                if let Some(cond) = args.get(i) {
+                    parsed.if_condition = Some(cond.clone());
+                } else {
+                    anyhow::bail!("-if requires a condition string");
+                }
+            }
+            "-htmlDump" | "--htmlDump" | "--html-dump" => parsed.html_dump = true,
+            "-duplicates" | "--duplicates" | "-dup" => {
+                parsed.duplicates = true;
+                // Check if next arg is a method specifier
+                if let Some(next) = args.get(i + 1) {
+                    if !next.starts_with('-') && ["hash", "content", "datetime", "metadata"].contains(&next.as_str()) {
+                        parsed.dup_by = next.clone();
+                        i += 1;
+                    }
+                }
+                if parsed.dup_by.is_empty() {
+                    parsed.dup_by = "hash".to_string();
+                }
+            }
             "-T" | "--thumbnail" => parsed.thumbnail = true,
             "-P" | "--preview" => parsed.preview = true,
             "-r" | "--recursive" => parsed.recursive = true,
@@ -892,6 +1186,12 @@ fn parse_args(args: &[String]) -> Result<Args> {
                         anyhow::bail!("Source file not found: {}", src_path);
                     }
                     parsed.tags_from_file = Some(path);
+                }
+            }
+            "--rename" => {
+                i += 1;
+                if let Some(template) = args.get(i) {
+                    parsed.rename = Some(template.to_string());
                 }
             }
             _ if arg.starts_with('-') => {
@@ -1166,6 +1466,13 @@ fn output_csv_unified(files: &[PathBuf], registry: &FormatRegistry, args: &Args)
             Ok(mut metadata) => {
                 if args.composite {
                     add_composite_tags(&mut metadata);
+                }
+                
+                // Apply -if condition filter
+                if let Some(ref cond) = args.if_condition {
+                    if !matches_condition(&metadata, cond) {
+                        continue; // Skip file that doesn't match condition
+                    }
                 }
                 
                 // Collect all tag names (filtered or all)
@@ -1691,4 +1998,918 @@ fn write_tags_to_file(
 
     eprintln!("Wrote: {} ({} tags)", output_path.display(), tags.len());
     Ok(())
+}
+
+/// Rename files using metadata template.
+/// Template syntax:
+/// - $Tag - metadata tag value (e.g., $Make, $Model, $DateTimeOriginal)
+/// - %Y, %m, %d, %H, %M, %S - date/time from DateTimeOriginal
+/// - %e - original extension (without dot)
+/// - %c - copy number if file exists (01, 02, ...)
+/// - %% - literal %
+fn rename_files(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    let template = args.rename.as_ref().unwrap();
+    
+    // Expand paths
+    let files = expand_paths(
+        &args.files,
+        args.recursive,
+        &args.extensions,
+        &args.exclude,
+        args.newer,
+        args.older,
+        args.minsize,
+        args.maxsize,
+    );
+    
+    if files.is_empty() {
+        anyhow::bail!("No files to rename");
+    }
+    
+    let mut renamed = 0;
+    let mut errors = 0;
+    
+    for path in &files {
+        match rename_single_file(path, template, registry) {
+            Ok(new_path) => {
+                if new_path != *path {
+                    println!("{} -> {}", path.display(), new_path.display());
+                    renamed += 1;
+                }
+            }
+            Err(e) => {
+                eprintln!("Error renaming {}: {}", path.display(), e);
+                errors += 1;
+            }
+        }
+    }
+    
+    eprintln!("Renamed {} files, {} errors", renamed, errors);
+    Ok(())
+}
+
+/// Rename a single file using template.
+fn rename_single_file(path: &Path, template: &str, registry: &FormatRegistry) -> Result<PathBuf> {
+    // Read metadata
+    let file = File::open(path)
+        .with_context(|| format!("Cannot open: {}", path.display()))?;
+    let mut reader = BufReader::new(file);
+    let metadata = registry.parse(&mut reader)
+        .with_context(|| format!("Cannot parse: {}", path.display()))?;
+    
+    // Get original extension
+    let ext = path.extension()
+        .map(|e| e.to_string_lossy().to_string())
+        .unwrap_or_default();
+    
+    // Get datetime for strftime formatting
+    let datetime = metadata.exif.get("DateTimeOriginal")
+        .or_else(|| metadata.exif.get("CreateDate"))
+        .or_else(|| metadata.exif.get("ModifyDate"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    
+    // Expand template
+    let new_name = expand_rename_template(template, &metadata, &ext, datetime.as_deref())?;
+    
+    // Determine new path
+    let parent = path.parent().unwrap_or(Path::new("."));
+    let mut new_path = parent.join(&new_name);
+    
+    // Handle subdirectories in template (e.g., %Y/%m/%d/name.jpg)
+    if new_name.contains('/') || new_name.contains('\\') {
+        // Create directories if needed
+        if let Some(new_parent) = new_path.parent() {
+            std::fs::create_dir_all(new_parent)?;
+        }
+    }
+    
+    // Handle duplicate filenames with %c counter
+    if new_path.exists() && new_path != *path {
+        let stem = new_path.file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let new_ext = new_path.extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let new_parent = new_path.parent().unwrap_or(Path::new("."));
+        
+        for i in 1..1000 {
+            let candidate = new_parent.join(format!("{}_{:02}.{}", stem, i, new_ext));
+            if !candidate.exists() {
+                new_path = candidate;
+                break;
+            }
+        }
+    }
+    
+    // Rename if different
+    if new_path != *path {
+        std::fs::rename(path, &new_path)?;
+    }
+    
+    Ok(new_path)
+}
+
+/// Expand rename template with metadata values.
+fn expand_rename_template(
+    template: &str,
+    metadata: &Metadata,
+    ext: &str,
+    datetime: Option<&str>,
+) -> Result<String> {
+    let mut result = String::with_capacity(template.len() * 2);
+    let mut chars = template.chars().peekable();
+    
+    while let Some(c) = chars.next() {
+        match c {
+            '$' => {
+                // Tag substitution: $TagName
+                let mut tag_name = String::new();
+                while let Some(&nc) = chars.peek() {
+                    if nc.is_alphanumeric() || nc == '_' || nc == '-' || nc == ':' {
+                        tag_name.push(chars.next().unwrap());
+                    } else {
+                        break;
+                    }
+                }
+                
+                if tag_name.is_empty() {
+                    result.push('$');
+                } else {
+                    // Find tag value
+                    let value = metadata.exif.get(&tag_name)
+                        .map(|v| sanitize_filename(&v.to_string()))
+                        .unwrap_or_default();
+                    result.push_str(&value);
+                }
+            }
+            '%' => {
+                // Date/time format or special
+                if let Some(&nc) = chars.peek() {
+                    chars.next();
+                    match nc {
+                        '%' => result.push('%'),
+                        'e' => result.push_str(ext),
+                        'Y' | 'm' | 'd' | 'H' | 'M' | 'S' => {
+                            if let Some(dt) = datetime {
+                                let val = extract_datetime_part(dt, nc);
+                                result.push_str(&val);
+                            }
+                        }
+                        _ => {
+                            result.push('%');
+                            result.push(nc);
+                        }
+                    }
+                } else {
+                    result.push('%');
+                }
+            }
+            _ => result.push(c),
+        }
+    }
+    
+    // Ensure we have an extension
+    if !result.contains('.') && !ext.is_empty() {
+        result.push('.');
+        result.push_str(ext);
+    }
+    
+    Ok(result)
+}
+
+/// Extract datetime component from EXIF datetime string.
+/// Format: "YYYY:MM:DD HH:MM:SS"
+fn extract_datetime_part(datetime: &str, part: char) -> String {
+    let dt = datetime.trim();
+    match part {
+        'Y' if dt.len() >= 4 => dt[0..4].to_string(),
+        'm' if dt.len() >= 7 => dt[5..7].to_string(),
+        'd' if dt.len() >= 10 => dt[8..10].to_string(),
+        'H' if dt.len() >= 13 => dt[11..13].to_string(),
+        'M' if dt.len() >= 16 => dt[14..16].to_string(),
+        'S' if dt.len() >= 19 => dt[17..19].to_string(),
+        _ => String::new(),
+    }
+}
+
+/// Sanitize string for use in filename (remove/replace unsafe chars).
+fn sanitize_filename(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            c if c.is_control() => '_',
+            c => c,
+        })
+        .collect::<String>()
+        .trim()
+        .to_string()
+}
+
+// =============================================================================
+// Delete Metadata
+// =============================================================================
+
+/// Remove all metadata from files.
+fn delete_metadata(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    if !args.inplace && args.write_file.is_none() {
+        anyhow::bail!("--delete requires -p (in-place) or -w <file> (output file)");
+    }
+    
+    let files = expand_paths(
+        &args.files,
+        args.recursive,
+        &args.extensions,
+        &args.exclude,
+        args.newer,
+        args.older,
+        args.minsize,
+        args.maxsize,
+    );
+    
+    if files.is_empty() {
+        anyhow::bail!("No files to process");
+    }
+    
+    let mut processed = 0;
+    let mut errors = 0;
+    
+    for path in &files {
+        match delete_metadata_single(path, args, registry) {
+            Ok(()) => {
+                println!("Stripped: {}", path.display());
+                processed += 1;
+            }
+            Err(e) => {
+                eprintln!("Error {}: {}", path.display(), e);
+                errors += 1;
+            }
+        }
+    }
+    
+    eprintln!("Processed {} files, {} errors", processed, errors);
+    if errors > 0 {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// Delete metadata from a single file.
+fn delete_metadata_single(path: &Path, args: &Args, registry: &FormatRegistry) -> Result<()> {
+    use std::io::{Seek, SeekFrom};
+    
+    let file = File::open(path)
+        .with_context(|| format!("Cannot open: {}", path.display()))?;
+    let mut reader = BufReader::new(file);
+    let mut metadata = registry.parse(&mut reader)
+        .with_context(|| format!("Cannot parse: {}", path.display()))?;
+    
+    // Check if writable
+    if !metadata.is_writable() {
+        anyhow::bail!("Format {} does not support writing", metadata.format);
+    }
+    
+    // Clear all metadata
+    metadata.exif.clear();
+    metadata.xmp = None;
+    metadata.icc = None;
+    metadata.thumbnail = None;
+    metadata.preview = None;
+    
+    // Seek back to start
+    reader.seek(SeekFrom::Start(0))?;
+    let mut output = Vec::new();
+    
+    match metadata.format {
+        "JPEG" => {
+            // Write JPEG without any metadata segments
+            JpegWriter::write(&mut reader, &mut output, None, None, None)?;
+        }
+        "PNG" => {
+            PngWriter::write(&mut reader, &mut output, &metadata)?;
+        }
+        "TIFF" | "DNG" => {
+            TiffWriter::write(&mut reader, &mut output, &metadata)?;
+        }
+        "EXR" => {
+            ExrWriter::write(&mut reader, &mut output, &metadata)?;
+        }
+        "HDR" => {
+            HdrWriter::write(&mut reader, &mut output, &metadata)?;
+        }
+        fmt => anyhow::bail!("Cannot strip metadata from {}", fmt),
+    }
+    
+    // Write output
+    let output_path = args.write_file.as_deref().unwrap_or(path);
+    let tmp_path = output_path.with_extension("tmp");
+    std::fs::write(&tmp_path, &output)?;
+    std::fs::rename(&tmp_path, output_path)?;
+    
+    Ok(())
+}
+
+// =============================================================================
+// Find Duplicates
+// =============================================================================
+
+use std::collections::HashMap;
+
+/// Find duplicate files.
+fn find_duplicates(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    let files = expand_paths(
+        &args.files,
+        args.recursive,
+        &args.extensions,
+        &args.exclude,
+        args.newer,
+        args.older,
+        args.minsize,
+        args.maxsize,
+    );
+
+    if files.is_empty() {
+        anyhow::bail!("No files specified for -duplicates");
+    }
+
+    eprintln!("Scanning {} files for duplicates (by {})...", files.len(), args.dup_by);
+
+    // Group files by their key (hash, datetime, etc.)
+    let mut groups: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    for path in &files {
+        let key = match args.dup_by.as_str() {
+            "hash" | "content" => {
+                // Fast hash using file content
+                match std::fs::read(path) {
+                    Ok(data) => {
+                        let hash = simple_hash(&data);
+                        format!("{:016x}_{}", hash, data.len())
+                    }
+                    Err(_) => continue,
+                }
+            }
+            "datetime" => {
+                // Use DateTimeOriginal or CreateDate
+                let file = match File::open(path) {
+                    Ok(f) => f,
+                    Err(_) => continue,
+                };
+                let mut reader = BufReader::new(file);
+                match registry.parse(&mut reader) {
+                    Ok(metadata) => {
+                        metadata.exif.get("DateTimeOriginal")
+                            .or_else(|| metadata.exif.get("CreateDate"))
+                            .or_else(|| metadata.exif.get("DateTime"))
+                            .map(|v| v.to_string())
+                            .unwrap_or_default()
+                    }
+                    Err(_) => continue,
+                }
+            }
+            "metadata" => {
+                // Use Make + Model + DateTime + dimensions
+                let file = match File::open(path) {
+                    Ok(f) => f,
+                    Err(_) => continue,
+                };
+                let mut reader = BufReader::new(file);
+                match registry.parse(&mut reader) {
+                    Ok(metadata) => {
+                        let make = metadata.exif.get("Make").map(|v| v.to_string()).unwrap_or_default();
+                        let model = metadata.exif.get("Model").map(|v| v.to_string()).unwrap_or_default();
+                        let dt = metadata.exif.get("DateTimeOriginal")
+                            .or_else(|| metadata.exif.get("CreateDate"))
+                            .map(|v| v.to_string())
+                            .unwrap_or_default();
+                        let w = metadata.exif.get("ImageWidth").map(|v| v.to_string()).unwrap_or_default();
+                        let h = metadata.exif.get("ImageHeight").map(|v| v.to_string()).unwrap_or_default();
+                        format!("{}|{}|{}|{}x{}", make, model, dt, w, h)
+                    }
+                    Err(_) => continue,
+                }
+            }
+            _ => {
+                eprintln!("Unknown duplicate method: {}. Use: hash, content, datetime, metadata", args.dup_by);
+                return Ok(());
+            }
+        };
+
+        if !key.is_empty() {
+            groups.entry(key).or_default().push(path.clone());
+        }
+    }
+
+    // Find groups with more than one file (duplicates)
+    let mut dup_groups: Vec<_> = groups.into_iter()
+        .filter(|(_, files)| files.len() > 1)
+        .collect();
+    dup_groups.sort_by(|a, b| b.1.len().cmp(&a.1.len())); // Sort by count desc
+
+    if dup_groups.is_empty() {
+        println!("No duplicates found.");
+        return Ok(());
+    }
+
+    // Output results
+    let total_dups: usize = dup_groups.iter().map(|(_, f)| f.len() - 1).sum();
+    println!("Found {} duplicate groups ({} duplicate files):\n", dup_groups.len(), total_dups);
+
+    for (i, (key, files)) in dup_groups.iter().enumerate() {
+        let display_key = if key.len() > 60 { &key[..60] } else { key };
+        println!("Group {} ({} files) [{}]", i + 1, files.len(), display_key);
+        for f in files {
+            // Get file size
+            let size = std::fs::metadata(f).map(|m| m.len()).unwrap_or(0);
+            println!("  {} ({} bytes)", f.display(), size);
+        }
+        println!();
+    }
+
+    // Summary
+    let wasted: u64 = dup_groups.iter()
+        .flat_map(|(_, files)| files.iter().skip(1)) // Skip first (original)
+        .filter_map(|f| std::fs::metadata(f).ok())
+        .map(|m| m.len())
+        .sum();
+    
+    println!("Total wasted space: {:.2} MB", wasted as f64 / 1_048_576.0);
+
+    Ok(())
+}
+
+/// Simple fast hash for file content.
+fn simple_hash(data: &[u8]) -> u64 {
+    // FNV-1a hash
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for byte in data {
+        hash ^= *byte as u64;
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
+// =============================================================================
+// HTML Dump - File Structure Visualization
+// =============================================================================
+
+/// Generate HTML dump showing file structure.
+fn html_dump(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    let files = expand_paths(
+        &args.files,
+        args.recursive,
+        &args.extensions,
+        &args.exclude,
+        args.newer,
+        args.older,
+        args.minsize,
+        args.maxsize,
+    );
+
+    if files.is_empty() {
+        anyhow::bail!("No files specified for -htmlDump");
+    }
+
+    let mut html = String::new();
+    html.push_str("<!DOCTYPE html>\n<html>\n<head>\n");
+    html.push_str("<meta charset=\"UTF-8\">\n");
+    html.push_str("<title>File Structure Dump</title>\n");
+    html.push_str("<style>\n");
+    html.push_str("body { font-family: 'SF Mono', Monaco, Consolas, monospace; margin: 20px; background: #1e1e1e; color: #d4d4d4; }\n");
+    html.push_str("h1 { color: #569cd6; }\n");
+    html.push_str("h2 { color: #4ec9b0; border-bottom: 1px solid #444; padding-bottom: 5px; }\n");
+    html.push_str(".file-info { background: #252526; padding: 15px; border-radius: 5px; margin: 10px 0; }\n");
+    html.push_str(".hex-dump { background: #1e1e1e; border: 1px solid #444; padding: 10px; overflow-x: auto; }\n");
+    html.push_str(".hex-row { display: flex; }\n");
+    html.push_str(".hex-offset { color: #608b4e; width: 80px; }\n");
+    html.push_str(".hex-bytes { color: #ce9178; flex: 1; }\n");
+    html.push_str(".hex-ascii { color: #9cdcfe; width: 180px; }\n");
+    html.push_str(".marker { background: #264f78; padding: 2px 6px; border-radius: 3px; margin: 2px; display: inline-block; }\n");
+    html.push_str(".marker-exif { background: #4e7a25; }\n");
+    html.push_str(".marker-xmp { background: #7a4e25; }\n");
+    html.push_str(".marker-icc { background: #4e257a; }\n");
+    html.push_str(".meta-table { width: 100%; border-collapse: collapse; margin: 10px 0; }\n");
+    html.push_str(".meta-table th, .meta-table td { padding: 8px; text-align: left; border-bottom: 1px solid #444; }\n");
+    html.push_str(".meta-table th { background: #333; color: #569cd6; }\n");
+    html.push_str(".section { margin: 20px 0; }\n");
+    html.push_str("</style>\n</head>\n<body>\n");
+    html.push_str("<h1>File Structure Analysis</h1>\n");
+
+    for path in &files {
+        html_dump_single(path, registry, &mut html)?;
+    }
+
+    html.push_str("</body>\n</html>\n");
+
+    // Output to file or stdout
+    if let Some(ref output_path) = args.output {
+        std::fs::write(output_path, &html)
+            .with_context(|| format!("Cannot write: {}", output_path.display()))?;
+        eprintln!("Wrote: {}", output_path.display());
+    } else {
+        print!("{}", html);
+    }
+
+    Ok(())
+}
+
+/// Generate HTML dump for a single file.
+fn html_dump_single(path: &Path, registry: &FormatRegistry, html: &mut String) -> Result<()> {
+    use std::fmt::Write;
+
+    let file_data = std::fs::read(path)
+        .with_context(|| format!("Cannot read: {}", path.display()))?;
+    
+    let file_size = file_data.len();
+    let _ = writeln!(html, "<div class=\"file-info\">");
+    let _ = writeln!(html, "<h2>{}</h2>", escape_html(&path.display().to_string()));
+    let _ = writeln!(html, "<p><strong>Size:</strong> {} bytes ({:.2} KB)</p>", file_size, file_size as f64 / 1024.0);
+
+    // Detect format and show markers
+    let format = detect_format(&file_data);
+    let _ = writeln!(html, "<p><strong>Format:</strong> {}</p>", format);
+
+    // Show file structure markers
+    let _ = writeln!(html, "<div class=\"section\"><h3>Structure</h3>");
+    show_structure_markers(&file_data, &format, html);
+    let _ = writeln!(html, "</div>");
+
+    // Hex dump of first 256 bytes
+    let _ = writeln!(html, "<div class=\"section\"><h3>Header (first 256 bytes)</h3>");
+    let _ = writeln!(html, "<div class=\"hex-dump\">");
+    let preview_len = file_data.len().min(256);
+    for offset in (0..preview_len).step_by(16) {
+        let end = (offset + 16).min(preview_len);
+        let chunk = &file_data[offset..end];
+        
+        let _ = write!(html, "<div class=\"hex-row\">");
+        let _ = write!(html, "<span class=\"hex-offset\">{:08X}</span>", offset);
+        
+        // Hex bytes
+        let _ = write!(html, "<span class=\"hex-bytes\">");
+        for (i, b) in chunk.iter().enumerate() {
+            if i == 8 { let _ = write!(html, " "); }
+            let _ = write!(html, "{:02X} ", b);
+        }
+        // Pad if needed
+        for i in chunk.len()..16 {
+            if i == 8 { let _ = write!(html, " "); }
+            let _ = write!(html, "   ");
+        }
+        let _ = write!(html, "</span>");
+        
+        // ASCII
+        let _ = write!(html, "<span class=\"hex-ascii\">");
+        for b in chunk {
+            let c = if *b >= 0x20 && *b < 0x7F { *b as char } else { '.' };
+            let _ = write!(html, "{}", escape_html(&c.to_string()));
+        }
+        let _ = writeln!(html, "</span></div>");
+    }
+    let _ = writeln!(html, "</div></div>");
+
+    // Parse and show metadata summary
+    let file = File::open(path)?;
+    let mut reader = BufReader::new(file);
+    if let Ok(metadata) = registry.parse(&mut reader) {
+        let _ = writeln!(html, "<div class=\"section\"><h3>Metadata Summary ({} tags)</h3>", metadata.exif.len());
+        let _ = writeln!(html, "<table class=\"meta-table\">");
+        let _ = writeln!(html, "<tr><th>Tag</th><th>Value</th></tr>");
+        
+        // Show important tags first
+        let important = ["Make", "Model", "DateTimeOriginal", "ISO", "ExposureTime", "FNumber", 
+                        "FocalLength", "ImageWidth", "ImageHeight", "Software"];
+        for tag in &important {
+            if let Some(v) = metadata.exif.get(*tag) {
+                let _ = writeln!(html, "<tr><td>{}</td><td>{}</td></tr>", tag, escape_html(&v.to_string()));
+            }
+        }
+        let _ = writeln!(html, "</table></div>");
+    }
+
+    let _ = writeln!(html, "</div>");
+    Ok(())
+}
+
+/// Detect file format from magic bytes.
+fn detect_format(data: &[u8]) -> &'static str {
+    if data.len() < 4 { return "Unknown"; }
+    
+    match &data[0..4] {
+        [0xFF, 0xD8, 0xFF, _] => "JPEG",
+        [0x89, 0x50, 0x4E, 0x47] => "PNG",
+        [0x49, 0x49, 0x2A, 0x00] => "TIFF (Little Endian)",
+        [0x4D, 0x4D, 0x00, 0x2A] => "TIFF (Big Endian)",
+        [0x52, 0x49, 0x46, 0x46] => {
+            if data.len() >= 12 && &data[8..12] == b"WEBP" {
+                "WebP"
+            } else if data.len() >= 12 && &data[8..12] == b"AVI " {
+                "AVI"
+            } else {
+                "RIFF"
+            }
+        }
+        _ => {
+            // Check for ISOBMFF (ftyp at offset 4)
+            if data.len() >= 8 && &data[4..8] == b"ftyp" {
+                if data.len() >= 12 {
+                    let brand = &data[8..12];
+                    if brand == b"heic" || brand == b"heix" || brand == b"mif1" {
+                        "HEIC/HEIF"
+                    } else if brand == b"avif" {
+                        "AVIF"
+                    } else if brand == b"mp41" || brand == b"mp42" || brand == b"isom" {
+                        "MP4"
+                    } else if brand == b"qt  " {
+                        "QuickTime MOV"
+                    } else {
+                        "ISOBMFF"
+                    }
+                } else {
+                    "ISOBMFF"
+                }
+            } else if data.len() >= 4 && &data[0..4] == b"fLaC" {
+                "FLAC"
+            } else if data.len() >= 3 && &data[0..3] == b"ID3" {
+                "MP3 (ID3)"
+            } else if data.len() >= 4 && &data[0..4] == [0x76, 0x2F, 0x31, 0x01] {
+                "OpenEXR"
+            } else if data.len() >= 10 && &data[0..10] == b"#?RADIANCE" {
+                "Radiance HDR"
+            } else {
+                "Unknown"
+            }
+        }
+    }
+}
+
+/// Show structure markers for the file format.
+fn show_structure_markers(data: &[u8], format: &str, html: &mut String) {
+    use std::fmt::Write;
+    
+    match format {
+        "JPEG" => {
+            let _ = write!(html, "<p>Markers: ");
+            let mut i = 0;
+            while i < data.len() - 1 {
+                if data[i] == 0xFF {
+                    let marker = data[i + 1];
+                    let name = jpeg_marker_name(marker);
+                    let class = if name.contains("EXIF") { "marker marker-exif" }
+                               else if name.contains("XMP") { "marker marker-xmp" }
+                               else if name.contains("ICC") { "marker marker-icc" }
+                               else { "marker" };
+                    let _ = write!(html, "<span class=\"{}\">{} ({:02X})</span> ", class, name, marker);
+                    
+                    // Skip marker data
+                    if marker >= 0xE0 && marker <= 0xEF || marker == 0xFE || marker == 0xDB || marker == 0xC4 {
+                        if i + 3 < data.len() {
+                            let len = ((data[i + 2] as usize) << 8) | (data[i + 3] as usize);
+                            i += 2 + len;
+                            continue;
+                        }
+                    }
+                    if marker == 0xD8 || marker == 0xD9 {
+                        i += 2;
+                        continue;
+                    }
+                }
+                i += 1;
+            }
+            let _ = writeln!(html, "</p>");
+        }
+        "PNG" => {
+            let _ = write!(html, "<p>Chunks: ");
+            let mut i = 8; // Skip signature
+            while i + 8 <= data.len() {
+                let len = u32::from_be_bytes([data[i], data[i+1], data[i+2], data[i+3]]) as usize;
+                let chunk_type = std::str::from_utf8(&data[i+4..i+8]).unwrap_or("????");
+                let class = if chunk_type == "eXIf" || chunk_type == "tEXt" || chunk_type == "iTXt" { "marker marker-exif" }
+                           else if chunk_type == "iCCP" { "marker marker-icc" }
+                           else { "marker" };
+                let _ = write!(html, "<span class=\"{}\">{} ({}B)</span> ", class, chunk_type, len);
+                i += 12 + len; // length(4) + type(4) + data + crc(4)
+            }
+            let _ = writeln!(html, "</p>");
+        }
+        _ => {
+            let _ = writeln!(html, "<p>Structure visualization not available for this format.</p>");
+        }
+    }
+}
+
+/// Get JPEG marker name.
+fn jpeg_marker_name(marker: u8) -> &'static str {
+    match marker {
+        0xD8 => "SOI",
+        0xD9 => "EOI",
+        0xE0 => "APP0/JFIF",
+        0xE1 => "APP1/EXIF",
+        0xE2 => "APP2/ICC",
+        0xED => "APP13/IPTC",
+        0xEE => "APP14",
+        0xDB => "DQT",
+        0xC0 => "SOF0",
+        0xC2 => "SOF2",
+        0xC4 => "DHT",
+        0xDA => "SOS",
+        0xFE => "COM",
+        _ => "???",
+    }
+}
+
+/// Escape HTML special characters.
+fn escape_html(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+// =============================================================================
+// Validate Metadata
+// =============================================================================
+
+/// Validate metadata in files.
+fn validate_metadata(args: &Args, registry: &FormatRegistry) -> Result<()> {
+    let files = expand_paths(
+        &args.files,
+        args.recursive,
+        &args.extensions,
+        &args.exclude,
+        args.newer,
+        args.older,
+        args.minsize,
+        args.maxsize,
+    );
+    
+    if files.is_empty() {
+        anyhow::bail!("No files to validate");
+    }
+    
+    let mut total_issues = 0;
+    let mut files_with_issues = 0;
+    
+    for path in &files {
+        match validate_metadata_single(path, registry) {
+            Ok(issues) => {
+                if !issues.is_empty() {
+                    println!("-- {} --", path.display());
+                    for (tag, severity, msg) in &issues {
+                        println!("  [{}] {}: {}", severity, tag, msg);
+                    }
+                    total_issues += issues.len();
+                    files_with_issues += 1;
+                }
+            }
+            Err(e) => {
+                eprintln!("Error {}: {}", path.display(), e);
+                files_with_issues += 1;
+            }
+        }
+    }
+    
+    if files_with_issues > 0 {
+        eprintln!("\nFound {} issues in {} files", total_issues, files_with_issues);
+        std::process::exit(1);
+    } else {
+        eprintln!("All {} files valid", files.len());
+    }
+    Ok(())
+}
+
+/// Validate metadata for a single file.
+/// Returns list of (tag, severity, message) tuples.
+fn validate_metadata_single(
+    path: &Path, 
+    registry: &FormatRegistry
+) -> Result<Vec<(String, String, String)>> {
+    let file = File::open(path)
+        .with_context(|| format!("Cannot open: {}", path.display()))?;
+    let mut reader = BufReader::new(file);
+    let metadata = registry.parse(&mut reader)
+        .with_context(|| format!("Cannot parse: {}", path.display()))?;
+    
+    let mut issues = Vec::new();
+    
+    // GPS latitude (-90 to 90)
+    if let Some(lat) = metadata.exif.get("GPSLatitude").and_then(|v| v.as_f64()) {
+        if !(-90.0..=90.0).contains(&lat) {
+            issues.push((
+                "GPSLatitude".into(),
+                "error".into(),
+                format!("Invalid latitude {}: must be -90 to 90", lat),
+            ));
+        }
+    }
+    
+    // GPS longitude (-180 to 180)
+    if let Some(lon) = metadata.exif.get("GPSLongitude").and_then(|v| v.as_f64()) {
+        if !(-180.0..=180.0).contains(&lon) {
+            issues.push((
+                "GPSLongitude".into(),
+                "error".into(),
+                format!("Invalid longitude {}: must be -180 to 180", lon),
+            ));
+        }
+    }
+    
+    // Orientation (1-8)
+    if let Some(orient) = metadata.exif.get("Orientation").and_then(|v| v.as_u32()) {
+        if !(1..=8).contains(&orient) {
+            issues.push((
+                "Orientation".into(),
+                "error".into(),
+                format!("Invalid orientation {}: must be 1-8", orient),
+            ));
+        }
+    }
+    
+    // ISO (reasonable range)
+    if let Some(iso) = metadata.exif.get("ISO").and_then(|v| v.as_u32()) {
+        if iso == 0 || iso > 10_000_000 {
+            issues.push((
+                "ISO".into(),
+                "warning".into(),
+                format!("Suspicious ISO value {}", iso),
+            ));
+        }
+    }
+    
+    // Image dimensions > 0
+    if let Some(width) = metadata.exif.get("ImageWidth").and_then(|v| v.as_u32()) {
+        if width == 0 {
+            issues.push(("ImageWidth".into(), "error".into(), "Width is 0".into()));
+        }
+    }
+    if let Some(height) = metadata.exif.get("ImageHeight").and_then(|v| v.as_u32()) {
+        if height == 0 {
+            issues.push(("ImageHeight".into(), "error".into(), "Height is 0".into()));
+        }
+    }
+    
+    // DateTime format check
+    for tag in &["DateTime", "DateTimeOriginal", "DateTimeDigitized", "CreateDate", "ModifyDate"] {
+        if let Some(dt) = metadata.exif.get(*tag).and_then(|v| v.as_str()) {
+            if !is_valid_datetime(dt) {
+                issues.push((
+                    (*tag).to_string(),
+                    "warning".into(),
+                    format!("Invalid datetime format: {}", dt),
+                ));
+            }
+        }
+    }
+    
+    // ExposureTime > 0
+    if let Some(exp) = metadata.exif.get("ExposureTime").and_then(|v| v.as_f64()) {
+        if exp <= 0.0 {
+            issues.push((
+                "ExposureTime".into(),
+                "error".into(),
+                format!("Invalid exposure time: {}", exp),
+            ));
+        }
+    }
+    
+    // FNumber > 0
+    if let Some(f) = metadata.exif.get("FNumber").and_then(|v| v.as_f64()) {
+        if f <= 0.0 {
+            issues.push((
+                "FNumber".into(),
+                "error".into(),
+                format!("Invalid FNumber: {}", f),
+            ));
+        }
+    }
+    
+    Ok(issues)
+}
+
+/// Check if datetime string is valid EXIF format.
+fn is_valid_datetime(s: &str) -> bool {
+    let s = s.trim();
+    if s.len() < 10 {
+        return false;
+    }
+    // EXIF format: YYYY:MM:DD HH:MM:SS or YYYY-MM-DD HH:MM:SS
+    let parts: Vec<&str> = s.split(|c| c == ' ' || c == 'T').collect();
+    if parts.is_empty() {
+        return false;
+    }
+    let date = parts[0];
+    let date_parts: Vec<&str> = date.split(|c| c == ':' || c == '-').collect();
+    if date_parts.len() != 3 {
+        return false;
+    }
+    // Check year, month, day are numbers
+    if date_parts[0].parse::<u16>().is_err() { return false; }
+    if let Ok(m) = date_parts[1].parse::<u8>() {
+        if !(1..=12).contains(&m) { return false; }
+    } else { return false; }
+    if let Ok(d) = date_parts[2].parse::<u8>() {
+        if !(1..=31).contains(&d) { return false; }
+    } else { return false; }
+    true
 }
