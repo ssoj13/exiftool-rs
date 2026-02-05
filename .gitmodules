@@ -1,0 +1,6 @@
+[submodule "_ref/exif-rs"]
+	path = _ref/exif-rs
+	url = git@github.com:kamadak/exif-rs.git
+[submodule "_ref/exiftool"]
+	path = _ref/exiftool
+	url = git@github.com:exiftool/exiftool.git
