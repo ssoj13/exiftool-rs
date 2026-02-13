@@ -779,4 +779,74 @@ mod tests {
         assert_eq!(next, 0);
         assert_eq!(errors.len(), 1);
     }
+
+    #[test]
+    fn read_bigtiff_ifd_with_long8() {
+        // Minimal BigTIFF: header + IFD with LONG8 (format 16) entries
+        let mut data = Vec::new();
+        // BigTIFF header (16 bytes): II, 43, offset_size=8, reserved=0, first IFD at 16
+        data.extend_from_slice(&[0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        // IFD at offset 16: count(8), entries(20 each), next(8)
+        data.extend_from_slice(&[0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // count=2
+        // Entry 0: ImageWidth (0x0100), LONG8 (16), count 1, value 1920 (inline)
+        data.extend_from_slice(&[0x00, 0x01, 0x10, 0x00]); // tag, type
+        data.extend_from_slice(&[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // count
+        data.extend_from_slice(&[0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // 1920 LE
+        // Entry 1: ImageHeight (0x0101), LONG8, count 1, value 1080
+        data.extend_from_slice(&[0x01, 0x01, 0x10, 0x00]);
+        data.extend_from_slice(&[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x38, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // 1080 LE
+        // Next IFD = 0
+        data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+        let reader = IfdReader::new_bigtiff(&data, ByteOrder::LittleEndian);
+        let (offset, is_bigtiff) = reader.parse_header_ex().unwrap();
+        assert!(is_bigtiff);
+        assert_eq!(offset, 16);
+
+        let (entries, next) = reader.read_ifd(offset).unwrap();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(next, 0);
+
+        let w = entries.iter().find(|e| e.tag == 0x0100).unwrap();
+        assert_eq!(w.value.as_u64(), Some(1920));
+        let h = entries.iter().find(|e| e.tag == 0x0101).unwrap();
+        assert_eq!(h.value.as_u64(), Some(1080));
+    }
+
+    #[test]
+    fn read_bigtiff_ifd_chain() {
+        // BigTIFF with IFD0 at 16 -> IFD1 at 60 -> 0
+        let mut data = vec![0u8; 96];
+        data[0..16].copy_from_slice(&[
+            0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        // IFD0 at 16: count=1, entry(ImageWidth=1), next=60
+        data[16..24].copy_from_slice(&[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data[24..44].copy_from_slice(&[
+            0x00, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        data[44..52].copy_from_slice(&[0x3C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        // IFD1 at 60: count=1, entry(ImageHeight=2), next=0
+        data[60..68].copy_from_slice(&[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data[68..88].copy_from_slice(&[
+            0x01, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        data[88..96].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+        let reader = IfdReader::new_bigtiff(&data, ByteOrder::LittleEndian);
+        let (entries0, next0) = reader.read_ifd(16).unwrap();
+        assert_eq!(entries0.len(), 1);
+        assert_eq!(entries0[0].value.as_u64(), Some(1));
+        assert_eq!(next0, 60);
+
+        let (entries1, next1) = reader.read_ifd(next0).unwrap();
+        assert_eq!(entries1.len(), 1);
+        assert_eq!(entries1[0].value.as_u64(), Some(2));
+        assert_eq!(next1, 0);
+    }
 }

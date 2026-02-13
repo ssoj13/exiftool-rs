@@ -593,4 +593,90 @@ mod tests {
         assert!(!info.is_thumbnail());
         assert!(info.is_page()); // bit 1 set = multi-page document
     }
+
+    #[test]
+    fn parse_bigtiff_metadata() {
+        use std::io::Cursor;
+        // Minimal BigTIFF that TiffParser can parse
+        let mut data = Vec::new();
+        data.extend_from_slice(&[0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // IFD count 2
+        // ImageWidth (0x0100) LONG8 = 1920
+        data.extend_from_slice(&[0x00, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        // ImageHeight (0x0101) LONG8 = 1080
+        data.extend_from_slice(&[0x01, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x38, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // next IFD = 0
+
+        let parser = TiffParser::default();
+        let mut cursor = Cursor::new(data);
+        let metadata = parser.parse(&mut cursor).unwrap();
+        assert_eq!(metadata.format, "BigTIFF");
+        assert_eq!(metadata.exif.get_u32("ImageWidth"), Some(1920));
+        assert_eq!(metadata.exif.get_u32("ImageHeight"), Some(1080));
+    }
+
+    #[test]
+    fn parse_tiff_ifd_chain_with_thumbnail() {
+        use std::io::Cursor;
+        use exiftool_core::{ExifWriter, WriteEntry};
+        use exiftool_core::writer::tags;
+        // Create valid TIFF via ExifWriter (IFD0 + IFD1 thumbnail)
+        let mut writer = ExifWriter::new(exiftool_core::ByteOrder::LittleEndian);
+        writer.add_ifd0(WriteEntry::from_str(tags::MAKE, "Test"));
+        writer.add_ifd0(WriteEntry::from_u16(tags::ORIENTATION, 1));
+        writer.set_thumbnail(&[0xFF, 0xD8, 0xFF, 0xD9]); // minimal JPEG
+        let data = writer.serialize().unwrap();
+
+        let parser = TiffParser::default();
+        let mut cursor = Cursor::new(data);
+        let metadata = parser.parse(&mut cursor).unwrap();
+        assert_eq!(metadata.format, "TIFF");
+        assert_eq!(metadata.exif.get_str("Make"), Some("Test"));
+        // IFD0 = page, IFD1 = thumbnail
+        assert_eq!(metadata.pages.len(), 1);
+        assert!(metadata.thumbnail.is_some());
+    }
+
+    #[test]
+    fn parse_bigtiff_with_long8_strip_offsets() {
+        use std::io::Cursor;
+        // BigTIFF with StripOffsets/StripByteCounts as LONG8 (as_u64_vec path)
+        let mut data = vec![0u8; 112];
+        data[0..16].copy_from_slice(&[
+            0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        data[16..24].copy_from_slice(&[0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        // Make: String, inline "Test\0" (5 bytes <= 8)
+        data[24..44].copy_from_slice(&[
+            0x0F, 0x01, 0x02, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x54, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        // StripOffsets: LONG8, count 1, value 0
+        data[44..64].copy_from_slice(&[
+            0x11, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        // StripByteCounts: LONG8
+        data[64..84].copy_from_slice(&[
+            0x17, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        // Compression: Short, 1
+        data[84..104].copy_from_slice(&[
+            0x03, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        data[104..112].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+        let parser = TiffParser::default();
+        let mut cursor = Cursor::new(data);
+        let metadata = parser.parse(&mut cursor).unwrap();
+        assert_eq!(metadata.format, "BigTIFF");
+        assert_eq!(metadata.exif.get_str("Make"), Some("Test"));
+        assert_eq!(metadata.pages.len(), 1);
+    }
 }

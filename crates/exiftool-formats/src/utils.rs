@@ -225,6 +225,8 @@ pub fn raw_value_to_attr(value: &RawValue) -> Option<AttrValue> {
         RawValue::Float(v) if v.len() == 1 => AttrValue::Float(v[0]),
         RawValue::Double(v) if v.len() == 1 => AttrValue::Double(v[0]),
         RawValue::Undefined(v) => AttrValue::Bytes(v.clone()),
+        RawValue::UInt64(v) if v.len() == 1 => AttrValue::UInt(v[0] as u32),
+        RawValue::Int64(v) if v.len() == 1 => AttrValue::Int(v[0] as i32),
         // Arrays - convert to string representation
         _ => AttrValue::Str(value.to_string()),
     })
@@ -247,6 +249,8 @@ pub fn entry_to_attr(entry: &IfdEntry) -> AttrValue {
         RawValue::Float(v) if v.len() == 1 => AttrValue::Float(v[0]),
         RawValue::Double(v) if v.len() == 1 => AttrValue::Double(v[0]),
         RawValue::Undefined(v) => AttrValue::Bytes(v.clone()),
+        RawValue::UInt64(v) if v.len() == 1 => AttrValue::UInt(v[0] as u32),
+        RawValue::Int64(v) if v.len() == 1 => AttrValue::Int(v[0] as i32),
         // Arrays and other types - convert to string representation
         _ => AttrValue::Str(entry.value.to_string()),
     }
