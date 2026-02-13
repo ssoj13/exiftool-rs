@@ -18,9 +18,9 @@
 //!   VP8L <size> <lossless-data>      ; Lossless image data
 //! ```
 
-use crate::{Error, FormatParser, Metadata, ReadSeek, Result, utils::entry_to_attr, tag_lookup};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
+use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
 use exiftool_attrs::{Attrs, AttrValue};
-use exiftool_core::{ByteOrder, IfdReader};
 use std::io::SeekFrom;
 
 /// WebP format parser.
@@ -45,31 +45,17 @@ impl WebpParser {
         Ok(u32::from_le_bytes(buf))
     }
 
-    /// Parse EXIF chunk data (TIFF structure).
+    /// Parse EXIF chunk data (TIFF structure) including sub-IFDs (ExifIFD, GPS, Interop).
     fn parse_exif_chunk(&self, data: &[u8]) -> Result<Attrs> {
-        if data.len() < 8 {
-            return Ok(Attrs::new());
-        }
-
-        // EXIF data starts with TIFF header
-        let byte_order = ByteOrder::from_marker([data[0], data[1]])
-            .map_err(|_| Error::InvalidStructure("Invalid EXIF byte order".into()))?;
-
-        let reader = IfdReader::new(data, byte_order);
-        let ifd_offset = reader.parse_header()
-            .map_err(|e| Error::InvalidStructure(format!("EXIF header: {}", e)))?;
-
-        let (entries, _) = reader.read_ifd(ifd_offset)
-            .map_err(|e| Error::InvalidStructure(format!("EXIF IFD: {}", e)))?;
-
         let mut attrs = Attrs::new();
-        for entry in entries {
-            let name = tag_lookup::lookup_exif(entry.tag)
-                .unwrap_or("Unknown")
-                .to_string();
-            attrs.set(&name, entry_to_attr(&entry));
-        }
-
+        parse_tiff_exif(
+            data,
+            &mut attrs,
+            None,
+            ParseTiffExifOptions {
+                extract_thumbnail: false,
+            },
+        )?;
         Ok(attrs)
     }
 }

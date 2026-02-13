@@ -98,7 +98,7 @@ pub fn parse_ifd_entries(data: &[u8], byte_order: ByteOrder, ifd_offset: u32) ->
         return None;
     }
     let reader = IfdReader::new(data, byte_order);
-    let (entries, _) = reader.read_ifd(ifd_offset).ok()?;
+    let (entries, _) = reader.read_ifd(ifd_offset as u64).ok()?;
     Some(entries)
 }
 

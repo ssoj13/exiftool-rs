@@ -13,10 +13,9 @@
 //! - `jumb`: JUMBF metadata
 //! - `brob`: Brotli-compressed box
 
-use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0};
-use crate::{entry_to_attr, makernotes, Error, FormatParser, Metadata, ReadSeek, Result};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
+use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
 use exiftool_attrs::AttrValue;
-use exiftool_core::{ByteOrder, IfdReader, RawValue};
 use std::io::SeekFrom;
 
 /// JPEG XL container magic (12 bytes).
@@ -188,7 +187,12 @@ impl JxlParser {
         }
 
         let tiff_data = &exif_data[tiff_start..];
-        self.parse_tiff_exif(tiff_data, metadata)?;
+        parse_tiff_exif(
+            tiff_data,
+            &mut metadata.exif,
+            None,
+            ParseTiffExifOptions::default(),
+        )?;
 
         Ok(())
     }
@@ -231,82 +235,6 @@ impl JxlParser {
             }
         }
         0
-    }
-
-    /// Parse TIFF-format EXIF data.
-    fn parse_tiff_exif(&self, tiff_data: &[u8], metadata: &mut Metadata) -> Result<()> {
-        let byte_order = match ByteOrder::from_marker([tiff_data[0], tiff_data[1]]) {
-            Ok(bo) => bo,
-            Err(_) => return Ok(()),
-        };
-
-        let reader = IfdReader::new(tiff_data, byte_order);
-        let ifd0_offset = match reader.parse_header() {
-            Ok(o) => o,
-            Err(_) => return Ok(()),
-        };
-
-        let (entries, _next_ifd) = match reader.read_ifd(ifd0_offset) {
-            Ok(e) => e,
-            Err(_) => return Ok(()),
-        };
-
-        // Find Make for MakerNotes vendor detection
-        let mut vendor = makernotes::Vendor::Unknown;
-        for entry in &entries {
-            if entry.tag == 0x010F {
-                if let RawValue::String(make) = &entry.value {
-                    vendor = makernotes::Vendor::from_make(make);
-                }
-                break;
-            }
-        }
-
-        // Convert IFD0 entries
-        for entry in &entries {
-            if let Some(name) = lookup_ifd0(entry.tag) {
-                metadata.exif.set(name, entry_to_attr(entry));
-            }
-
-            match entry.tag {
-                0x8769 => {
-                    // ExifIFD pointer
-                    if let Some(offset) = entry.value.as_u32() {
-                        if let Ok((exif_entries, _)) = reader.read_ifd(offset) {
-                            for e in &exif_entries {
-                                if e.tag == 0x927C {
-                                    // MakerNotes
-                                    if let RawValue::Undefined(bytes) = &e.value {
-                                        if let Some(mn_data) = makernotes::parse(bytes, vendor, byte_order) {
-                                            for (key, val) in mn_data.iter() {
-                                                metadata.exif.set(key.clone(), val.clone());
-                                            }
-                                        }
-                                    }
-                                } else if let Some(name) = lookup_exif_subifd(e.tag) {
-                                    metadata.exif.set(name, entry_to_attr(e));
-                                }
-                            }
-                        }
-                    }
-                }
-                0x8825 => {
-                    // GPS IFD pointer
-                    if let Some(offset) = entry.value.as_u32() {
-                        if let Ok((gps_entries, _)) = reader.read_ifd(offset) {
-                            for e in &gps_entries {
-                                if let Some(name) = lookup_gps(e.tag) {
-                                    metadata.exif.set(name, entry_to_attr(e));
-                                }
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(())
     }
 
     /// Parse raw codestream header for basic image info.

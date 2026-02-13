@@ -15,10 +15,9 @@
 //! EXIF is stored as an item, referenced via iloc.
 //! The EXIF item data has a 4-byte prefix (offset to TIFF header), then TIFF structure.
 
-use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0};
-use crate::{Error, FormatParser, Metadata, ReadSeek, Result, makernotes};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
+use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
 use exiftool_attrs::AttrValue;
-use exiftool_core::{ByteOrder, IfdReader, RawValue};
 use std::io::SeekFrom;
 
 /// HEIC/HEIF brand identifiers in ftyp box.
@@ -532,7 +531,12 @@ impl HeicParser {
         }
         
         // Parse TIFF/EXIF
-        self.parse_tiff_exif(tiff_data, metadata)?;
+        parse_tiff_exif(
+            tiff_data,
+            &mut metadata.exif,
+            None,
+            ParseTiffExifOptions::default(),
+        )?;
         metadata.exif_offset = Some(tiff_start);
         
         Ok(())
@@ -560,73 +564,6 @@ impl HeicParser {
         4
     }
     
-    /// Parse TIFF-format EXIF data.
-    fn parse_tiff_exif(&self, tiff_data: &[u8], metadata: &mut Metadata) -> Result<()> {
-        let byte_order = ByteOrder::from_marker([tiff_data[0], tiff_data[1]])
-            .map_err(Error::Core)?;
-        
-        let reader = IfdReader::new(tiff_data, byte_order);
-        let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
-        
-        let (entries, _next_ifd) = reader.read_ifd(ifd0_offset).map_err(Error::Core)?;
-        
-        // Find Make for MakerNotes vendor detection
-        let mut vendor = makernotes::Vendor::Unknown;
-        for entry in &entries {
-            if entry.tag == 0x010F {
-                if let RawValue::String(make) = &entry.value {
-                    vendor = makernotes::Vendor::from_make(make);
-                }
-                break;
-            }
-        }
-        
-        // Convert IFD0 entries
-        for entry in &entries {
-            if let Some(name) = lookup_ifd0(entry.tag) {
-                metadata.exif.set(name, entry_to_attr(entry));
-            }
-            
-            match entry.tag {
-                0x8769 => {
-                    // ExifIFD pointer
-                    if let Some(offset) = entry.value.as_u32() {
-                        if let Ok((exif_entries, _)) = reader.read_ifd(offset) {
-                            for e in &exif_entries {
-                                if e.tag == 0x927C {
-                                    // MakerNotes
-                                    if let RawValue::Undefined(bytes) = &e.value {
-                                        if let Some(mn_data) = makernotes::parse(bytes, vendor, byte_order) {
-                                            for (key, val) in mn_data.iter() {
-                                                metadata.exif.set(key.clone(), val.clone());
-                                            }
-                                        }
-                                    }
-                                } else if let Some(name) = lookup_exif_subifd(e.tag) {
-                                    metadata.exif.set(name, entry_to_attr(e));
-                                }
-                            }
-                        }
-                    }
-                }
-                0x8825 => {
-                    // GPS IFD pointer
-                    if let Some(offset) = entry.value.as_u32() {
-                        if let Ok((gps_entries, _)) = reader.read_ifd(offset) {
-                            for e in &gps_entries {
-                                if let Some(name) = lookup_gps(e.tag) {
-                                    metadata.exif.set(name, entry_to_attr(e));
-                                }
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-        
-        Ok(())
-    }
     
     /// Parse iprp (item properties) box to find image dimensions.
     fn parse_iprp_box(
@@ -731,8 +668,6 @@ impl HeicParser {
     }
 }
 
-// Use shared entry_to_attr from crate::utils
-use crate::utils::entry_to_attr;
 
 #[cfg(test)]
 mod tests {

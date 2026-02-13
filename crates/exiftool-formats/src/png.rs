@@ -12,10 +12,9 @@
 //!
 //! XMP is stored in iTXt with keyword "XML:com.adobe.xmp"
 
-use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0};
 use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
+use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
 use exiftool_attrs::AttrValue;
-use exiftool_core::{ByteOrder, IfdReader};
 use exiftool_xmp::XmpParser;
 use flate2::read::ZlibDecoder;
 use std::io::Read;
@@ -211,51 +210,12 @@ impl FormatParser for PngParser {
 impl PngParser {
     /// Parse eXIf chunk (raw EXIF data).
     fn parse_exif(&self, data: &[u8], metadata: &mut Metadata) -> Result<()> {
-        if data.len() < 8 {
-            return Ok(());
-        }
-
-        // eXIf contains raw TIFF data (byte order + IFDs)
-        let byte_order = ByteOrder::from_marker([data[0], data[1]]).map_err(Error::Core)?;
-        let reader = IfdReader::new(data, byte_order);
-        let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
-
-        // Parse IFD0
-        if let Ok((entries, _)) = reader.read_ifd(ifd0_offset) {
-            for entry in &entries {
-                if let Some(name) = lookup_ifd0(entry.tag) {
-                    metadata.exif.set(name, entry_to_attr(entry));
-                }
-
-                // Handle EXIF sub-IFD
-                if entry.tag == 0x8769 {
-                    if let Some(offset) = entry.value.as_u32() {
-                        if let Ok((exif_entries, _)) = reader.read_ifd(offset) {
-                            for e in &exif_entries {
-                                if let Some(name) = lookup_exif_subifd(e.tag) {
-                                    metadata.exif.set(name, entry_to_attr(e));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Handle GPS sub-IFD
-                if entry.tag == 0x8825 {
-                    if let Some(offset) = entry.value.as_u32() {
-                        if let Ok((gps_entries, _)) = reader.read_ifd(offset) {
-                            for e in &gps_entries {
-                                if let Some(name) = lookup_gps(e.tag) {
-                                    metadata.exif.set(name, entry_to_attr(e));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
+        parse_tiff_exif(
+            data,
+            &mut metadata.exif,
+            None,
+            ParseTiffExifOptions::default(),
+        )
     }
 
     /// Parse tEXt chunk (uncompressed).
@@ -370,8 +330,6 @@ fn decompress_zlib(data: &[u8]) -> Option<String> {
     String::from_utf8(decompressed).ok()
 }
 
-// Use shared entry_to_attr from crate::utils
-use crate::utils::entry_to_attr;
 
 #[cfg(test)]
 mod tests {

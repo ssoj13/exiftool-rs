@@ -419,9 +419,10 @@ cp testdata/*.jpg fuzz/corpus/fuzz_jpeg/
 
 Current version (0.1.0) has some documented limitations:
 
-- **BigTIFF**: Files >4GB with 8-byte offsets not supported
-- **Multi-page TIFF**: Only first IFD processed
+- **BigTIFF**: Parsing supports 64-bit offsets (IFD8, LONG8 per spec). Files >4GB require streaming I/O; current design loads file into RAM (max 100MB)
+- **Multi-page TIFF**: Full IFD chain processed (TIFF 6.0 spec). Pages vs thumbnails identified via NewSubfileType/SubfileType
 - **Thumbnail extraction**: Not implemented yet
+- **HEIC write**: Adding EXIF to HEIC files without existing EXIF is not yet supported (updating existing EXIF works)
 - **Some RAW formats**: Leica, Sigma, Phase One not yet supported
 - **Value interpretation**: Enums like Orientation/Flash returned as numbers, not strings
 

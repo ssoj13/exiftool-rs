@@ -106,7 +106,7 @@ impl TiffWriter {
         let mut chunks = Vec::new();
         let mut is_tiled = false;
         
-        if let Ok((entries, _)) = reader.read_ifd(ifd0_offset) {
+        if let Ok((entries, _)) = reader.read_ifd(ifd0_offset as u64) {
             let mut strip_offsets: Vec<u32> = Vec::new();
             let mut strip_counts: Vec<u32> = Vec::new();
             let mut tile_offsets: Vec<u32> = Vec::new();

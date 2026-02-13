@@ -15,21 +15,10 @@ use crate::{makernotes, Error, FormatParser, Metadata, PageInfo, ReadSeek, Resul
 
 use exiftool_core::{ByteOrder, IfdEntry, IfdReader, RawValue};
 
-// Thumbnail-related tags (IFD1)
-const TAG_THUMBNAIL_OFFSET: u16 = 0x0201;     // JPEGInterchangeFormat
-const TAG_THUMBNAIL_LENGTH: u16 = 0x0202;     // JPEGInterchangeFormatLength
-const TAG_COMPRESSION: u16 = 0x0103;          // Compression type
+use crate::utils::ifd_tags;
 
-// Preview-related tags (IFD0 for CR2, etc.)
-const TAG_STRIP_OFFSETS: u16 = 0x0111;        // StripOffsets
-const TAG_STRIP_BYTE_COUNTS: u16 = 0x0117;    // StripByteCounts
-
-// Multi-page TIFF tags
-const TAG_NEW_SUBFILE_TYPE: u16 = 0x00FE;     // NewSubfileType
-const TAG_SUBFILE_TYPE: u16 = 0x00FF;         // SubfileType (older)
-const TAG_IMAGE_WIDTH: u16 = 0x0100;          // ImageWidth
-const TAG_IMAGE_HEIGHT: u16 = 0x0101;         // ImageLength
-const TAG_BITS_PER_SAMPLE: u16 = 0x0102;      // BitsPerSample
+/// Maximum IFD chain length (security parity with reference implementation).
+const MAX_IFD_CHAIN: usize = 8;
 
 /// Configuration for TIFF-based format parsing.
 #[derive(Clone)]
@@ -121,7 +110,7 @@ impl FormatParser for TiffParser {
         };
 
         // Parse IFD chain
-        self.parse_ifd_chain(&ifd_reader, ifd0_offset as u32, &mut metadata)?;
+        self.parse_ifd_chain(&ifd_reader, ifd0_offset, &mut metadata)?;
 
         Ok(metadata)
     }
@@ -132,7 +121,7 @@ impl TiffParser {
     pub fn parse_ifd_chain(
         &self,
         reader: &IfdReader,
-        start_offset: u32,
+        start_offset: u64,
         metadata: &mut Metadata,
     ) -> Result<()> {
         let mut current_offset = start_offset;
@@ -142,7 +131,7 @@ impl TiffParser {
         let mut vendor = self.config.vendor.unwrap_or(makernotes::Vendor::Unknown);
 
         // Follow IFD chain (IFD0 -> IFD1 -> ...)
-        while current_offset != 0 && ifd_index < 100 {
+        while current_offset != 0 && ifd_index < MAX_IFD_CHAIN {
             let (entries, next_ifd) = reader.read_ifd(current_offset).map_err(Error::Core)?;
 
             // Collect page info for this IFD
@@ -238,10 +227,10 @@ impl TiffParser {
 
         for entry in entries {
             match entry.tag {
-                TAG_NEW_SUBFILE_TYPE => {
+                ifd_tags::TAG_NEW_SUBFILE_TYPE => {
                     info.subfile_type = entry.value.as_u32().unwrap_or(0);
                 }
-                TAG_SUBFILE_TYPE => {
+                ifd_tags::TAG_SUBFILE_TYPE => {
                     // Old SubfileType: 1=full-res, 2=reduced-res, 3=multi-page
                     // Convert to NewSubfileType bits
                     if info.subfile_type == 0 {
@@ -253,18 +242,18 @@ impl TiffParser {
                         };
                     }
                 }
-                TAG_IMAGE_WIDTH => {
+                ifd_tags::TAG_IMAGE_WIDTH => {
                     info.width = entry.value.as_u32().unwrap_or(0);
                 }
-                TAG_IMAGE_HEIGHT => {
+                ifd_tags::TAG_IMAGE_HEIGHT => {
                     info.height = entry.value.as_u32().unwrap_or(0);
                 }
-                TAG_BITS_PER_SAMPLE => {
+                ifd_tags::TAG_BITS_PER_SAMPLE => {
                     if let RawValue::UInt16(v) = &entry.value {
                         info.bits_per_sample = v.first().copied().unwrap_or(8);
                     }
                 }
-                TAG_COMPRESSION => {
+                ifd_tags::TAG_COMPRESSION => {
                     if let RawValue::UInt16(v) = &entry.value {
                         info.compression = v.first().copied().unwrap_or(1);
                     }
@@ -283,20 +272,20 @@ impl TiffParser {
         reader: &IfdReader,
         metadata: &mut Metadata,
     ) {
-        let mut thumb_offset: Option<u32> = None;
-        let mut thumb_length: Option<u32> = None;
+        let mut thumb_offset: Option<u64> = None;
+        let mut thumb_length: Option<u64> = None;
         let mut compression: Option<u16> = None;
 
-        // Collect thumbnail-related tags
+        // Collect thumbnail-related tags (LONG or LONG8 for BigTIFF)
         for entry in entries {
             match entry.tag {
-                TAG_THUMBNAIL_OFFSET => {
-                    thumb_offset = entry.value.as_u32();
+                ifd_tags::TAG_THUMBNAIL_OFFSET => {
+                    thumb_offset = entry.value.as_u64();
                 }
-                TAG_THUMBNAIL_LENGTH => {
-                    thumb_length = entry.value.as_u32();
+                ifd_tags::TAG_THUMBNAIL_LENGTH => {
+                    thumb_length = entry.value.as_u64();
                 }
-                TAG_COMPRESSION => {
+                ifd_tags::TAG_COMPRESSION => {
                     if let RawValue::UInt16(v) = &entry.value {
                         compression = v.first().copied();
                     }
@@ -307,10 +296,8 @@ impl TiffParser {
 
         // Extract JPEG thumbnail (compression = 6 is JPEG)
         if let (Some(offset), Some(length)) = (thumb_offset, thumb_length) {
-            // Validate: compression should be JPEG (6) or old-JPEG (7)
             let is_jpeg = compression.map(|c| c == 6 || c == 7).unwrap_or(true);
-            
-            if is_jpeg && length > 0 && length < 1_000_000 {
+            if is_jpeg && length > 0 && length < 1_000_000 && offset <= usize::MAX as u64 {
                 let offset = offset as usize;
                 let length = length as usize;
                 
@@ -336,25 +323,26 @@ impl TiffParser {
 
     /// Extract preview JPEG from IFD0 (for RAW formats like CR2).
     /// Uses StripOffsets/StripByteCounts when compression is JPEG.
+    /// Supports LONG8 (Vec<u64>) for BigTIFF per spec.
     fn extract_preview(
         &self,
         entries: &[IfdEntry],
         reader: &IfdReader,
         metadata: &mut Metadata,
     ) {
-        let mut strip_offsets: Option<Vec<u32>> = None;
-        let mut strip_byte_counts: Option<Vec<u32>> = None;
+        let mut strip_offsets: Option<Vec<u64>> = None;
+        let mut strip_byte_counts: Option<Vec<u64>> = None;
         let mut compression: Option<u16> = None;
 
         for entry in entries {
             match entry.tag {
-                TAG_STRIP_OFFSETS => {
-                    strip_offsets = entry.value.as_u32_vec();
+                ifd_tags::TAG_STRIP_OFFSETS => {
+                    strip_offsets = entry.value.as_u64_vec();
                 }
-                TAG_STRIP_BYTE_COUNTS => {
-                    strip_byte_counts = entry.value.as_u32_vec();
+                ifd_tags::TAG_STRIP_BYTE_COUNTS => {
+                    strip_byte_counts = entry.value.as_u64_vec();
                 }
-                TAG_COMPRESSION => {
+                ifd_tags::TAG_COMPRESSION => {
                     if let RawValue::UInt16(v) = &entry.value {
                         compression = v.first().copied();
                     }
@@ -421,8 +409,8 @@ impl TiffParser {
         // Handle sub-IFD pointers
         match entry.tag {
             0x8769 => {
-                // EXIF sub-IFD
-                if let Some(offset) = entry.value.as_u32() {
+                // EXIF sub-IFD (Ifd or Ifd64 for BigTIFF)
+                if let Some(offset) = entry.value.as_u64() {
                     if let Ok((exif_entries, _)) = reader.read_ifd(offset) {
                         for e in &exif_entries {
                             if let Some(name) = lookup_exif_subifd(e.tag) {
@@ -443,8 +431,8 @@ impl TiffParser {
                 }
             }
             0x8825 => {
-                // GPS sub-IFD
-                if let Some(offset) = entry.value.as_u32() {
+                // GPS sub-IFD (Ifd or Ifd64 for BigTIFF)
+                if let Some(offset) = entry.value.as_u64() {
                     if let Ok((gps_entries, _)) = reader.read_ifd(offset) {
                         for e in &gps_entries {
                             if let Some(name) = lookup_gps(e.tag) {
@@ -455,8 +443,8 @@ impl TiffParser {
                 }
             }
             0xA005 => {
-                // Interoperability IFD
-                if let Some(offset) = entry.value.as_u32() {
+                // Interoperability IFD (Ifd or Ifd64 for BigTIFF)
+                if let Some(offset) = entry.value.as_u64() {
                     if let Ok((interop_entries, _)) = reader.read_ifd(offset) {
                         for e in &interop_entries {
                             if let Some(name) = lookup_interop(e.tag) {
@@ -546,11 +534,11 @@ mod tests {
         
         // Create mock IFD entries with page info
         let entries = vec![
-            mock_entry(TAG_IMAGE_WIDTH, RawValue::UInt32(vec![1920])),
-            mock_entry(TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![1080])),
-            mock_entry(TAG_BITS_PER_SAMPLE, RawValue::UInt16(vec![8])),
-            mock_entry(TAG_COMPRESSION, RawValue::UInt16(vec![1])), // No compression
-            mock_entry(TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![0])), // Full-res
+            mock_entry(ifd_tags::TAG_IMAGE_WIDTH, RawValue::UInt32(vec![1920])),
+            mock_entry(ifd_tags::TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![1080])),
+            mock_entry(ifd_tags::TAG_BITS_PER_SAMPLE, RawValue::UInt16(vec![8])),
+            mock_entry(ifd_tags::TAG_COMPRESSION, RawValue::UInt16(vec![1])), // No compression
+            mock_entry(ifd_tags::TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![0])), // Full-res
         ];
         
         let info = parser.extract_page_info(&entries, 0, 8);
@@ -572,9 +560,9 @@ mod tests {
         
         // Thumbnail IFD (NewSubfileType = 1 means reduced resolution)
         let entries = vec![
-            mock_entry(TAG_IMAGE_WIDTH, RawValue::UInt32(vec![160])),
-            mock_entry(TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![120])),
-            mock_entry(TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![1])), // Reduced-res
+            mock_entry(ifd_tags::TAG_IMAGE_WIDTH, RawValue::UInt32(vec![160])),
+            mock_entry(ifd_tags::TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![120])),
+            mock_entry(ifd_tags::TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![1])), // Reduced-res
         ];
         
         let info = parser.extract_page_info(&entries, 1, 1000);
@@ -593,9 +581,9 @@ mod tests {
         
         // Multi-page document (NewSubfileType = 2 means single page of multi-page)
         let entries = vec![
-            mock_entry(TAG_IMAGE_WIDTH, RawValue::UInt32(vec![2480])),
-            mock_entry(TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![3508])), // A4 @ 300dpi
-            mock_entry(TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![2])), // Page
+            mock_entry(ifd_tags::TAG_IMAGE_WIDTH, RawValue::UInt32(vec![2480])),
+            mock_entry(ifd_tags::TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![3508])), // A4 @ 300dpi
+            mock_entry(ifd_tags::TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![2])), // Page
         ];
         
         let info = parser.extract_page_info(&entries, 2, 50000);

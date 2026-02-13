@@ -8,10 +8,9 @@
 //! - DQT, DHT, SOF, SOS... - image data
 //! - EOI (0xFFD9) - End of Image
 
-use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0};
-use crate::{makernotes, Error, FormatParser, Metadata, ReadSeek, Result};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
+use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
 use exiftool_attrs::AttrValue;
-use exiftool_core::{ByteOrder, IfdReader, RawValue};
 use exiftool_xmp::XmpParser;
 use crate::iptc::IptcParser;
 use exiftool_icc::IccParser;
@@ -102,7 +101,14 @@ impl FormatParser for JpegParser {
                     if data.starts_with(b"Exif\x00\x00") {
                         let tiff_data = &data[6..];
                         metadata.exif_offset = Some(seg_start + 6);
-                        parse_exif(tiff_data, &mut metadata)?;
+                        parse_tiff_exif(
+                            tiff_data,
+                            &mut metadata.exif,
+                            Some(&mut metadata.thumbnail),
+                            ParseTiffExifOptions {
+                                extract_thumbnail: true,
+                            },
+                        )?;
                     } else if data.starts_with(b"http://ns.adobe.com/xap/1.0/\x00") {
                         let xmp_start = b"http://ns.adobe.com/xap/1.0/\x00".len();
                         let xmp_data = &data[xmp_start..];
@@ -451,141 +457,6 @@ fn decode_utf16(data: &[u8]) -> Option<String> {
     String::from_utf16(&u16_iter.collect::<Vec<_>>()).ok()
 }
 
-// Thumbnail-related tags (IFD1)
-const TAG_THUMBNAIL_OFFSET: u16 = 0x0201;     // JPEGInterchangeFormat
-const TAG_THUMBNAIL_LENGTH: u16 = 0x0202;     // JPEGInterchangeFormatLength
-const TAG_COMPRESSION: u16 = 0x0103;          // Compression type
-
-/// Parse EXIF TIFF data into metadata.
-fn parse_exif(tiff_data: &[u8], metadata: &mut Metadata) -> Result<()> {
-    if tiff_data.len() < 8 {
-        return Ok(());
-    }
-
-    let byte_order =
-        ByteOrder::from_marker([tiff_data[0], tiff_data[1]]).map_err(Error::Core)?;
-
-    let reader = IfdReader::new(tiff_data, byte_order);
-    let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
-
-    let (entries, next_ifd) = reader.read_ifd(ifd0_offset).map_err(Error::Core)?;
-
-    // First pass: extract Make to detect vendor
-    let mut vendor = makernotes::Vendor::Unknown;
-    for entry in &entries {
-        if entry.tag == 0x010F {
-            if let RawValue::String(make) = &entry.value {
-                vendor = makernotes::Vendor::from_make(make);
-            }
-            break;
-        }
-    }
-
-    // Convert IFD entries to attributes
-    for entry in &entries {
-        if let Some(name) = lookup_ifd0(entry.tag) {
-            let value = entry_to_attr(entry);
-            metadata.exif.set(name, value);
-        }
-
-        // Handle sub-IFDs
-        match entry.tag {
-            0x8769 => {
-                // ExifIFD pointer
-                if let Some(offset) = entry.value.as_u32() {
-                    if let Ok((exif_entries, _)) = reader.read_ifd(offset) {
-                        for e in &exif_entries {
-                            // Parse MakerNotes with vendor-specific decoder
-                            if e.tag == 0x927C {
-                                if let RawValue::Undefined(bytes) = &e.value {
-                                    if let Some(mn_data) = makernotes::parse(bytes, vendor, byte_order) {
-                                        for (key, val) in mn_data.iter() {
-                                            metadata.exif.set(key.clone(), val.clone());
-                                        }
-                                    }
-                                }
-                            } else if let Some(name) = lookup_exif_subifd(e.tag) {
-                                metadata.exif.set(name, entry_to_attr(e));
-                            }
-                        }
-                    }
-                }
-            }
-            0x8825 => {
-                // GPS IFD pointer
-                if let Some(offset) = entry.value.as_u32() {
-                    if let Ok((gps_entries, _)) = reader.read_ifd(offset) {
-                        for e in &gps_entries {
-                            if let Some(name) = lookup_gps(e.tag) {
-                                metadata.exif.set(name, entry_to_attr(e));
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-
-    // IFD1 = thumbnail IFD
-    if next_ifd != 0 {
-        if let Ok((ifd1_entries, _)) = reader.read_ifd(next_ifd) {
-            extract_thumbnail_from_ifd1(&ifd1_entries, &reader, metadata);
-        }
-    }
-
-    Ok(())
-}
-
-/// Extract thumbnail from IFD1 entries.
-fn extract_thumbnail_from_ifd1(
-    entries: &[exiftool_core::IfdEntry],
-    reader: &IfdReader,
-    metadata: &mut Metadata,
-) {
-    let mut thumb_offset: Option<u32> = None;
-    let mut thumb_length: Option<u32> = None;
-    let mut compression: Option<u16> = None;
-
-    // Collect thumbnail-related tags
-    for entry in entries {
-        match entry.tag {
-            TAG_THUMBNAIL_OFFSET => {
-                thumb_offset = entry.value.as_u32();
-            }
-            TAG_THUMBNAIL_LENGTH => {
-                thumb_length = entry.value.as_u32();
-            }
-            TAG_COMPRESSION => {
-                if let RawValue::UInt16(v) = &entry.value {
-                    compression = v.first().copied();
-                }
-            }
-            _ => {}
-        }
-    }
-
-    // Extract JPEG thumbnail (compression = 6 is JPEG)
-    if let (Some(offset), Some(length)) = (thumb_offset, thumb_length) {
-        // Validate: compression should be JPEG (6) or old-JPEG (7), or not specified
-        let is_jpeg = compression.map(|c| c == 6 || c == 7).unwrap_or(true);
-        
-        if is_jpeg && length > 0 && length < 1_000_000 {
-            let offset = offset as usize;
-            let length = length as usize;
-            
-            if let Some(data) = reader.get_bytes(offset, length) {
-                // Verify JPEG signature (0xFFD8)
-                if data.len() >= 2 && data[0] == 0xFF && data[1] == 0xD8 {
-                    metadata.thumbnail = Some(data.to_vec());
-                }
-            }
-        }
-    }
-}
-
-// Use shared entry_to_attr from crate::utils
-use crate::utils::entry_to_attr;
 
 #[cfg(test)]
 mod tests {

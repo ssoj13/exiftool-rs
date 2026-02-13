@@ -864,6 +864,8 @@ impl HeicWriter {
 
         // Simplified: if there's no EXIF, just copy the file as-is for now
         // A full implementation would rebuild meta box with new entries
+        // LIMITATION: Adding EXIF to HEIC files without existing EXIF is not yet supported.
+        // See plan1.md and AGENTS.md for details.
         output.write_all(data)?;
 
         // TODO: Full implementation would:

@@ -147,6 +147,18 @@ impl RawValue {
             RawValue::UInt8(v) if v.len() == 1 => Some(v[0] as u32),
             RawValue::UInt16(v) if v.len() == 1 => Some(v[0] as u32),
             RawValue::UInt32(v) if v.len() == 1 => Some(v[0]),
+            RawValue::UInt64(v) if v.len() == 1 => Some(v[0] as u32), // truncates if >4G
+            _ => None,
+        }
+    }
+
+    /// Try to get as a single u64 value (for BigTIFF IFD8, LONG8 offsets).
+    pub fn as_u64(&self) -> Option<u64> {
+        match self {
+            RawValue::UInt8(v) if v.len() == 1 => Some(v[0] as u64),
+            RawValue::UInt16(v) if v.len() == 1 => Some(v[0] as u64),
+            RawValue::UInt32(v) if v.len() == 1 => Some(v[0] as u64),
+            RawValue::UInt64(v) if v.len() == 1 => Some(v[0]),
             _ => None,
         }
     }
@@ -157,7 +169,18 @@ impl RawValue {
             RawValue::UInt8(v) => Some(v.iter().map(|&x| x as u32).collect()),
             RawValue::UInt16(v) => Some(v.iter().map(|&x| x as u32).collect()),
             RawValue::UInt32(v) => Some(v.clone()),
-            RawValue::UInt64(v) => Some(v.iter().map(|&x| x as u32).collect()),
+            RawValue::UInt64(v) => Some(v.iter().map(|&x| x as u32).collect()), // truncates if >4G
+            _ => None,
+        }
+    }
+
+    /// Try to get as Vec<u64> (for BigTIFF StripOffsets/StripByteCounts as LONG8).
+    pub fn as_u64_vec(&self) -> Option<Vec<u64>> {
+        match self {
+            RawValue::UInt8(v) => Some(v.iter().map(|&x| x as u64).collect()),
+            RawValue::UInt16(v) => Some(v.iter().map(|&x| x as u64).collect()),
+            RawValue::UInt32(v) => Some(v.iter().map(|&x| x as u64).collect()),
+            RawValue::UInt64(v) => Some(v.clone()),
             _ => None,
         }
     }
@@ -210,5 +233,58 @@ impl std::fmt::Display for RawValue {
             RawValue::Undefined(v) => write!(f, "<{} bytes>", v.len()),
             _ => write!(f, "<{} x {}>", self.count(), self.format().name()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn as_u64_from_u32() {
+        let v = RawValue::UInt32(vec![0x12345678]);
+        assert_eq!(v.as_u64(), Some(0x12345678));
+    }
+
+    #[test]
+    fn as_u64_from_u64() {
+        let v = RawValue::UInt64(vec![0x1234_5678_9abc_def0]);
+        assert_eq!(v.as_u64(), Some(0x1234_5678_9abc_def0));
+    }
+
+    #[test]
+    fn as_u64_from_u16() {
+        let v = RawValue::UInt16(vec![512]);
+        assert_eq!(v.as_u64(), Some(512));
+    }
+
+    #[test]
+    fn as_u64_empty_vec_none() {
+        let v = RawValue::UInt32(vec![]);
+        assert_eq!(v.as_u64(), None);
+    }
+
+    #[test]
+    fn as_u64_multi_element_none() {
+        let v = RawValue::UInt32(vec![1, 2]);
+        assert_eq!(v.as_u64(), None);
+    }
+
+    #[test]
+    fn as_u64_vec_from_u32() {
+        let v = RawValue::UInt32(vec![100, 200, 300]);
+        assert_eq!(v.as_u64_vec(), Some(vec![100, 200, 300]));
+    }
+
+    #[test]
+    fn as_u64_vec_from_u64() {
+        let v = RawValue::UInt64(vec![1000, 2000, 3000]);
+        assert_eq!(v.as_u64_vec(), Some(vec![1000, 2000, 3000]));
+    }
+
+    #[test]
+    fn as_u64_vec_string_none() {
+        let v = RawValue::String("x".into());
+        assert_eq!(v.as_u64_vec(), None);
     }
 }

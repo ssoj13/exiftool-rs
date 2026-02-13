@@ -219,47 +219,66 @@ impl<'a> IfdReader<'a> {
     /// Read all entries from an IFD at given offset.
     ///
     /// Returns (entries, next_ifd_offset). Next offset is 0 if no more IFDs.
-    pub fn read_ifd(&self, offset: u32) -> Result<(Vec<IfdEntry>, u32)> {
+    /// Strict mode: returns `Err` on first malformed entry (ref: exif-rs default).
+    /// Supports u64 offsets for BigTIFF chains and sub-IFDs.
+    pub fn read_ifd(&self, offset: u64) -> Result<(Vec<IfdEntry>, u64)> {
         if self.is_bigtiff {
-            let (entries, next) = self.read_ifd_bigtiff(offset as u64)?;
-            Ok((entries, next as u32))
+            self.read_ifd_bigtiff_inner(offset, None)
         } else {
-            self.read_ifd_standard(offset)
+            self.read_ifd_standard_inner(offset, None)
+        }
+    }
+
+    /// Read IFD with continue-on-error (ref: exif-rs Parser.continue_on_error).
+    ///
+    /// When an entry fails to parse, pushes the error to `errors` and continues.
+    /// Use when partial results are acceptable (e.g. malformed files).
+    pub fn read_ifd_lenient(
+        &self,
+        offset: u64,
+        errors: &mut Vec<Error>,
+    ) -> Result<(Vec<IfdEntry>, u64)> {
+        if self.is_bigtiff {
+            self.read_ifd_bigtiff_inner(offset, Some(errors))
+        } else {
+            self.read_ifd_standard_inner(offset, Some(errors))
         }
     }
 
     /// Read IFD (standard TIFF format).
-    fn read_ifd_standard(&self, offset: u32) -> Result<(Vec<IfdEntry>, u32)> {
-        let offset = offset as usize;
-
-        if offset >= self.data.len() {
-            return Err(Error::IfdOffsetOutOfBounds(offset as u32, self.data.len()));
+    fn read_ifd_standard_inner(
+        &self,
+        offset: u64,
+        mut errors: Option<&mut Vec<Error>>,
+    ) -> Result<(Vec<IfdEntry>, u64)> {
+        let off = offset as usize;
+        if offset > usize::MAX as u64 || off >= self.data.len() {
+            return Err(Error::IfdOffsetOutOfBounds(off as u32, self.data.len()));
         }
 
-        // Number of entries (2 bytes)
-        let count = self.read_u16(offset)?;
+        let count = self.read_u16(off)?;
         if count > MAX_IFD_ENTRIES {
             return Err(Error::TooManyIfdEntries(count, MAX_IFD_ENTRIES));
         }
 
         let mut entries = Vec::with_capacity(count as usize);
 
-        // Each entry is 12 bytes
         for i in 0..count as usize {
-            let entry_offset = offset + 2 + i * 12;
+            let entry_offset = off + 2 + i * 12;
             match self.read_entry(entry_offset) {
                 Ok(entry) => entries.push(entry),
                 Err(e) => {
-                    // Log but continue - some entries may be malformed
-                    eprintln!("Warning: failed to read IFD entry {}: {}", i, e);
+                    match errors {
+                        Some(ref mut errs) => errs.push(e),
+                        None => return Err(e),
+                    }
                 }
             }
         }
 
-        // Next IFD offset is after all entries
-        let next_offset_pos = offset + 2 + (count as usize) * 12;
+        let next_offset_pos = off + 2 + (count as usize) * 12;
         let next_ifd = if next_offset_pos + 4 <= self.data.len() {
-            self.read_u32(next_offset_pos)?
+            self.read_u32(next_offset_pos)? as u64
         } else {
             0
         };
@@ -268,14 +287,17 @@ impl<'a> IfdReader<'a> {
     }
 
     /// Read IFD (BigTIFF format - 8-byte offsets, 20-byte entries).
-    fn read_ifd_bigtiff(&self, offset: u64) -> Result<(Vec<IfdEntry>, u64)> {
+    fn read_ifd_bigtiff_inner(
+        &self,
+        offset: u64,
+        mut errors: Option<&mut Vec<Error>>,
+    ) -> Result<(Vec<IfdEntry>, u64)> {
         let offset = offset as usize;
 
         if offset >= self.data.len() {
             return Err(Error::IfdOffsetOutOfBounds(offset as u32, self.data.len()));
         }
 
-        // Number of entries (8 bytes for BigTIFF)
         let count = self.read_u64(offset)? as usize;
         if count > MAX_IFD_ENTRIES as usize {
             return Err(Error::TooManyIfdEntries(count as u16, MAX_IFD_ENTRIES));
@@ -283,18 +305,19 @@ impl<'a> IfdReader<'a> {
 
         let mut entries = Vec::with_capacity(count);
 
-        // Each entry is 20 bytes in BigTIFF
         for i in 0..count {
             let entry_offset = offset + 8 + i * 20;
             match self.read_entry_bigtiff(entry_offset) {
                 Ok(entry) => entries.push(entry),
                 Err(e) => {
-                    eprintln!("Warning: failed to read BigTIFF IFD entry {}: {}", i, e);
+                    match errors {
+                        Some(ref mut errs) => errs.push(e),
+                        None => return Err(e),
+                    }
                 }
             }
         }
 
-        // Next IFD offset is after all entries (8 bytes)
         let next_offset_pos = offset + 8 + count * 20;
         let next_ifd = if next_offset_pos + 8 <= self.data.len() {
             self.read_u64(next_offset_pos)?
@@ -717,5 +740,43 @@ mod tests {
         let (offset, is_bigtiff) = reader.parse_header_ex().unwrap();
         assert!(is_bigtiff);
         assert_eq!(offset, 16);
+    }
+
+    #[test]
+    fn read_ifd_strict_fails_on_bad_entry() {
+        // Minimal TIFF: IFD at 8 with 2 entries; second has invalid format 0xFFFF
+        let mut data = vec![
+            0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00,
+        ];
+        data.resize(8, 0);
+        data.extend_from_slice(&[0x02, 0x00]); // count = 2
+        // Entry 0: ImageWidth (0x0100), SHORT, count 1, value 512 (inline)
+        data.extend_from_slice(&[0x00, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00]);
+        // Entry 1: invalid format 0xFFFF
+        data.extend_from_slice(&[0x10, 0x01, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00]);
+
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
+        assert!(reader.read_ifd(8).is_err());
+    }
+
+    #[test]
+    fn read_ifd_lenient_collects_errors() {
+        // Same malformed IFD - lenient returns partial result and collects errors
+        let mut data = vec![
+            0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00,
+        ];
+        data.resize(8, 0);
+        data.extend_from_slice(&[0x02, 0x00]);
+        data.extend_from_slice(&[0x00, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00]);
+        data.extend_from_slice(&[0x10, 0x01, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00]);
+
+        let reader = IfdReader::new(&data, ByteOrder::LittleEndian);
+        let mut errors = Vec::new();
+        let (entries, next) = reader.read_ifd_lenient(8, &mut errors).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(next, 0);
+        assert_eq!(errors.len(), 1);
     }
 }

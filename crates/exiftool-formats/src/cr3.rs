@@ -304,7 +304,7 @@ impl Cr3Parser {
         };
         
         // Read IFD entries
-        if let Ok((entries, _)) = ifd_reader.read_ifd(ifd_offset) {
+        if let Ok((entries, _)) = ifd_reader.read_ifd(ifd_offset as u64) {
             for entry in entries {
                 let tag_name = match prefix {
                     "IFD0" => lookup_ifd0(entry.tag),

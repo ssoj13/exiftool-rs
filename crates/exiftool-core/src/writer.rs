@@ -488,7 +488,7 @@ mod tests {
         // Parse back to verify
         let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian);
         let offset = reader.parse_header().unwrap();
-        let (entries, _) = reader.read_ifd(offset).unwrap();
+        let (entries, _) = reader.read_ifd(offset as u64).unwrap();
         
         assert_eq!(entries.len(), 3);
     }
@@ -509,7 +509,7 @@ mod tests {
         // Parse and verify
         let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian);
         let offset = reader.parse_header().unwrap();
-        let (entries, _) = reader.read_ifd(offset).unwrap();
+        let (entries, _) = reader.read_ifd(offset as u64).unwrap();
         
         // Should have IFD0 entries + ExifIFD pointer
         assert!(entries.len() >= 4);
@@ -529,7 +529,7 @@ mod tests {
         // Parse IFD0
         let reader = IfdReader::new(&bytes, ByteOrder::LittleEndian);
         let offset = reader.parse_header().unwrap();
-        let (ifd0_entries, next_ifd) = reader.read_ifd(offset).unwrap();
+        let (ifd0_entries, next_ifd) = reader.read_ifd(offset as u64).unwrap();
         
         // IFD0 should have Make entry
         assert!(!ifd0_entries.is_empty());

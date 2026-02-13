@@ -162,7 +162,7 @@ impl VendorParser for NikonParser {
                     // PreviewIFD - sub-IFD containing preview image offsets
                     // Note: offsets in PreviewIFD are relative to TIFF base (file start)
                     if let Some(offset) = entry.value.as_u32() {
-                        if let Ok((preview_entries, _)) = reader.read_ifd(offset) {
+                        if let Ok((preview_entries, _)) = reader.read_ifd(offset as u64) {
                             // Extract preview offset/length from sub-IFD
                             let mut preview_offset: Option<u32> = None;
                             let mut preview_length: Option<u32> = None;

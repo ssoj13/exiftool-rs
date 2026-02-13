@@ -231,7 +231,10 @@ pub use exr_writer::ExrWriter;
 pub use hdr_writer::HdrWriter;
 pub use raf_writer::RafWriter;
 pub use nef_writer::NefWriter;
-pub use utils::{build_exif_bytes, entry_to_attr, raw_value_to_attr, read_with_limit, MAX_FILE_SIZE};
+pub use utils::{
+    build_exif_bytes, entry_to_attr, ifd_tags, parse_tiff_exif, raw_value_to_attr, read_with_limit,
+    MAX_FILE_SIZE, ParseTiffExifOptions,
+};
 
 /// Info about a single page/subfile in multi-page TIFF.
 #[derive(Debug, Clone, Default)]
