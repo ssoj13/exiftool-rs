@@ -7,8 +7,8 @@ use crate::rational::PyRational;
 use crate::value::{display_value, from_python, to_python};
 use exiftool_attrs::AttrValue;
 use exiftool_formats::{
-    add_composite_tags, build_exif_bytes, ExrWriter, FormatRegistry, HdrWriter, HeicWriter,
-    JpegWriter, Metadata, PageInfo, PngWriter, TiffWriter, WebpWriter,
+    add_composite_tags, build_xmp_string, ExrWriter, FormatRegistry, HdrWriter, HeicWriter,
+    JpegWriter, Metadata, Mp4Writer, PageInfo, PngWriter, TiffWriter, WebpWriter,
 };
 use exiftool_xmp::XmpSidecar;
 use pyo3::exceptions::PyKeyError;
@@ -667,35 +667,44 @@ impl PyImage {
         let mut reader = BufReader::new(file);
         let mut output_data = Vec::new();
 
-        match self.metadata.format {
+        let mut meta = self.metadata.clone();
+        if meta.xmp.is_none() {
+            if let Ok(Some(xmp)) = build_xmp_string(&meta) {
+                meta.xmp = Some(xmp);
+            }
+        }
+
+        match meta.format {
             "JPEG" => {
-                let exif = build_exif_bytes(&self.metadata)
-                    .map_err(|e| crate::error::WriteError::new_err(format!("EXIF build failed: {}", e)))?;
-                JpegWriter::write(&mut reader, &mut output_data, Some(&exif), None, None)
+                JpegWriter::write_metadata(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("JPEG write failed: {}", e)))?;
             }
             "PNG" => {
-                PngWriter::write(&mut reader, &mut output_data, &self.metadata)
+                PngWriter::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("PNG write failed: {}", e)))?;
             }
             "TIFF" | "DNG" => {
-                TiffWriter::write(&mut reader, &mut output_data, &self.metadata)
+                TiffWriter::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("TIFF write failed: {}", e)))?;
             }
             "WebP" => {
-                WebpWriter::write(&mut reader, &mut output_data, &self.metadata)
+                WebpWriter::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("WebP write failed: {}", e)))?;
             }
             "HEIC" | "HEIF" | "AVIF" => {
-                HeicWriter::write(&mut reader, &mut output_data, &self.metadata)
+                HeicWriter::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("HEIC write failed: {}", e)))?;
             }
+            "MP4" | "MOV" | "M4V" | "M4A" | "M4B" | "M4P" | "3GP" | "3G2" | "F4V" => {
+                Mp4Writer::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("MP4 write failed: {}", e)))?;
+            }
             "EXR" => {
-                ExrWriter::write(&mut reader, &mut output_data, &self.metadata)
+                ExrWriter::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("EXR write failed: {}", e)))?;
             }
             "HDR" => {
-                HdrWriter::write(&mut reader, &mut output_data, &self.metadata)
+                HdrWriter::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("HDR write failed: {}", e)))?;
             }
             fmt => return Err(write_not_supported(fmt)),

@@ -27,20 +27,24 @@
 //! | TIFF | .tiff, .tif, .dng | [`TiffParser`] | [`TiffWriter`] |
 //! | PNG | .png | [`PngParser`] | [`PngWriter`] |
 //! | HEIC/HEIF | .heic, .heif | [`HeicParser`] | [`HeicWriter`] |
-//! | Canon CR2 | .cr2 | [`Cr2Parser`] | - |
+//! | Canon CR2 | .cr2 | [`Cr2Parser`] | [`Cr2Writer`] |
 //! | Canon CR3 | .cr3 | [`Cr3Parser`] | - |
 //! | Nikon NEF | .nef | [`NefParser`] | [`NefWriter`] |
-//! | Sony ARW | .arw | [`ArwParser`] | - |
-//! | Olympus ORF | .orf | [`OrfParser`] | - |
-//! | Panasonic RW2 | .rw2 | [`Rw2Parser`] | - |
-//! | Pentax PEF | .pef | [`PefParser`] | - |
+//! | Sony ARW | .arw | [`ArwParser`] | [`ArwWriter`] |
+//! | Olympus ORF | .orf | [`OrfParser`] | [`OrfWriter`] |
+//! | Panasonic RW2 | .rw2 | [`Rw2Parser`] | [`Rw2Writer`] |
+//! | Pentax PEF | .pef | [`PefParser`] | [`PefWriter`] |
 //! | Fuji RAF | .raf | [`RafParser`] | [`RafWriter`] |
 //! | WebP | .webp | [`WebpParser`] | [`WebpWriter`] |
 //! | OpenEXR | .exr | [`ExrParser`] | [`ExrWriter`] |
 //! | Radiance HDR | .hdr | [`HdrParser`] | [`HdrWriter`] |
-//! | MP4/MOV | .mp4, .mov, .m4a, .3gp | [`Mp4Parser`] | - |
-//! | MP3 | .mp3 | [`Id3Parser`] | - |
-//! | FLAC | .flac | [`FlacParser`] | - |
+//! | GIF | .gif | [`GifParser`] | [`GifWriter`] |
+//! | WAV | .wav, .wave | [`WavParser`] | [`WavWriter`] |
+//! | JXL | .jxl | [`JxlParser`] | [`JxlWriter`] |
+//! | MP4/MOV | .mp4, .mov, .m4a, .3gp | [`Mp4Parser`] | [`Mp4Writer`] |
+//! | MP3 | .mp3 | [`Id3Parser`] | [`Id3Writer`] |
+//! | FLAC | .flac | [`FlacParser`] | [`FlacWriter`] |
+//! | PNM | .ppm, .pgm, .pbm, .pam | [`PnmParser`] | [`PnmWriter`] |
 //!
 //! # Quick Start
 //!
@@ -85,26 +89,33 @@ mod asf;
 mod audible;
 mod ape;
 mod arw;
+mod arw_writer;
 mod au;
 mod avi;
 mod bmp;
 mod braw;
 mod composite;
 mod cr2;
+mod cr2_writer;
 mod cr3;
 mod crw;
 mod dcr;
+mod dcr_writer;
 mod dpx;
 mod dsf;
 mod eps;
 mod erf;
+mod erf_writer;
 mod error;
 mod exr;
 mod exr_writer;
 mod fff;
+mod fff_writer;
 mod flac;
+mod flac_writer;
 mod flv;
 mod gif;
+mod gif_writer;
 mod hdr;
 mod hdr_writer;
 mod heic;
@@ -112,18 +123,23 @@ mod ico;
 mod id3;
 mod id3_writer;
 mod iiq;
+mod iiq_writer;
 mod iptc;
 mod jp2;
 mod jpeg;
 mod jpeg_writer;
 mod jxl;
+mod jxl_writer;
 mod makernotes;
 mod mef;
+mod mef_writer;
 mod midi;
 mod mkv;
 mod mpeg_ts;
 mod mos;
+mod mos_writer;
 mod mp4;
+mod mp4_writer;
 mod mrw;
 mod mxf;
 mod pcx;
@@ -133,11 +149,14 @@ mod nef_writer;
 mod nrw;
 mod ogg;
 mod orf;
+mod orf_writer;
 mod parsers;
 mod pef;
+mod pef_writer;
 mod png;
 mod png_writer;
 mod pnm;
+mod pnm_writer;
 mod psd;
 mod r3d;
 mod rm;
@@ -146,9 +165,12 @@ mod raf_writer;
 mod riff;
 mod registry;
 mod rw2;
+mod rw2_writer;
 mod rwl;
+mod rwl_writer;
 mod sgi;
 mod srw;
+mod srw_writer;
 mod srf;
 mod svg;
 mod tag_lookup;
@@ -158,6 +180,7 @@ mod tiff_writer;
 mod traits;
 mod utils;
 mod wav;
+mod wav_writer;
 mod webp;
 mod webp_writer;
 mod heic_writer;
@@ -173,65 +196,84 @@ pub use asf::AsfParser;
 pub use audible::AudibleParser;
 pub use ape::ApeParser;
 pub use arw::ArwParser;
+pub use arw_writer::ArwWriter;
 pub use au::AuParser;
 pub use avi::AviParser;
 pub use bmp::BmpParser;
 pub use braw::BrawParser;
 pub use composite::add_composite_tags;
 pub use cr2::Cr2Parser;
+pub use cr2_writer::Cr2Writer;
 pub use cr3::Cr3Parser;
 pub use crw::CrwParser;
 pub use dcr::{DcrParser, KdcParser, K25Parser};
+pub use dcr_writer::DcrWriter;
 pub use dpx::DpxParser;
 pub use dsf::{DsfParser, DffParser};
 pub use eps::EpsParser;
 pub use erf::ErfParser;
+pub use erf_writer::ErfWriter;
 pub use fff::FffParser;
+pub use fff_writer::FffWriter;
 pub use error::{Error, Result};
 use exiftool_attrs::AttrValue;
 pub use exr::ExrParser;
 pub use flac::FlacParser;
+pub use flac_writer::FlacWriter;
 pub use flv::FlvParser;
 pub use gif::GifParser;
+pub use gif_writer::GifWriter;
 pub use hdr::HdrParser;
 pub use heic::HeicParser;
 pub use ico::IcoParser;
 pub use id3::Id3Parser;
 pub use id3_writer::Id3Writer;
 pub use iiq::IiqParser;
+pub use iiq_writer::IiqWriter;
 pub use iptc::{IptcParser, IptcWriter};
 pub use jp2::Jp2Parser;
 pub use jpeg::JpegParser;
 pub use jxl::JxlParser;
+pub use jxl_writer::JxlWriter;
 pub use mef::MefParser;
+pub use mef_writer::MefWriter;
 pub use midi::MidiParser;
 pub use mkv::MkvParser;
 pub use mpeg_ts::MpegTsParser;
 pub use mos::MosParser;
+pub use mos_writer::MosWriter;
 pub use mp4::Mp4Parser;
+pub use mp4_writer::Mp4Writer;
 pub use mrw::MrwParser;
 pub use mxf::MxfParser;
 pub use nef::NefParser;
 pub use nrw::NrwParser;
 pub use ogg::OggParser;
 pub use orf::OrfParser;
+pub use orf_writer::OrfWriter;
 pub use pef::PefParser;
+pub use pef_writer::PefWriter;
 pub use png::PngParser;
 pub use pnm::PnmParser;
+pub use pnm_writer::PnmWriter;
 pub use psd::PsdParser;
 pub use r3d::R3dParser;
 pub use rm::RmParser;
 pub use raf::RafParser;
 pub use rw2::Rw2Parser;
+pub use rw2_writer::Rw2Writer;
 pub use rwl::RwlParser;
+pub use rwl_writer::RwlWriter;
 pub use sgi::SgiParser;
 pub use srf::SrfParser;
 pub use srw::SrwParser;
+pub use srw_writer::SrwWriter;
 pub use svg::SvgParser;
 pub use tga::TgaParser;
 pub use pcx::PcxParser;
 pub use pdf::PdfParser;
 pub use wav::WavParser;
+pub use wav_writer::WavWriter;
 pub use tiff::{TiffConfig, TiffParser};
 pub use webp::WebpParser;
 pub use webp_writer::WebpWriter;
@@ -250,8 +292,8 @@ pub use hdr_writer::HdrWriter;
 pub use raf_writer::RafWriter;
 pub use nef_writer::NefWriter;
 pub use utils::{
-    build_exif_bytes, entry_to_attr, ifd_tags, parse_tiff_exif, raw_value_to_attr, read_with_limit,
-    MAX_FILE_SIZE, ParseTiffExifOptions,
+    build_exif_bytes, build_xmp_string, entry_to_attr, ifd_tags, parse_tiff_exif, raw_value_to_attr,
+    read_with_limit, MAX_FILE_SIZE, ParseTiffExifOptions,
 };
 
 /// Info about a single page/subfile in multi-page TIFF.
@@ -342,7 +384,9 @@ impl Metadata {
     pub fn is_camera_raw(&self) -> bool {
         // Known RAW format names
         const RAW_FORMATS: &[&str] = &[
-            "ARW", "CR2", "CR3", "NEF", "ORF", "RW2", "PEF", "RAF"
+            "ARW", "CR2", "CR3", "NEF", "ORF", "RW2", "PEF", "RAF",
+            "SRW", "RWL", "3FR", "FFF", "ERF", "MEF", "DCR", "KDC", "K25",
+            "MOS", "IIQ", "SRF", "SR2",
         ];
         
         if RAW_FORMATS.contains(&self.format) {
@@ -367,11 +411,21 @@ impl Metadata {
 
     /// Check if this format supports writing.
     ///
-    /// Writable: JPEG, PNG, TIFF, DNG, EXR, HDR
-    /// Read-only: All RAW formats, HEIC, AVIF, WebP
+    /// Writable: JPEG, PNG, TIFF, DNG, EXR, HDR, WebP, HEIC, AVIF, and selected RAW (CR2, ARW, ORF, NEF, RAF).
     pub fn is_writable(&self) -> bool {
-        const WRITABLE: &[&str] = &["JPEG", "PNG", "TIFF", "DNG", "EXR", "HDR", "WebP", "HEIC", "HEIF", "AVIF"];
-        WRITABLE.contains(&self.format) && !self.is_camera_raw()
+        const WRITABLE: &[&str] = &[
+            "JPEG", "PNG", "TIFF", "DNG", "EXR", "HDR", "WebP", "HEIC", "HEIF", "AVIF",
+            "MP4", "MOV", "M4V", "M4A", "M4B", "M4P", "3GP", "3G2", "F4V",
+            "MP3", "FLAC", "PNM", "PBM", "PGM", "PPM", "PAM",
+            "GIF", "WAV", "JXL",
+        ];
+        const WRITABLE_RAW: &[&str] = &[
+            "CR2", "ARW", "SRF", "SR2", "ORF", "NEF", "NRW", "RAF",
+            "RW2", "PEF", "SRW", "RWL", "3FR", "FFF", "ERF", "MEF",
+            "DCR", "KDC", "K25", "MOS", "IIQ",
+        ];
+        (WRITABLE.contains(&self.format) && !self.is_camera_raw())
+            || WRITABLE_RAW.contains(&self.format)
     }
 
     /// Get interpreted value for a tag.

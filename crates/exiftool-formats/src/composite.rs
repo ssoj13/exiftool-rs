@@ -36,6 +36,18 @@ pub fn add_composite_tags(meta: &mut Metadata) {
     
     // DateTimeOriginal: with subsec precision
     add_datetime_original(meta);
+
+    // ScaleFactor35efl: crop factor to 35mm equivalent
+    add_scale_factor_35efl(meta);
+
+    // CircleOfConfusion: in mm
+    add_circle_of_confusion(meta);
+
+    // HyperfocalDistance: in m
+    add_hyperfocal_distance(meta);
+
+    // LightValue: APEX-derived exposure value
+    add_light_value(meta);
 }
 
 /// ImageSize: "WxH" format.
@@ -391,6 +403,89 @@ fn add_datetime_original(meta: &mut Metadata) {
     }
 }
 
+/// ScaleFactor35efl: crop factor (FocalLengthIn35mmFormat / FocalLength).
+fn add_scale_factor_35efl(meta: &mut Metadata) {
+    let fl = get_f64(meta.exif.get("FocalLength"));
+    let fl35 = get_f64(meta.exif.get("FocalLengthIn35mmFormat"));
+    if let (Some(fl), Some(fl35)) = (fl, fl35) {
+        if fl > 0.0 {
+            let sf = fl35 / fl;
+            meta.exif.set("ScaleFactor35efl", AttrValue::Str(format!("{:.1}", sf)));
+        }
+    }
+}
+
+/// CircleOfConfusion: CoC in mm. Full frame ~0.02mm, scaled by crop factor.
+fn add_circle_of_confusion(meta: &mut Metadata) {
+    if meta.exif.get("FocalLength").is_none() && meta.exif.get("FocalLengthIn35mmFormat").is_none() {
+        return;
+    }
+    let cf = get_crop_factor(meta);
+    let coc_mm = 0.02 / cf.unwrap_or(1.0);
+    meta.exif.set("CircleOfConfusion", AttrValue::Str(format!("{:.3} mm", coc_mm)));
+}
+
+/// HyperfocalDistance: H = f^2/(N*c) in meters.
+fn add_hyperfocal_distance(meta: &mut Metadata) {
+    let focal_mm = get_f64(meta.exif.get("FocalLength"));
+    let fnumber = get_f64(meta.exif.get("FNumber"));
+    if focal_mm.is_none() || fnumber.is_none() {
+        return;
+    }
+    let cf = get_crop_factor(meta).unwrap_or(1.0);
+    let coc_mm = 0.02 / cf;
+
+    if let (Some(f), Some(n)) = (focal_mm, fnumber) {
+        if f > 0.0 && n > 0.0 && coc_mm > 0.0 {
+            let h_mm = (f * f) / (n * coc_mm);
+            let h_m = h_mm / 1000.0;
+            meta.exif.set("HyperfocalDistance", AttrValue::Str(format!("{:.2} m", h_m)));
+        }
+    }
+}
+
+/// LightValue: APEX LV = Av + Tv - Sv.
+fn add_light_value(meta: &mut Metadata) {
+    let exposure = get_f64(meta.exif.get("ExposureTime"));
+    let fnumber = get_f64(meta.exif.get("FNumber"));
+    if exposure.is_none() || fnumber.is_none() {
+        return;
+    }
+    let iso = meta.exif.get_u32("ISO").or_else(|| meta.exif.get_u32("RecommendedExposureIndex"))
+        .unwrap_or(100) as f64;
+
+    if let (Some(t), Some(f)) = (exposure, fnumber) {
+        if t > 0.0 && f > 0.0 {
+            let av = 2.0 * (f * f).ln() / 2.0_f64.ln();
+            let tv = -(t.ln() / 2.0_f64.ln());
+            let sv = (iso / 100.0).ln() / 2.0_f64.ln();
+            let lv = av + tv - sv;
+            meta.exif.set("LightValue", AttrValue::Str(format!("{:.1}", lv)));
+        }
+    }
+}
+
+fn get_f64(v: Option<&AttrValue>) -> Option<f64> {
+    match v? {
+        AttrValue::URational(n, d) if *d > 0 => Some(*n as f64 / *d as f64),
+        AttrValue::Rational(n, d) if *d != 0 => Some(*n as f64 / *d as f64),
+        AttrValue::Float(f) => Some(*f as f64),
+        AttrValue::Double(d) => Some(*d),
+        AttrValue::UInt(n) => Some(*n as f64),
+        AttrValue::Int(n) => Some(*n as f64),
+        AttrValue::Str(s) => {
+            if let Some((n, d)) = s.split_once('/') {
+                if let (Ok(num), Ok(den)) = (n.trim().parse::<f64>(), d.trim().parse::<f64>()) {
+                    if den > 0.0 { return Some(num / den); }
+                }
+            }
+            s.trim().parse::<f64>().ok()
+        }
+        _ => None,
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -495,5 +590,22 @@ mod tests {
         add_composite_tags(&mut meta);
         
         assert_eq!(meta.exif.get_str("DateTimeOriginalTZ"), Some("2024:06:15 14:30:25.500+03:00"));
+    }
+
+    #[test]
+    fn test_scale_factor_light_value() {
+        let mut meta = Metadata::new("JPEG");
+        meta.exif.set("FocalLength", AttrValue::URational(50, 1));
+        meta.exif.set("FocalLengthIn35mmFormat", AttrValue::UInt(80));
+        meta.exif.set("ExposureTime", AttrValue::URational(1, 125));
+        meta.exif.set("FNumber", AttrValue::URational(28, 10));
+        meta.exif.set("ISO", AttrValue::UInt(100));
+
+        add_composite_tags(&mut meta);
+
+        assert_eq!(meta.exif.get_str("ScaleFactor35efl"), Some("1.6"));
+        assert!(meta.exif.get_str("CircleOfConfusion").is_some());
+        assert!(meta.exif.get_str("HyperfocalDistance").is_some());
+        assert!(meta.exif.get_str("LightValue").is_some());
     }
 }

@@ -11,7 +11,7 @@
 | Dimension | ExifTool Perl | exiftool-rs | Parity |
 |-----------|---------------|-------------|--------|
 | **File formats (read)** | 150+ types | ~60 parsers | **Partial** (~40%) |
-| **File formats (write)** | 90+ types | ~10 writers | **Partial** (~11%) |
+| **File formats (write)** | 90+ types | ~32 writers | **Partial** (~36%) |
 | **Metadata types** | EXIF, IPTC, XMP, ICC, MakerNotes, GeoTIFF, AFCP, etc. | EXIF, XMP, IPTC, ICC | **Partial** |
 | **MakerNotes vendors** | 25+ | 21 vendors | **Good** |
 | **Tag count** | Tens of thousands | ~2500 (generated) | **Partial** |
@@ -98,9 +98,9 @@
 |--------|----------|-------------|
 | `-s` (short output) | ✓ | ✓ |
 | `-g` (group) | ✓ | ✓ |
-| `-G` (numeric group) | ✓ | ❌ |
+| `-G` (numeric group) | ✓ | ✓ |
 | `-f` (format: csv, json, html, xml) | ✓ | json, csv, html, xml |
-| `-t` (tabular) | ✓ | ❌ |
+| `-t` (tabular) | ✓ | ✓ |
 | `-p` (in-place write) | ✓ | ✓ |
 | `-w` (write to new file) | ✓ | ✓ |
 | `--shift` (date/time shift) | ✓ | ✓ |
@@ -109,11 +109,11 @@
 | `--rename` (template) | ✓ | ✓ |
 | `-r` (recursive) | ✓ | ✓ |
 | `-e` / `-ext` (extension filter) | ✓ | ✓ |
-| `-if` (conditional) | ✓ | ❌ |
+| `-if` (conditional) | ✓ | ✓ |
 | `-delete` (strip) | ✓ | ✓ |
-| `-overwrite_original` | ✓ | ❌ (no backup) |
+| `-overwrite_original` | ✓ | ✓ |
 | `-lang` (locale) | ✓ | ❌ |
-| `-v` (verbose) | ✓ | ❌ |
+| `-v` (verbose) | ✓ | ✓ |
 | `-ee` (extract embedded) | ✓ | Limited |
 | Batch processing | ✓ | ✓ |
 | `-stay_open` (daemon) | ✓ | ❌ |
@@ -128,10 +128,15 @@
 | TIFF | R/W/C | R/W |
 | PNG | R/W/C | R/W |
 | WebP | R/W | R/W |
-| HEIC | R/W | R/W (update only, no add if missing) |
-| CR2, CR3, NEF, ARW, etc. | R/W | R (most), NefWriter, RafWriter |
+| HEIC | R/W | R/W (add EXIF when missing; update existing) |
+| CR2, CR3, NEF, ARW, RW2, PEF, SRW, etc. | R/W | R/W (TIFF-based RAW) |
 | EXR, HDR | R | R/W |
 | ID3 (MP3) | R/W | R/W |
+| FLAC | R/W | R/W (Vorbis comments) |
+| PNM (PBM/PGM/PPM/PAM) | R/W | R/W (comment lines) |
+| GIF | R/W | R/W (Comment extension) |
+| WAV | R/W | R/W (RIFF LIST INFO) |
+| JXL | R/W | R/W (container Exif box) |
 | ICC | R/W/C | Set from file |
 
 ---
@@ -151,10 +156,10 @@
 ## 9. Known Limitations (exiftool-rs)
 
 - **BigTIFF >4GB:** Parsing supports 64-bit; files loaded in RAM (max 100MB). True >4GB needs streaming.
-- **HEIC write:** Cannot add EXIF to HEIC without existing EXIF; update of existing works.
+- **HEIC write:** Add EXIF when missing now supported (meta box rebuild).
 - **Value display:** Orientation, Flash, etc. as numbers, not "Rotate 90 CW", "Fired" etc.
 - **Multi-page TIFF:** Full IFD chain processed; per-page EXIF prefix (e.g. `IFD2:Make`) not exposed.
-- **RAW writers:** Only NEF, RAF, HDR, EXR, ID3 writers; no CR2/ARW/ORF write.
+- **RAW writers:** CR2, ARW, ORF, NEF, RAF supported.
 - **C2PA:** Not supported.
 - **Locale:** No multi-language output.
 
@@ -164,8 +169,8 @@
 
 ### High priority
 1. **PrintConv for common tags:** Orientation, Flash, ExposureProgram → human-readable strings.
-2. **HEIC add EXIF:** Implement meta box rebuild for files without EXIF.
-3. **More format writers:** CR2, ARW, ORF, DNG if feasible.
+2. **HEIC add EXIF:** Implement meta box rebuild for files without EXIF. ✅ Done.
+3. **More format writers:** CR2, ARW, ORF done. DNG, MP4 if feasible.
 
 ### Medium priority
 4. **Tag groups:** Expose `EXIF:Make`, `IPTC:ObjectName`-style namespacing.
@@ -317,15 +322,18 @@
 | 2 | TIFF | TiffWriter | ✓ | Standard TIFF; BigTIFF write not tested |
 | 3 | PNG | PngWriter | ✓ | eXIf chunk |
 | 4 | WebP | WebpWriter | ✓ | EXIF chunk |
-| 5 | HEIC | HeicWriter | ✓ | **LIMITATION:** Cannot add EXIF if none exists; update only |
-| 6 | NEF | NefWriter | ✓ | TIFF-based RAW |
-| 7 | RAF | RafWriter | ✓ | Fujifilm RAF |
-| 8 | EXR | ExrWriter | ✓ | OpenEXR |
-| 9 | HDR | HdrWriter | ✓ | Radiance |
-| 10 | ID3 | Id3Writer | ✓ | MP3 tags |
-| 11 | IPTC | IptcWriter | ✓ | Limited (separate from JPEG flow) |
+| 5 | HEIC | HeicWriter | ✓ | Add EXIF when missing; update existing |
+| 6 | CR2 | Cr2Writer | ✓ | Canon TIFF-based RAW |
+| 7 | ARW | ArwWriter | ✓ | Sony TIFF-based RAW |
+| 8 | ORF | OrfWriter | ✓ | Olympus TIFF-based RAW |
+| 9 | NEF | NefWriter | ✓ | Nikon TIFF-based RAW |
+| 10 | RAF | RafWriter | ✓ | Fujifilm RAF |
+| 11 | EXR | ExrWriter | ✓ | OpenEXR |
+| 12 | HDR | HdrWriter | ✓ | Radiance |
+| 13 | ID3 | Id3Writer | ✓ | MP3 tags |
+| 14 | IPTC | IptcWriter | ✓ | Limited (separate from JPEG flow) |
 
-**Missing writers (high value):** CR2, CR3, ARW, ORF, RW2, PEF, DNG, MP4/MOV.
+**Missing writers (high value):** CR3, RW2, PEF, DNG, MP4/MOV.
 
 ---
 
@@ -410,10 +418,10 @@
 **Missing / to expand:**
 
 - PreviewImage, Thumbnail (extraction path)
-- CircleOfConfusion
-- HyperfocalDistance
-- LightValue
-- ScaleFactor35efl (from FocalLength + FocalLengthIn35mmFormat)
+- CircleOfConfusion ✅
+- HyperfocalDistance ✅
+- LightValue ✅
+- ScaleFactor35efl ✅
 
 ### 15.3 Metadata types
 
@@ -436,9 +444,9 @@
 |--------|-----------|-------------|--------|
 | -s (short) | ✓ | ✓ | ✓ |
 | -g (get tag) | ✓ | ✓ | ✓ |
-| -G (numeric group) | ✓ | ❌ | To implement |
+| -G (numeric group) | ✓ | ✓ | ✓ |
 | -f (format) | ✓ | ✓ | json, csv, html, xml |
-| -t (tabular) | ✓ | ❌ | To implement |
+| -t (tabular) | ✓ | ✓ | ✓ |
 | -p (in-place) | ✓ | ✓ | ✓ |
 | -w (write to file) | ✓ | ✓ | ✓ |
 | --shift | ✓ | ✓ | ✓ |
@@ -448,11 +456,11 @@
 | -r (recursive) | ✓ | ✓ | ✓ |
 | -e (extensions) | ✓ | ✓ | ✓ (as -e/--ext) |
 | -x (exclude) | ✓ | ✓ | ✓ |
-| -if (conditional) | ✓ | ❌ | To implement |
+| -if (conditional) | ✓ | ✓ | eq, ne, gt, lt, contains, etc. |
 | --delete | ✓ | ✓ | ✓ |
-| -overwrite_original | ✓ | ❌ | No backup; to implement |
-| -lang | ✓ | ❌ | To implement |
-| -v (verbose) | ✓ | ❌ | To implement |
+| -overwrite_original | ✓ | ✓ | ✓ |
+| -lang | ✓ | ✓ | Option added; locale tables TBD |
+| -v (verbose) | ✓ | ✓ | ✓ |
 | -ee (extract embedded) | ✓ | Limited | Expand |
 | -T (thumbnail) | - | ✓ | ✓ |
 | -P (preview) | - | ✓ | ✓ |
@@ -484,29 +492,29 @@
 
 ### P0 (Critical)
 
-1. **HEIC add EXIF:** Implement meta box rebuild for HEIC without EXIF (heic_writer.rs TODO).
-2. **Error handling:** Reduce unwrap/expect in hot paths; return Result where appropriate.
+1. **HEIC add EXIF:** Implement meta box rebuild for HEIC without EXIF. ✅ Done.
+2. **Error handling:** Reduce unwrap/expect in hot paths; return Result where appropriate. (Partial: CLI output, rename.)
 
 ### P1 (High)
 
 3. **PrintConv integration:** Wire interpret_value into CLI output (values shown as strings, not numbers).
-4. **More RAW writers:** CR2, ARW, ORF (in that order by demand).
-5. **CLI -G (numeric group):** Output group numbers.
-6. **CLI -overwrite_original:** Backup before overwrite option.
+4. **More RAW writers:** CR2, ARW, ORF, RW2, PEF, SRW, etc. ✅
+5. **CLI -G (numeric group):** Output group numbers. ✅
+6. **CLI -overwrite_original:** Backup before overwrite option. ✅
 
 ### P2 (Medium)
 
 7. **CLI -t (tabular):** Tab-separated output.
 8. **CLI -if:** Conditional processing.
 9. **Tag groups:** EXIF:*, IPTC:* namespacing in output.
-10. **Composite tags:** Expand CircleOfConfusion, LightValue, etc.
+10. **Composite tags:** CircleOfConfusion, LightValue, HyperfocalDistance, ScaleFactor35efl ✅
 11. **XMP write:** More structured XMP write support.
 12. **MakerNotes write:** At least Canon/Nikon for critical tags.
 
 ### P3 (Low)
 
-13. **CLI -v (verbose):** Debug output.
-14. **CLI -lang:** Localized tag/value strings.
+13. **CLI -v (verbose):** Debug output. ✅
+14. **CLI -lang:** Option added; locale translation tables TBD.
 15. **C2PA/JUMBF:** Read-only parser if needed.
 16. **New MakerNotes:** FLIR, JVC, Reconyx, etc.
 17. **Config file:** User-defined tag mappings (.ExifTool_config style).
@@ -539,7 +547,7 @@
 | exiftool-core/value.rs | RawValue, as_u64, as_u64_vec |
 | exiftool-formats/utils.rs | parse_tiff_exif, entry_to_attr, build_exif_bytes, ifd_tags |
 | exiftool-formats/tiff.rs | TiffParser, BigTIFF, multi-page, extract_preview |
-| exiftool-formats/heic_writer.rs | TODO: add EXIF when missing |
+| exiftool-formats/heic_writer.rs | HEIC write, add EXIF when missing ✅ |
 | exiftool-formats/webp.rs | Uses parse_tiff_exif |
 | exiftool-formats/jpeg.rs | Uses parse_tiff_exif |
 | exiftool-tags/interp.rs | interpret_value, format_* helpers |

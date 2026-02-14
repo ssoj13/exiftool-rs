@@ -169,7 +169,14 @@ impl FormatParser for HeicParser {
                 self.extract_exif(reader, loc, &state, &mut metadata)?;
             }
         }
-        
+
+        // Extract XMP if we found its location (mime item application/rdf+xml)
+        if let Some(xmp_item_id) = state.xmp_item_id {
+            if let Some(loc) = state.item_locations.get(&xmp_item_id) {
+                self.extract_xmp(reader, loc, &state, &mut metadata)?;
+            }
+        }
+
         Ok(metadata)
     }
 }
@@ -178,6 +185,7 @@ impl FormatParser for HeicParser {
 #[derive(Default)]
 struct ParseState {
     exif_item_id: Option<u32>,
+    xmp_item_id: Option<u32>,
     item_locations: std::collections::HashMap<u32, ItemLocation>,
     mdat_offset: Option<u64>,
     idat_offset: Option<u64>,
@@ -314,12 +322,27 @@ impl HeicParser {
             reader.read_exact(&mut _protection)?;
             
             if infe_version >= 2 {
-                // item_type is 4 bytes
+                // item_type is 4 bytes (ExifTool: type = "Exif\0" or "mime\0")
                 let mut item_type = [0u8; 4];
                 reader.read_exact(&mut item_type)?;
                 
                 if &item_type == b"Exif" {
                     state.exif_item_id = Some(item_id);
+                } else if &item_type == b"mime" {
+                    // item_name is null-terminated content-type (ExifTool: "application/rdf+xml\0")
+                    let mut item_name = Vec::new();
+                    let name_end = (pos + infe_size) as u64;
+                    let mut b = [0u8; 1];
+                    while reader.stream_position()? < name_end && reader.read_exact(&mut b).is_ok() {
+                        if b[0] == 0 {
+                            break;
+                        }
+                        item_name.push(b[0]);
+                    }
+                    let name_str = String::from_utf8_lossy(&item_name);
+                    if name_str.contains("application/rdf+xml") || name_str.contains("rdf+xml") {
+                        state.xmp_item_id = Some(item_id);
+                    }
                 }
             }
             
@@ -538,10 +561,86 @@ impl HeicParser {
             ParseTiffExifOptions::default(),
         )?;
         metadata.exif_offset = Some(tiff_start);
-        
+
         Ok(())
     }
-    
+
+    /// Extract XMP data from mime item (application/rdf+xml).
+    fn extract_xmp(
+        &self,
+        reader: &mut dyn ReadSeek,
+        loc: &ItemLocation,
+        state: &ParseState,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
+        if loc.extents.is_empty() {
+            return Ok(());
+        }
+
+        let total_len: u64 = loc.extents.iter().map(|(_, len)| len).sum();
+        if total_len < 20 || total_len > 10 * 1024 * 1024 {
+            return Ok(());
+        }
+
+        let mut xmp_data = vec![0u8; total_len as usize];
+        let mut write_pos = 0;
+
+        for (extent_offset, extent_length) in &loc.extents {
+            let abs_offset = match loc.construction_method {
+                0 => loc.base_offset + extent_offset,
+                1 => {
+                    if let Some(idat_off) = state.idat_offset {
+                        idat_off + loc.base_offset + extent_offset
+                    } else {
+                        continue;
+                    }
+                }
+                _ => continue,
+            };
+
+            if loc.construction_method == 1 {
+                if let Some(ref idat) = state.idat_data {
+                    let start = (loc.base_offset + extent_offset) as usize;
+                    let end = start + *extent_length as usize;
+                    if end <= idat.len() {
+                        xmp_data[write_pos..write_pos + *extent_length as usize]
+                            .copy_from_slice(&idat[start..end]);
+                        write_pos += *extent_length as usize;
+                    }
+                }
+            } else {
+                reader.seek(SeekFrom::Start(abs_offset))?;
+                reader.read_exact(&mut xmp_data[write_pos..write_pos + *extent_length as usize])?;
+                write_pos += *extent_length as usize;
+            }
+        }
+
+        // XMP may be deflate-compressed (content_encoding in infe)
+        let raw: Vec<u8> = if xmp_data.len() >= 2
+            && xmp_data[0] == 0x78
+            && (xmp_data[1] == 0x9c || xmp_data[1] == 0x01 || xmp_data[1] == 0x5e || xmp_data[1] == 0xda)
+        {
+            use std::io::Read;
+            let mut decoder = flate2::read::ZlibDecoder::new(&xmp_data[..]);
+            let mut decoded = Vec::new();
+            if decoder.read_to_end(&mut decoded).is_ok() && !decoded.is_empty() {
+                decoded
+            } else {
+                xmp_data
+            }
+        } else {
+            xmp_data
+        };
+
+        if let Ok(xmp_str) = String::from_utf8(raw) {
+            if xmp_str.contains("xmpmeta") || xmp_str.contains("rdf:RDF") {
+                metadata.xmp = Some(xmp_str.trim().to_string());
+            }
+        }
+
+        Ok(())
+    }
+
     /// Find TIFF header in EXIF data by searching for byte order markers.
     fn find_tiff_header(&self, data: &[u8]) -> usize {
         // Search for "II" (Intel) or "MM" (Motorola) byte order markers

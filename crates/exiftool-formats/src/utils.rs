@@ -333,6 +333,47 @@ pub fn build_exif_bytes(metadata: &Metadata) -> Result<Vec<u8>> {
     w.serialize().map_err(|e| Error::InvalidStructure(format!("EXIF build failed: {}", e)))
 }
 
+/// XMP namespace prefixes that we can serialize.
+const XMP_NS_PREFIXES: &[&str] = &[
+    "XMP:", "DC:", "xmp:", "dc:", "EXIF:", "TIFF:", "Photoshop:", "IPTC:",
+    "xmpMM:", "xmpRights:", "exif:", "tiff:", "photoshop:", "Iptc4xmpCore:",
+];
+
+/// Check if a tag key belongs to XMP namespace.
+fn is_xmp_key(key: &str) -> bool {
+    XMP_NS_PREFIXES.iter().any(|prefix| key.starts_with(prefix))
+}
+
+/// Build XMP string from metadata.
+///
+/// Returns `metadata.xmp` if set. Otherwise, if metadata has XMP-prefixed attrs
+/// (XMP:, DC:, EXIF:, etc.), generates XMP via exiftool-xmp XmpWriter.
+pub fn build_xmp_string(metadata: &Metadata) -> Result<Option<String>> {
+    if let Some(ref xmp) = metadata.xmp {
+        if !xmp.trim().is_empty() {
+            return Ok(Some(xmp.clone()));
+        }
+    }
+
+    let has_xmp_attrs = metadata.exif.iter().any(|(k, _)| is_xmp_key(k));
+    if !has_xmp_attrs {
+        return Ok(None);
+    }
+
+    let mut xmp_attrs = exiftool_attrs::Attrs::new();
+    for (key, value) in metadata.exif.iter() {
+        if is_xmp_key(key) && !key.starts_with('_') {
+            xmp_attrs.set(key, value.clone());
+        }
+    }
+
+    if xmp_attrs.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(exiftool_xmp::XmpWriter::write(&xmp_attrs).map(Some)?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -352,5 +393,28 @@ mod tests {
         let mut cursor = Cursor::new(data);
         let result = read_with_limit_custom(&mut cursor, 50);
         assert!(matches!(result, Err(Error::FileTooLarge(100, 50))));
+    }
+
+    #[test]
+    fn build_xmp_from_attrs() {
+        let mut metadata = Metadata::new("JPEG");
+        metadata.exif.set("XMP:Rating", exiftool_attrs::AttrValue::Str("5".into()));
+        metadata.exif.set("DC:title", exiftool_attrs::AttrValue::Str("Test".into()));
+
+        let xmp = build_xmp_string(&metadata).unwrap();
+        assert!(xmp.is_some());
+        let xmp = xmp.unwrap();
+        assert!(xmp.contains("<xmp:Rating>5</xmp:Rating>"));
+        assert!(xmp.contains("Test"));
+    }
+
+    #[test]
+    fn build_xmp_returns_existing() {
+        let mut metadata = Metadata::new("JPEG");
+        let existing = "<x:xmpmeta>existing</x:xmpmeta>";
+        metadata.xmp = Some(existing.to_string());
+
+        let xmp = build_xmp_string(&metadata).unwrap();
+        assert_eq!(xmp.as_deref(), Some(existing));
     }
 }

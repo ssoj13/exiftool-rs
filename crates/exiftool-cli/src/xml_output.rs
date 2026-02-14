@@ -55,7 +55,7 @@ pub fn format_xml(path: &Path, m: &Metadata, filter: &[String], out: &mut String
     
     // All tags
     let mut entries: Vec<_> = m.exif.iter()
-        .filter(|(k, _)| filter.is_empty() || super::tag_matches(k, filter))
+        .filter(|(k, _)| filter.is_empty() || crate::filters::tag_matches(k, filter))
         .collect();
     entries.sort_by(|a, b| a.0.cmp(b.0));
     

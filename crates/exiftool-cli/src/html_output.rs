@@ -39,7 +39,7 @@ pub fn format_html(path: &Path, m: &Metadata, filter: &[String], out: &mut Strin
     let mut entries: Vec<_> = m.exif.iter()
         .filter(|(k, _)| filter.is_empty() || filter.iter().any(|f| {
             if f.contains('*') || f.contains('?') {
-                crate::glob_match(f, k)
+                crate::filters::glob_match(f, k)
             } else {
                 f.eq_ignore_ascii_case(k)
             }

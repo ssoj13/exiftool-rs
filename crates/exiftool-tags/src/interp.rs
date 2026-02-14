@@ -50,6 +50,8 @@ pub fn interpret_value(tag_name: &str, value: i64) -> Option<String> {
         "GPSStatus" => GPS_STATUS.get(&(value as u8)).map(|s| s.to_string()),
         "GPSMeasureMode" => GPS_MEASURE_MODE.get(&(value as u8)).map(|s| s.to_string()),
         "GPSDifferential" => GPS_DIFFERENTIAL.get(&(value as u8)).map(|s| s.to_string()),
+        "GPSSpeedRef" => GPS_SPEED_REF.get(&(value as u8)).map(|s| s.to_string()),
+        "GPSTrackRef" => GPS_TRACK_REF.get(&(value as u8)).map(|s| s.to_string()),
 
         _ => None,
     }
@@ -382,6 +384,17 @@ static GPS_MEASURE_MODE: phf::Map<u8, &'static str> = phf_map! {
 static GPS_DIFFERENTIAL: phf::Map<u8, &'static str> = phf_map! {
     0u8 => "No Correction",
     1u8 => "Differential Corrected",
+};
+
+static GPS_SPEED_REF: phf::Map<u8, &'static str> = phf_map! {
+    75u8 => "km/h",   // 'K'
+    77u8 => "mph",    // 'M'
+    78u8 => "knots",  // 'N'
+};
+
+static GPS_TRACK_REF: phf::Map<u8, &'static str> = phf_map! {
+    77u8 => "Magnetic North",  // 'M'
+    84u8 => "True North",      // 'T'
 };
 
 #[cfg(test)]
