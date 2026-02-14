@@ -21,6 +21,8 @@ pub fn interpret_value(tag_name: &str, value: i64) -> Option<String> {
         "Orientation" => ORIENTATION.get(&(value as u8)).map(|s| s.to_string()),
         "ResolutionUnit" => RESOLUTION_UNIT.get(&(value as u8)).map(|s| s.to_string()),
         "YCbCrPositioning" => YCBCR_POSITIONING.get(&(value as u8)).map(|s| s.to_string()),
+        "PhotometricInterpretation" => PHOTOMETRIC_INTERPRETATION.get(&(value as u16)).map(|s| s.to_string()),
+        "PlanarConfiguration" => PLANAR_CONFIGURATION.get(&(value as u8)).map(|s| s.to_string()),
 
         // EXIF tags
         "ExposureProgram" => EXPOSURE_PROGRAM.get(&(value as u8)).map(|s| s.to_string()),
@@ -42,6 +44,8 @@ pub fn interpret_value(tag_name: &str, value: i64) -> Option<String> {
         "SensitivityType" => SENSITIVITY_TYPE.get(&(value as u8)).map(|s| s.to_string()),
 
         // GPS tags
+        "GPSLatitudeRef" => match value as u8 { 78 => Some("N".into()), 83 => Some("S".into()), _ => None },
+        "GPSLongitudeRef" => match value as u8 { 69 => Some("E".into()), 87 => Some("W".into()), _ => None },
         "GPSAltitudeRef" => GPS_ALTITUDE_REF.get(&(value as u8)).map(|s| s.to_string()),
         "GPSStatus" => GPS_STATUS.get(&(value as u8)).map(|s| s.to_string()),
         "GPSMeasureMode" => GPS_MEASURE_MODE.get(&(value as u8)).map(|s| s.to_string()),
@@ -146,6 +150,27 @@ static RESOLUTION_UNIT: phf::Map<u8, &'static str> = phf_map! {
 static YCBCR_POSITIONING: phf::Map<u8, &'static str> = phf_map! {
     1u8 => "Centered",
     2u8 => "Co-sited",
+};
+
+static PHOTOMETRIC_INTERPRETATION: phf::Map<u16, &'static str> = phf_map! {
+    0u16 => "WhiteIsZero",
+    1u16 => "BlackIsZero",
+    2u16 => "RGB",
+    3u16 => "Palette color",
+    4u16 => "Transparency Mask",
+    5u16 => "CMYK",
+    6u16 => "YCbCr",
+    8u16 => "CIELab",
+    9u16 => "ICCLab",
+    10u16 => "ITULab",
+    32803u16 => "CFA",
+    32844u16 => "Pixar LogL",
+    32845u16 => "Pixar LogLuv",
+};
+
+static PLANAR_CONFIGURATION: phf::Map<u8, &'static str> = phf_map! {
+    1u8 => "Chunky",
+    2u8 => "Planar",
 };
 
 static EXPOSURE_PROGRAM: phf::Map<u8, &'static str> = phf_map! {
@@ -414,5 +439,17 @@ mod tests {
     fn test_compression() {
         assert_eq!(interpret_value("Compression", 1), Some("Uncompressed".to_string()));
         assert_eq!(interpret_value("Compression", 7), Some("JPEG".to_string()));
+    }
+
+    #[test]
+    fn test_photometric_planar() {
+        assert_eq!(interpret_value("PhotometricInterpretation", 2), Some("RGB".to_string()));
+        assert_eq!(interpret_value("PlanarConfiguration", 1), Some("Chunky".to_string()));
+    }
+
+    #[test]
+    fn test_gps_refs() {
+        assert_eq!(interpret_value("GPSLatitudeRef", 78), Some("N".to_string()));  // 'N'
+        assert_eq!(interpret_value("GPSLongitudeRef", 87), Some("W".to_string()));  // 'W'
     }
 }

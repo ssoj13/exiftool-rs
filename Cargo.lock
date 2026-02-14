@@ -334,6 +334,7 @@ dependencies = [
  "exiftool-attrs",
  "exiftool-core",
  "exiftool-formats",
+ "exiftool-tags",
  "exiftool-xmp",
  "serde_json",
  "walkdir",

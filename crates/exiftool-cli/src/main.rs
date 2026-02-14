@@ -12,6 +12,7 @@ use exiftool_formats::{
     add_composite_tags, build_exif_bytes, FormatRegistry, JpegWriter, Metadata, 
     PngWriter, TiffWriter, HdrWriter, ExrWriter,
 };
+use exiftool_tags::interp;
 use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::BufReader;
@@ -20,6 +21,18 @@ use std::env;
 use walkdir::WalkDir;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Format value for display with PrintConv when available (ExifTool-compatible).
+fn format_value_for_display(tag_name: &str, value: &AttrValue) -> String {
+    let i64_val = value.as_i64();
+    if let Some(v) = i64_val {
+        let base_name = tag_name.rsplit(':').next().unwrap_or(tag_name);
+        if let Some(interpreted) = interp::interpret_value(base_name, v) {
+            return interpreted;
+        }
+    }
+    value.to_string()
+}
 
 /// Simple glob matching for tag names (* = any chars, ? = one char)
 fn glob_match(pattern: &str, text: &str) -> bool {
@@ -137,6 +150,9 @@ OPTIONS:
     -g, --get <PATTERN>  Get tag(s) matching pattern (* and ? wildcards)
     -f, --format <FMT>   Output: text (default), json, csv, xml, html
     -X, --xml            XML output (shortcut for -f xml)
+    -s, --short          Print values only (no tag names)
+    -G, --numeric        Print group numbers (0:tag or 1:Group:tag)
+    --tabular            Tab-delimited output (machine-parseable)
     -o, --output <FILE>  Save metadata/thumbnail to file
     -t, --tag <T=V>      Set tag (repeatable): -t Tag=Value
     --shift <OFFSET>     Shift all DateTime tags (+/-HH:MM or +/-MM minutes)
@@ -148,6 +164,7 @@ OPTIONS:
     --rename <TMPL>      Rename files using template ($Tag, %Y%m%d, %e=ext)
     -w, --write <FILE>   Output image file (for write mode)
     -p, --inplace        Modify original file in-place
+    --overwrite_original No backup: overwrite original (no _original file)
     -T, --thumbnail      Extract embedded thumbnail
     -P, --preview        Extract embedded preview (larger, from RAW files)
     -r, --recursive      Recursively scan directories
@@ -593,6 +610,11 @@ struct Args {
     validate: bool,                   // --validate check metadata
     // Conditional processing
     if_condition: Option<String>,     // -if CONDITION filter by metadata
+    // Output format (ExifTool-compatible)
+    short: bool,                       // -s print values only, no tag names
+    numeric_group: bool,              // -G print group numbers (e.g. 0:IFD0:Make)
+    tabular: bool,                    // -t tab-delimited output
+    overwrite_original: bool,         // --overwrite_original: no backup, delete .original after write
     // HTML dump
     html_dump: bool,                  // -htmlDump show file structure
     // Duplicates
@@ -1072,6 +1094,10 @@ fn parse_args(args: &[String]) -> Result<Args> {
             }
             "-X" | "--xml" => parsed.format = "xml".into(),
             "-p" | "--inplace" => parsed.inplace = true,
+            "-s" | "--short" => parsed.short = true,
+            "-G" | "--numeric" => parsed.numeric_group = true,
+            "--tabular" | "-tabular" => parsed.tabular = true,
+            "--overwrite_original" => parsed.overwrite_original = true,
             "--delete" | "--strip" => parsed.delete = true,
             "--validate" => parsed.validate = true,
             "-if" => {
@@ -1367,7 +1393,18 @@ fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
         if args.inplace && output_path == *path {
             let tmp = output_path.with_extension("tmp");
             std::fs::write(&tmp, &output_data)?;
-            std::fs::rename(&tmp, &output_path)?;
+            if args.overwrite_original {
+                // No backup: just overwrite (ExifTool --overwrite_original)
+                std::fs::rename(&tmp, &output_path)?;
+            } else {
+                // Backup original to file_original (ExifTool default -p behavior)
+                let ext = path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+                let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+                let backup = path.with_file_name(format!("{}_original.{}", stem, if ext.is_empty() { "bak" } else { &ext }));
+                std::fs::copy(path, &backup)?;
+                std::fs::rename(&tmp, &output_path)?;
+                eprintln!("Original backed up to: {}", backup.display());
+            }
         } else {
             std::fs::write(&output_path, &output_data)?;
         }
@@ -1554,7 +1591,7 @@ fn print_metadata(path: &Path, m: &Metadata, args: &Args) {
         "csv" => print_csv(path, m, &args.get_tags),
         "xml" => xml_output::print_xml(path, m, &args.get_tags),
         "html" => html_output::print_html(path, m, &args.get_tags),
-        _ => print_text(path, m, args.all, &args.get_tags),
+        _ => print_text(path, m, args, &args.get_tags),
     }
 }
 
@@ -1614,28 +1651,51 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
             let _ = writeln!(out, "{}", vals.join(","));
         }
         _ => {
-            // Single tag, single file: just the value
             if is_simple_filter(filter) && args.files.len() == 1 {
                 if let Some(v) = m.exif.get(&filter[0]) {
-                    let _ = writeln!(out, "{}", v);
+                    let _ = writeln!(out, "{}", format_value_for_display(&filter[0], v));
                 }
                 return;
             }
-            
+
+            let sep = if args.tabular { "\t" } else { " " };
+            let col_width = if args.tabular { 0 } else { 28 };
+
+            if args.short {
+                let mut entries: Vec<_> = m.exif.iter()
+                    .filter(|(k, _)| tag_matches(k, filter))
+                    .collect();
+                entries.sort_by(|a, b| a.0.cmp(b.0));
+                for (k, v) in entries {
+                    let _ = writeln!(out, "{}", format_value_for_display(k, v));
+                }
+                return;
+            }
+
             if filter.is_empty() {
                 let _ = writeln!(out, "── {} ──", path.display());
                 let _ = writeln!(out, "{:28} {}", "Format", m.format);
             } else if args.files.len() > 1 {
                 let _ = writeln!(out, "── {} ──", path.display());
             }
-            
+
             let mut entries: Vec<_> = m.exif.iter()
                 .filter(|(k, _)| tag_matches(k, filter))
                 .collect();
             entries.sort_by(|a, b| a.0.cmp(b.0));
-            
+
             for (k, v) in entries {
-                let _ = writeln!(out, "{:28} {}", k, v);
+                let disp = format_value_for_display(k, v);
+                let tag_display = if args.numeric_group {
+                    if k.contains(':') { format!("1:{}", k) } else { format!("0:{}", k) }
+                } else {
+                    k.clone()
+                };
+                if args.tabular {
+                    let _ = writeln!(out, "{}{}{}", tag_display, sep, disp);
+                } else {
+                    let _ = writeln!(out, "{:width$}{}{}", tag_display, sep, disp, width = col_width);
+                }
             }
             if filter.is_empty() {
                 if let Some(ref xmp) = m.xmp {
@@ -1647,49 +1707,66 @@ fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String) {
     }
 }
 
-fn print_text(path: &Path, m: &Metadata, _all: bool, filter: &[String]) {
-    // Single tag: just print value
+fn print_text(path: &Path, m: &Metadata, args: &Args, filter: &[String]) {
+    let sep = if args.tabular { "\t" } else { " " };
+    let col_width = if args.tabular { 0 } else { 28 };
+
+    // Single tag: just print value (ExifTool -s style)
     if is_simple_filter(filter) {
         if let Some(v) = m.exif.get(&filter[0]) {
-            println!("{}", v);
+            let disp = format_value_for_display(&filter[0], v);
+            println!("{}", disp);
         }
         return;
     }
-    
+
+    // -s (short): values only, no tag names
+    if args.short {
+        let mut entries: Vec<_> = m.exif.iter()
+            .filter(|(k, _)| tag_matches(k, filter))
+            .collect();
+        entries.sort_by(|a, b| a.0.cmp(b.0));
+        for (k, v) in entries {
+            println!("{}", format_value_for_display(k, v));
+        }
+        return;
+    }
+
     if filter.is_empty() {
         println!("── {} ──", path.display());
         println!("{:28} {}", "Format", m.format);
     }
-    
+
     let mut entries: Vec<_> = m.exif.iter()
         .filter(|(k, _)| tag_matches(k, filter))
         .collect();
     entries.sort_by(|a, b| a.0.cmp(b.0));
-    
+
     for (k, v) in entries {
-        println!("{:28} {}", k, v);
+        let disp = format_value_for_display(k, v);
+        let tag_display = if args.numeric_group {
+            if k.contains(':') { format!("1:{}", k) } else { format!("0:{}", k) }
+        } else {
+            k.clone()
+        };
+        if args.tabular {
+            println!("{}{}{}", tag_display, sep, disp);
+        } else {
+            println!("{:width$}{}{}", tag_display, sep, disp, width = col_width);
+        }
     }
-    
+
     if filter.is_empty() {
         if let Some(ref xmp) = m.xmp {
             println!("{:28} {} bytes", "XMP", xmp.len());
         }
-        // Multi-page info
         if m.pages.len() > 1 {
             println!("{:28} {}", "Pages", m.pages.len());
             for page in &m.pages {
-                let desc = if page.is_thumbnail() {
-                    "(thumbnail)"
-                } else if page.is_page() {
-                    "(page)"
-                } else {
-                    ""
-                };
-                println!("  Page {:2}: {}x{} {}bpp {}", 
-                    page.index, page.width, page.height, page.bits_per_sample, desc);
+                let desc = if page.is_thumbnail() { "(thumbnail)" } else if page.is_page() { "(page)" } else { "" };
+                println!("  Page {:2}: {}x{} {}bpp {}", page.index, page.width, page.height, page.bits_per_sample, desc);
             }
         }
-        // Thumbnail info
         if let Some(ref thumb) = m.thumbnail {
             println!("{:28} {} bytes", "Thumbnail", thumb.len());
         }

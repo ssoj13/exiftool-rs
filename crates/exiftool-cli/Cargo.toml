@@ -13,6 +13,7 @@ path = "src/main.rs"
 exiftool-core.workspace = true
 exiftool-attrs.workspace = true
 exiftool-formats.workspace = true
+exiftool-tags.workspace = true
 exiftool-xmp.workspace = true
 clap.workspace = true
 serde_json.workspace = true

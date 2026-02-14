@@ -1,7 +1,23 @@
-//! File format parsers for image metadata extraction.
+//! File format parsers and writers for image/video/audio metadata.
 //!
-//! This crate provides a unified interface for parsing EXIF, XMP, and other
-//! metadata from various image file formats.
+//! # Why this crate exists
+//!
+//! Files (JPEG, TIFF, PNG, CR2, HEIC, …) embed metadata in format-specific locations.
+//! This crate provides format detection, parsing, and writing so callers don't need
+//! to know the format in advance.
+//!
+//! # What it provides
+//!
+//! - **[`FormatRegistry`]** — auto-detect format from magic bytes, parse metadata
+//! - **[`default_parsers`]** / **[`parse_with`]** — list of built-in parsers; add/remove in `parsers` module
+//! - **Writers** — `JpegWriter`, `TiffWriter`, `PngWriter`, etc. for metadata updates
+//! - **[`parse_tiff_exif`]** — shared TIFF/EXIF logic used by JPEG, PNG, WebP, HEIC, …
+//!
+//! # Where used
+//!
+//! - **exiftool-cli** — read/write metadata from command line
+//! - **exiftool-py** — Python bindings
+//! - **Direct** — `FormatRegistry::new().parse(&mut file)?`
 //!
 //! # Supported Formats
 //!
@@ -117,6 +133,7 @@ mod nef_writer;
 mod nrw;
 mod ogg;
 mod orf;
+mod parsers;
 mod pef;
 mod png;
 mod png_writer;
@@ -222,6 +239,7 @@ pub use heic_writer::HeicWriter;
 pub use tak::TakParser;
 pub use wv::WvParser;
 pub use x3f::X3fParser;
+pub use parsers::{default_parsers, parse_with};
 pub use registry::FormatRegistry;
 pub use traits::{FormatParser, ReadSeek};
 pub use jpeg_writer::JpegWriter;

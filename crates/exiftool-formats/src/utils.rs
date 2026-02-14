@@ -1,4 +1,21 @@
 //! Shared utilities for format parsers.
+//!
+//! # Why
+//!
+//! Many formats embed EXIF as TIFF (JPEG APP1, PNG eXIf, WebP EXIF, HEIC, JXL, AVI).
+//! One implementation avoids duplication and bugs (e.g. missing sub-IFDs).
+//!
+//! # What
+//!
+//! - [`parse_tiff_exif`] — parse TIFF bytes → Attrs; handles IFD0, ExifIFD, GPS, Interop, MakerNotes
+//! - [`entry_to_attr`] — convert IfdEntry → AttrValue (type-aware)
+//! - [`build_exif_bytes`] — Metadata → TIFF bytes for writing
+//! - [`ifd_tags`] — constants (thumbnail offset, strip offsets, …)
+//!
+//! # Where used
+//!
+//! `parse_tiff_exif`: jpeg.rs, png.rs, webp.rs, heic.rs, jxl.rs, avi.rs.
+//! `entry_to_attr`: parse_tiff_exif, tiff.rs. `build_exif_bytes`: all writers.
 
 use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0};
 use crate::{makernotes, Error, Metadata, ReadSeek, Result};

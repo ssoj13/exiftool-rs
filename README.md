@@ -228,6 +228,33 @@ exiftool-rs/
     exiftool-py/        # Python bindings (PyO3)
 ```
 
+## Architecture: Why / What / How / Where
+
+### Format Parsers (`exiftool-formats`)
+
+| Component | Why it exists | What it does | How it works | Where used |
+|-----------|---------------|--------------|--------------|------------|
+| **parsers.rs** | One place to add/remove formats | `default_parsers()` returns all parsers; `parse_with()` for custom list | List of `Box<dyn FormatParser>`, order = detection priority | `FormatRegistry::new()`, minimal builds |
+| **registry.rs** | Auto-detect format from bytes | `FormatRegistry` picks parser by magic bytes | Reads 16 bytes → first `can_parse()` match → `parse()` | CLI, Python, direct library use |
+| **FormatParser** trait | Uniform interface for 60+ formats | `can_parse(header)`, `parse(reader)` → `Metadata` | Each format implements trait; TIFF-based share `parse_tiff_exif` | All parsers (jpeg.rs, tiff.rs, …) |
+| **utils::parse_tiff_exif** | Single source for EXIF in containers | Parse TIFF bytes → `Metadata.exif` | Shared by JPEG, PNG, WebP, HEIC, JXL, AVI | jpeg.rs, png.rs, webp.rs, heic.rs, … |
+| **utils::entry_to_attr** | Consistent IFD entry → AttrValue | `IfdEntry` → `AttrValue` | Switch on type, handle rationals, strings, etc. | All TIFF-based parsers |
+
+### Data Flow
+
+```
+File → FormatRegistry::parse() → detect(header) → Parser::parse()
+  → Metadata { exif: Attrs, xmp, thumbnail, pages }
+  → CLI / Python / user code
+```
+
+### Adding a New Format
+
+1. Create `src/xxx.rs` implementing `FormatParser`
+2. Add `mod xxx;` to `lib.rs`
+3. Add `Box::new(XxxParser)` to `parsers::default_parsers()` (place by detection order)
+4. Re-export in `lib.rs` if needed
+
 ## Supported Formats
 
 | Format | Read | Write | Notes |
