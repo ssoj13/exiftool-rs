@@ -117,8 +117,8 @@ impl VendorParser for NikonParser {
             let header_type = data.get(6)?;
             match *header_type {
                 0x01 => {
-                    // Type 2: "Nikon\0\x01\0" — IFD starts after the 10-byte header.
-                    (&data[10..], parent_byte_order, 0u64)
+                    // ExifTool MakerNoteNikon2: Start +8, little-endian.
+                    (&data[8..], ByteOrder::LittleEndian, 0u64)
                 }
                 0x02 => {
                     // Type 3: embedded TIFF at offset 10; IFD0 from that TIFF header.

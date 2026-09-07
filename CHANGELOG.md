@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **MakerNotes field write** (FujiFilm IFD): overlay existing tags in the `FUJIFILM` blob (`rewrite_blob`). JPEG/RAF `write_metadata` rewrites original APP1 TIFF so MakerNotes are not dropped. Other vendors remain blob-copy.
+- **MakerNotes field write**: FujiFilm IFD rebuild; Panasonic / Sony / Olympus / Nikon / Canon / Pentax overlay existing IFD tags in place (`rewrite_blob`). Encrypted Nikon ShotInfo and unknown magics stay blob-copy. JPEG/RAF `write_metadata` rewrites original APP1 TIFF so MakerNotes are not dropped.
 - **CR3 write** (`Cr3Writer`): ExifTool WriteQuickTime CR3 map — rewrite CMT1/CMT2/CMT4, optional XMP UUID, patch CTBO and stco/co64; keep `mdat` largesize header; CMT3 blob copy. `is_writable` true.
 - **RAF write** (`RafWriter`): ExifTool `WriteRAF` — rewrite preview JPEG EXIF, 4-byte pad, fix header pointers, copy RAF directory + CFA from `nextPtr` at 0x5C. `is_writable` true.
 - **NEF/NRW write** (`tiff_rewrite` + `NefWriter`): overlay IFD0 / ExifIFD / GPS; copy SubIFD trees, strips/tiles, MakerNotes/ICC blobs. Does not use `TiffWriter` (that path drops SubIFD/raw). CLI and Python `save()` dispatch both formats.

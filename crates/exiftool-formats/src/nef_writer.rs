@@ -2,7 +2,7 @@
 //!
 //! `write` uses `tiff_rewrite` (ExifTool WriteTIFF / ProcessTIFF style):
 //! overlay IFD0 / ExifIFD / GPS tags, copy SubIFD trees, strips/tiles, MakerNotes blobs.
-//! MakerNotes field tables are not rewritten.
+//! MakerNotes IFD fields overlay via `rewrite_blob` (not encrypted ShotInfo).
 
 use crate::{Error, Metadata, ReadSeek, Result};
 use std::io::Write;

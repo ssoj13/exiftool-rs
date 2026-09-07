@@ -163,13 +163,22 @@ impl VendorParser for PentaxParser {
             } else {
                 parent_byte_order
             };
-            (&data[10..], byte_order)
+            (data, byte_order)
         } else {
             // No header
             (data, parent_byte_order)
         };
 
-        let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
+        let ifd_off = if std::ptr::eq(ifd_data.as_ptr(), data.as_ptr())
+            && data.starts_with(PENTAX_HEADER)
+            && data.len() >= 12
+            && data.get(7) == Some(&0)
+        {
+            10u32
+        } else {
+            0u32
+        };
+        let entries = super::parse_ifd_entries(ifd_data, byte_order, ifd_off)?;
 
         let mut attrs = Attrs::new();
 

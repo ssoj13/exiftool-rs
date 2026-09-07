@@ -47,8 +47,8 @@ impl VendorParser for OlympusParser {
 
         // Detect header type
         let (ifd_data, byte_order, ifd_offset) = if data.starts_with(OLYMPUS_HEADER) {
-            // Type 2: "OLYMPUS\0II" with embedded TIFF
-            if data.len() < 16 {
+            // ExifTool MakerNoteOlympus2: IFD at +12, offsets from MakerNotes start.
+            if data.len() < 14 {
                 return None;
             }
             let byte_order = if &data[8..10] == b"II" {
@@ -58,16 +58,19 @@ impl VendorParser for OlympusParser {
             } else {
                 return None;
             };
-            // IFD offset at bytes 12-15
-            let offset = match byte_order {
-                ByteOrder::LittleEndian => {
-                    u32::from_le_bytes([data[12], data[13], data[14], data[15]])
-                }
-                ByteOrder::BigEndian => {
-                    u32::from_be_bytes([data[12], data[13], data[14], data[15]])
-                }
-            } as usize;
-            (data, byte_order, offset)
+            (data, byte_order, 12usize)
+        } else if data.starts_with(b"OM SYSTEM\0") {
+            if data.len() < 18 {
+                return None;
+            }
+            let byte_order = if &data[10..12] == b"II" {
+                ByteOrder::LittleEndian
+            } else if &data[10..12] == b"MM" {
+                ByteOrder::BigEndian
+            } else {
+                return None;
+            };
+            (data, byte_order, 16usize)
         } else if data.starts_with(OLYMP_HEADER) {
             // Type 1: "OLYMP\0" - old format
             (&data[8..], parent_byte_order, 0)

@@ -1,7 +1,7 @@
 //! TIFF rewrite that preserves image IFDs, strips/tiles, and MakerNotes.
 //!
-//! FujiFilm MakerNotes IFD fields are overlaid when present in `metadata`; other
-//! vendor blobs are copied. Used for TIFF-based RAW (NEF): update IFD0 / ExifIFD / GPS
+//! FujiFilm MakerNotes IFD is rebuilt; other IFD vendors overlay existing tags in
+//! place via `rewrite_blob`. Unknown / encrypted blobs are copied. Used for TIFF-based RAW (NEF): update IFD0 / ExifIFD / GPS
 //! copying SubIFD trees and pixel payloads. Unlike [`crate::TiffWriter`], this
 //! does not rebuild IFD0 from a short tag list.
 
