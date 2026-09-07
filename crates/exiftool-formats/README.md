@@ -22,7 +22,7 @@ Files come in many formats (JPEG, TIFF, PNG, CR2, HEIC, …). This crate provide
 
 ## How it works
 
-1. **Detection**: `FormatRegistry::parse(reader)` reads 16 bytes, seeks back, finds first parser where `can_parse(header)`.
+1. **Detection**: `FormatRegistry::parse_file(path)` uses magic + extension. `parse(reader)` reads `DETECT_HEADER_LEN` (132) bytes, finds first `can_parse(header)`. TIFF-family FileType uses `tiff_family` after `TiffParser`.
 2. **Parse**: Calls `parser.parse(reader)` → returns `Metadata { exif, xmp, thumbnail, pages }`.
 3. **EXIF path**: TIFF-based formats (JPEG APP1, PNG eXIf, WebP EXIF, HEIC, …) use `utils::parse_tiff_exif()` — single implementation, no duplication.
 4. **Tag names**: From `exiftool-tags` (generated from ExifTool Perl).

@@ -319,6 +319,14 @@ impl Cr3Parser {
                 }
             }
         }
+
+        if prefix == "MakerNotes" {
+            if let Some(mn) = crate::makernotes::parse(&tiff_data, crate::makernotes::Vendor::Canon, byte_order) {
+                for (key, val) in mn.iter() {
+                    metadata.exif.set(key.clone(), val.clone());
+                }
+            }
+        }
         
         Ok(())
     }

@@ -1,6 +1,7 @@
 //! Sony ARW format writer.
 //!
-//! ARW is standard TIFF-based. Delegates directly to TiffWriter.
+//! Delegates to `TiffWriter` / `tiff_rewrite`. Original DSLR-A100 files get ExifTool
+//! `FinishARW`: 0x14a is CFA offset (not SubIFD); Minolta MRW at 0xc634 is appended after the TIFF.
 
 use crate::{Metadata, ReadSeek, Result, TiffWriter};
 use std::io::Write;

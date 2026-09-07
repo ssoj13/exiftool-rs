@@ -219,7 +219,11 @@ if img.is_multi_page:
 # Detect camera RAW
 if img.is_camera_raw:
     print(f"RAW file from {img.make}")
-    
+    # TIFF-family RAW and RAF: img.is_writable is True (EXIF only; raw copied)
+    if img.is_writable:
+        img.artist = "Name"
+        img.save()
+
     # Extract preview
     if img.preview:
         with open("preview.jpg", "wb") as f:
@@ -322,7 +326,7 @@ except WriteError as e:
 | `page_count` | int | Number of pages |
 | `is_multi_page` | bool | Has multiple pages |
 | `is_camera_raw` | bool | Is RAW file |
-| `is_writable` | bool | Supports writing |
+| `is_writable` | bool | JPEG PNG TIFF DNG WebP HEIC EXR HDR GIF PNM JXL + TIFF-RAW + RAF + MP4 + WAV/FLAC/MP3 (not CR3) |
 
 ### Image Methods
 

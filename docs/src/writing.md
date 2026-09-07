@@ -8,14 +8,22 @@ Writing is supported for:
 |--------|-----------|-------|
 | JPEG | .jpg, .jpeg | Full EXIF + XMP + IPTC |
 | PNG | .png | tEXt/iTXt chunks |
-| TIFF | .tif, .tiff | Full EXIF |
+| TIFF | .tif, .tiff | Full EXIF (classic + BigTIFF preserve rewrite) |
 | DNG | .dng | Full EXIF |
 | WebP | .webp | EXIF + XMP chunks |
-| HEIC/HEIF | .heic, .heif | EXIF in meta box |
-| EXR | .exr | Header attributes |
+| HEIC/HEIF | .heic, .heif | EXIF in meta box (creates EXIF item if missing) |
+| EXR | .exr | Header attributes (`exr-core`) |
 | HDR | .hdr | Header comments |
+| GIF | .gif | Comment / metadata |
+| PNM | .pbm/.pgm/.ppm/.pam | Header comments |
+| JXL | .jxl | EXIF box |
+| RAF | .raf | Preview JPEG EXIF (WriteRAF); RAF directory + CFA copied from nextPtr at 0x5C |
+| NEF / NRW | .nef, .nrw | TIFF rewrite: IFD0/Exif/GPS overlay; SubIFD + strips/tiles + MakerNotes blob copied |
+| CR2 / ARW / ORF / RW2 / … | TIFF-RAW | Same `tiff_rewrite` path (`TiffWriter::write`); CR2 16-byte header; A100 ARW uses FinishARW (MRW + CFA trailer) |
+| MP4 / MOV | .mp4, .mov, … | XMP UUID box |
+| WAV / FLAC / MP3 | | Existing tag writers |
 
-RAW formats (CR2, NEF, ARW, etc.) are read-only.
+CR3 stays read-only. Do not rebuild camera RAW with a short IFD0-only writer.
 
 ## Basic Writing
 
@@ -90,6 +98,15 @@ WebpWriter::write(&mut reader, &mut output, &metadata)?;
 
 // HEIC
 HeicWriter::write(&mut reader, &mut output, &metadata)?;
+
+// NEF/NRW (preserve SubIFD/raw)
+NefWriter::write(&mut reader, &mut output, &metadata)?;
+
+// CR2 / ORF (same preserve rewrite; CR2 keeps 16-byte header)
+Cr2Writer::write(&mut reader, &mut output, &metadata)?;
+
+// RAF (preview JPEG EXIF; CFA copied)
+RafWriter::write(&mut reader, &mut output, &metadata)?;
 ```
 
 ## XMP Writing

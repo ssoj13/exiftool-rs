@@ -10,8 +10,6 @@
 //! main.rs read path — print_metadata() for stdout, format_metadata() for -o file.
 
 use std::collections::BTreeSet;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -375,11 +373,7 @@ pub fn output_csv_unified(
     let mut all_tags: BTreeSet<String> = BTreeSet::new();
 
     for path in files {
-        let file = File::open(path)
-            .with_context(|| format!("Cannot open: {}", path.display()))?;
-        let mut reader = BufReader::new(file);
-
-        match registry.parse(&mut reader) {
+        match registry.parse_file(path) {
             Ok(mut metadata) => {
                 if args.composite {
                     add_composite_tags(&mut metadata);

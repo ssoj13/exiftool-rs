@@ -13,8 +13,11 @@ exiftool-xmp.workspace = true
 exiftool-iptc.workspace = true
 exiftool-icc.workspace = true
 thiserror.workspace = true
-exr.workspace = true
+exr-core.workspace = true
+jpg-rs.workspace = true
+jph-rs.workspace = true
 flate2.workspace = true
+lzma-rs.workspace = true
 
 [dev-dependencies]
 proptest = "1.9"

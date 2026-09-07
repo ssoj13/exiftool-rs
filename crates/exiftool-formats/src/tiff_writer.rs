@@ -24,6 +24,7 @@ struct ImageChunk {
 }
 
 /// Parsed TIFF structure for preservation.
+#[allow(dead_code)]
 struct TiffStructure {
     byte_order: ByteOrder,
     chunks: Vec<ImageChunk>,
@@ -44,53 +45,15 @@ impl TiffWriter {
         R: ReadSeek,
         W: Write,
     {
-        // Read source file (with size limit)
         input.seek(SeekFrom::Start(0))?;
         let data = crate::utils::read_with_limit(input)?;
-
-        if data.len() < 8 {
-            return Err(Error::InvalidStructure("TIFF file too small".into()));
-        }
-
-        // Parse original structure
-        let structure = Self::parse_structure(&data)?;
-        
-        // Build new EXIF/IFD from metadata
-        let mut writer = ExifWriter::new(structure.byte_order);
-        Self::populate_from_metadata(&mut writer, metadata);
-        
-        // Add image-related tags that we need to preserve
-        // These will be updated with correct offsets after we know the header size
-        
-        // Serialize metadata part first to know its size
-        let meta_bytes = writer.serialize().map_err(|e| {
-            Error::InvalidStructure(format!("EXIF serialize error: {}", e))
-        })?;
-        
-        if structure.chunks.is_empty() {
-            // No image data - just output metadata
-            output.write_all(&meta_bytes)?;
-            return Ok(());
-        }
-        
-        // Calculate where image data will start
-        // We need to rebuild with correct offsets
-        let image_data_start = meta_bytes.len() as u32;
-        
-        // Build final TIFF with correct strip/tile offsets
-        let final_bytes = Self::build_with_image_data(
-            &data,
-            &structure,
-            metadata,
-            image_data_start,
-        )?;
-        
-        output.write_all(&final_bytes)?;
-        
+        let rewritten = crate::tiff_rewrite::rewrite_preserving(&data, metadata)?;
+        output.write_all(&rewritten)?;
         Ok(())
     }
 
     /// Parse TIFF structure to find image chunks.
+    #[allow(dead_code)]
     fn parse_structure(data: &[u8]) -> Result<TiffStructure> {
         let byte_order = if data[0] == b'I' && data[1] == b'I' {
             ByteOrder::LittleEndian
@@ -157,6 +120,7 @@ impl TiffWriter {
     }
     
     /// Extract u32 array from RawValue.
+    #[allow(dead_code)]
     fn extract_u32_array(value: &exiftool_core::RawValue) -> Vec<u32> {
         use exiftool_core::RawValue;
         match value {
@@ -167,6 +131,7 @@ impl TiffWriter {
     }
     
     /// Build complete TIFF with metadata and image data.
+    #[allow(dead_code)]
     fn build_with_image_data(
         original: &[u8],
         structure: &TiffStructure,

@@ -18,7 +18,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.87"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/user/exiftool-rs"
+repository = "https://github.com/ssoj13/exiftool-rs"
 
 [workspace.dependencies]
 # Internal crates
@@ -56,8 +56,12 @@ chrono = { version = "0.4", default-features = false, features = ["std", "serde"
 # UUID
 uuid = { version = "1.19", features = ["v4", "serde"] }
 
-# EXR support
-exr = "1.74"
+# Our GitHub repos: git = "ssh://git@github.com/ssoj13/<repo>.git"
+# Public crates: crates.io (or https git). Never path= to a sibling clone.
+exr-core = { git = "ssh://git@github.com/ssoj13/exr-rs.git" }
+jpg-rs = { git = "ssh://git@github.com/ssoj13/jpg-rs.git" }
+jph-rs = { git = "ssh://git@github.com/ssoj13/jph-rs.git" }
 
 # Compression
 flate2 = "1.1"
+lzma-rs = "0.3"

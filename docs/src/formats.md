@@ -25,21 +25,22 @@ Most formats support reading. Writing is available for:
 | HEIC/HEIF | ✓ | ✓ |
 | EXR | ✓ | ✓ |
 | HDR | ✓ | ✓ |
-| RAW formats | ✓ | ✗ |
-| Audio | ✓ | ✗ |
-| Video | ✓ | ✗ |
+| JXL | ✓ | ✓ |
+| GIF | ✓ | ✓ |
+| PNM | ✓ | ✓ |
+| NEF / NRW | ✓ | ✓ |
+| RAF | ✓ | ✓ |
+| DICOM | ✓ | ✗ |
+| FITS | ✓ | ✗ |
+| 7z | ✓ | ✗ |
+| ZIP / OOXML / ODF | ✓ | ✗ |
+| Other camera RAW (CR2, ARW, ORF, RW2, PEF, …) | ✓ | ✓ |
+| CR3 | ✓ | ✗ |
+| Audio | ✓ | ✓ |
+| Video (MP4/MOV) | ✓ | ✓ |
 
 ## Auto-Detection
 
-Format is detected from file headers, not extensions:
+Magic bytes pick the parser. TIFF-family FileType (NEF, ARW, DNG, …) additionally uses the filename extension and `DNGVersion`, matching ExifTool; anonymous streams may use IFD0 `Make`.
 
-```rust
-let registry = FormatRegistry::new();
-let metadata = registry.parse(&mut reader)?;
-println!("Detected: {}", metadata.format);
-```
-
-This means:
-- Renamed files are handled correctly
-- Corrupt/truncated files are detected
-- No file extension required
+Prefer `FormatRegistry::parse_file(path)` when a path exists. `parse(reader)` is magic-only (plus Make for unnamed TIFF streams).

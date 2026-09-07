@@ -1,6 +1,8 @@
 //! JPEG 2000 format parser.
 //!
-//! Supports JP2 container format and raw codestream:
+//! Container boxes (ftyp / jp2h / uuid / xml) stay here (ExifTool `Jpeg2000.pm`).
+//! Codestream SIZ/COD: classic Part-1 via **`jpg-rs`**, HTJ2K via **`jph-rs`**
+//! (`ssh://git@github.com/ssoj13/...`). Neither crate is baseline JPEG.
 //! - .jp2: JPEG 2000 Part 1 (JP2 file format with boxes)
 //! - .jpx: JPEG 2000 Part 2 (extended)
 //! - .j2k/.jpc/.j2c: Raw JPEG 2000 codestream
@@ -57,7 +59,7 @@ impl FormatParser for Jp2Parser {
     }
 
     fn extensions(&self) -> &'static [&'static str] {
-        &["jp2", "jpx", "jpf", "j2k", "jpc", "j2c"]
+        &["jp2", "jpx", "jpf", "j2k", "jpc", "j2c", "jph"]
     }
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
@@ -76,14 +78,53 @@ impl FormatParser for Jp2Parser {
             metadata.set_file_type("JP2", "image/jp2");
             self.parse_jp2_container(reader, &mut metadata)?;
         } else if bytes_read >= 2 && &header[0..2] == J2K_SOC_MARKER {
-            metadata.set_file_type("J2K", "image/j2c");
-            self.parse_codestream(reader, &mut metadata)?;
+            metadata.format = "J2C";
+            metadata.set_file_type("J2C", "image/j2c");
+            reader.seek(SeekFrom::Start(0))?;
+            let data = crate::utils::read_with_limit(reader)?;
+            apply_j2k_codestream(&data, &mut metadata);
         } else {
             return Err(Error::InvalidStructure("Invalid JPEG 2000 signature".into()));
         }
 
         Ok(metadata)
     }
+}
+
+fn apply_j2k_codestream(data: &[u8], metadata: &mut Metadata) {
+    if jpg_rs::is_htj2k(data) {
+        if metadata.format == "JP2" || metadata.format == "J2C" || metadata.format == "J2K" {
+            metadata.format = "JPH";
+            metadata.set_file_type("JPH", "image/jph");
+        }
+        metadata.exif.set("JP2:HTJ2K", AttrValue::Bool(true));
+        if let Ok(parsed) = jph_rs::enumerate(data) {
+            set_j2k_geometry(
+                metadata,
+                parsed.config.width,
+                parsed.config.height,
+                parsed.config.num_comps,
+            );
+            return;
+        }
+    } else if let Ok(cs) = jpg_rs::parse(data) {
+        set_j2k_geometry(
+            metadata,
+            cs.siz.width(),
+            cs.siz.height(),
+            cs.siz.comps.len() as u32,
+        );
+        metadata.exif.set("JP2:NumLayers", AttrValue::UInt(u32::from(cs.cod.num_layers)));
+        return;
+    }
+    let mut cursor = std::io::Cursor::new(data);
+    let _ = Jp2Parser.parse_codestream(&mut cursor, metadata);
+}
+
+fn set_j2k_geometry(metadata: &mut Metadata, width: u32, height: u32, comps: u32) {
+    metadata.exif.set("File:ImageWidth", AttrValue::UInt(width));
+    metadata.exif.set("File:ImageHeight", AttrValue::UInt(height));
+    metadata.exif.set("JP2:NumComponents", AttrValue::UInt(comps));
 }
 
 impl Jp2Parser {
@@ -132,10 +173,13 @@ impl Jp2Parser {
                     self.parse_jp2h(reader, data_size, metadata)?;
                 }
                 "jp2c" => {
-                    // Codestream - parse for image dimensions
-                    let codestream_start = reader.stream_position()?;
-                    self.parse_codestream(reader, metadata)?;
-                    reader.seek(SeekFrom::Start(codestream_start + data_size))?;
+                    let n = (data_size as usize).min(16 * 1024 * 1024);
+                    let mut cs = vec![0u8; n];
+                    reader.read_exact(&mut cs)?;
+                    if data_size as usize > n {
+                        reader.seek(SeekFrom::Current((data_size as i64) - n as i64))?;
+                    }
+                    apply_j2k_codestream(&cs, metadata);
                 }
                 "uuid" => {
                     self.parse_uuid(reader, data_size, metadata)?;
@@ -178,6 +222,10 @@ impl Jp2Parser {
             "jpx " | "jpx" => {
                 metadata.format = "JPX";
                 metadata.set_file_type("JPX", "image/jpx");
+            }
+            "jph " | "jph" => {
+                metadata.format = "JPH";
+                metadata.set_file_type("JPH", "image/jph");
             }
             _ => {}
         }
@@ -475,7 +523,7 @@ impl Jp2Parser {
         Ok(())
     }
 
-    /// Parse raw JPEG 2000 codestream.
+    /// Parse raw JPEG 2000 codestream (legacy streaming SIZ walk).
     fn parse_codestream(&self, reader: &mut dyn ReadSeek, metadata: &mut Metadata) -> Result<()> {
         // Read SOC marker
         let mut marker = [0u8; 2];
@@ -654,7 +702,7 @@ mod tests {
         let mut cursor = Cursor::new(data);
         let meta = parser.parse(&mut cursor).unwrap();
 
-        assert_eq!(meta.exif.get_str("File:FileType"), Some("J2K"));
+        assert_eq!(meta.exif.get_str("File:FileType"), Some("J2C"));
         assert_eq!(meta.exif.get_u32("File:ImageWidth"), Some(1024));
         assert_eq!(meta.exif.get_u32("File:ImageHeight"), Some(768));
         assert_eq!(meta.exif.get_u32("JP2:NumComponents"), Some(3));

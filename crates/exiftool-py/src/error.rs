@@ -47,7 +47,7 @@ pub fn to_py_err(e: exiftool_formats::Error, path: Option<&str>) -> PyErr {
 /// Create WriteError for unsupported format.
 pub fn write_not_supported(format: &str) -> PyErr {
     WriteError::new_err(format!(
-        "Cannot write to {} format. Supported for writing: JPEG, PNG, TIFF, DNG",
+        "Cannot write to {} format. Supported for writing: JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, NEF, NRW, RAF, CR2, ARW, ORF, RW2, PEF, MP4, WAV, FLAC, MP3",
         format
     ))
 }

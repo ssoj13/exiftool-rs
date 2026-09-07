@@ -10,8 +10,9 @@ A native Rust alternative to [ExifTool](https://exiftool.org/) with zero runtime
 
 - **Read/Write EXIF** - Full IFD parsing with MakerNotes support (Canon, Nikon, Sony, Fujifilm, etc.)
 - **XMP Support** - Parse rdf:Bag, rdf:Seq, rdf:Alt structures
-- **17 Formats** - JPEG, PNG, TIFF, DNG, HEIC/AVIF, CR2, CR3, NEF, ARW, ORF, RW2, PEF, RAF, WebP, EXR, HDR
-- **Zero Dependencies** - Pure Rust, no external tools required
+- **90+ formats (read)** - JPEG, PNG, TIFF, DNG, HEIC/AVIF, camera RAW, EXR, HDR, audio/video, DICOM, FITS, ZIP/7z, …
+- **Write** - JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, TIFF-family RAW (NEF/CR2/ARW/ORF/…), RAF, MP4/MOV, WAV/FLAC/MP3
+- **No Perl** - Native Rust; no ExifTool binary at runtime (git deps: `exr-core`, `jpg-rs`, `jph-rs`)
 - **Fast** - Native code, ~10-100x faster than ExifTool for batch operations
 - **Type-Safe** - Strongly typed values (Rational, URational, DateTime, etc.)
 - **Geotagging** - Add GPS coordinates from GPX track files
@@ -265,14 +266,14 @@ File → FormatRegistry::parse() → detect(header) → Parser::parse()
 | DNG    | Yes  | Yes   | Via TIFF parser, DNGVersion detection |
 | HEIC   | Yes  | Yes   | ISOBMFF with EXIF item extraction |
 | AVIF   | Yes  | Yes   | Via HEIC parser |
-| CR2    | Yes  | -     | Canon RAW (TIFF-based) |
-| CR3    | Yes  | -     | Canon RAW (ISOBMFF-based) |
-| NEF    | Yes  | Yes   | Nikon RAW |
-| ARW    | Yes  | -     | Sony RAW |
-| ORF    | Yes  | -     | Olympus RAW (supports IIRO magic) |
-| RW2    | Yes  | -     | Panasonic RAW (supports 0x55 magic) |
-| PEF    | Yes  | -     | Pentax RAW |
-| RAF    | Yes  | Yes   | Fujifilm RAW |
+| CR2    | Yes  | Yes   | Canon RAW; 16-byte header preserved (`WriteCR2`) |
+| CR3    | Yes  | -     | Canon RAW (ISOBMFF); not writable |
+| NEF    | Yes  | Yes   | Nikon RAW; IFD0/Exif overlay, SubIFD/raw copied |
+| ARW    | Yes  | Yes   | Sony RAW (`tiff_rewrite` + A100 `FinishARW`) |
+| ORF    | Yes  | Yes   | Olympus RAW (IIRO magic + strip padding) |
+| RW2    | Yes  | Yes   | Panasonic RAW |
+| PEF    | Yes  | Yes   | Pentax RAW |
+| RAF    | Yes  | Yes   | Fujifilm RAW; preview JPEG EXIF, CFA copied |
 | WebP   | Yes  | Yes   | Google WebP (VP8/VP8L/VP8X) |
 | EXR    | Yes  | Yes   | OpenEXR attributes |
 | HDR    | Yes  | Yes   | Radiance RGBE |
@@ -339,35 +340,26 @@ Benchmarks vs ExifTool (reading 1000 JPEGs):
 
 ```bash
 # Build all crates (release)
-cargo build --release
-
-# Or use bootstrap (release by default)
-./bootstrap.ps1 build
-python bootstrap.py build
+python bootstrap.py b
 
 # Debug build
-./bootstrap.ps1 build --debug
-python bootstrap.py build --debug
+python bootstrap.py b -d
 
-# Run tests
-cargo test
+# Tests / fmt+clippy / install CLI `exif`
+python bootstrap.py t
+python bootstrap.py c
+python bootstrap.py i
 
-# Run benchmarks
-cargo bench -p exiftool-formats
+# Python wheel / editable / pip install
+python bootstrap.py p b
+python bootstrap.py p d
+python bootstrap.py p i
 
-# Regenerate tag tables from ExifTool source
-cargo xtask codegen
+# Docs book
+python bootstrap.py m b
 
-# Install CLI
-cargo install --path crates/exiftool-cli
-
-# Build Python wheel (release)
-./bootstrap.ps1 python
-python bootstrap.py python
-
-# Build Python wheel (debug)
-./bootstrap.ps1 python --debug
-python bootstrap.py python --debug
+# Tag tables from ExifTool
+python bootstrap.py codegen
 ```
 
 ## Fuzz Testing
@@ -446,12 +438,10 @@ cp testdata/*.jpg fuzz/corpus/fuzz_jpeg/
 
 Current version (0.1.0) has some documented limitations:
 
-- **BigTIFF**: Parsing supports 64-bit offsets (IFD8, LONG8 per spec). Files >4GB require streaming I/O; current design loads file into RAM (max 100MB)
-- **Multi-page TIFF**: Full IFD chain processed (TIFF 6.0 spec). Pages vs thumbnails identified via NewSubfileType/SubfileType
-- **Thumbnail extraction**: Not implemented yet
-- **HEIC write**: Adding EXIF to HEIC files without existing EXIF is not yet supported (updating existing EXIF works)
-- **Some RAW formats**: Leica, Sigma, Phase One not yet supported
-- **Value interpretation**: Enums like Orientation/Flash returned as numbers, not strings
+- **BigTIFF rewrite**: IFD overlay uses the same preserve path as classic TIFF (16-byte header, 20-byte entries, LONG8 pointers). Files >4GB are still not loaded (max 100MB).
+- **NEF/RAF write**: standard EXIF only. MakerNotes field tables are copied as blobs. CR3 is not writable. Other TIFF-RAW uses the same preserve rewrite (`TiffWriter::write`). Sony A100 ARW uses ExifTool `FinishARW` (MRW pad + `A100DataOffset`).
+- **7z**: encoded header (id 23) LZMA via `lzma-rs`. AES-encrypted headers warn. LZMA2-encoded headers are not decoded (ExifTool `7Z.pm` is LZMA1-only).
+- **Value interpretation**: many enums still returned as numbers unless `get_interpreted` is used.
 
 See [AGENTS.md](AGENTS.md) for full architecture documentation.
 

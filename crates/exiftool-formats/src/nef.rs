@@ -7,19 +7,9 @@
 //! Since we can't easily check Make without parsing, we rely on file extension
 //! and fall back to TiffParser for actual parsing.
 //!
-//! Nikon-specific features (STUB - needs implementation):
-//! - NikonPreview sub-IFD
-//! - Nikon MakerNotes decoding
-//! - White balance data
-//! - Lens data
-//! - Shot info
-
 use crate::{makernotes, FormatParser, Metadata, ReadSeek, Result, TiffConfig, TiffParser};
 
-/// Nikon NEF format parser.
-/// 
-/// STUB: Currently wraps TiffParser. Full Nikon MakerNotes parsing
-/// requires extensive reverse-engineering of Nikon's proprietary format.
+/// Nikon NEF/NRW parser (TIFF + Nikon MakerNotes).
 pub struct NefParser {
     tiff: TiffParser,
 }
@@ -78,19 +68,7 @@ impl FormatParser for NefParser {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         // Parse as TIFF - all NEF metadata is in standard TIFF/EXIF tags
         let mut metadata = self.tiff.parse(reader)?;
-        
-        // Override format name
         metadata.format = "NEF";
-        
-        // STUB: Additional Nikon-specific parsing would go here:
-        // - Parse Nikon MakerNotes (tag 0x927C in EXIF sub-IFD)
-        // - Extract Nikon-specific tags like:
-        //   - Lens data
-        //   - White balance coefficients
-        //   - Shot info (shutter count, etc.)
-        //   - Active D-Lighting setting
-        //   - Picture control
-        
         Ok(metadata)
     }
 }
@@ -117,5 +95,22 @@ mod tests {
     fn reject_png() {
         let parser = NefParser::new();
         assert!(!parser.can_parse(&[0x89, b'P', b'N', b'G']));
+    }
+
+    #[test]
+    fn parse_nikon_d70_makernotes() {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/testdata/Nikon.nef");
+        if !path.exists() {
+            return;
+        }
+        let data = std::fs::read(&path).unwrap();
+        let mut cur = std::io::Cursor::new(data);
+        let meta = NefParser::new().parse(&mut cur).unwrap();
+        assert_eq!(meta.format, "NEF");
+        assert_eq!(meta.exif.get_str("Make"), Some("NIKON CORPORATION"));
+        assert!(meta.exif.get("MakerNoteApple").is_none());
+        assert_eq!(meta.exif.get_str("LensDataVersion"), Some("0101"));
+        assert!(meta.exif.get("LensIDNumber").is_some());
     }
 }

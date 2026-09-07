@@ -1,0 +1,15 @@
+{
+  "exif": {
+    "ChannelCount": "4",
+    "Channels": "A, B, G, R",
+    "Compression": "PIZ",
+    "ImageHeight": "2",
+    "ImageWidth": "3",
+    "LineOrder": "Increasing",
+    "PixelAspectRatio": "1"
+  },
+  "format": "EXR",
+  "has_preview": false,
+  "has_thumbnail": false,
+  "has_xmp": false
+}

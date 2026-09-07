@@ -12,7 +12,7 @@
 
 use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0, lookup_interop};
 use crate::{makernotes, Error, FormatParser, Metadata, PageInfo, ReadSeek, Result};
-
+use exiftool_attrs::AttrValue;
 use exiftool_core::{ByteOrder, IfdEntry, IfdReader, RawValue};
 
 use crate::utils::ifd_tags;
@@ -113,6 +113,44 @@ impl FormatParser for TiffParser {
         self.parse_ifd_chain(&ifd_reader, ifd0_offset, &mut metadata)?;
 
         Ok(metadata)
+    }
+
+    fn parse_with_hint(
+        &self,
+        reader: &mut dyn ReadSeek,
+        ext_hint: Option<&str>,
+    ) -> Result<Metadata> {
+        let mut metadata = self.parse(reader)?;
+        if self.config.format_name == "TIFF" {
+            let make = metadata.exif.get_str("Make").map(|s| s.to_string());
+            crate::tiff_family::classify(
+                &mut metadata.format,
+                ext_hint,
+                make.as_deref(),
+            );
+        }
+        Ok(metadata)
+    }
+}
+
+fn adjust_nikon_preview_offset(
+    makernotes: &[u8],
+    makernotes_file_offset: Option<u32>,
+    key: &str,
+    val: AttrValue,
+) -> AttrValue {
+    if key != "PreviewImageStart" {
+        return val;
+    }
+    if !makernotes.starts_with(b"Nikon\x00\x02") {
+        return val;
+    }
+    let Some(base) = makernotes_file_offset else {
+        return val;
+    };
+    match val {
+        AttrValue::UInt(rel) => AttrValue::UInt(base.saturating_add(10).saturating_add(rel)),
+        other => other,
     }
 }
 
@@ -421,7 +459,8 @@ impl TiffParser {
                                 if let RawValue::Undefined(bytes) = &e.value {
                                     if let Some(mn_data) = makernotes::parse(bytes, vendor, reader.byte_order()) {
                                         for (key, val) in mn_data.iter() {
-                                            metadata.exif.set(key.clone(), val.clone());
+                                            let val = adjust_nikon_preview_offset(bytes, e.value_offset, key, val.clone());
+                                            metadata.exif.set(key.clone(), val);
                                         }
                                     }
                                 }
@@ -455,6 +494,14 @@ impl TiffParser {
                 }
             }
             _ => {
+                if crate::utils::apply_subifd_xmp_iptc(
+                    reader,
+                    entry,
+                    &mut metadata.exif,
+                    Some(&mut metadata.xmp),
+                ) {
+                    return Ok(());
+                }
                 // Regular IFD tag
                 let tag_name = if ifd_index == 0 {
                     lookup_ifd0(entry.tag)

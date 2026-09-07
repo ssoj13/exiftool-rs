@@ -4,9 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **RAF write** (`RafWriter`): ExifTool `WriteRAF` — rewrite preview JPEG EXIF, 4-byte pad, fix header pointers, copy RAF directory + CFA from `nextPtr` at 0x5C. `is_writable` true.
+- **NEF/NRW write** (`tiff_rewrite` + `NefWriter`): overlay IFD0 / ExifIFD / GPS; copy SubIFD trees, strips/tiles, MakerNotes/ICC blobs. Does not use `TiffWriter` (that path drops SubIFD/raw). CLI and Python `save()` dispatch both formats.
+- **Nikon MakerNotes**: Type-3 IFD, decrypt (`ProcessNikonEncrypted` / `@xlat` including `NIKON_OFFSETS` piecewise), LensData 0100/0101/02xx, ColorBalance, ShotInfo per-model dispatch (D40–Z9). PreviewIFD offsets relocated.
+- **EXR** via `exr-core` (`ssh://git@github.com/ssoj13/exr-rs.git`); crates.io `exr` removed.
+- **JPEG 2000** via `jpg-rs` / HTJ2K `jph-rs` (SSH git).
+- **JPEG** post-EOI trailer detect (AFCP / FotoStation / PhotoMechanic / Samsung / CanonVRD). **PNG** `zXIf` (zlib EXIF).
+- **DICOM**, **FITS**, **7z** (unencoded + LZMA encoded header id 23), **ZIP/OOXML/ODF** readers.
+- Golden fixtures from ExifTool `t/images` + `xtask/parity.py` vs Perl FileType.
+
 ### Changed
-- Bootstrap build defaults to release; use `--debug` for debug builds
-- Removed `python release` subcommand from bootstrap scripts
+- TIFF-family FileType: unique magics first; generic TIFF classified by `DNGVersion`, extension, Make (`tiff_family`). Wrappers no longer steal TIFF magic.
+- `Metadata::is_writable`: TIFF-family RAW, RAF, MP4/MOV, WAV/FLAC/MP3; CR3 stays false.
+- Bootstrap build defaults to release; use `--debug` for debug builds.
+- Removed `python release` subcommand from bootstrap scripts.
+
+### Fixed
+- RAF writer no longer treats 0x5C/0x60 as CFA offset/length.
+- **TIFF-family RAW write** via `tiff_rewrite` (also used by `TiffWriter::write`): CR2 16-byte header (`WriteCR2`), ORF/RW2 magics, strip padding, BigTIFF (16-byte header / 20-byte IFDs), Sony A100 `FinishARW` (MRW + `A100DataOffset`). `is_writable` true except CR3.
+- **HEIC write**: create an EXIF item when the file has none (`HeicWriter`).
+- **MP4/MOV, WAV, FLAC, MP3**: `is_writable` matches existing writers (XMP UUID / tags).
+
+### Docs
+- Docs: `writing.md`, `formats.md`, `formats/raw.md`, `reading.md`, `python.md`, `AGENTS.md`, `plan2.md`, README.
 
 ### Added
 - **5 New RAW Formats**: Sony ARW, Olympus ORF, Panasonic RW2, Pentax PEF, WebP

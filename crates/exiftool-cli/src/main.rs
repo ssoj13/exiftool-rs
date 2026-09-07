@@ -15,8 +15,6 @@ mod xml_output;
 
 use anyhow::{Context, Result};
 use exiftool_formats::{add_composite_tags, FormatRegistry};
-use std::fs::File;
-use std::io::BufReader;
 use std::env;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -138,11 +136,7 @@ fn run() -> Result<()> {
         if parsed.verbose >= 1 {
             eprintln!("Reading: {}", path.display());
         }
-        let file = File::open(path)
-            .with_context(|| format!("Cannot open: {}", path.display()))?;
-        let mut reader = BufReader::new(file);
-
-        match registry.parse(&mut reader) {
+        match registry.parse_file(path) {
             Ok(mut metadata) => {
                 if parsed.verbose >= 2 {
                     eprintln!("  Format: {}", metadata.format);

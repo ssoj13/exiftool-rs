@@ -31,7 +31,11 @@ pub fn lookup_ifd0(tag: u16) -> Option<&'static str> {
 /// EXIF sub-IFD tag lookup.
 #[inline]
 pub fn lookup_exif_subifd(tag: u16) -> Option<&'static str> {
-    lookup_exif(tag)
+    match tag {
+        // Generated table names the first ExifTool condition (MakerNoteApple).
+        0x927C => None,
+        _ => lookup_exif(tag),
+    }
 }
 
 /// Interoperability tag lookup (uses same table as EXIF).

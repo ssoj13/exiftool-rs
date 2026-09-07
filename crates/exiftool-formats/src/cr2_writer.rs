@@ -19,8 +19,15 @@ impl Cr2Writer {
         R: ReadSeek,
         W: Write,
     {
+        let data = crate::utils::read_with_limit(input)?;
+        if data.len() >= 16 && data[8] == b'C' && data[9] == b'R' {
+            let rewritten = crate::tiff_rewrite::rewrite_preserving(&data, metadata)?;
+            output.write_all(&rewritten)?;
+            return Ok(());
+        }
+        let mut input = std::io::Cursor::new(data);
         let mut buf = Vec::new();
-        TiffWriter::write(input, &mut buf, metadata)?;
+        TiffWriter::write(&mut input, &mut buf, metadata)?;
 
         if buf.len() < 8 {
             return Err(Error::InvalidStructure("TIFF output too short".into()));

@@ -1,7 +1,7 @@
 # RAW Formats
 
-Camera RAW formats are read-only. They contain full sensor data and extensive 
-manufacturer-specific metadata.
+Camera RAW contains sensor data and MakerNotes. CR3 stays read-only.
+TIFF-family RAW and RAF are writable for standard EXIF (see `docs/src/writing.md`); CFA / SubIFD pixels are copied, not recompressed.
 
 ## Canon
 
@@ -15,8 +15,8 @@ manufacturer-specific metadata.
 
 | Format | Extension | Notes |
 |--------|-----------|-------|
-| NEF | .nef | TIFF-based |
-| NRW | .nrw | Coolpix RAW |
+| NEF | .nef | TIFF-based; IFD0/Exif writable, SubIFD copied |
+| NRW | .nrw | Coolpix RAW; same writer as NEF |
 
 ## Sony
 
@@ -30,7 +30,7 @@ manufacturer-specific metadata.
 
 | Format | Extension | Notes |
 |--------|-----------|-------|
-| RAF | .raf | Fuji RAW |
+| RAF | .raf | Fuji RAW; preview JPEG EXIF writable, CFA copied |
 
 ## Olympus
 
@@ -81,7 +81,7 @@ RAW files are detected by format signature and/or Make tag:
 
 ```rust
 if metadata.is_camera_raw() {
-    // Read-only, cannot write
+    // CR3 is read-only; TIFF-family RAW and RAF use is_writable()
     println!("RAW file from: {}", metadata.exif.get_str("Make").unwrap_or("Unknown"));
 }
 ```

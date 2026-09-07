@@ -176,8 +176,7 @@ impl FormatParser for PngParser {
                         }
                     }
                 }
-                b"eXIf" => {
-                    // Raw EXIF data (PNG 1.5+)
+                b"eXIf" | b"zXIf" => {
                     self.parse_exif(chunk_data, &mut metadata)?;
                 }
                 b"tEXt" => {
@@ -208,10 +207,24 @@ impl FormatParser for PngParser {
 }
 
 impl PngParser {
-    /// Parse eXIf chunk (raw EXIF data).
+    /// Parse eXIf / zXIf chunk (raw or zlib-compressed TIFF).
     fn parse_exif(&self, data: &[u8], metadata: &mut Metadata) -> Result<()> {
+        let mut payload = data;
+        if payload.starts_with(b"Exif\x00\x00") {
+            payload = &payload[6..];
+        }
+        let decompressed;
+        if payload.first() == Some(&0) && payload.len() > 5 {
+            match decompress_zlib_bytes(&payload[5..]) {
+                Some(bytes) => {
+                    decompressed = bytes;
+                    payload = &decompressed;
+                }
+                None => return Ok(()),
+            }
+        }
         parse_tiff_exif(
-            data,
+            payload,
             &mut metadata.exif,
             None,
             ParseTiffExifOptions::default(),
@@ -306,28 +319,50 @@ impl PngParser {
                     }
                 }
             } else {
-                // Regular iTXt - extract as text
-                // Simplified: just get keyword for now
                 let key = format!("PNG:{}", keyword);
-                metadata.exif.set(key, AttrValue::Str("<iTXt data>".into()));
+                let mut pos = null_pos + 1;
+                if pos + 2 > data.len() {
+                    return;
+                }
+                let compression_flag = data[pos];
+                pos += 2;
+                let Some(lang_end) = data[pos..].iter().position(|&b| b == 0) else {
+                    return;
+                };
+                pos += lang_end + 1;
+                let Some(tk_end) = data[pos..].iter().position(|&b| b == 0) else {
+                    return;
+                };
+                pos += tk_end + 1;
+                let text_data = &data[pos..];
+                let text = if compression_flag == 0 {
+                    String::from_utf8_lossy(text_data).into_owned()
+                } else {
+                    decompress_zlib(text_data).unwrap_or_default()
+                };
+                let text = text.trim_end_matches('\0').to_string();
+                if !text.is_empty() {
+                    metadata.exif.set(key, AttrValue::Str(text));
+                }
             }
         }
     }
 }
 
-/// Decompress zlib data to string.
-fn decompress_zlib(data: &[u8]) -> Option<String> {
+/// Decompress zlib data to bytes (10MB cap).
+fn decompress_zlib_bytes(data: &[u8]) -> Option<Vec<u8>> {
     let decoder = ZlibDecoder::new(data);
     let mut decompressed = Vec::new();
-    
-    // Limit decompression to 10MB to prevent zip bombs
     let mut limited = decoder.take(10 * 1024 * 1024);
-    
     if limited.read_to_end(&mut decompressed).is_err() {
         return None;
     }
-    
-    String::from_utf8(decompressed).ok()
+    Some(decompressed)
+}
+
+/// Decompress zlib data to string.
+fn decompress_zlib(data: &[u8]) -> Option<String> {
+    String::from_utf8(decompress_zlib_bytes(data)?).ok()
 }
 
 

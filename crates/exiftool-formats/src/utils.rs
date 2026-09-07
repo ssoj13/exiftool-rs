@@ -17,11 +17,12 @@
 //! `parse_tiff_exif`: jpeg.rs, png.rs, webp.rs, heic.rs, jxl.rs, avi.rs.
 //! `entry_to_attr`: parse_tiff_exif, tiff.rs. `build_exif_bytes`: all writers.
 
-use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0};
-use crate::{makernotes, Error, Metadata, ReadSeek, Result};
+use crate::tag_lookup::{lookup_exif_subifd, lookup_gps, lookup_ifd0, lookup_interop};
+use crate::{iptc::IptcParser, makernotes, Error, Metadata, ReadSeek, Result};
 use exiftool_attrs::{AttrValue, Attrs};
 use exiftool_core::writer::tags;
 use exiftool_core::{ByteOrder, ExifWriter, IfdEntry, IfdReader, RawValue, WriteEntry};
+use exiftool_xmp::XmpParser;
 use std::io::SeekFrom;
 
 /// IFD tag constants shared across parsers (thumbnail, compression, etc.).
@@ -36,6 +37,14 @@ pub mod ifd_tags {
     pub const TAG_IMAGE_WIDTH: u16 = 0x0100;
     pub const TAG_IMAGE_HEIGHT: u16 = 0x0101;
     pub const TAG_BITS_PER_SAMPLE: u16 = 0x0102;
+    pub const TAG_SUB_IFD: u16 = 0x014A;
+    pub const TAG_XMP: u16 = 0x02BC;
+    pub const TAG_IPTC_NAA: u16 = 0x83BB;
+    pub const TAG_EXIF_IFD: u16 = 0x8769;
+    pub const TAG_GPS_IFD: u16 = 0x8825;
+    pub const TAG_MAKERNOTES: u16 = 0x927C;
+    pub const TAG_INTEROP_IFD: u16 = 0xA005;
+    pub const TAG_DNG_VERSION: u16 = 0xC612;
 }
 
 /// Options for parse_tiff_exif.
@@ -83,7 +92,7 @@ pub fn parse_tiff_exif(
         }
 
         match entry.tag {
-            0x8769 => {
+            ifd_tags::TAG_EXIF_IFD => {
                 // ExifIFD pointer (Ifd or Ifd64 for BigTIFF)
                 if let Some(offset) = entry.value.as_u64() {
                     if let Ok((exif_entries, _)) = reader.read_ifd(offset) {
@@ -105,7 +114,7 @@ pub fn parse_tiff_exif(
                     }
                 }
             }
-            0x8825 => {
+            ifd_tags::TAG_GPS_IFD => {
                 // GPS IFD pointer (Ifd or Ifd64 for BigTIFF)
                 if let Some(offset) = entry.value.as_u64() {
                     if let Ok((gps_entries, _)) = reader.read_ifd(offset) {
@@ -117,17 +126,20 @@ pub fn parse_tiff_exif(
                     }
                 }
             }
-            0xA005 => {
+            ifd_tags::TAG_INTEROP_IFD => {
                 // Interop IFD pointer (Ifd or Ifd64 for BigTIFF)
                 if let Some(offset) = entry.value.as_u64() {
                     if let Ok((interop_entries, _)) = reader.read_ifd(offset) {
                         for e in &interop_entries {
-                            if let Some(name) = lookup_exif_subifd(e.tag) {
+                            if let Some(name) = lookup_interop(e.tag) {
                                 exif.set(name, entry_to_attr(e));
                             }
                         }
                     }
                 }
+            }
+            ifd_tags::TAG_SUB_IFD | ifd_tags::TAG_XMP | ifd_tags::TAG_IPTC_NAA => {
+                apply_subifd_xmp_iptc(&reader, entry, exif, None);
             }
             _ => {}
         }
@@ -151,7 +163,76 @@ pub fn parse_tiff_exif(
     Ok(())
 }
 
-/// Extract JPEG thumbnail from IFD entries (IFD1 typically).
+fn pointer_offsets(entry: &IfdEntry) -> Vec<u64> {
+    match &entry.value {
+        RawValue::UInt32(v) => v.iter().copied().map(u64::from).collect(),
+        RawValue::UInt64(v) => v.clone(),
+        _ => entry.value.as_u64().into_iter().collect(),
+    }
+}
+
+fn xmp_bytes(value: &RawValue) -> Option<String> {
+    match value {
+        RawValue::String(s) if s.contains('<') => Some(s.clone()),
+        RawValue::Undefined(b) | RawValue::UInt8(b) => String::from_utf8(b.clone()).ok(),
+        _ => None,
+    }
+}
+
+fn iptc_bytes(value: &RawValue) -> Option<&[u8]> {
+    match value {
+        RawValue::Undefined(b) | RawValue::UInt8(b) => Some(b.as_slice()),
+        _ => None,
+    }
+}
+
+/// Walk TIFF SubIFD (0x014A), XMP (0x02BC), IPTC (0x83BB). Returns true if handled.
+pub(crate) fn apply_subifd_xmp_iptc(
+    reader: &IfdReader,
+    entry: &IfdEntry,
+    exif: &mut Attrs,
+    mut xmp: Option<&mut Option<String>>,
+) -> bool {
+    match entry.tag {
+        ifd_tags::TAG_SUB_IFD => {
+            for offset in pointer_offsets(entry) {
+                if let Ok((sub_entries, _)) = reader.read_ifd(offset) {
+                    for e in &sub_entries {
+                        if let Some(name) = lookup_ifd0(e.tag) {
+                            exif.set(format!("SubIFD:{}", name), entry_to_attr(e));
+                        }
+                    }
+                }
+            }
+            true
+        }
+        ifd_tags::TAG_XMP => {
+            if let Some(xml) = xmp_bytes(&entry.value) {
+                if let Ok(xmp_attrs) = XmpParser::parse(&xml) {
+                    for (key, value) in xmp_attrs.iter() {
+                        exif.set(format!("XMP:{}", key), value.clone());
+                    }
+                }
+                if let Some(out) = xmp.as_mut() {
+                    **out = Some(xml);
+                }
+            }
+            true
+        }
+        ifd_tags::TAG_IPTC_NAA => {
+            if let Some(bytes) = iptc_bytes(&entry.value) {
+                if let Some(attrs) = IptcParser::parse(bytes) {
+                    for (key, value) in attrs.iter() {
+                        exif.set(format!("IPTC:{}", key), value.clone());
+                    }
+                }
+            }
+            true
+        }
+        _ => false,
+    }
+}
+
 fn extract_jpeg_thumbnail_from_ifd(
     entries: &[IfdEntry],
     reader: &IfdReader,

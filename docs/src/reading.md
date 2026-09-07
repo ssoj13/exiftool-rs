@@ -101,8 +101,8 @@ if metadata.is_multi_page() {
 ## RAW File Detection
 
 ```rust
-if metadata.is_camera_raw() {
-    println!("This is a RAW file, read-only");
+if metadata.is_camera_raw() && !metadata.is_writable() {
+    println!("This RAW type is read-only (e.g. CR3)");
 } else if metadata.is_writable() {
     println!("Can modify this file");
 }

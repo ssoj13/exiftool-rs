@@ -16,7 +16,6 @@
 use exiftool_formats::{FormatRegistry, Metadata};
 use std::collections::BTreeMap;
 use std::fs;
-use std::io::BufReader;
 use std::path::PathBuf;
 
 /// Directory containing test images
@@ -86,11 +85,7 @@ pub fn golden_test(image_name: &str) -> Result<(), String> {
     let golden = golden_path(image_name);
     
     // Parse image
-    let file = fs::File::open(&image_path)
-        .map_err(|e| format!("Cannot open {}: {}", image_path.display(), e))?;
-    let mut reader = BufReader::new(file);
-    
-    let metadata = registry.parse(&mut reader)
+    let metadata = registry.parse_file(&image_path)
         .map_err(|e| format!("Parse error: {}", e))?;
     
     let actual_json = metadata_to_json(&metadata);
@@ -141,12 +136,20 @@ pub fn run_all_golden_tests() -> Vec<(String, Result<(), String>)> {
             let path = entry.path();
             if path.is_file() {
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    // Skip non-image files
+                    if name == "README.md" {
+                        continue;
+                    }
+                    // Large camera RAWs (e.g. rawsamples.ch A100) are unit-test fixtures, not golden.
+                    if entry.metadata().map(|m| m.len() > 1_000_000).unwrap_or(false) {
+                        continue;
+                    }
                     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
                     if !matches!(ext.to_lowercase().as_str(), 
                         "jpg" | "jpeg" | "png" | "tiff" | "tif" | "gif" | "bmp" |
                         "webp" | "heic" | "heif" | "cr2" | "cr3" | "nef" | "arw" |
-                        "dng" | "orf" | "rw2" | "pef" | "raf" | "exr" | "hdr"
+                        "dng" | "orf" | "rw2" | "pef" | "raf" | "exr" | "hdr" |
+                        "jp2" | "j2k" | "j2c" | "jpc" | "jph" | "jpx" |
+                        "dcm" | "dicom" | "fits" | "fts" | "zip" | "7z" | "docx" | "xlsx" | "pptx" | "odt"
                     ) {
                         continue;
                     }
@@ -169,8 +172,10 @@ mod tests {
         let results = run_all_golden_tests();
         
         if results.is_empty() {
-            eprintln!("No test images found in {}", TESTDATA_DIR);
-            return;
+            panic!(
+                "No golden images in {}. Empty testdata must not pass.",
+                TESTDATA_DIR
+            );
         }
         
         let mut failures = Vec::new();

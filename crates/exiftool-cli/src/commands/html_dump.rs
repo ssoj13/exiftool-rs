@@ -1,8 +1,6 @@
 //! HTML dump showing file structure (-htmlDump).
 
 use std::fmt::Write;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::Path;
 
 use anyhow::{Context, Result};
@@ -129,9 +127,7 @@ fn html_dump_single(path: &Path, registry: &FormatRegistry, html: &mut String) -
     }
     let _ = writeln!(html, "</div></div>");
 
-    let file = File::open(path)?;
-    let mut reader = BufReader::new(file);
-    if let Ok(metadata) = registry.parse(&mut reader) {
+    if let Ok(metadata) = registry.parse_file(path) {
         let _ = writeln!(
             html,
             "<div class=\"section\"><h3>Metadata Summary ({} tags)</h3>",

@@ -48,7 +48,7 @@ img = exif.Image.from_bytes(jpeg_bytes)
 | `page_count` | `int` | Number of pages |
 | `is_multi_page` | `bool` | True if multiple pages |
 | `is_camera_raw` | `bool` | True if RAW format |
-| `is_writable` | `bool` | True if format supports writing |
+| `is_writable` | `bool` | True for JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, TIFF-family RAW, RAF, MP4/MOV, WAV/FLAC/MP3 (not CR3) |
 | `pages` | `List[PageInfo]` | Page info for multi-page files |
 | `exif_offset` | `int \| None` | EXIF data offset in file |
 

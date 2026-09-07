@@ -76,7 +76,15 @@ impl VendorParser for CanonParser {
     }
 
     fn parse(&self, data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
-        let entries = super::parse_ifd_entries(data, byte_order, 0)?;
+        // JPEG MakerNotes: IFD at offset 0. CR3 CMT3: full TIFF; IFD from header.
+        let ifd_offset = if data.len() >= 8 && (data.starts_with(b"II") || data.starts_with(b"MM")) {
+            exiftool_core::IfdReader::new(data, byte_order)
+                .parse_header()
+                .ok()? as u32
+        } else {
+            0
+        };
+        let entries = super::parse_ifd_entries(data, byte_order, ifd_offset)?;
 
         let mut attrs = Attrs::new();
 

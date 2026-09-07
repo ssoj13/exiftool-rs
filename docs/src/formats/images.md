@@ -65,7 +65,7 @@ Modern container formats using ISOBMFF structure.
 | Feature | Support |
 |---------|---------|
 | Read | ✓ |
-| Write | ✓ (existing EXIF) |
+| Write | ✓ (update existing EXIF or add EXIF item) |
 | EXIF | Via meta box |
 | XMP | Via meta box |
 

@@ -1,8 +1,6 @@
 //! Find duplicate files (-duplicates).
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -42,12 +40,7 @@ pub fn find_duplicates(args: &Args, registry: &FormatRegistry) -> Result<()> {
                 Err(_) => continue,
             },
             "datetime" => {
-                let file = match File::open(path) {
-                    Ok(f) => f,
-                    Err(_) => continue,
-                };
-                let mut reader = BufReader::new(file);
-                match registry.parse(&mut reader) {
+                match registry.parse_file(path) {
                     Ok(metadata) => metadata
                         .exif
                         .get("DateTimeOriginal")
@@ -59,12 +52,7 @@ pub fn find_duplicates(args: &Args, registry: &FormatRegistry) -> Result<()> {
                 }
             }
             "metadata" => {
-                let file = match File::open(path) {
-                    Ok(f) => f,
-                    Err(_) => continue,
-                };
-                let mut reader = BufReader::new(file);
-                match registry.parse(&mut reader) {
+                match registry.parse_file(path) {
                     Ok(metadata) => {
                         let make = metadata
                             .exif

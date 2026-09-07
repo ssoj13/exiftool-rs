@@ -1,0 +1,21 @@
+{
+  "exif": {
+    "File:FileType": "JP2",
+    "File:ImageHeight": "16",
+    "File:ImageWidth": "16",
+    "File:MIMEType": "image/jp2",
+    "JP2:BitsPerComponent": "7",
+    "JP2:Brand": "jp2",
+    "JP2:ColorSpace": "sRGB",
+    "JP2:ColorspaceUnknown": "true",
+    "JP2:Compression": "JPEG 2000",
+    "JP2:HasXML": "true",
+    "JP2:MinorVersion": "0",
+    "JP2:NumComponents": "3",
+    "JP2:NumLayers": "4"
+  },
+  "format": "JP2",
+  "has_preview": false,
+  "has_thumbnail": false,
+  "has_xmp": false
+}

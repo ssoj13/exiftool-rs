@@ -24,11 +24,8 @@ pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
         if args.verbose >= 1 {
             eprintln!("Processing: {}", path.display());
         }
-        let file = File::open(path)
-            .with_context(|| format!("Cannot open: {}", path.display()))?;
-        let mut reader = BufReader::new(file);
         let mut metadata = registry
-            .parse(&mut reader)
+            .parse_file(path)
             .with_context(|| format!("Cannot parse: {}", path.display()))?;
 
         if let Some(offset) = args.shift {
@@ -84,10 +81,7 @@ pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
         }
 
         if let Some(ref src_path) = args.tags_from_file {
-            let src_file = File::open(src_path)
-                .with_context(|| format!("Cannot open source: {}", src_path.display()))?;
-            let mut src_reader = BufReader::new(src_file);
-            match registry.parse(&mut src_reader) {
+            match registry.parse_file(src_path) {
                 Ok(src_meta) => {
                     let mut copied = 0;
                     for (tag, value) in src_meta.exif.iter() {
@@ -142,7 +136,7 @@ pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
                 format!("Format {} does not support writing", metadata.format)
             };
             anyhow::bail!(
-                "{}.\n\nWritable formats: JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, MP4, MOV, M4V, MP3, FLAC, PNM, GIF, WAV, JXL, CR2, ARW, ORF, NEF, RAF, RW2, PEF, SRW, RWL, 3FR, FFF, ERF, MEF, DCR, KDC, K25, MOS, IIQ",
+                "{}.\n\nWritable formats: JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, NEF, NRW, RAF, CR2, ARW, ORF, RW2, PEF, SRW, MP4, WAV, FLAC, MP3",
                 reason
             );
         }

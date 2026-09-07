@@ -14,9 +14,9 @@
 //!
 //! 1. Each parser implements [`FormatParser`] (`can_parse`, `parse`, etc.)
 //! 2. Order matters: parsers with unique magic bytes (JPEG, PNG, RAF) come first
-//! 3. TIFF-based RAW (CR2, NEF, ARW…) come last — they share TIFF header,
-//!    so detection falls back to extension/magic variants
-//! 4. [`FormatRegistry::new()`] calls `default_parsers()` and builds the registry
+//! 3. TIFF-based RAW wrappers (NEF, ERF, …) register for `get`/`by_extension` but
+//!    `can_parse` is false — magic goes to [`TiffParser`], FileType via `tiff_family`
+//! 4. Unique TIFF magics (CR2, ORF, RW2) stay dedicated parsers before generic TIFF
 //!
 //! # Where used
 //!
@@ -43,7 +43,8 @@ use crate::{
     Mp4Parser, MpegTsParser, MrwParser, MxfParser, NefParser, NrwParser, OggParser, OrfParser,
     PcxParser, PdfParser, PefParser, PngParser, PnmParser, PsdParser, R3dParser, RmParser,
     RafParser, Rw2Parser, RwlParser, SgiParser, SrfParser, SrwParser, SvgParser, TakParser,
-    TgaParser, TiffParser, WavParser, WebpParser, WvParser, X3fParser,
+    TgaParser, TiffParser, WavParser, WebpParser, WvParser, X3fParser, DicomParser, FitsParser,
+    SevenZParser, ZipParser,
 };
 
 /// Build the default list of format parsers.
@@ -97,6 +98,10 @@ pub fn default_parsers() -> Vec<Box<dyn FormatParser>> {
         Box::new(BrawParser),
         Box::new(RmParser),
         Box::new(MkvParser),
+        Box::new(ZipParser),
+        Box::new(SevenZParser),
+        Box::new(DicomParser),
+        Box::new(FitsParser),
         Box::new(TgaParser),
         Box::new(PcxParser),
         Box::new(SgiParser),
@@ -131,19 +136,17 @@ pub fn default_parsers() -> Vec<Box<dyn FormatParser>> {
 /// Parse file with a custom parser list.
 ///
 /// Use when you need a minimal set of formats (e.g. only JPEG+PNG) or for testing.
-/// Reads 16-byte header, finds first matching parser, then parses.
+/// Reads [`crate::DETECT_HEADER_LEN`] bytes, finds first matching parser, then parses.
 pub fn parse_with<R: Read + Seek>(
     parsers: &[Box<dyn FormatParser>],
     reader: &mut R,
 ) -> crate::Result<crate::Metadata> {
-    let mut header = [0u8; 16];
-    reader.read_exact(&mut header)?;
-    reader.seek(std::io::SeekFrom::Start(0))?;
+    let header = crate::read_detect_header(reader)?;
 
     let parser = parsers
         .iter()
         .find(|p| p.can_parse(&header))
         .ok_or(crate::Error::UnsupportedFormat)?;
 
-    parser.parse(reader)
+    parser.parse_with_hint(reader, None)
 }

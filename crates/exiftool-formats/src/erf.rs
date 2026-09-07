@@ -26,8 +26,10 @@ impl Default for ErfParser {
 
 impl FormatParser for ErfParser {
     fn can_parse(&self, header: &[u8]) -> bool {
-        // ERF uses standard TIFF magic - detected by extension
-        self.tiff.can_parse(header)
+        // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // Matching TIFF magic here would steal every TIFF from later parsers.
+        let _ = header;
+        false
     }
 
     fn format_name(&self) -> &'static str {
@@ -85,10 +87,10 @@ mod tests {
     }
 
     #[test]
-    fn test_can_parse_returns_true_for_tiff() {
+    fn test_can_parse_does_not_steal_tiff_magic() {
         let parser = ErfParser::new();
         let data = make_tiff_header("EPSON");
-        assert!(parser.can_parse(&data));
+        assert!(!parser.can_parse(&data));
     }
 
     #[test]

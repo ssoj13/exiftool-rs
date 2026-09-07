@@ -26,7 +26,10 @@ impl Default for IiqParser {
 
 impl FormatParser for IiqParser {
     fn can_parse(&self, header: &[u8]) -> bool {
-        self.tiff.can_parse(header)
+                // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // Matching TIFF magic here would steal every TIFF from later parsers.
+        let _ = header;
+        false
     }
 
     fn format_name(&self) -> &'static str {

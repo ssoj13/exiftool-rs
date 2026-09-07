@@ -103,6 +103,8 @@ mod dcr;
 mod dcr_writer;
 mod dpx;
 mod dsf;
+mod dicom;
+mod dicom_tags;
 mod eps;
 mod erf;
 mod erf_writer;
@@ -111,6 +113,7 @@ mod exr;
 mod exr_writer;
 mod fff;
 mod fff_writer;
+mod fits;
 mod flac;
 mod flac_writer;
 mod flv;
@@ -176,6 +179,8 @@ mod svg;
 mod tag_lookup;
 mod tga;
 mod tiff;
+mod tiff_family;
+mod tiff_rewrite;
 mod tiff_writer;
 mod traits;
 mod utils;
@@ -187,6 +192,8 @@ mod heic_writer;
 mod tak;
 mod wv;
 mod x3f;
+mod seven_z;
+mod zip;
 
 pub use aac::AacParser;
 pub use ai::AiParser;
@@ -210,11 +217,13 @@ pub use dcr::{DcrParser, KdcParser, K25Parser};
 pub use dcr_writer::DcrWriter;
 pub use dpx::DpxParser;
 pub use dsf::{DsfParser, DffParser};
+pub use dicom::DicomParser;
 pub use eps::EpsParser;
 pub use erf::ErfParser;
 pub use erf_writer::ErfWriter;
 pub use fff::FffParser;
 pub use fff_writer::FffWriter;
+pub use fits::FitsParser;
 pub use error::{Error, Result};
 use exiftool_attrs::AttrValue;
 pub use exr::ExrParser;
@@ -281,9 +290,11 @@ pub use heic_writer::HeicWriter;
 pub use tak::TakParser;
 pub use wv::WvParser;
 pub use x3f::X3fParser;
+pub use seven_z::SevenZParser;
+pub use zip::ZipParser;
 pub use parsers::{default_parsers, parse_with};
 pub use registry::FormatRegistry;
-pub use traits::{FormatParser, ReadSeek};
+pub use traits::{DETECT_HEADER_LEN, FormatParser, ReadSeek, read_detect_header};
 pub use jpeg_writer::JpegWriter;
 pub use tiff_writer::TiffWriter;
 pub use png_writer::PngWriter;
@@ -411,21 +422,29 @@ impl Metadata {
 
     /// Check if this format supports writing.
     ///
-    /// Writable: JPEG, PNG, TIFF, DNG, EXR, HDR, WebP, HEIC, AVIF, and selected RAW (CR2, ARW, ORF, NEF, RAF).
+    /// JPEG, PNG, TIFF, DNG, EXR, HDR, WebP, HEIC/AVIF, GIF, PNM, JXL,
+    /// TIFF-family RAW (not CR3), RAF, MP4/MOV family, WAV, FLAC, MP3.
     pub fn is_writable(&self) -> bool {
         const WRITABLE: &[&str] = &[
             "JPEG", "PNG", "TIFF", "DNG", "EXR", "HDR", "WebP", "HEIC", "HEIF", "AVIF",
-            "MP4", "MOV", "M4V", "M4A", "M4B", "M4P", "3GP", "3G2", "F4V",
-            "MP3", "FLAC", "PNM", "PBM", "PGM", "PPM", "PAM",
-            "GIF", "WAV", "JXL",
+            "PNM", "PBM", "PGM", "PPM", "PAM", "GIF", "JXL",
         ];
-        const WRITABLE_RAW: &[&str] = &[
-            "CR2", "ARW", "SRF", "SR2", "ORF", "NEF", "NRW", "RAF",
-            "RW2", "PEF", "SRW", "RWL", "3FR", "FFF", "ERF", "MEF",
-            "DCR", "KDC", "K25", "MOS", "IIQ",
+        // TIFF-family RAW via tiff_rewrite (SubIFD/raw copied). CR3 is ISOBMFF, not this path.
+        const RAW_WRITABLE: &[&str] = &[
+            "RAF", "NEF", "NRW", "ARW", "SRF", "SR2", "CR2", "ORF", "RW2", "PEF",
+            "SRW", "RWL", "3FR", "FFF", "ERF", "MEF", "DCR", "KDC", "K25", "MOS", "IIQ",
         ];
-        (WRITABLE.contains(&self.format) && !self.is_camera_raw())
-            || WRITABLE_RAW.contains(&self.format)
+        if RAW_WRITABLE.contains(&self.format) {
+            return true;
+        }
+        const MEDIA: &[&str] = &[
+            "MP4", "MOV", "M4V", "M4A", "M4B", "M4P", "3GP", "3G2", "F4V", "WAV", "FLAC",
+            "MP3",
+        ];
+        if MEDIA.contains(&self.format) {
+            return true;
+        }
+        WRITABLE.contains(&self.format) && !self.is_camera_raw()
     }
 
     /// Get interpreted value for a tag.

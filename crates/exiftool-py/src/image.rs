@@ -7,8 +7,10 @@ use crate::rational::PyRational;
 use crate::value::{display_value, from_python, to_python};
 use exiftool_attrs::AttrValue;
 use exiftool_formats::{
-    add_composite_tags, build_xmp_string, ExrWriter, FormatRegistry, HdrWriter, HeicWriter,
-    JpegWriter, Metadata, Mp4Writer, PageInfo, PngWriter, TiffWriter, WebpWriter,
+    add_composite_tags, build_xmp_string, Cr2Writer, ExrWriter, FlacWriter, FormatRegistry,
+    GifWriter, HdrWriter, HeicWriter, Id3Writer, JpegWriter, JxlWriter, Metadata, Mp4Writer,
+    NefWriter, OrfWriter, PageInfo, PngWriter, PnmWriter, RafWriter, TiffWriter, WavWriter,
+    WebpWriter,
 };
 use exiftool_xmp::XmpSidecar;
 use pyo3::exceptions::PyKeyError;
@@ -657,7 +659,7 @@ impl PyImage {
                 format!("Format {} does not support writing", self.metadata.format)
             };
             return Err(crate::error::WriteError::new_err(format!(
-                "{}. Writable formats: JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR", reason
+                "{}. Writable formats: JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, NEF, NRW, RAF, CR2, ARW, ORF, RW2, PEF, MP4, WAV, FLAC, MP3", reason
             )));
         }
 
@@ -706,6 +708,51 @@ impl PyImage {
             "HDR" => {
                 HdrWriter::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("HDR write failed: {}", e)))?;
+            }
+            "NEF" | "NRW" => {
+                NefWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("NEF write failed: {}", e)))?;
+            }
+            "RAF" => {
+                RafWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("RAF write failed: {}", e)))?;
+            }
+            "CR2" => {
+                Cr2Writer::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("CR2 write failed: {}", e)))?;
+            }
+            "ORF" => {
+                OrfWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("ORF write failed: {}", e)))?;
+            }
+            "ARW" | "SRF" | "SR2" | "RW2" | "PEF" | "SRW" | "RWL" | "3FR" | "FFF"
+            | "ERF" | "MEF" | "DCR" | "KDC" | "K25" | "MOS" | "IIQ" => {
+                TiffWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("RAW TIFF write failed: {}", e)))?;
+            }
+            "GIF" => {
+                GifWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("GIF write failed: {}", e)))?;
+            }
+            "WAV" => {
+                WavWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("WAV write failed: {}", e)))?;
+            }
+            "FLAC" => {
+                FlacWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("FLAC write failed: {}", e)))?;
+            }
+            "MP3" => {
+                Id3Writer::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("MP3 write failed: {}", e)))?;
+            }
+            "JXL" => {
+                JxlWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("JXL write failed: {}", e)))?;
+            }
+            "PNM" | "PBM" | "PGM" | "PPM" | "PAM" => {
+                PnmWriter::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("PNM write failed: {}", e)))?;
             }
             fmt => return Err(write_not_supported(fmt)),
         }
@@ -943,12 +990,8 @@ impl PyImage {
     /// Open image from file path.
     pub fn open(path: &str) -> PyResult<Self> {
         let path_buf = PathBuf::from(path);
-        let file = File::open(&path_buf)
-            .map_err(|e| crate::error::FormatError::new_err(format!("Cannot open '{}': {}", path, e)))?;
-        let mut reader = BufReader::new(file);
-
         let registry = FormatRegistry::new();
-        let metadata = registry.parse(&mut reader)
+        let metadata = registry.parse_file(&path_buf)
             .map_err(|e| to_py_err(e, Some(path)))?;
 
         Ok(Self {

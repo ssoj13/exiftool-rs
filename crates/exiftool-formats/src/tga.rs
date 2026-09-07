@@ -34,8 +34,8 @@ impl FormatParser for TgaParser {
             return false;
         }
 
-        // Valid image types: 0-3, 9-11, 32-33
-        let valid_types = [0, 1, 2, 3, 9, 10, 11, 32, 33];
+        // Type 0 = no image data; all-zero headers would steal DICOM (128-byte 0 preamble + DICM).
+        let valid_types = [1, 2, 3, 9, 10, 11, 32, 33];
         if !valid_types.contains(&image_type) {
             return false;
         }

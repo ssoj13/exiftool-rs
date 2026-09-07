@@ -838,34 +838,42 @@ impl Mp4Parser {
         meta_size: u64,
         metadata: &mut Metadata,
     ) -> Result<()> {
-        // Skip version/flags (4 bytes)
         reader.seek(SeekFrom::Start(meta_start + 12))?;
 
         let meta_end = meta_start + meta_size;
         let mut buf = [0u8; 8];
+        let mut children: Vec<([u8; 4], u64, u64)> = Vec::new();
 
         while reader.stream_position()? < meta_end {
             let pos = reader.stream_position()?;
-
             if reader.read_exact(&mut buf).is_err() {
                 break;
             }
-
             let box_size = u32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as u64;
             let box_type = [buf[4], buf[5], buf[6], buf[7]];
-
             if box_size < 8 || pos + box_size > meta_end {
                 break;
             }
+            children.push((box_type, pos, box_size));
+            reader.seek(SeekFrom::Start(pos + box_size))?;
+        }
 
-            match &box_type {
+        let mut key_names: Vec<String> = Vec::new();
+        for (box_type, pos, box_size) in &children {
+            if box_type == b"keys" {
+                key_names = self.parse_keys_box(reader, *pos, *box_size)?;
+            }
+        }
+
+        for (box_type, pos, box_size) in &children {
+            match box_type {
                 b"ilst" => {
-                    self.parse_ilst_box(reader, pos, box_size, metadata)?;
+                    self.parse_ilst_box(reader, *pos, *box_size, metadata, &key_names)?;
                 }
                 b"xml " => {
-                    // XMP data
-                    let xml_size = (box_size - 8) as usize;
+                    let xml_size = (*box_size - 8) as usize;
                     if xml_size > 0 && xml_size < 10 * 1024 * 1024 {
+                        reader.seek(SeekFrom::Start(*pos + 8))?;
                         let mut xml_data = vec![0u8; xml_size];
                         reader.read_exact(&mut xml_data)?;
                         if let Ok(xmp) = String::from_utf8(xml_data) {
@@ -875,11 +883,51 @@ impl Mp4Parser {
                 }
                 _ => {}
             }
-
-            reader.seek(SeekFrom::Start(pos + box_size))?;
         }
 
         Ok(())
+    }
+
+    /// QuickTime `keys` box (mdta): 1-based names for numeric `ilst` indices.
+    fn parse_keys_box(
+        &self,
+        reader: &mut dyn ReadSeek,
+        keys_start: u64,
+        keys_size: u64,
+    ) -> Result<Vec<String>> {
+        reader.seek(SeekFrom::Start(keys_start + 8))?;
+        let keys_end = keys_start + keys_size;
+        if reader.stream_position()? + 8 > keys_end {
+            return Ok(Vec::new());
+        }
+        let mut hdr = [0u8; 8];
+        reader.read_exact(&mut hdr)?;
+        let count = u32::from_be_bytes([hdr[4], hdr[5], hdr[6], hdr[7]]) as usize;
+        let mut names = Vec::with_capacity(count);
+        for _ in 0..count {
+            if reader.stream_position()? + 8 > keys_end {
+                break;
+            }
+            let mut szb = [0u8; 4];
+            reader.read_exact(&mut szb)?;
+            let key_size = u32::from_be_bytes(szb) as u64;
+            if key_size < 8 {
+                break;
+            }
+            let mut ns = [0u8; 4];
+            reader.read_exact(&mut ns)?;
+            let val_len = (key_size - 8) as usize;
+            let mut val = vec![0u8; val_len];
+            if reader.read_exact(&mut val).is_err() {
+                break;
+            }
+            let mut name = String::from_utf8_lossy(&val).into_owned();
+            if let Some(rest) = name.strip_prefix("com.apple.quicktime.") {
+                name = rest.to_string();
+            }
+            names.push(name);
+        }
+        Ok(names)
     }
 
     /// Parse ilst (item list) box - iTunes-style metadata.
@@ -889,6 +937,7 @@ impl Mp4Parser {
         ilst_start: u64,
         ilst_size: u64,
         metadata: &mut Metadata,
+        key_names: &[String],
     ) -> Result<()> {
         reader.seek(SeekFrom::Start(ilst_start + 8))?;
 
@@ -911,24 +960,31 @@ impl Mp4Parser {
 
             // Parse data box inside
             let tag_name = match &box_type {
-                b"\xa9nam" => Some("Title"),
-                b"\xa9ART" => Some("Artist"),
-                b"\xa9alb" => Some("Album"),
-                b"\xa9day" => Some("Year"),
-                b"\xa9cmt" => Some("Comment"),
-                b"\xa9gen" => Some("Genre"),
-                b"\xa9wrt" => Some("Writer"),
-                b"\xa9too" => Some("Encoder"),
-                b"\xa9lyr" => Some("Lyrics"),
-                b"aART" => Some("AlbumArtist"),
-                b"cprt" => Some("Copyright"),
-                b"desc" => Some("Description"),
-                b"gnre" => Some("GenreID"),
-                b"trkn" => Some("TrackNumber"),
-                b"disk" => Some("DiscNumber"),
-                b"cpil" => Some("Compilation"),
-                b"tmpo" => Some("Tempo"),
-                _ => None,
+                b"\xa9nam" => Some("Title".to_string()),
+                b"\xa9ART" => Some("Artist".to_string()),
+                b"\xa9alb" => Some("Album".to_string()),
+                b"\xa9day" => Some("Year".to_string()),
+                b"\xa9cmt" => Some("Comment".to_string()),
+                b"\xa9gen" => Some("Genre".to_string()),
+                b"\xa9wrt" => Some("Writer".to_string()),
+                b"\xa9too" => Some("Encoder".to_string()),
+                b"\xa9lyr" => Some("Lyrics".to_string()),
+                b"aART" => Some("AlbumArtist".to_string()),
+                b"cprt" => Some("Copyright".to_string()),
+                b"desc" => Some("Description".to_string()),
+                b"gnre" => Some("GenreID".to_string()),
+                b"trkn" => Some("TrackNumber".to_string()),
+                b"disk" => Some("DiscNumber".to_string()),
+                b"cpil" => Some("Compilation".to_string()),
+                b"tmpo" => Some("Tempo".to_string()),
+                _ => {
+                    let idx = u32::from_be_bytes(box_type);
+                    if box_type[0] == 0 && idx >= 1 {
+                        key_names.get((idx as usize) - 1).map(|n| format!("Keys:{}", n))
+                    } else {
+                        None
+                    }
+                }
             };
 
             if let Some(name) = tag_name {

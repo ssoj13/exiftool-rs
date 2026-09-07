@@ -320,12 +320,12 @@ class Image:
     
     @property
     def is_camera_raw(self) -> bool:
-        """True if this is a camera RAW file (typically read-only)."""
+        """True if this is a camera RAW file. NEF/NRW/RAF may still be writable."""
         ...
     
     @property
     def is_writable(self) -> bool:
-        """True if format supports writing (JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR)."""
+        """True if format supports writing (JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, NEF, NRW, RAF)."""
         ...
     
     @property

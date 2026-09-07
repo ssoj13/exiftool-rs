@@ -27,7 +27,10 @@ impl Default for SrwParser {
 impl FormatParser for SrwParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         // SRW uses standard TIFF magic - detected by extension
-        self.tiff.can_parse(header)
+                // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // Matching TIFF magic here would steal every TIFF from later parsers.
+        let _ = header;
+        false
     }
 
     fn format_name(&self) -> &'static str {
