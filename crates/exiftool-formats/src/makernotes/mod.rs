@@ -52,6 +52,7 @@ mod samsung;
 mod sigma;
 mod sony;
 mod vivo;
+mod write;
 mod xiaomi;
 
 pub use apple::AppleParser;
@@ -81,6 +82,8 @@ pub use sigma::SigmaParser;
 pub use sony::SonyParser;
 pub use vivo::VivoParser;
 pub use xiaomi::XiaomiParser;
+
+pub use write::rewrite_blob;
 
 use exiftool_attrs::{AttrValue, Attrs};
 use exiftool_core::{ByteOrder, IfdEntry, IfdReader};

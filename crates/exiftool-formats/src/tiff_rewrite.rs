@@ -1,6 +1,7 @@
-//! TIFF rewrite that preserves image IFDs, strips/tiles, and MakerNotes blobs.
+//! TIFF rewrite that preserves image IFDs, strips/tiles, and MakerNotes.
 //!
-//! Used for TIFF-based RAW (NEF): update IFD0 / ExifIFD / GPS metadata while
+//! FujiFilm MakerNotes IFD fields are overlaid when present in `metadata`; other
+//! vendor blobs are copied. Used for TIFF-based RAW (NEF): update IFD0 / ExifIFD / GPS
 //! copying SubIFD trees and pixel payloads. Unlike [`crate::TiffWriter`], this
 //! does not rebuild IFD0 from a short tag list.
 
@@ -71,6 +72,7 @@ pub(crate) fn rewrite_preserving_kind(
     let mut root = parse_ifd_tree(&reader, ifd0_u64, &mut seen, 0, a100.is_some())?;
     overlay_ifd(&mut root, metadata, root_kind);
     apply_child_overlays(&mut root, metadata);
+    rewrite_makernotes_tree(&mut root, metadata);
     let mut out = emit_tiff(original, order, magic, root, ifd0_off, bigtiff)?;
     if let Some(layout) = a100 {
         finish_a100_arw(&mut out, original, layout, order)?;
@@ -222,6 +224,29 @@ fn overlay_ifd(node: &mut IfdNode, metadata: &Metadata, kind: IfdKind) {
             );
         }
         IfdKind::Other => {}
+    }
+}
+
+fn rewrite_makernotes_tree(node: &mut IfdNode, metadata: &Metadata) {
+    for e in &mut node.entries {
+        if e.tag != 0x927C {
+            continue;
+        }
+        if let RawValue::Undefined(bytes) = &e.value {
+            let next = crate::makernotes::rewrite_blob(bytes, metadata);
+            e.count = next.len() as u32;
+            e.value = RawValue::Undefined(next);
+        }
+    }
+    for kids in &mut node.children {
+        if let Some(kids) = kids {
+            for kid in kids {
+                rewrite_makernotes_tree(kid, metadata);
+            }
+        }
+    }
+    if let Some(next) = node.next.as_mut() {
+        rewrite_makernotes_tree(next, metadata);
     }
 }
 

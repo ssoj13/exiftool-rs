@@ -191,6 +191,7 @@ mod tests {
         metadata
             .exif
             .set("Artist", AttrValue::Str("exiftool-rs".into()));
+        metadata.exif.set("Quality", AttrValue::Str("FINE".into()));
 
         let mut out = Vec::new();
         RafWriter::write(&mut Cursor::new(&data), &mut out, &metadata).unwrap();
@@ -205,6 +206,11 @@ mod tests {
 
         let parsed = RafParser.parse(&mut Cursor::new(&out)).unwrap();
         assert_eq!(parsed.exif.get_str("Artist"), Some("exiftool-rs"));
+        assert!(
+            out.windows(5).any(|w| w == b"FINE\0"),
+            "FINE missing from rewritten RAF bytes"
+        );
+        assert_eq!(parsed.exif.get_str("Quality"), Some("FINE"));
         assert_eq!(parsed.exif.get_str("RAFVersion"), Some("0106"));
         assert_eq!(parsed.exif.get_str("RawImageFullSize"), Some("4352x1444"));
     }

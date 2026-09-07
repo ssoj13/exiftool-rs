@@ -5,7 +5,7 @@
 
 use crate::iptc::IptcWriter;
 use crate::{Error, Metadata, ReadSeek, Result};
-use std::io::Write;
+use std::io::{Cursor, Write};
 
 /// JPEG segment for writing.
 #[derive(Debug, Clone)]
@@ -56,27 +56,23 @@ impl JpegWriter {
         for seg in &segments {
             match seg.marker {
                 0xE1 => {
-                    // APP1 - check if EXIF or XMP
-                    if seg.data.starts_with(b"Exif\x00\x00") {
-                        // Replace EXIF
+                    // APP1 payload is after the 2-byte length field stored in `seg.data`.
+                    let payload = Self::app1_payload(&seg.data);
+                    if payload.starts_with(b"Exif\x00\x00") {
                         if let Some(exif) = exif_data {
                             if !wrote_exif {
                                 Self::write_exif_segment(output, exif)?;
                                 wrote_exif = true;
                             }
                         }
-                        // Skip original EXIF (don't copy)
-                    } else if seg.data.starts_with(b"http://ns.adobe.com/xap/1.0/\x00") {
-                        // Replace XMP
+                    } else if payload.starts_with(b"http://ns.adobe.com/xap/1.0/\x00") {
                         if let Some(xmp) = xmp_data {
                             if !wrote_xmp {
                                 Self::write_xmp_segment(output, xmp)?;
                                 wrote_xmp = true;
                             }
                         }
-                        // Skip original XMP
                     } else {
-                        // Other APP1 - copy as-is
                         Self::write_segment(output, seg.marker, &seg.data)?;
                     }
                 }
@@ -143,18 +139,19 @@ impl JpegWriter {
         R: ReadSeek,
         W: Write,
     {
-        // Build EXIF bytes from metadata
-        let exif_bytes = crate::utils::build_exif_bytes(metadata)?;
+        let data = crate::utils::read_with_limit(input)?;
+        let exif_bytes = match Self::extract_exif_tiff(&data) {
+            Some(tiff) => crate::tiff_rewrite::rewrite_preserving(&tiff, metadata)?,
+            None => crate::utils::build_exif_bytes(metadata)?,
+        };
         let exif_data = if exif_bytes.is_empty() {
             None
         } else {
             Some(exif_bytes.as_slice())
         };
 
-        // Get XMP string from metadata
         let xmp_data = metadata.xmp.as_deref();
 
-        // Build IPTC APP13 from IPTC: prefixed attrs
         let iptc_bytes = IptcWriter::build_app13(&metadata.exif);
         let iptc_data = if iptc_bytes.is_empty() {
             None
@@ -162,7 +159,27 @@ impl JpegWriter {
             Some(iptc_bytes.as_slice())
         };
 
-        Self::write(input, output, exif_data, xmp_data, iptc_data)
+        Self::write(
+            &mut Cursor::new(data),
+            output,
+            exif_data,
+            xmp_data,
+            iptc_data,
+        )
+    }
+
+    fn extract_exif_tiff(jpeg: &[u8]) -> Option<Vec<u8>> {
+        let segments = Self::parse_segments(jpeg).ok()?;
+        for seg in segments {
+            if seg.marker != 0xE1 {
+                continue;
+            }
+            let payload = Self::app1_payload(&seg.data);
+            if payload.starts_with(b"Exif\x00\x00") && payload.len() > 6 {
+                return Some(payload[6..].to_vec());
+            }
+        }
+        None
     }
 
     /// Parse JPEG into segments.
@@ -248,6 +265,14 @@ impl JpegWriter {
         }
 
         Ok(segments)
+    }
+
+    fn app1_payload(seg_data: &[u8]) -> &[u8] {
+        if seg_data.len() >= 2 {
+            &seg_data[2..]
+        } else {
+            seg_data
+        }
     }
 
     /// Write a JPEG segment.
