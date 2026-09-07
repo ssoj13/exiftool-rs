@@ -28,19 +28,27 @@ fn main() {
 
 fn run() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    
+
     // No args or help requested
-    if args.len() < 2 || matches!(args.get(1).map(|s| s.as_str()), Some("-h" | "--help" | "/?" | "-?" | "help")) {
+    if args.len() < 2
+        || matches!(
+            args.get(1).map(|s| s.as_str()),
+            Some("-h" | "--help" | "/?" | "-?" | "help")
+        )
+    {
         print!("{}", args::HELP.trim_start());
         return Ok(());
     }
-    
+
     // Version
-    if matches!(args.get(1).map(|s| s.as_str()), Some("-v" | "--version" | "-V")) {
+    if matches!(
+        args.get(1).map(|s| s.as_str()),
+        Some("-v" | "--version" | "-V")
+    ) {
         println!("exif {}", VERSION);
         return Ok(());
     }
-    
+
     // Parse args manually for flexibility
     let parsed = args::parse_args(&args[1..])?;
     let registry = FormatRegistry::new();
@@ -81,8 +89,11 @@ fn run() -> Result<()> {
     }
 
     // Write mode (modify image tags or copy from file)
-    if !parsed.tags.is_empty() || parsed.tags_from_file.is_some() || parsed.shift.is_some()
-        || parsed.geotag.is_some() || parsed.icc_profile.is_some()
+    if !parsed.tags.is_empty()
+        || parsed.tags_from_file.is_some()
+        || parsed.shift.is_some()
+        || parsed.geotag.is_some()
+        || parsed.icc_profile.is_some()
     {
         return commands::write_image(&parsed, &registry);
     }
@@ -99,16 +110,16 @@ fn run() -> Result<()> {
 
     // Expand paths (handle directories if recursive)
     let files = paths::expand_paths(
-        &parsed.files, 
-        parsed.recursive, 
-        &parsed.extensions, 
+        &parsed.files,
+        parsed.recursive,
+        &parsed.extensions,
         &parsed.exclude,
         parsed.newer,
         parsed.older,
         parsed.minsize,
         parsed.maxsize,
     );
-    
+
     // Read mode
     if files.is_empty() {
         if parsed.files.is_empty() {
@@ -145,14 +156,14 @@ fn run() -> Result<()> {
                 if parsed.composite {
                     add_composite_tags(&mut metadata);
                 }
-                
+
                 // Apply -if condition filter
                 if let Some(ref cond) = parsed.if_condition {
                     if !condition::matches_condition(&metadata, cond) {
                         continue; // Skip file that doesn't match condition
                     }
                 }
-                
+
                 if write_to_file {
                     output::format_metadata(path, &metadata, &parsed, &mut output_buf);
                 } else {
@@ -172,5 +183,3 @@ fn run() -> Result<()> {
 
     Ok(())
 }
-
-

@@ -27,7 +27,7 @@ impl Default for SrwParser {
 impl FormatParser for SrwParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         // SRW uses standard TIFF magic - detected by extension
-                // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // TIFF-family FileType is classified by TiffParser + tiff_family.
         // Matching TIFF magic here would steal every TIFF from later parsers.
         let _ = header;
         false
@@ -43,14 +43,14 @@ impl FormatParser for SrwParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = self.tiff.parse(reader)?;
-        
+
         // Check if this is actually a Samsung file
         if let Some(make) = meta.exif.get_str("Make") {
             if make.to_uppercase().contains("SAMSUNG") {
                 meta.format = "SRW";
             }
         }
-        
+
         Ok(meta)
     }
 }

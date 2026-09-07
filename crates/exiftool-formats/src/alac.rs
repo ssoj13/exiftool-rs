@@ -48,17 +48,18 @@ impl FormatParser for CafParser {
 
         // Version
         let version = u16::from_be_bytes([header[4], header[5]]);
-        meta.exif.set("CAF:Version", AttrValue::UInt(version as u32));
+        meta.exif
+            .set("CAF:Version", AttrValue::UInt(version as u32));
 
         // Parse chunks
         let file_size = crate::utils::get_file_size(reader)?;
         meta.exif.set("File:FileSize", AttrValue::UInt64(file_size));
-        
+
         let mut pos = 8u64;
-        
+
         while pos + 12 <= file_size {
             reader.seek(SeekFrom::Start(pos))?;
-            
+
             let mut chunk_header = [0u8; 12];
             if reader.read_exact(&mut chunk_header).is_err() {
                 break;
@@ -66,8 +67,14 @@ impl FormatParser for CafParser {
 
             let chunk_type = &chunk_header[0..4];
             let chunk_size = i64::from_be_bytes([
-                chunk_header[4], chunk_header[5], chunk_header[6], chunk_header[7],
-                chunk_header[8], chunk_header[9], chunk_header[10], chunk_header[11],
+                chunk_header[4],
+                chunk_header[5],
+                chunk_header[6],
+                chunk_header[7],
+                chunk_header[8],
+                chunk_header[9],
+                chunk_header[10],
+                chunk_header[11],
             ]);
 
             match chunk_type {
@@ -84,7 +91,8 @@ impl FormatParser for CafParser {
                 b"data" => {
                     // Audio data chunk
                     if chunk_size > 0 {
-                        meta.exif.set("CAF:AudioDataSize", AttrValue::UInt64(chunk_size as u64));
+                        meta.exif
+                            .set("CAF:AudioDataSize", AttrValue::UInt64(chunk_size as u64));
                     }
                 }
                 _ => {}
@@ -111,7 +119,8 @@ fn parse_caf_desc(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Result<()> 
         desc[0], desc[1], desc[2], desc[3], desc[4], desc[5], desc[6], desc[7],
     ]);
     let sample_rate = f64::from_bits(sample_rate_bits);
-    meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate as u32));
+    meta.exif
+        .set("Audio:SampleRate", AttrValue::UInt(sample_rate as u32));
 
     // Format ID (4 bytes)
     let format_id = &desc[8..12];
@@ -130,30 +139,34 @@ fn parse_caf_desc(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Result<()> 
             "Unknown"
         }
     };
-    meta.exif.set("Audio:Codec", AttrValue::Str(codec.to_string()));
+    meta.exif
+        .set("Audio:Codec", AttrValue::Str(codec.to_string()));
 
     // Format flags (4 bytes)
     let format_flags = u32::from_be_bytes([desc[12], desc[13], desc[14], desc[15]]);
     if format_flags != 0 {
-        meta.exif.set("CAF:FormatFlags", AttrValue::UInt(format_flags));
+        meta.exif
+            .set("CAF:FormatFlags", AttrValue::UInt(format_flags));
     }
 
     // Bytes per packet (4 bytes)
     let bytes_per_packet = u32::from_be_bytes([desc[16], desc[17], desc[18], desc[19]]);
     if bytes_per_packet > 0 {
-        meta.exif.set("CAF:BytesPerPacket", AttrValue::UInt(bytes_per_packet));
+        meta.exif
+            .set("CAF:BytesPerPacket", AttrValue::UInt(bytes_per_packet));
     }
 
     // Frames per packet (4 bytes)
     let frames_per_packet = u32::from_be_bytes([desc[20], desc[21], desc[22], desc[23]]);
     if frames_per_packet > 0 {
-        meta.exif.set("CAF:FramesPerPacket", AttrValue::UInt(frames_per_packet));
+        meta.exif
+            .set("CAF:FramesPerPacket", AttrValue::UInt(frames_per_packet));
     }
 
     // Channels per frame (4 bytes)
     let channels = u32::from_be_bytes([desc[24], desc[25], desc[26], desc[27]]);
     meta.exif.set("Audio:Channels", AttrValue::UInt(channels));
-    
+
     let channel_mode = match channels {
         1 => "Mono",
         2 => "Stereo",
@@ -161,12 +174,16 @@ fn parse_caf_desc(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Result<()> 
         8 => "7.1 Surround",
         _ => "Multi-channel",
     };
-    meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_mode.to_string()));
+    meta.exif.set(
+        "Audio:ChannelMode",
+        AttrValue::Str(channel_mode.to_string()),
+    );
 
     // Bits per channel (4 bytes)
     let bits_per_sample = u32::from_be_bytes([desc[28], desc[29], desc[30], desc[31]]);
     if bits_per_sample > 0 {
-        meta.exif.set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample));
+        meta.exif
+            .set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample));
     }
 
     Ok(())
@@ -183,9 +200,9 @@ fn parse_caf_info(reader: &mut dyn ReadSeek, size: usize, meta: &mut Metadata) -
 
     // Number of entries (4 bytes BE)
     let num_entries = u32::from_be_bytes([data[0], data[1], data[2], data[3]]) as usize;
-    
+
     let mut pos = 4;
-    
+
     for _ in 0..num_entries.min(50) {
         // Key (null-terminated)
         let key_end = data[pos..].iter().position(|&b| b == 0);
@@ -246,11 +263,11 @@ mod tests {
         data[0..4].copy_from_slice(b"caff");
         data[4..6].copy_from_slice(&1u16.to_be_bytes()); // version
         data[6..8].copy_from_slice(&0u16.to_be_bytes()); // flags
-        
+
         // desc chunk
         data[8..12].copy_from_slice(b"desc");
         data[12..20].copy_from_slice(&32i64.to_be_bytes()); // chunk size
-        
+
         // Audio description
         data[20..28].copy_from_slice(&44100.0f64.to_be_bytes()); // sample rate
         data[28..32].copy_from_slice(b"alac"); // format ID
@@ -259,7 +276,7 @@ mod tests {
         data[40..44].copy_from_slice(&4096u32.to_be_bytes()); // frames per packet
         data[44..48].copy_from_slice(&2u32.to_be_bytes()); // channels
         data[48..52].copy_from_slice(&16u32.to_be_bytes()); // bits per sample
-        
+
         data
     }
 
@@ -287,7 +304,10 @@ mod tests {
         assert_eq!(meta.format, "CAF");
         assert_eq!(meta.exif.get_u32("Audio:SampleRate"), Some(44100));
         assert_eq!(meta.exif.get_u32("Audio:Channels"), Some(2));
-        assert_eq!(meta.exif.get_str("Audio:Codec"), Some("Apple Lossless (ALAC)"));
+        assert_eq!(
+            meta.exif.get_str("Audio:Codec"),
+            Some("Apple Lossless (ALAC)")
+        );
     }
 
     #[test]

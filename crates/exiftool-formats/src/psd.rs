@@ -25,57 +25,62 @@ pub struct PsdParser;
 impl PsdParser {
     /// PSD magic: "8BPS"
     const MAGIC: &'static [u8] = b"8BPS";
-    
+
     /// Image resource signature: "8BIM"
     const RESOURCE_SIG: &'static [u8] = b"8BIM";
-    
+
     /// Known resource IDs
-    const RES_IPTC: u16 = 0x0404;        // IPTC-NAA record
-    const RES_EXIF1: u16 = 0x0422;       // EXIF data 1
-    const RES_EXIF3: u16 = 0x0423;       // EXIF data 3 (without TIFF header)
-    const RES_XMP: u16 = 0x0424;         // XMP metadata
-    const RES_ICC: u16 = 0x040F;         // ICC profile
-    const RES_THUMBNAIL: u16 = 0x0409;   // Thumbnail (Photoshop 4+)
+    const RES_IPTC: u16 = 0x0404; // IPTC-NAA record
+    const RES_EXIF1: u16 = 0x0422; // EXIF data 1
+    const RES_EXIF3: u16 = 0x0423; // EXIF data 3 (without TIFF header)
+    const RES_XMP: u16 = 0x0424; // XMP metadata
+    const RES_ICC: u16 = 0x040F; // ICC profile
+    const RES_THUMBNAIL: u16 = 0x0409; // Thumbnail (Photoshop 4+)
     const RES_THUMBNAIL_OLD: u16 = 0x0408; // Thumbnail (Photoshop 2.5)
-    const RES_RESOLUTION: u16 = 0x03ED;  // Resolution info
-    const RES_COPYRIGHT: u16 = 0x040A;   // Copyright flag
-    const RES_URL: u16 = 0x040B;         // URL
-    
+    const RES_RESOLUTION: u16 = 0x03ED; // Resolution info
+    const RES_COPYRIGHT: u16 = 0x040A; // Copyright flag
+    const RES_URL: u16 = 0x040B; // URL
+
     /// Parse PSD header.
-    fn parse_header<R: Read + Seek + ?Sized>(reader: &mut R) -> Result<(bool, u16, u32, u32, u16, u16)> {
+    fn parse_header<R: Read + Seek + ?Sized>(
+        reader: &mut R,
+    ) -> Result<(bool, u16, u32, u32, u16, u16)> {
         let mut header = [0u8; 30];
         reader.read_exact(&mut header[..26])?;
-        
+
         // Check magic
         if &header[0..4] != Self::MAGIC {
             return Err(crate::Error::InvalidStructure("Not a PSD file".into()));
         }
-        
+
         // Version: 1 = PSD, 2 = PSB
         let version = u16::from_be_bytes([header[4], header[5]]);
         let is_psb = version == 2;
-        
+
         if version != 1 && version != 2 {
-            return Err(crate::Error::InvalidStructure(format!("Unknown PSD version: {}", version)));
+            return Err(crate::Error::InvalidStructure(format!(
+                "Unknown PSD version: {}",
+                version
+            )));
         }
-        
+
         // Reserved (6 bytes, should be zero)
         // Channels
         let channels = u16::from_be_bytes([header[12], header[13]]);
-        
+
         // Height and width (4 bytes each)
         let height = u32::from_be_bytes([header[14], header[15], header[16], header[17]]);
         let width = u32::from_be_bytes([header[18], header[19], header[20], header[21]]);
-        
+
         // Depth (bits per channel)
         let depth = u16::from_be_bytes([header[22], header[23]]);
-        
+
         // Color mode
         let color_mode = u16::from_be_bytes([header[24], header[25]]);
-        
+
         Ok((is_psb, channels, height, width, depth, color_mode))
     }
-    
+
     /// Get color mode name.
     fn color_mode_name(mode: u16) -> &'static str {
         match mode {
@@ -90,7 +95,7 @@ impl PsdParser {
             _ => "Unknown",
         }
     }
-    
+
     /// Skip color mode data section.
     fn skip_color_mode<R: Read + Seek + ?Sized>(reader: &mut R) -> Result<()> {
         let mut len_buf = [0u8; 4];
@@ -101,7 +106,7 @@ impl PsdParser {
         }
         Ok(())
     }
-    
+
     /// Parse image resources section.
     fn parse_resources<R: Read + Seek + ?Sized>(
         reader: &mut R,
@@ -110,18 +115,18 @@ impl PsdParser {
         let mut xmp = None;
         let mut icc = None;
         let mut thumbnail = None;
-        
+
         // Read section length
         let mut len_buf = [0u8; 4];
         reader.read_exact(&mut len_buf)?;
         let section_len = u32::from_be_bytes(len_buf) as u64;
-        
+
         if section_len == 0 {
             return Ok((xmp, icc, thumbnail));
         }
-        
+
         let section_end = reader.stream_position()? + section_len;
-        
+
         // Parse individual resources
         while reader.stream_position()? < section_end {
             // Read resource signature
@@ -129,33 +134,41 @@ impl PsdParser {
             if reader.read_exact(&mut sig).is_err() {
                 break;
             }
-            
+
             if &sig != Self::RESOURCE_SIG {
                 // Try to recover by seeking back
                 reader.seek(SeekFrom::Current(-3))?;
                 continue;
             }
-            
+
             // Resource ID (2 bytes)
             let mut id_buf = [0u8; 2];
             reader.read_exact(&mut id_buf)?;
             let resource_id = u16::from_be_bytes(id_buf);
-            
+
             // Pascal string (name) - padded to even length
             let mut name_len = [0u8; 1];
             reader.read_exact(&mut name_len)?;
             let name_len = name_len[0] as u64;
-            let padded_len = if (name_len + 1) % 2 == 0 { name_len } else { name_len + 1 };
+            let padded_len = if (name_len + 1) % 2 == 0 {
+                name_len
+            } else {
+                name_len + 1
+            };
             reader.seek(SeekFrom::Current(padded_len as i64))?;
-            
+
             // Resource data length (4 bytes)
             let mut data_len_buf = [0u8; 4];
             reader.read_exact(&mut data_len_buf)?;
             let data_len = u32::from_be_bytes(data_len_buf);
-            
+
             // Padded to even length
-            let padded_data_len = if data_len % 2 == 0 { data_len } else { data_len + 1 };
-            
+            let padded_data_len = if data_len % 2 == 0 {
+                data_len
+            } else {
+                data_len + 1
+            };
+
             match resource_id {
                 Self::RES_XMP => {
                     let mut data = vec![0u8; data_len as usize];
@@ -246,16 +259,16 @@ impl PsdParser {
                 }
             }
         }
-        
+
         Ok((xmp, icc, thumbnail))
     }
-    
+
     /// Parse EXIF resource data.
     fn parse_exif_resource(data: &[u8], attrs: &mut Attrs, _without_header: bool) {
         if data.len() < 8 {
             return;
         }
-        
+
         // Try to detect byte order from TIFF header
         let byte_order = if data.len() >= 2 {
             match &data[0..2] {
@@ -266,17 +279,18 @@ impl PsdParser {
         } else {
             ByteOrder::LittleEndian
         };
-        
+
         // Parse using IFD reader
         let ifd_reader = exiftool_core::IfdReader::new(data, byte_order);
         if let Ok((entries, _)) = ifd_reader.read_ifd(8) {
             for entry in entries {
                 // Lookup tag name in IFD0 and EXIF tables
-                let name = exiftool_tags::IFD0_TAGS.get(&entry.tag)
+                let name = exiftool_tags::IFD0_TAGS
+                    .get(&entry.tag)
                     .or_else(|| exiftool_tags::EXIF_TAGS.get(&entry.tag))
                     .or_else(|| exiftool_tags::GPS_TAGS.get(&entry.tag))
                     .map(|def| def.name);
-                
+
                 if let Some(tag_name) = name {
                     if let Some(value) = crate::utils::raw_value_to_attr(&entry.value) {
                         attrs.set(tag_name, value);
@@ -285,7 +299,7 @@ impl PsdParser {
             }
         }
     }
-    
+
     /// Parse IPTC resource data.
     fn parse_iptc_resource(data: &[u8], attrs: &mut Attrs) {
         // IPTC-NAA format: series of records
@@ -296,19 +310,19 @@ impl PsdParser {
                 pos += 1;
                 continue;
             }
-            
+
             let record = data[pos + 1];
             let dataset = data[pos + 2];
             let size = u16::from_be_bytes([data[pos + 3], data[pos + 4]]) as usize;
             pos += 5;
-            
+
             if pos + size > data.len() {
                 break;
             }
-            
+
             let value_data = &data[pos..pos + size];
             pos += size;
-            
+
             // Record 2 is application record (most common)
             if record == 2 {
                 let tag_name = match dataset {
@@ -330,13 +344,16 @@ impl PsdParser {
                     122 => "Writer-Editor",
                     _ => continue,
                 };
-                
+
                 if let Ok(s) = String::from_utf8(value_data.to_vec()) {
                     // Keywords can be repeated
                     if dataset == 25 {
                         if let Some(existing) = attrs.get(tag_name) {
                             if let Some(existing_str) = existing.as_str() {
-                                attrs.set(tag_name, AttrValue::Str(format!("{}, {}", existing_str, s)));
+                                attrs.set(
+                                    tag_name,
+                                    AttrValue::Str(format!("{}, {}", existing_str, s)),
+                                );
                                 continue;
                             }
                         }
@@ -352,35 +369,38 @@ impl FormatParser for PsdParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         header.len() >= 4 && &header[0..4] == Self::MAGIC
     }
-    
+
     fn format_name(&self) -> &'static str {
         "PSD"
     }
-    
+
     fn extensions(&self) -> &'static [&'static str] {
         &["psd", "psb"]
     }
-    
+
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut attrs = Attrs::new();
-        
+
         // Parse header
         let (is_psb, channels, height, width, depth, color_mode) = Self::parse_header(reader)?;
-        
+
         let format = if is_psb { "PSB" } else { "PSD" };
-        
+
         attrs.set("ImageWidth", AttrValue::UInt(width));
         attrs.set("ImageHeight", AttrValue::UInt(height));
         attrs.set("BitDepth", AttrValue::UInt(depth as u32));
-        attrs.set("ColorMode", AttrValue::Str(Self::color_mode_name(color_mode).to_string()));
+        attrs.set(
+            "ColorMode",
+            AttrValue::Str(Self::color_mode_name(color_mode).to_string()),
+        );
         attrs.set("NumChannels", AttrValue::UInt(channels as u32));
-        
+
         // Skip color mode data
         Self::skip_color_mode(reader)?;
-        
+
         // Parse image resources (contains metadata)
         let (xmp, icc, thumbnail) = Self::parse_resources(reader, &mut attrs)?;
-        
+
         Ok(Metadata {
             format,
             exif: attrs,
@@ -397,7 +417,7 @@ impl FormatParser for PsdParser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_can_parse() {
         let parser = PsdParser;
@@ -406,7 +426,7 @@ mod tests {
         assert!(!parser.can_parse(b"PNG\r\n"));
         assert!(!parser.can_parse(b"\xFF\xD8\xFF"));
     }
-    
+
     #[test]
     fn test_color_modes() {
         assert_eq!(PsdParser::color_mode_name(0), "Bitmap");

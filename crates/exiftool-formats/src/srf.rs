@@ -80,10 +80,9 @@ impl FormatParser for SrfParser {
             .map(|m| m.to_lowercase().contains("sony"))
             .unwrap_or(false);
 
-        if !is_sony
-            && meta.exif.get_str("Make").is_none() {
-                meta.exif.set("Make", AttrValue::Str("SONY".to_string()));
-            }
+        if !is_sony && meta.exif.get_str("Make").is_none() {
+            meta.exif.set("Make", AttrValue::Str("SONY".to_string()));
+        }
 
         Ok(meta)
     }
@@ -98,7 +97,10 @@ fn detect_sony_format(meta: &Metadata) -> &'static str {
         // Early DSC models use SRF
         if model_lower.contains("dsc-") {
             // DSC-F828, DSC-R1, DSC-V3 use SRF
-            if model_lower.contains("f828") || model_lower.contains("r1") || model_lower.contains("v3") {
+            if model_lower.contains("f828")
+                || model_lower.contains("r1")
+                || model_lower.contains("v3")
+            {
                 return "SRF";
             }
         }

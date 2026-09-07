@@ -13,8 +13,8 @@
 //! - `jumb`: JUMBF metadata
 //! - `brob`: Brotli-compressed box
 
-use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
 use std::io::SeekFrom;
 
@@ -62,10 +62,15 @@ impl FormatParser for JxlParser {
         metadata.set_file_type("JXL", "image/jxl");
 
         if bytes_read >= 12 && header[..12] == *JXL_CONTAINER_MAGIC {
-            metadata.exif.set("JXL:ContainerFormat", AttrValue::Str("ISOBMFF".to_string()));
+            metadata
+                .exif
+                .set("JXL:ContainerFormat", AttrValue::Str("ISOBMFF".to_string()));
             self.parse_container(reader, &mut metadata)?;
         } else if bytes_read >= 2 && header[..2] == *JXL_CODESTREAM_MAGIC {
-            metadata.exif.set("JXL:ContainerFormat", AttrValue::Str("Codestream".to_string()));
+            metadata.exif.set(
+                "JXL:ContainerFormat",
+                AttrValue::Str("Codestream".to_string()),
+            );
             self.parse_codestream(reader, &mut metadata)?;
         } else {
             return Err(Error::InvalidStructure("Invalid JXL signature".into()));
@@ -85,7 +90,7 @@ impl JxlParser {
 
         while reader.stream_position()? < file_size {
             let box_start = reader.stream_position()?;
-            
+
             // Read box header
             let mut size_buf = [0u8; 4];
             if reader.read_exact(&mut size_buf).is_err() {
@@ -160,7 +165,12 @@ impl JxlParser {
     }
 
     /// Parse EXIF box.
-    fn parse_exif_box(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_exif_box(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if !(8..=10 * 1024 * 1024).contains(&size) {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -198,7 +208,12 @@ impl JxlParser {
     }
 
     /// Parse XMP box.
-    fn parse_xmp_box(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_xmp_box(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size > 10 * 1024 * 1024 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -255,23 +270,28 @@ impl JxlParser {
         }
 
         let small = (first[0] & 0x01) != 0;
-        
+
         if small {
             // Small image: ratio and height/width bits encoded
             let ratio = (first[0] >> 1) & 0x07;
             let height_bits = (first[0] >> 4) & 0x0F;
-            
+
             let mut second = [0u8; 1];
             if reader.read_exact(&mut second).is_err() {
                 return Ok(());
             }
             let width_bits = ((second[0] as u16) << 4) | ((first[0] >> 4) as u16 & 0x0F);
-            
-            let (width, height) = self.decode_small_size(ratio, height_bits as u32, width_bits as u32);
-            
+
+            let (width, height) =
+                self.decode_small_size(ratio, height_bits as u32, width_bits as u32);
+
             if width > 0 && height > 0 {
-                metadata.exif.set("File:ImageWidth", AttrValue::Int(width as i32));
-                metadata.exif.set("File:ImageHeight", AttrValue::Int(height as i32));
+                metadata
+                    .exif
+                    .set("File:ImageWidth", AttrValue::Int(width as i32));
+                metadata
+                    .exif
+                    .set("File:ImageHeight", AttrValue::Int(height as i32));
             }
         }
         // For large images, we'd need more complex VarInt parsing - skip for now

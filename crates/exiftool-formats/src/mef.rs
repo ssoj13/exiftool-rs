@@ -27,7 +27,7 @@ impl Default for MefParser {
 impl FormatParser for MefParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         // MEF uses standard TIFF magic - detected by extension
-                // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // TIFF-family FileType is classified by TiffParser + tiff_family.
         // Matching TIFF magic here would steal every TIFF from later parsers.
         let _ = header;
         false
@@ -43,7 +43,7 @@ impl FormatParser for MefParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = self.tiff.parse(reader)?;
-        
+
         // Check if this is actually a Mamiya file
         if let Some(make) = meta.exif.get_str("Make") {
             let make_upper = make.to_uppercase();
@@ -51,7 +51,7 @@ impl FormatParser for MefParser {
                 meta.format = "MEF";
             }
         }
-        
+
         Ok(meta)
     }
 }

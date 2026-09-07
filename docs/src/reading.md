@@ -102,7 +102,7 @@ if metadata.is_multi_page() {
 
 ```rust
 if metadata.is_camera_raw() && !metadata.is_writable() {
-    println!("This RAW type is read-only (e.g. CR3)");
+    println!("This RAW type is read-only");
 } else if metadata.is_writable() {
     println!("Can modify this file");
 }

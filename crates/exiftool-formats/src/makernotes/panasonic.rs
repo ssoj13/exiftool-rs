@@ -148,7 +148,8 @@ impl VendorParser for PanasonicParser {
             match entry.tag {
                 0x004E => {
                     // FaceDetInfo sub-IFD
-                    if let Some(sub_attrs) = parse_face_detect(entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_face_detect(entry.value.as_bytes()?, byte_order)
+                    {
                         attrs.set("FaceDetect", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
@@ -184,7 +185,10 @@ fn parse_face_detect(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
 }
 
 /// Format IFD entry value with PrintConv lookup.
-fn format_value(entry: &exiftool_core::IfdEntry, values_map: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+fn format_value(
+    entry: &exiftool_core::IfdEntry,
+    values_map: Option<&'static [(i64, &'static str)]>,
+) -> AttrValue {
     if let Some(map) = values_map {
         if let Some(int_val) = entry.value.as_u32().map(|v| v as i64) {
             for &(key, label) in map {

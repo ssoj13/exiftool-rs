@@ -74,7 +74,9 @@ impl FormatParser for SgiParser {
 
         // Validate magic
         if header[0] != 0x01 || header[1] != 0xDA {
-            return Err(crate::Error::InvalidStructure("Not a valid SGI file".to_string()));
+            return Err(crate::Error::InvalidStructure(
+                "Not a valid SGI file".to_string(),
+            ));
         }
 
         meta.set_file_type("SGI", "image/x-sgi");
@@ -92,7 +94,8 @@ impl FormatParser for SgiParser {
 
         // Dimension
         let dimension = u16::from_be_bytes([header[4], header[5]]);
-        meta.exif.set("SGI:Dimension", AttrValue::UInt(dimension as u32));
+        meta.exif
+            .set("SGI:Dimension", AttrValue::UInt(dimension as u32));
 
         // Dimensions
         let width = u16::from_be_bytes([header[6], header[7]]) as u32;
@@ -104,7 +107,8 @@ impl FormatParser for SgiParser {
         meta.exif.set("SGI:NumChannels", AttrValue::UInt(channels));
 
         // Bits per sample
-        meta.exif.set("File:BitsPerSample", AttrValue::UInt(bpc * 8));
+        meta.exif
+            .set("File:BitsPerSample", AttrValue::UInt(bpc * 8));
 
         // Color mode
         let color_mode = match channels {
@@ -114,7 +118,8 @@ impl FormatParser for SgiParser {
             4 => "RGBA",
             _ => "Unknown",
         };
-        meta.exif.set("SGI:ColorMode", AttrValue::Str(color_mode.to_string()));
+        meta.exif
+            .set("SGI:ColorMode", AttrValue::Str(color_mode.to_string()));
 
         // Pixel range
         let min_val = u32::from_be_bytes([header[12], header[13], header[14], header[15]]);
@@ -138,7 +143,10 @@ impl FormatParser for SgiParser {
             3 => "Colormap",
             _ => "Unknown",
         };
-        meta.exif.set("SGI:ColormapType", AttrValue::Str(colormap_name.to_string()));
+        meta.exif.set(
+            "SGI:ColormapType",
+            AttrValue::Str(colormap_name.to_string()),
+        );
 
         // File size
         let file_size = crate::utils::get_file_size(reader)?;

@@ -35,7 +35,8 @@ impl FormatParser for R3dParser {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("R3D");
         meta.set_file_type("R3D", "video/x-red-r3d");
-        meta.exif.set("Video:Codec", AttrValue::Str("REDCODE RAW".to_string()));
+        meta.exif
+            .set("Video:Codec", AttrValue::Str("REDCODE RAW".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -90,10 +91,10 @@ fn parse_r3d_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata)
                 if data_size >= 16 {
                     let mut data = [0u8; 16];
                     reader.read_exact(&mut data)?;
-                    
+
                     let width = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
                     let height = u32::from_be_bytes([data[4], data[5], data[6], data[7]]);
-                    
+
                     if width > 0 && width < 20000 {
                         meta.exif.set("Video:Width", AttrValue::UInt(width));
                     }
@@ -107,11 +108,11 @@ fn parse_r3d_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata)
                 if data_size >= 24 {
                     let mut data = [0u8; 24];
                     reader.read_exact(&mut data)?;
-                    
+
                     // Frame rate as rational
                     let fps_num = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
                     let fps_den = u32::from_be_bytes([data[4], data[5], data[6], data[7]]);
-                    
+
                     if fps_den > 0 && fps_num > 0 {
                         let fps = fps_num as f64 / fps_den as f64;
                         if fps > 0.0 && fps < 1000.0 {
@@ -125,15 +126,17 @@ fn parse_r3d_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata)
                 if data_size >= 8 {
                     let mut data = [0u8; 8];
                     reader.read_exact(&mut data)?;
-                    
+
                     let sample_rate = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
                     let channels = u16::from_be_bytes([data[4], data[5]]);
-                    
+
                     if sample_rate > 0 {
-                        meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+                        meta.exif
+                            .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
                     }
                     if channels > 0 {
-                        meta.exif.set("Audio:Channels", AttrValue::UInt(channels as u32));
+                        meta.exif
+                            .set("Audio:Channels", AttrValue::UInt(channels as u32));
                     }
                 }
             }
@@ -142,19 +145,22 @@ fn parse_r3d_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata)
                 if data_size >= 20 {
                     let mut data = [0u8; 20];
                     reader.read_exact(&mut data)?;
-                    
+
                     let year = u16::from_be_bytes([data[0], data[1]]);
                     let month = data[2];
                     let day = data[3];
                     let hour = data[4];
                     let min = data[5];
                     let sec = data[6];
-                    
+
                     if year > 2000 && year < 2100 {
-                        meta.exif.set("R3D:DateRecorded", AttrValue::Str(
-                            format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", 
-                                year, month, day, hour, min, sec)
-                        ));
+                        meta.exif.set(
+                            "R3D:DateRecorded",
+                            AttrValue::Str(format!(
+                                "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+                                year, month, day, hour, min, sec
+                            )),
+                        );
                     }
                 }
             }
@@ -200,17 +206,20 @@ fn parse_r3d_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata)
                 if data_size >= 8 {
                     let mut data = [0u8; 8];
                     reader.read_exact(&mut data)?;
-                    
+
                     // ISO
                     let iso = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
                     if iso > 0 && iso < 1000000 {
                         meta.exif.set("R3D:ISO", AttrValue::UInt(iso));
                     }
-                    
+
                     // Shutter angle or exposure time
                     let shutter = u32::from_be_bytes([data[4], data[5], data[6], data[7]]);
                     if shutter > 0 {
-                        meta.exif.set("R3D:ShutterAngle", AttrValue::Double(shutter as f64 / 1000.0));
+                        meta.exif.set(
+                            "R3D:ShutterAngle",
+                            AttrValue::Double(shutter as f64 / 1000.0),
+                        );
                     }
                 }
             }
@@ -238,9 +247,10 @@ fn parse_r3d_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata)
                     let s = total_sec % 60;
                     let m = (total_sec / 60) % 60;
                     let h = total_sec / 3600;
-                    meta.exif.set("R3D:Timecode", AttrValue::Str(
-                        format!("{:02}:{:02}:{:02}:{:02}", h, m, s, f)
-                    ));
+                    meta.exif.set(
+                        "R3D:Timecode",
+                        AttrValue::Str(format!("{:02}:{:02}:{:02}:{:02}", h, m, s, f)),
+                    );
                 }
             }
             b"CLIP" | b"REEN" | b"TAKE" => {
@@ -286,7 +296,7 @@ mod tests {
         // RED2 atom (size=512)
         data[0..4].copy_from_slice(&512u32.to_be_bytes());
         data[4..8].copy_from_slice(b"RED2");
-        
+
         // RDVO atom at offset 8 (size=24)
         data[8..12].copy_from_slice(&24u32.to_be_bytes());
         data[12..16].copy_from_slice(b"RDVO");
@@ -294,7 +304,7 @@ mod tests {
         data[16..20].copy_from_slice(&4096u32.to_be_bytes());
         // Height = 2160
         data[20..24].copy_from_slice(&2160u32.to_be_bytes());
-        
+
         data
     }
 

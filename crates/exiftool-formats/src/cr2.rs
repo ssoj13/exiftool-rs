@@ -12,7 +12,7 @@
 use crate::{makernotes, Error, FormatParser, Metadata, ReadSeek, Result, TiffConfig, TiffParser};
 
 /// Canon CR2 format parser.
-/// 
+///
 /// Extends TiffParser with Canon-specific detection and metadata.
 pub struct Cr2Parser {
     tiff: TiffParser,
@@ -43,8 +43,10 @@ impl FormatParser for Cr2Parser {
         }
 
         // Must be valid TIFF first
-        let is_tiff_le = header[0] == b'I' && header[1] == b'I' && header[2] == 0x2A && header[3] == 0x00;
-        let is_tiff_be = header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2A;
+        let is_tiff_le =
+            header[0] == b'I' && header[1] == b'I' && header[2] == 0x2A && header[3] == 0x00;
+        let is_tiff_be =
+            header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2A;
 
         if !is_tiff_le && !is_tiff_be {
             return false;
@@ -113,10 +115,8 @@ mod tests {
     fn reject_plain_tiff() {
         let parser = Cr2Parser::new();
         let header = [
-            b'I', b'I', 0x2A, 0x00,
-            0x08, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
+            b'I', b'I', 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00,
         ];
         assert!(!parser.can_parse(&header));
     }

@@ -1,6 +1,6 @@
 # Golden testdata
 
-Copies of small files from ExifTool `t/images` (Phil Harvey, same license as the `_ref/exiftool` tree). Used by `cargo test -p exiftool-formats --test golden` and `python xtask/parity.py`.
+Copies of small files from ExifTool `t/images` (Phil Harvey, same license as the `_ref/exiftool` tree). Used by `cargo test -p exiftool-formats --test golden` and `python xtask/parity.py`. Includes `CanonRaw.cr3` (ExifTool `t/images/CanonRaw.cr3`).
 
 Extra fixtures (not golden — files >1MB are skipped by the golden glob):
 

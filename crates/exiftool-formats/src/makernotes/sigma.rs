@@ -75,13 +75,14 @@ impl VendorParser for SigmaParser {
         }
 
         // Check for Sigma/Foveon header
-        let (ifd_data, byte_order) = if data.starts_with(b"SIGMA\0\0\0") || data.starts_with(b"FOVEON\0\0") {
-            // Skip 8-byte header, use LE for Sigma
-            (&data[8..], ByteOrder::LittleEndian)
-        } else {
-            // No header, try as direct IFD
-            (data, parent_byte_order)
-        };
+        let (ifd_data, byte_order) =
+            if data.starts_with(b"SIGMA\0\0\0") || data.starts_with(b"FOVEON\0\0") {
+                // Skip 8-byte header, use LE for Sigma
+                (&data[8..], ByteOrder::LittleEndian)
+            } else {
+                // No header, try as direct IFD
+                (data, parent_byte_order)
+            };
 
         let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
 

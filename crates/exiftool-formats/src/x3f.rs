@@ -50,7 +50,9 @@ impl FormatParser for X3fParser {
 
         // Validate magic
         if &header[0..4] != X3F_MAGIC {
-            return Err(crate::Error::InvalidStructure("Not a valid X3F file".to_string()));
+            return Err(crate::Error::InvalidStructure(
+                "Not a valid X3F file".to_string(),
+            ));
         }
 
         // Version (little-endian)
@@ -64,17 +66,25 @@ impl FormatParser for X3fParser {
         // Unique ID (8 bytes at offset 8)
         let unique_id = format!(
             "{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
-            header[8], header[9], header[10], header[11],
-            header[12], header[13], header[14], header[15]
+            header[8],
+            header[9],
+            header[10],
+            header[11],
+            header[12],
+            header[13],
+            header[14],
+            header[15]
         );
         meta.exif.set("X3F:UniqueID", AttrValue::Str(unique_id));
 
         // Mark bits (offset 16)
         let mark = u32::from_le_bytes([header[16], header[17], header[18], header[19]]);
         if mark & 1 != 0 {
-            meta.exif.set("X3F:ColorMode", AttrValue::Str("Color".to_string()));
+            meta.exif
+                .set("X3F:ColorMode", AttrValue::Str("Color".to_string()));
         } else {
-            meta.exif.set("X3F:ColorMode", AttrValue::Str("Monochrome".to_string()));
+            meta.exif
+                .set("X3F:ColorMode", AttrValue::Str("Monochrome".to_string()));
         }
 
         // Image dimensions (offsets 20, 24)
@@ -92,7 +102,8 @@ impl FormatParser for X3fParser {
             270 => "Rotate 270 CW",
             _ => "Unknown",
         };
-        meta.exif.set("X3F:Rotation", AttrValue::Str(rotation_str.to_string()));
+        meta.exif
+            .set("X3F:Rotation", AttrValue::Str(rotation_str.to_string()));
 
         // White balance string (null-terminated, starts at offset 32)
         let mut wb_bytes = Vec::new();
@@ -158,16 +169,20 @@ impl X3fParser {
         }
 
         // Section version
-        let _section_version = u32::from_le_bytes([dir_header[4], dir_header[5], dir_header[6], dir_header[7]]);
+        let _section_version =
+            u32::from_le_bytes([dir_header[4], dir_header[5], dir_header[6], dir_header[7]]);
 
         // Number of directory entries
-        let num_entries = u32::from_le_bytes([dir_header[8], dir_header[9], dir_header[10], dir_header[11]]) as usize;
+        let num_entries =
+            u32::from_le_bytes([dir_header[8], dir_header[9], dir_header[10], dir_header[11]])
+                as usize;
 
         if num_entries > 100 {
             return Ok(());
         }
 
-        meta.exif.set("X3F:DirectoryEntries", AttrValue::UInt(num_entries as u32));
+        meta.exif
+            .set("X3F:DirectoryEntries", AttrValue::UInt(num_entries as u32));
 
         // Read directory entries (12 bytes each)
         for _ in 0..num_entries {
@@ -186,11 +201,14 @@ impl X3fParser {
                     self.parse_prop_section(reader, meta, entry_offset, entry_size)?;
                 }
                 b"IMA2" | b"IMAG" => {
-                    meta.exif.set("X3F:ImageDataOffset", AttrValue::UInt64(entry_offset));
-                    meta.exif.set("X3F:ImageDataSize", AttrValue::UInt(entry_size));
+                    meta.exif
+                        .set("X3F:ImageDataOffset", AttrValue::UInt64(entry_offset));
+                    meta.exif
+                        .set("X3F:ImageDataSize", AttrValue::UInt(entry_size));
                 }
                 b"CAMF" => {
-                    meta.exif.set("X3F:CameraInfoOffset", AttrValue::UInt64(entry_offset));
+                    meta.exif
+                        .set("X3F:CameraInfoOffset", AttrValue::UInt64(entry_offset));
                 }
                 _ => {}
             }
@@ -225,7 +243,8 @@ impl X3fParser {
         let _format = u32::from_le_bytes([header[12], header[13], header[14], header[15]]);
 
         // Property data offset within section
-        let prop_offset = u32::from_le_bytes([header[20], header[21], header[22], header[23]]) as u64;
+        let prop_offset =
+            u32::from_le_bytes([header[20], header[21], header[22], header[23]]) as u64;
 
         if num_props > 100 {
             return Ok(());
@@ -285,7 +304,8 @@ impl X3fParser {
                 }
                 "FLEQ35MM" => {
                     if let Ok(v) = value.parse::<f64>() {
-                        meta.exif.set("FocalLengthIn35mmFormat", AttrValue::Float(v as f32));
+                        meta.exif
+                            .set("FocalLengthIn35mmFormat", AttrValue::Float(v as f32));
                     }
                 }
                 "DATETIME" => {
@@ -295,12 +315,14 @@ impl X3fParser {
                     meta.exif.set("X3F:LensAperture", AttrValue::Str(value));
                 }
                 "LENSFLMIN" | "LENSFLMAX" => {
-                    meta.exif.set(format!("X3F:{}", name), AttrValue::Str(value));
+                    meta.exif
+                        .set(format!("X3F:{}", name), AttrValue::Str(value));
                 }
                 _ => {
                     // Store other properties with X3F prefix
                     if !value.is_empty() && value.len() < 256 {
-                        meta.exif.set(format!("X3F:{}", name), AttrValue::Str(value));
+                        meta.exif
+                            .set(format!("X3F:{}", name), AttrValue::Str(value));
                     }
                 }
             }
@@ -339,7 +361,7 @@ mod tests {
         // Version 2.3
         data[4] = 3; // minor
         data[5] = 2; // major
-        // Unique ID
+                     // Unique ID
         data[8..16].copy_from_slice(&[0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]);
         // Mark bits (color)
         data[16..20].copy_from_slice(&1u32.to_le_bytes());

@@ -11,12 +11,34 @@ const CARD: usize = 80;
 const MAX_CARDS: usize = 100_000;
 
 const SPECIAL_KEYS: &[&str] = &[
-    "TABLE_NAME", "SHORT_NAME", "PROCESS_PROC", "WRITE_PROC", "CHECK_PROC",
-    "GROUPS", "FORMAT", "FIRST_ENTRY", "TAG_PREFIX", "PRINT_CONV",
-    "WRITABLE", "TABLE_DESC", "NOTES", "IS_OFFSET", "IS_SUBDIR",
-    "EXTRACT_UNKNOWN", "NAMESPACE", "PREFERRED", "SRC_TABLE", "PRIORITY",
-    "AVOID", "WRITE_GROUP", "LANG_INFO", "VARS", "DATAMEMBER",
-    "SET_GROUP1", "PERMANENT", "INIT_TABLE",
+    "TABLE_NAME",
+    "SHORT_NAME",
+    "PROCESS_PROC",
+    "WRITE_PROC",
+    "CHECK_PROC",
+    "GROUPS",
+    "FORMAT",
+    "FIRST_ENTRY",
+    "TAG_PREFIX",
+    "PRINT_CONV",
+    "WRITABLE",
+    "TABLE_DESC",
+    "NOTES",
+    "IS_OFFSET",
+    "IS_SUBDIR",
+    "EXTRACT_UNKNOWN",
+    "NAMESPACE",
+    "PREFERRED",
+    "SRC_TABLE",
+    "PRIORITY",
+    "AVOID",
+    "WRITE_GROUP",
+    "LANG_INFO",
+    "VARS",
+    "DATAMEMBER",
+    "SET_GROUP1",
+    "PERMANENT",
+    "INIT_TABLE",
 ];
 
 /// FITS astronomy image parser.
@@ -127,11 +149,7 @@ fn parse_fits(reader: &mut dyn ReadSeek) -> Result<Metadata> {
             };
         }
 
-        let val_field = if card.len() > 10 {
-            &card[10..]
-        } else {
-            ""
-        };
+        let val_field = if card.len() > 10 { &card[10..] } else { "" };
         if let Some((mut val, _rest)) = parse_quoted(val_field) {
             val = val.trim_end_matches(' ').to_string();
             if let Some(prev) = continue_val.take() {
@@ -165,11 +183,14 @@ fn parse_fits(reader: &mut dyn ReadSeek) -> Result<Metadata> {
 }
 
 fn ascii_card(buff: &[u8; CARD]) -> String {
-    buff.iter().map(|&b| if b.is_ascii() { b as char } else { '?' }).collect()
+    buff.iter()
+        .map(|&b| if b.is_ascii() { b as char } else { '?' })
+        .collect()
 }
 
 fn valid_fits_key(key: &str) -> bool {
-    key.bytes().all(|b| matches!(b, b'-' | b'_' | b'A'..=b'Z' | b'0'..=b'9'))
+    key.bytes()
+        .all(|b| matches!(b, b'-' | b'_' | b'A'..=b'Z' | b'0'..=b'9'))
 }
 
 fn strip_leading_spaces(s: &str) -> String {
@@ -216,7 +237,8 @@ fn is_fits_float(s: &str) -> bool {
     if i >= b.len() {
         return false;
     }
-    let ok_start = b[i].is_ascii_digit() || (b[i] == b'.' && i + 1 < b.len() && b[i + 1].is_ascii_digit());
+    let ok_start =
+        b[i].is_ascii_digit() || (b[i] == b'.' && i + 1 < b.len() && b[i + 1].is_ascii_digit());
     if !ok_start {
         return false;
     }

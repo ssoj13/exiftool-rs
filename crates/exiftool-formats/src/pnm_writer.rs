@@ -173,7 +173,8 @@ mod tests {
     fn write_pnm_injects_comment() {
         let input = b"P6\n640 480\n255\n\x00\x01\x02";
         let mut meta = Metadata::new("PPM");
-        meta.exif.set("Comment", AttrValue::Str("test comment".into()));
+        meta.exif
+            .set("Comment", AttrValue::Str("test comment".into()));
 
         let mut output = Vec::new();
         PnmWriter::write(&mut Cursor::new(&input), &mut output, &meta).unwrap();

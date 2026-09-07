@@ -36,16 +36,19 @@ impl FormatParser for PefParser {
         if header.len() < 8 {
             return false;
         }
-        
+
         // PEF uses standard TIFF header (usually little-endian)
-        let is_tiff = (header[0] == b'I' && header[1] == b'I' && header[2] == 0x2A && header[3] == 0x00)
+        let is_tiff = (header[0] == b'I'
+            && header[1] == b'I'
+            && header[2] == 0x2A
+            && header[3] == 0x00)
             || (header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2A);
-        
+
         // Can't distinguish from TIFF without parsing Make
         if is_tiff {
-            return false;  // Detect via extension
+            return false; // Detect via extension
         }
-        
+
         false
     }
 
@@ -60,7 +63,7 @@ impl FormatParser for PefParser {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut metadata = self.tiff.parse(reader)?;
         metadata.format = "PEF";
-        
+
         // Pentax MakerNotes contain:
         // - PentaxModelID
         // - LensInfo
@@ -70,7 +73,7 @@ impl FormatParser for PefParser {
         // - AEInfo
         // - LensData
         // - CustomSettings
-        
+
         Ok(metadata)
     }
 }

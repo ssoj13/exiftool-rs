@@ -99,9 +99,9 @@ impl NefWriter {
             writer.add_gps(WriteEntry::from_str(tags::GPS_LONGITUDE_REF, v));
         }
 
-        let bytes = writer.serialize().map_err(|e| {
-            Error::InvalidStructure(format!("NEF serialize error: {}", e))
-        })?;
+        let bytes = writer
+            .serialize()
+            .map_err(|e| Error::InvalidStructure(format!("NEF serialize error: {}", e)))?;
 
         output.write_all(&bytes)?;
         Ok(())
@@ -116,8 +116,12 @@ mod tests {
     #[test]
     fn write_nef_metadata() {
         let mut metadata = Metadata::new("NEF");
-        metadata.exif.set("Make", AttrValue::Str("NIKON CORPORATION".into()));
-        metadata.exif.set("Model", AttrValue::Str("NIKON Z 8".into()));
+        metadata
+            .exif
+            .set("Make", AttrValue::Str("NIKON CORPORATION".into()));
+        metadata
+            .exif
+            .set("Model", AttrValue::Str("NIKON Z 8".into()));
         metadata.exif.set("ISO", AttrValue::UInt(800));
 
         let mut output = Vec::new();

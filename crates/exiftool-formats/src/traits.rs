@@ -61,4 +61,3 @@ pub trait FormatParser: Send + Sync {
         self.parse(reader)
     }
 }
-

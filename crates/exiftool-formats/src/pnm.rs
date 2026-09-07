@@ -25,13 +25,13 @@ pub struct PnmParser;
 /// PNM format variant.
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum PnmType {
-    PbmAscii,   // P1
-    PgmAscii,   // P2
-    PpmAscii,   // P3
-    PbmBinary,  // P4
-    PgmBinary,  // P5
-    PpmBinary,  // P6
-    Pam,        // P7
+    PbmAscii,  // P1
+    PgmAscii,  // P2
+    PpmAscii,  // P3
+    PbmBinary, // P4
+    PgmBinary, // P5
+    PpmBinary, // P6
+    Pam,       // P7
 }
 
 impl PnmType {
@@ -80,9 +80,13 @@ impl PnmType {
         match self {
             Self::PbmAscii | Self::PbmBinary => 1,
             _ => {
-                if maxval <= 255 { 8 }
-                else if maxval <= 65535 { 16 }
-                else { 32 }
+                if maxval <= 255 {
+                    8
+                } else if maxval <= 65535 {
+                    16
+                } else {
+                    32
+                }
             }
         }
     }
@@ -122,8 +126,14 @@ impl FormatParser for PnmParser {
 
         // Set format info
         metadata.set_file_type(pnm_type.name(), "image/x-portable-anymap");
-        metadata.exif.set("File:ColorType", AttrValue::Str(pnm_type.color_type().to_string()));
-        metadata.exif.set("File:Encoding", AttrValue::Str(pnm_type.encoding().to_string()));
+        metadata.exif.set(
+            "File:ColorType",
+            AttrValue::Str(pnm_type.color_type().to_string()),
+        );
+        metadata.exif.set(
+            "File:Encoding",
+            AttrValue::Str(pnm_type.encoding().to_string()),
+        );
 
         if pnm_type == PnmType::Pam {
             self.parse_pam(reader, &mut metadata)?;
@@ -137,7 +147,12 @@ impl FormatParser for PnmParser {
 
 impl PnmParser {
     /// Parse standard PNM (P1-P6) header.
-    fn parse_pnm(&self, reader: &mut dyn ReadSeek, pnm_type: PnmType, metadata: &mut Metadata) -> Result<()> {
+    fn parse_pnm(
+        &self,
+        reader: &mut dyn ReadSeek,
+        pnm_type: PnmType,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let mut buf_reader = BufReader::new(reader);
         let mut comments = Vec::new();
 
@@ -146,8 +161,12 @@ impl PnmParser {
         // Read height
         let height = self.read_value(&mut buf_reader, &mut comments)?;
 
-        metadata.exif.set("File:ImageWidth", AttrValue::Int(width as i32));
-        metadata.exif.set("File:ImageHeight", AttrValue::Int(height as i32));
+        metadata
+            .exif
+            .set("File:ImageWidth", AttrValue::Int(width as i32));
+        metadata
+            .exif
+            .set("File:ImageHeight", AttrValue::Int(height as i32));
 
         // Read maxval (not for PBM)
         let maxval = match pnm_type {
@@ -156,15 +175,21 @@ impl PnmParser {
         };
 
         if maxval > 1 {
-            metadata.exif.set("File:MaxValue", AttrValue::Int(maxval as i32));
+            metadata
+                .exif
+                .set("File:MaxValue", AttrValue::Int(maxval as i32));
         }
 
         // Calculate bits
         let bits = pnm_type.bits_per_sample(maxval);
         let samples = pnm_type.samples_per_pixel();
 
-        metadata.exif.set("File:BitsPerSample", AttrValue::Int(bits as i32));
-        metadata.exif.set("File:SamplesPerPixel", AttrValue::Int(samples as i32));
+        metadata
+            .exif
+            .set("File:BitsPerSample", AttrValue::Int(bits as i32));
+        metadata
+            .exif
+            .set("File:SamplesPerPixel", AttrValue::Int(samples as i32));
 
         // Store comments
         if !comments.is_empty() {
@@ -191,7 +216,9 @@ impl PnmParser {
         loop {
             line.clear();
             if buf_reader.read_line(&mut line)? == 0 {
-                return Err(Error::InvalidStructure("Unexpected EOF in PAM header".into()));
+                return Err(Error::InvalidStructure(
+                    "Unexpected EOF in PAM header".into(),
+                ));
             }
 
             let trimmed = line.trim();
@@ -224,18 +251,32 @@ impl PnmParser {
 
         // Set metadata
         if let Some(w) = width {
-            metadata.exif.set("File:ImageWidth", AttrValue::Int(w as i32));
+            metadata
+                .exif
+                .set("File:ImageWidth", AttrValue::Int(w as i32));
         }
         if let Some(h) = height {
-            metadata.exif.set("File:ImageHeight", AttrValue::Int(h as i32));
+            metadata
+                .exif
+                .set("File:ImageHeight", AttrValue::Int(h as i32));
         }
         if let Some(d) = depth {
-            metadata.exif.set("File:SamplesPerPixel", AttrValue::Int(d as i32));
+            metadata
+                .exif
+                .set("File:SamplesPerPixel", AttrValue::Int(d as i32));
         }
         if let Some(m) = maxval {
             metadata.exif.set("File:MaxValue", AttrValue::Int(m as i32));
-            let bits = if m <= 255 { 8 } else if m <= 65535 { 16 } else { 32 };
-            metadata.exif.set("File:BitsPerSample", AttrValue::Int(bits));
+            let bits = if m <= 255 {
+                8
+            } else if m <= 65535 {
+                16
+            } else {
+                32
+            };
+            metadata
+                .exif
+                .set("File:BitsPerSample", AttrValue::Int(bits));
         }
         if let Some(tt) = tupltype {
             let color_type = match tt.as_str() {
@@ -246,11 +287,15 @@ impl PnmParser {
                 "RGB_ALPHA" => "RGBA",
                 _ => &tt,
             };
-            metadata.exif.set("File:ColorType", AttrValue::Str(color_type.to_string()));
+            metadata
+                .exif
+                .set("File:ColorType", AttrValue::Str(color_type.to_string()));
         }
 
         if !comments.is_empty() {
-            metadata.exif.set("File:Comment", AttrValue::Str(comments.join("\n")));
+            metadata
+                .exif
+                .set("File:Comment", AttrValue::Str(comments.join("\n")));
         }
 
         Ok(())
@@ -298,11 +343,15 @@ impl PnmParser {
             if ch.is_ascii_digit() {
                 result.push(ch);
             } else {
-                return Err(Error::InvalidStructure(format!("Invalid character in PNM header: {:?}", ch)));
+                return Err(Error::InvalidStructure(format!(
+                    "Invalid character in PNM header: {:?}",
+                    ch
+                )));
             }
         }
 
-        result.parse()
+        result
+            .parse()
             .map_err(|_| Error::InvalidStructure("Failed to parse PNM value".into()))
     }
 }

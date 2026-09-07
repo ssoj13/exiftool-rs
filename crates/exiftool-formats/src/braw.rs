@@ -40,7 +40,8 @@ impl FormatParser for BrawParser {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("BRAW");
         meta.set_file_type("BRAW", "video/x-blackmagic-raw");
-        meta.exif.set("Video:Codec", AttrValue::Str("Blackmagic RAW".to_string()));
+        meta.exif
+            .set("Video:Codec", AttrValue::Str("Blackmagic RAW".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -58,14 +59,19 @@ impl FormatParser for BrawParser {
 }
 
 /// Parse BRAW/MP4 atoms.
-fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata, depth: u32) -> Result<()> {
+fn parse_braw_atoms(
+    reader: &mut dyn ReadSeek,
+    end_pos: u64,
+    meta: &mut Metadata,
+    depth: u32,
+) -> Result<()> {
     if depth > 10 {
         return Ok(());
     }
 
     while reader.stream_position()? + 8 <= end_pos {
         let atom_start = reader.stream_position()?;
-        
+
         let mut header = [0u8; 8];
         if reader.read_exact(&mut header).is_err() {
             break;
@@ -95,9 +101,10 @@ fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata
                 if data_size >= 4 {
                     let mut brand = [0u8; 4];
                     reader.read_exact(&mut brand)?;
-                    meta.exif.set("BRAW:Brand", AttrValue::Str(
-                        String::from_utf8_lossy(&brand).to_string()
-                    ));
+                    meta.exif.set(
+                        "BRAW:Brand",
+                        AttrValue::Str(String::from_utf8_lossy(&brand).to_string()),
+                    );
                 }
             }
             b"moov" | b"trak" | b"mdia" | b"minf" | b"stbl" | b"udta" => {
@@ -109,21 +116,22 @@ fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata
                 if data_size >= 100 {
                     let mut data = [0u8; 100];
                     reader.read_exact(&mut data)?;
-                    
+
                     let version = data[0];
                     let (timescale, duration) = if version == 1 {
                         let ts = u32::from_be_bytes([data[20], data[21], data[22], data[23]]);
                         let dur = u64::from_be_bytes([
-                            data[24], data[25], data[26], data[27],
-                            data[28], data[29], data[30], data[31],
+                            data[24], data[25], data[26], data[27], data[28], data[29], data[30],
+                            data[31],
                         ]);
                         (ts, dur)
                     } else {
                         let ts = u32::from_be_bytes([data[12], data[13], data[14], data[15]]);
-                        let dur = u32::from_be_bytes([data[16], data[17], data[18], data[19]]) as u64;
+                        let dur =
+                            u32::from_be_bytes([data[16], data[17], data[18], data[19]]) as u64;
                         (ts, dur)
                     };
-                    
+
                     if timescale > 0 && duration > 0 {
                         let dur_secs = duration as f64 / timescale as f64;
                         meta.exif.set("Video:Duration", AttrValue::Double(dur_secs));
@@ -135,19 +143,23 @@ fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata
                 if data_size >= 84 {
                     let mut data = [0u8; 84];
                     reader.read_exact(&mut data)?;
-                    
+
                     let (width_off, height_off) = (76, 80);
-                    
+
                     // Width/height are 16.16 fixed point
                     let width = u32::from_be_bytes([
-                        data[width_off], data[width_off + 1], 
-                        data[width_off + 2], data[width_off + 3]
+                        data[width_off],
+                        data[width_off + 1],
+                        data[width_off + 2],
+                        data[width_off + 3],
                     ]) >> 16;
                     let height = u32::from_be_bytes([
-                        data[height_off], data[height_off + 1],
-                        data[height_off + 2], data[height_off + 3]
+                        data[height_off],
+                        data[height_off + 1],
+                        data[height_off + 2],
+                        data[height_off + 3],
                     ]) >> 16;
-                    
+
                     if width > 0 && width < 20000 && meta.exif.get_u32("Video:Width").is_none() {
                         meta.exif.set("Video:Width", AttrValue::UInt(width));
                     }
@@ -161,12 +173,14 @@ fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata
                 if data_size > 16 {
                     let mut data = vec![0u8; data_size.min(256) as usize];
                     reader.read_exact(&mut data)?;
-                    
+
                     // Skip version (1) + flags (3) + entry count (4)
                     if data.len() > 16 {
                         let codec = &data[12..16];
                         let codec_str = String::from_utf8_lossy(codec).trim().to_string();
-                        if !codec_str.is_empty() && codec_str.chars().all(|c| c.is_ascii_alphanumeric()) {
+                        if !codec_str.is_empty()
+                            && codec_str.chars().all(|c| c.is_ascii_alphanumeric())
+                        {
                             meta.exif.set("BRAW:CodecID", AttrValue::Str(codec_str));
                         }
                     }
@@ -182,7 +196,8 @@ fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata
             }
             b"mdat" => {
                 // Media data - just note its size
-                meta.exif.set("BRAW:MediaDataSize", AttrValue::UInt64(data_size));
+                meta.exif
+                    .set("BRAW:MediaDataSize", AttrValue::UInt64(data_size));
             }
             _ => {}
         }
@@ -198,7 +213,7 @@ fn parse_braw_atoms(reader: &mut dyn ReadSeek, end_pos: u64, meta: &mut Metadata
 fn parse_braw_metadata(data: &[u8], meta: &mut Metadata) {
     // BMDM is typically key-value pairs
     // Format varies, try to extract known fields
-    
+
     let mut pos = 0;
     while pos + 8 < data.len() {
         // Try to find recognizable strings
@@ -206,13 +221,14 @@ fn parse_braw_metadata(data: &[u8], meta: &mut Metadata) {
             if end > 2 && end < 64 {
                 let key = String::from_utf8_lossy(&data[pos..pos + end]).to_string();
                 pos += end + 1;
-                
+
                 // Look for value
                 if pos < data.len() {
                     if let Some(val_end) = data[pos..].iter().position(|&b| b == 0) {
                         if val_end > 0 && val_end < 256 {
-                            let value = String::from_utf8_lossy(&data[pos..pos + val_end]).to_string();
-                            
+                            let value =
+                                String::from_utf8_lossy(&data[pos..pos + val_end]).to_string();
+
                             // Map known keys
                             let tag = match key.to_lowercase().as_str() {
                                 "camera" | "camera model" => Some("BRAW:CameraModel"),
@@ -227,11 +243,11 @@ fn parse_braw_metadata(data: &[u8], meta: &mut Metadata) {
                                 "take" => Some("BRAW:Take"),
                                 _ => None,
                             };
-                            
+
                             if let Some(tag_name) = tag {
                                 meta.exif.set(tag_name, AttrValue::Str(value));
                             }
-                            
+
                             pos += val_end + 1;
                             continue;
                         }
@@ -256,11 +272,11 @@ mod tests {
         data[8..12].copy_from_slice(b"braw");
         data[12..16].copy_from_slice(&0u32.to_be_bytes());
         data[16..20].copy_from_slice(b"braw");
-        
+
         // moov atom (minimal)
         data[20..24].copy_from_slice(&100u32.to_be_bytes());
         data[24..28].copy_from_slice(b"moov");
-        
+
         data
     }
 

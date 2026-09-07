@@ -26,8 +26,8 @@ impl FormatParser for ZipParser {
 
     fn extensions(&self) -> &'static [&'static str] {
         &[
-            "zip", "docx", "docm", "xlsx", "xlsm", "pptx", "pptm",
-            "odt", "ods", "odp", "odg", "epub", "idml", "pages", "numbers", "key",
+            "zip", "docx", "docm", "xlsx", "xlsm", "pptx", "pptm", "odt", "ods", "odp", "odg",
+            "epub", "idml", "pages", "numbers", "key",
         ]
     }
 
@@ -111,10 +111,14 @@ fn parse_zip(reader: &mut dyn ReadSeek) -> Result<Metadata> {
         metadata.exif.set("Comment", AttrValue::Str(comment));
     }
 
-    metadata.exif.set("ZipMemberCount", AttrValue::UInt(members.len() as u32));
+    metadata
+        .exif
+        .set("ZipMemberCount", AttrValue::UInt(members.len() as u32));
     let names: Vec<&str> = members.iter().map(|m| m.name.as_str()).collect();
     if !names.is_empty() {
-        metadata.exif.set("ZipFiles", AttrValue::Str(names.join(";")));
+        metadata
+            .exif
+            .set("ZipFiles", AttrValue::Str(names.join(";")));
     }
 
     if let Some(first) = members.first() {
@@ -131,13 +135,33 @@ fn set_member_tags(metadata: &mut Metadata, m: &Member, index: usize) {
     } else {
         format!("{index}:")
     };
-    metadata.exif.set(format!("Zip:{p}FileName"), AttrValue::Str(m.name.clone()));
-    metadata.exif.set(format!("Zip:{p}Compression"), AttrValue::Str(compression_name(m.method).into()));
-    metadata.exif.set(format!("Zip:{p}CompressedSize"), AttrValue::UInt(m.comp_size));
-    metadata.exif.set(format!("Zip:{p}UncompressedSize"), AttrValue::UInt(m.uncomp_size));
-    metadata.exif.set(format!("Zip:{p}CRC"), AttrValue::Str(format!("0x{:08x}", m.crc)));
-    metadata.exif.set(format!("Zip:{p}ModifyDate"), AttrValue::Str(dos_datetime(m.dos_time)));
-    metadata.exif.set(format!("Zip:{p}BitFlag"), AttrValue::UInt(u32::from(m.flags)));
+    metadata
+        .exif
+        .set(format!("Zip:{p}FileName"), AttrValue::Str(m.name.clone()));
+    metadata.exif.set(
+        format!("Zip:{p}Compression"),
+        AttrValue::Str(compression_name(m.method).into()),
+    );
+    metadata.exif.set(
+        format!("Zip:{p}CompressedSize"),
+        AttrValue::UInt(m.comp_size),
+    );
+    metadata.exif.set(
+        format!("Zip:{p}UncompressedSize"),
+        AttrValue::UInt(m.uncomp_size),
+    );
+    metadata.exif.set(
+        format!("Zip:{p}CRC"),
+        AttrValue::Str(format!("0x{:08x}", m.crc)),
+    );
+    metadata.exif.set(
+        format!("Zip:{p}ModifyDate"),
+        AttrValue::Str(dos_datetime(m.dos_time)),
+    );
+    metadata.exif.set(
+        format!("Zip:{p}BitFlag"),
+        AttrValue::UInt(u32::from(m.flags)),
+    );
 }
 
 fn compression_name(m: u16) -> &'static str {
@@ -223,7 +247,9 @@ fn classify_package(
         if let Some(raw) = inflate_member(reader, m) {
             if let Ok(mime) = std::str::from_utf8(&raw) {
                 let mime = mime.trim();
-                metadata.exif.set("MIMEType", AttrValue::Str(mime.to_string()));
+                metadata
+                    .exif
+                    .set("MIMEType", AttrValue::Str(mime.to_string()));
                 if let Some(fmt) = open_doc_type(mime) {
                     metadata.format = fmt;
                 }
@@ -243,11 +269,16 @@ fn classify_package(
             }
         }
     }
-    if members.iter().any(|m| m.name.starts_with("CaptureOne/") && m.name.to_ascii_lowercase().ends_with(".cos"))
+    if members
+        .iter()
+        .any(|m| m.name.starts_with("CaptureOne/") && m.name.to_ascii_lowercase().ends_with(".cos"))
     {
         metadata.format = "EIP";
     }
-    if members.iter().any(|m| m.name == "Index/Document.iwa" || m.name == "Index/Slide.iwa") {
+    if members
+        .iter()
+        .any(|m| m.name == "Index/Document.iwa" || m.name == "Index/Slide.iwa")
+    {
         if metadata.format == "ZIP" {
             metadata.format = "PAGES";
         }
@@ -299,7 +330,9 @@ fn extract_simple_xml(xml: &str, prefix: &str, metadata: &mut Metadata) {
         ("meta:generator", "Generator"),
     ] {
         if let Some(v) = xml_text(xml, tag) {
-            metadata.exif.set(format!("{prefix}:{name}"), AttrValue::Str(v));
+            metadata
+                .exif
+                .set(format!("{prefix}:{name}"), AttrValue::Str(v));
         }
     }
 }

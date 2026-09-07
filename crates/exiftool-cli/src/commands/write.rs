@@ -1,15 +1,15 @@
 //! Write metadata to images (-t, --shift, --geotag, --icc, --tagsFromFile).
 
-use std::fs::File;
-use std::io::BufReader;
 use anyhow::{Context, Result};
 use exiftool_attrs::AttrValue;
 use exiftool_formats::{
-    build_xmp_string, ArwWriter, Cr2Writer, DcrWriter, ErfWriter, ExrWriter, FffWriter, FlacWriter,
-    FormatRegistry, GifWriter, HdrWriter, HeicWriter, Id3Writer, IiqWriter, JpegWriter, JxlWriter,
-    MefWriter, Mp4Writer, MosWriter, NefWriter, OrfWriter, PefWriter, PngWriter, PnmWriter,
-    RafWriter, Rw2Writer, RwlWriter, SrwWriter, TiffWriter, WavWriter, WebpWriter,
+    build_xmp_string, ArwWriter, Cr2Writer, Cr3Writer, DcrWriter, ErfWriter, ExrWriter, FffWriter,
+    FlacWriter, FormatRegistry, GifWriter, HdrWriter, HeicWriter, Id3Writer, IiqWriter, JpegWriter,
+    JxlWriter, MefWriter, MosWriter, Mp4Writer, NefWriter, OrfWriter, PefWriter, PngWriter,
+    PnmWriter, RafWriter, Rw2Writer, RwlWriter, SrwWriter, TiffWriter, WavWriter, WebpWriter,
 };
+use std::fs::File;
+use std::io::BufReader;
 
 use crate::args::Args;
 use crate::datetime;
@@ -17,7 +17,9 @@ use crate::datetime;
 /// Write metadata to image files.
 pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
     if args.files.is_empty() {
-        anyhow::bail!("No input file specified for write operation.\n\nUsage: exif -t Tag=Value <FILE>");
+        anyhow::bail!(
+            "No input file specified for write operation.\n\nUsage: exif -t Tag=Value <FILE>"
+        );
     }
 
     for path in &args.files {
@@ -45,14 +47,26 @@ pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
                         if let Some((lat, lon, ele)) = track.find_position(ts) {
                             let lat_ref = if lat >= 0.0 { "N" } else { "S" };
                             let lon_ref = if lon >= 0.0 { "E" } else { "W" };
-                            metadata.exif.set("GPSLatitude", AttrValue::Double(lat.abs()));
-                            metadata.exif.set("GPSLatitudeRef", AttrValue::Str(lat_ref.to_string()));
-                            metadata.exif.set("GPSLongitude", AttrValue::Double(lon.abs()));
-                            metadata.exif.set("GPSLongitudeRef", AttrValue::Str(lon_ref.to_string()));
+                            metadata
+                                .exif
+                                .set("GPSLatitude", AttrValue::Double(lat.abs()));
+                            metadata
+                                .exif
+                                .set("GPSLatitudeRef", AttrValue::Str(lat_ref.to_string()));
+                            metadata
+                                .exif
+                                .set("GPSLongitude", AttrValue::Double(lon.abs()));
+                            metadata
+                                .exif
+                                .set("GPSLongitudeRef", AttrValue::Str(lon_ref.to_string()));
                             if let Some(altitude) = ele {
                                 let alt_ref = if altitude >= 0.0 { 0u32 } else { 1u32 };
-                                metadata.exif.set("GPSAltitude", AttrValue::Double(altitude.abs()));
-                                metadata.exif.set("GPSAltitudeRef", AttrValue::UInt(alt_ref));
+                                metadata
+                                    .exif
+                                    .set("GPSAltitude", AttrValue::Double(altitude.abs()));
+                                metadata
+                                    .exif
+                                    .set("GPSAltitudeRef", AttrValue::UInt(alt_ref));
                             }
                             eprintln!("  Geotagged: {:.6}, {:.6}", lat, lon);
                         } else {
@@ -85,7 +99,8 @@ pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
                 Ok(src_meta) => {
                     let mut copied = 0;
                     for (tag, value) in src_meta.exif.iter() {
-                        if tag.starts_with('_') || tag == "ThumbnailImage" || tag == "PreviewImage" {
+                        if tag.starts_with('_') || tag == "ThumbnailImage" || tag == "PreviewImage"
+                        {
                             continue;
                         }
                         if !args.copy_tags.is_empty()
@@ -292,6 +307,11 @@ pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
                 JxlWriter::write(&mut reader, &mut out, &metadata)?;
                 out
             }
+            "CR3" => {
+                let mut out = Vec::new();
+                Cr3Writer::write(&mut reader, &mut out, &metadata)?;
+                out
+            }
             "MP4" | "MOV" | "M4V" | "M4A" | "M4B" | "M4P" | "3GP" | "3G2" | "F4V" => {
                 let mut out = Vec::new();
                 Mp4Writer::write(&mut reader, &mut out, &metadata)?;
@@ -324,7 +344,11 @@ pub fn write_image(args: &Args, registry: &FormatRegistry) -> Result<()> {
             std::fs::write(&output_path, &output_data)?;
         }
 
-        eprintln!("Wrote: {} ({} bytes)", output_path.display(), output_data.len());
+        eprintln!(
+            "Wrote: {} ({} bytes)",
+            output_path.display(),
+            output_data.len()
+        );
     }
 
     Ok(())

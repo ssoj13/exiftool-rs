@@ -77,7 +77,8 @@ impl VendorParser for CanonParser {
 
     fn parse(&self, data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
         // JPEG MakerNotes: IFD at offset 0. CR3 CMT3: full TIFF; IFD from header.
-        let ifd_offset = if data.len() >= 8 && (data.starts_with(b"II") || data.starts_with(b"MM")) {
+        let ifd_offset = if data.len() >= 8 && (data.starts_with(b"II") || data.starts_with(b"MM"))
+        {
             exiftool_core::IfdReader::new(data, byte_order)
                 .parse_header()
                 .ok()? as u32
@@ -93,13 +94,16 @@ impl VendorParser for CanonParser {
             match entry.tag {
                 0x0001 => {
                     // CameraSettings - binary array with specific format
-                    if let Some(sub_attrs) = parse_camera_settings(entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_camera_settings(entry.value.as_bytes()?, byte_order)
+                    {
                         attrs.set("CameraSettings", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0002 => {
                     // FocalLength
-                    if let Some(sub_attrs) = parse_focal_length(entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) = parse_focal_length(entry.value.as_bytes()?, byte_order)
+                    {
                         attrs.set("FocalLength", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
@@ -129,7 +133,9 @@ impl VendorParser for CanonParser {
                 }
                 0x00A0 => {
                     // ProcessingInfo
-                    if let Some(sub_attrs) = parse_processing_info(entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_processing_info(entry.value.as_bytes()?, byte_order)
+                    {
                         attrs.set("ProcessingInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
@@ -201,7 +207,10 @@ fn parse_focal_length(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
 
     // FocalLength at index 1 (in units of focal length / 32)
     let focal_length = read_u16(data, 2, byte_order);
-    attrs.set("FocalLength", AttrValue::Str(format!("{} mm", focal_length as f32 / 32.0)));
+    attrs.set(
+        "FocalLength",
+        AttrValue::Str(format!("{} mm", focal_length as f32 / 32.0)),
+    );
 
     // FocalPlaneXSize at index 2
     if data.len() >= 6 {
@@ -409,7 +418,10 @@ fn parse_processing_info(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
 }
 
 /// Format IFD entry value with PrintConv lookup.
-fn format_value(entry: &exiftool_core::IfdEntry, values_map: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+fn format_value(
+    entry: &exiftool_core::IfdEntry,
+    values_map: Option<&'static [(i64, &'static str)]>,
+) -> AttrValue {
     if let Some(map) = values_map {
         if let Some(int_val) = entry.value.as_u32().map(|v| v as i64) {
             for &(key, label) in map {

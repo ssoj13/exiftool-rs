@@ -83,7 +83,8 @@ impl IptcParser {
             }
 
             // Resource size
-            let size = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+            let size = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
+                as usize;
             pos += 4;
 
             if pos + size > data.len() {
@@ -175,7 +176,7 @@ impl IptcParser {
             0 => ("RecordVersion", false),
             3 => ("ObjectTypeReference", false),
             4 => ("ObjectAttributeReference", true),
-            5 => ("ObjectName", false),  // Title
+            5 => ("ObjectName", false), // Title
             7 => ("EditStatus", false),
             8 => ("EditorialUpdate", false),
             10 => ("Urgency", false),
@@ -202,7 +203,7 @@ impl IptcParser {
             65 => ("OriginatingProgram", false),
             70 => ("ProgramVersion", false),
             75 => ("ObjectCycle", false),
-            80 => ("By-line", true),  // Creator
+            80 => ("By-line", true), // Creator
             85 => ("By-lineTitle", true),
             90 => ("City", false),
             92 => ("Sub-location", false),
@@ -215,7 +216,7 @@ impl IptcParser {
             115 => ("Source", false),
             116 => ("CopyrightNotice", false),
             118 => ("Contact", true),
-            120 => ("Caption-Abstract", false),  // Description
+            120 => ("Caption-Abstract", false), // Description
             121 => ("LocalCaption", false),
             122 => ("Writer-Editor", true),
             125 => ("RasterizedCaption", false),
@@ -322,7 +323,8 @@ impl IptcParser {
                 break;
             }
 
-            let size = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+            let size = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
+                as usize;
             pos += 4;
 
             if pos + size > data.len() {
@@ -552,7 +554,10 @@ mod tests {
     fn build_iptc_data() {
         let mut attrs = Attrs::new();
         attrs.set("IPTC:ObjectName", AttrValue::Str("My Title".into()));
-        attrs.set("IPTC:Keywords", AttrValue::List(vec!["tag1".into(), "tag2".into()]));
+        attrs.set(
+            "IPTC:Keywords",
+            AttrValue::List(vec!["tag1".into(), "tag2".into()]),
+        );
 
         let data = IptcWriter::build(&attrs);
 

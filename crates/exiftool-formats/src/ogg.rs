@@ -10,7 +10,7 @@
 //! - First page contains codec identification
 //! - Second page contains Vorbis comments (metadata)
 
-use crate::{FormatParser, Metadata, ReadSeek, Result, Error};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
 use std::io::SeekFrom;
 
@@ -36,19 +36,20 @@ impl FormatParser for OggParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("OGG");
-        
+
         reader.seek(SeekFrom::Start(0))?;
 
         // Read first OGG page to identify codec
         let first_page = read_ogg_page(reader)?;
-        
+
         // Check codec type from first packet
         if first_page.len() >= 7 {
             if &first_page[1..7] == b"vorbis" {
                 meta.format = "OGG";
                 meta.set_file_type("OGG", "audio/ogg");
-                meta.exif.set("Audio:Codec", AttrValue::Str("Vorbis".to_string()));
-                
+                meta.exif
+                    .set("Audio:Codec", AttrValue::Str("Vorbis".to_string()));
+
                 // Parse Vorbis identification header
                 if first_page.len() >= 30 {
                     parse_vorbis_id(&first_page, &mut meta);
@@ -56,8 +57,9 @@ impl FormatParser for OggParser {
             } else if &first_page[0..8] == b"OpusHead" {
                 meta.format = "OPUS";
                 meta.set_file_type("OPUS", "audio/opus");
-                meta.exif.set("Audio:Codec", AttrValue::Str("Opus".to_string()));
-                
+                meta.exif
+                    .set("Audio:Codec", AttrValue::Str("Opus".to_string()));
+
                 // Parse Opus header
                 if first_page.len() >= 19 {
                     parse_opus_header(&first_page, &mut meta);
@@ -65,18 +67,21 @@ impl FormatParser for OggParser {
             } else if &first_page[0..5] == b"\x7fFLAC" {
                 meta.format = "OGG";
                 meta.set_file_type("OGG", "audio/ogg");
-                meta.exif.set("Audio:Codec", AttrValue::Str("FLAC".to_string()));
+                meta.exif
+                    .set("Audio:Codec", AttrValue::Str("FLAC".to_string()));
             } else if &first_page[1..7] == b"theora" {
                 meta.format = "OGV";
                 meta.set_file_type("OGV", "video/ogg");
-                meta.exif.set("Video:Codec", AttrValue::Str("Theora".to_string()));
+                meta.exif
+                    .set("Video:Codec", AttrValue::Str("Theora".to_string()));
             }
         }
 
         // Read second page for Vorbis comments
         if let Ok(comment_page) = read_ogg_page(reader) {
             // Vorbis comment header starts with 0x03 + "vorbis"
-            if comment_page.len() > 7 && comment_page[0] == 0x03 && &comment_page[1..7] == b"vorbis" {
+            if comment_page.len() > 7 && comment_page[0] == 0x03 && &comment_page[1..7] == b"vorbis"
+            {
                 parse_vorbis_comments(&comment_page[7..], &mut meta);
             }
             // Opus tags start with "OpusTags"
@@ -105,7 +110,7 @@ fn read_ogg_page(reader: &mut dyn ReadSeek) -> Result<Vec<u8>> {
 
     // Number of segments
     let num_segments = header[26] as usize;
-    
+
     // Read segment table
     let mut segment_table = vec![0u8; num_segments];
     reader.read_exact(&mut segment_table)?;
@@ -128,21 +133,26 @@ fn parse_vorbis_id(data: &[u8], meta: &mut Metadata) {
 
     // Vorbis version (should be 0)
     let _version = u32::from_le_bytes([data[7], data[8], data[9], data[10]]);
-    
+
     // Audio channels
     let channels = data[11];
-    meta.exif.set("Audio:Channels", AttrValue::UInt(channels as u32));
-    
+    meta.exif
+        .set("Audio:Channels", AttrValue::UInt(channels as u32));
+
     let channel_mode = match channels {
         1 => "Mono",
         2 => "Stereo",
         _ => "Multi-channel",
     };
-    meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_mode.to_string()));
+    meta.exif.set(
+        "Audio:ChannelMode",
+        AttrValue::Str(channel_mode.to_string()),
+    );
 
     // Sample rate
     let sample_rate = u32::from_le_bytes([data[12], data[13], data[14], data[15]]);
-    meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+    meta.exif
+        .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
 
     // Bitrates (may be -1 for VBR)
     let bitrate_max = i32::from_le_bytes([data[16], data[17], data[18], data[19]]);
@@ -150,13 +160,16 @@ fn parse_vorbis_id(data: &[u8], meta: &mut Metadata) {
     let bitrate_min = i32::from_le_bytes([data[24], data[25], data[26], data[27]]);
 
     if bitrate_nom > 0 {
-        meta.exif.set("Audio:NominalBitrate", AttrValue::Int(bitrate_nom));
+        meta.exif
+            .set("Audio:NominalBitrate", AttrValue::Int(bitrate_nom));
     }
     if bitrate_max > 0 {
-        meta.exif.set("Audio:MaxBitrate", AttrValue::Int(bitrate_max));
+        meta.exif
+            .set("Audio:MaxBitrate", AttrValue::Int(bitrate_max));
     }
     if bitrate_min > 0 {
-        meta.exif.set("Audio:MinBitrate", AttrValue::Int(bitrate_min));
+        meta.exif
+            .set("Audio:MinBitrate", AttrValue::Int(bitrate_min));
     }
 }
 
@@ -168,28 +181,37 @@ fn parse_opus_header(data: &[u8], meta: &mut Metadata) {
 
     // Version
     let version = data[8];
-    meta.exif.set("Opus:Version", AttrValue::UInt(version as u32));
+    meta.exif
+        .set("Opus:Version", AttrValue::UInt(version as u32));
 
     // Channel count
     let channels = data[9];
-    meta.exif.set("Audio:Channels", AttrValue::UInt(channels as u32));
-    
+    meta.exif
+        .set("Audio:Channels", AttrValue::UInt(channels as u32));
+
     let channel_mode = match channels {
         1 => "Mono",
         2 => "Stereo",
         _ => "Multi-channel",
     };
-    meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_mode.to_string()));
+    meta.exif.set(
+        "Audio:ChannelMode",
+        AttrValue::Str(channel_mode.to_string()),
+    );
 
     // Pre-skip
     let pre_skip = u16::from_le_bytes([data[10], data[11]]);
-    meta.exif.set("Opus:PreSkip", AttrValue::UInt(pre_skip as u32));
+    meta.exif
+        .set("Opus:PreSkip", AttrValue::UInt(pre_skip as u32));
 
     // Original sample rate (informational, Opus always uses 48kHz internally)
     let orig_sample_rate = u32::from_le_bytes([data[12], data[13], data[14], data[15]]);
     meta.exif.set("Audio:SampleRate", AttrValue::UInt(48000)); // Opus native
     if orig_sample_rate > 0 {
-        meta.exif.set("Audio:OriginalSampleRate", AttrValue::UInt(orig_sample_rate));
+        meta.exif.set(
+            "Audio:OriginalSampleRate",
+            AttrValue::UInt(orig_sample_rate),
+        );
     }
 
     // Output gain
@@ -212,7 +234,8 @@ fn parse_vorbis_comments(data: &[u8], meta: &mut Metadata) {
     if pos + 4 > data.len() {
         return;
     }
-    let vendor_len = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+    let vendor_len =
+        u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
     pos += 4;
 
     // Vendor string
@@ -229,7 +252,8 @@ fn parse_vorbis_comments(data: &[u8], meta: &mut Metadata) {
     if pos + 4 > data.len() {
         return;
     }
-    let comment_count = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+    let comment_count =
+        u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
     pos += 4;
 
     // Parse comments
@@ -237,7 +261,8 @@ fn parse_vorbis_comments(data: &[u8], meta: &mut Metadata) {
         if pos + 4 > data.len() {
             break;
         }
-        let comment_len = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+        let comment_len =
+            u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
         pos += 4;
 
         if pos + comment_len > data.len() || comment_len > 65536 {
@@ -284,7 +309,7 @@ mod tests {
 
     fn make_ogg_vorbis() -> Vec<u8> {
         let mut data = vec![0u8; 512];
-        
+
         // First page - Vorbis ID header
         // OGG page header
         data[0..4].copy_from_slice(b"OggS");
@@ -296,7 +321,7 @@ mod tests {
         data[22..26].copy_from_slice(&0u32.to_le_bytes()); // CRC (ignored)
         data[26] = 1; // 1 segment
         data[27] = 30; // segment size
-        
+
         // Vorbis ID packet
         data[28] = 0x01; // packet type
         data[29..35].copy_from_slice(b"vorbis");
@@ -314,7 +339,7 @@ mod tests {
         data[page2_start + 5] = 0;
         data[page2_start + 26] = 1;
         data[page2_start + 27] = 40;
-        
+
         let comment_start = page2_start + 28;
         data[comment_start] = 0x03;
         data[comment_start + 1..comment_start + 7].copy_from_slice(b"vorbis");

@@ -66,17 +66,22 @@ impl FormatParser for MpegTsParser {
         } else if probe[4] == SYNC_BYTE {
             meta.format = "M2TS";
             meta.set_file_type("M2TS", "");
-            meta.exif.set("MPEG:Container", AttrValue::Str("BDAV (Blu-ray)".to_string()));
+            meta.exif.set(
+                "MPEG:Container",
+                AttrValue::Str("BDAV (Blu-ray)".to_string()),
+            );
             (M2TS_PACKET_SIZE, true)
         } else {
             return Ok(meta);
         };
 
-        meta.exif.set("MPEG:PacketSize", AttrValue::UInt(packet_size as u32));
+        meta.exif
+            .set("MPEG:PacketSize", AttrValue::UInt(packet_size as u32));
 
         // Calculate packet count
         let packet_count = file_size / packet_size as u64;
-        meta.exif.set("MPEG:PacketCount", AttrValue::UInt64(packet_count));
+        meta.exif
+            .set("MPEG:PacketCount", AttrValue::UInt64(packet_count));
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -97,7 +102,7 @@ impl FormatParser for MpegTsParser {
             }
 
             let offset = if is_m2ts { 4 } else { 0 };
-            
+
             // Verify sync byte
             if packet[offset] != SYNC_BYTE {
                 continue;
@@ -112,11 +117,13 @@ impl FormatParser for MpegTsParser {
                 continue;
             }
 
-            let payload_start = offset + 4 + if has_adaptation {
-                1 + packet[offset + 4] as usize
-            } else {
-                0
-            };
+            let payload_start = offset
+                + 4
+                + if has_adaptation {
+                    1 + packet[offset + 4] as usize
+                } else {
+                    0
+                };
 
             if payload_start >= packet_size {
                 continue;
@@ -127,17 +134,22 @@ impl FormatParser for MpegTsParser {
             // PAT (PID 0)
             if pid == 0 && payload.len() > 8 {
                 // Skip pointer field if present
-                let ptr = if packet[offset + 1] & 0x40 != 0 { payload[0] as usize + 1 } else { 0 };
+                let ptr = if packet[offset + 1] & 0x40 != 0 {
+                    payload[0] as usize + 1
+                } else {
+                    0
+                };
                 if ptr < payload.len() - 8 {
                     let pat = &payload[ptr..];
-                    if pat[0] == 0x00 { // table_id for PAT
+                    if pat[0] == 0x00 {
+                        // table_id for PAT
                         // Parse PAT to find PMT PID
                         let section_len = (((pat[1] & 0x0F) as usize) << 8) | pat[2] as usize;
                         if section_len > 5 && pat.len() > 8 {
                             // Skip to program entries (after 8 byte header)
                             let prog_start = 8;
                             if prog_start + 4 <= pat.len().min(section_len + 3) {
-                                let prog_pid = (((pat[prog_start + 2] & 0x1F) as u16) << 8) 
+                                let prog_pid = (((pat[prog_start + 2] & 0x1F) as u16) << 8)
                                     | pat[prog_start + 3] as u16;
                                 if prog_pid > 0 && prog_pid < 0x1FFF {
                                     pmt_pid = Some(prog_pid);
@@ -151,21 +163,28 @@ impl FormatParser for MpegTsParser {
             // PMT
             if let Some(pmt) = pmt_pid {
                 if pid == pmt && payload.len() > 12 {
-                    let ptr = if packet[offset + 1] & 0x40 != 0 { payload[0] as usize + 1 } else { 0 };
+                    let ptr = if packet[offset + 1] & 0x40 != 0 {
+                        payload[0] as usize + 1
+                    } else {
+                        0
+                    };
                     if ptr < payload.len() - 12 {
                         let pmt_data = &payload[ptr..];
-                        if pmt_data[0] == 0x02 { // table_id for PMT
-                            let section_len = (((pmt_data[1] & 0x0F) as usize) << 8) | pmt_data[2] as usize;
-                            let prog_info_len = (((pmt_data[10] & 0x0F) as usize) << 8) | pmt_data[11] as usize;
-                            
+                        if pmt_data[0] == 0x02 {
+                            // table_id for PMT
+                            let section_len =
+                                (((pmt_data[1] & 0x0F) as usize) << 8) | pmt_data[2] as usize;
+                            let prog_info_len =
+                                (((pmt_data[10] & 0x0F) as usize) << 8) | pmt_data[11] as usize;
+
                             let mut pos = 12 + prog_info_len;
                             let end = (section_len + 3).min(pmt_data.len()).saturating_sub(4);
 
                             while pos + 5 <= end {
                                 let stream_type = pmt_data[pos];
-                                let es_pid = (((pmt_data[pos + 1] & 0x1F) as u16) << 8) 
+                                let es_pid = (((pmt_data[pos + 1] & 0x1F) as u16) << 8)
                                     | pmt_data[pos + 2] as u16;
-                                let es_info_len = (((pmt_data[pos + 3] & 0x0F) as usize) << 8) 
+                                let es_info_len = (((pmt_data[pos + 3] & 0x0F) as usize) << 8)
                                     | pmt_data[pos + 4] as usize;
 
                                 // Identify stream type
@@ -216,16 +235,24 @@ impl FormatParser for MpegTsParser {
 
         // Set metadata
         if !video_pids.is_empty() {
-            meta.exif.set("Video:StreamCount", AttrValue::UInt(video_pids.len() as u32));
+            meta.exif.set(
+                "Video:StreamCount",
+                AttrValue::UInt(video_pids.len() as u32),
+            );
             if let Some(codec) = video_codec {
-                meta.exif.set("Video:Codec", AttrValue::Str(codec.to_string()));
+                meta.exif
+                    .set("Video:Codec", AttrValue::Str(codec.to_string()));
             }
         }
 
         if !audio_pids.is_empty() {
-            meta.exif.set("Audio:StreamCount", AttrValue::UInt(audio_pids.len() as u32));
+            meta.exif.set(
+                "Audio:StreamCount",
+                AttrValue::UInt(audio_pids.len() as u32),
+            );
             if let Some(codec) = audio_codec {
-                meta.exif.set("Audio:Codec", AttrValue::Str(codec.to_string()));
+                meta.exif
+                    .set("Audio:Codec", AttrValue::Str(codec.to_string()));
             }
         }
 
@@ -235,7 +262,8 @@ impl FormatParser for MpegTsParser {
             let est_bitrate = 20_000_000.0; // 20 Mbps estimate
             let est_duration = (file_size as f64 * 8.0) / est_bitrate;
             if est_duration > 0.0 && est_duration < 86400.0 * 7.0 {
-                meta.exif.set("Video:EstimatedDuration", AttrValue::Double(est_duration));
+                meta.exif
+                    .set("Video:EstimatedDuration", AttrValue::Double(est_duration));
             }
         }
 
@@ -250,38 +278,38 @@ mod tests {
 
     fn make_ts_packet() -> Vec<u8> {
         let mut data = vec![0u8; 752]; // 4 packets
-        // Packet 1: PAT (PID 0)
+                                       // Packet 1: PAT (PID 0)
         data[0] = SYNC_BYTE;
         data[1] = 0x40; // PUSI + PID high
         data[2] = 0x00; // PID low = 0
         data[3] = 0x10; // payload only
-        // PAT payload
+                        // PAT payload
         data[4] = 0x00; // pointer
         data[5] = 0x00; // table_id
         data[6] = 0xB0; // section syntax + length high
         data[7] = 0x0D; // length low
-        // ... simplified
-        
+                        // ... simplified
+
         // Packet 2-4: more sync bytes at 188, 376, 564
         data[188] = SYNC_BYTE;
         data[376] = SYNC_BYTE;
         data[564] = SYNC_BYTE;
-        
+
         data
     }
 
     fn make_m2ts_packet() -> Vec<u8> {
         let mut data = vec![0u8; 768]; // 4 packets
-        // M2TS has 4-byte timestamp prefix
+                                       // M2TS has 4-byte timestamp prefix
         data[4] = SYNC_BYTE;
         data[5] = 0x40;
         data[6] = 0x00;
         data[7] = 0x10;
-        
+
         data[196] = SYNC_BYTE;
         data[388] = SYNC_BYTE;
         data[580] = SYNC_BYTE;
-        
+
         data
     }
 

@@ -114,8 +114,10 @@ fn parse_prop(data: &[u8], meta: &mut Metadata) {
 
     meta.exif.set("MaxBitrate", AttrValue::UInt(max_bitrate));
     meta.exif.set("AvgBitrate", AttrValue::UInt(avg_bitrate));
-    meta.exif.set("Duration", AttrValue::Double(duration_ms as f64 / 1000.0));
-    meta.exif.set("NumStreams", AttrValue::UInt(num_streams as u32));
+    meta.exif
+        .set("Duration", AttrValue::Double(duration_ms as f64 / 1000.0));
+    meta.exif
+        .set("NumStreams", AttrValue::UInt(num_streams as u32));
 
     // Flags
     if flags & 0x0001 != 0 {
@@ -157,7 +159,8 @@ fn parse_cont(data: &[u8], meta: &mut Metadata) {
     if pos + title_len <= data.len() && title_len > 0 {
         if let Ok(title) = String::from_utf8(data[pos..pos + title_len].to_vec()) {
             if !title.trim().is_empty() {
-                meta.exif.set("Title", AttrValue::Str(title.trim().to_string()));
+                meta.exif
+                    .set("Title", AttrValue::Str(title.trim().to_string()));
             }
         }
     }
@@ -173,7 +176,8 @@ fn parse_cont(data: &[u8], meta: &mut Metadata) {
     if pos + author_len <= data.len() && author_len > 0 {
         if let Ok(author) = String::from_utf8(data[pos..pos + author_len].to_vec()) {
             if !author.trim().is_empty() {
-                meta.exif.set("Author", AttrValue::Str(author.trim().to_string()));
+                meta.exif
+                    .set("Author", AttrValue::Str(author.trim().to_string()));
             }
         }
     }
@@ -189,7 +193,8 @@ fn parse_cont(data: &[u8], meta: &mut Metadata) {
     if pos + copyright_len <= data.len() && copyright_len > 0 {
         if let Ok(copyright) = String::from_utf8(data[pos..pos + copyright_len].to_vec()) {
             if !copyright.trim().is_empty() {
-                meta.exif.set("Copyright", AttrValue::Str(copyright.trim().to_string()));
+                meta.exif
+                    .set("Copyright", AttrValue::Str(copyright.trim().to_string()));
             }
         }
     }
@@ -205,7 +210,8 @@ fn parse_cont(data: &[u8], meta: &mut Metadata) {
     if pos + comment_len <= data.len() && comment_len > 0 {
         if let Ok(comment) = String::from_utf8(data[pos..pos + comment_len].to_vec()) {
             if !comment.trim().is_empty() {
-                meta.exif.set("Comment", AttrValue::Str(comment.trim().to_string()));
+                meta.exif
+                    .set("Comment", AttrValue::Str(comment.trim().to_string()));
             }
         }
     }
@@ -306,13 +312,15 @@ fn parse_mdpr(data: &[u8], meta: &mut Metadata) {
             }
 
             // Store stream duration if video
-            if mime.starts_with("video") && stream_duration_ms > 0
-                && meta.exif.get("VideoDuration").is_none() {
-                    meta.exif.set(
-                        "VideoDuration",
-                        AttrValue::Double(stream_duration_ms as f64 / 1000.0),
-                    );
-                }
+            if mime.starts_with("video")
+                && stream_duration_ms > 0
+                && meta.exif.get("VideoDuration").is_none()
+            {
+                meta.exif.set(
+                    "VideoDuration",
+                    AttrValue::Double(stream_duration_ms as f64 / 1000.0),
+                );
+            }
         }
     }
 }
@@ -404,7 +412,8 @@ mod tests {
         let author = b"Test Author";
         let copyright = b"2024";
         let comment = b"Test Comment";
-        let cont_size = 10 + 2 + title.len() + 2 + author.len() + 2 + copyright.len() + 2 + comment.len();
+        let cont_size =
+            10 + 2 + title.len() + 2 + author.len() + 2 + copyright.len() + 2 + comment.len();
 
         data.extend_from_slice(b"CONT");
         data.extend_from_slice(&(cont_size as u32).to_be_bytes());

@@ -45,8 +45,18 @@ impl FormatParser for BmpParser {
             return Err(Error::InvalidStructure("Not a valid BMP file".into()));
         }
 
-        let file_size = u32::from_le_bytes([file_header[2], file_header[3], file_header[4], file_header[5]]);
-        let _pixel_offset = u32::from_le_bytes([file_header[10], file_header[11], file_header[12], file_header[13]]);
+        let file_size = u32::from_le_bytes([
+            file_header[2],
+            file_header[3],
+            file_header[4],
+            file_header[5],
+        ]);
+        let _pixel_offset = u32::from_le_bytes([
+            file_header[10],
+            file_header[11],
+            file_header[12],
+            file_header[13],
+        ]);
 
         metadata.exif.set("FileSize", AttrValue::UInt(file_size));
 
@@ -65,7 +75,9 @@ impl FormatParser for BmpParser {
             124 => "BITMAPV5HEADER",
             _ => "Unknown",
         };
-        metadata.exif.set("DIBHeaderType", AttrValue::Str(header_type.to_string()));
+        metadata
+            .exif
+            .set("DIBHeaderType", AttrValue::Str(header_type.to_string()));
 
         if dib_header_size == 12 {
             // BITMAPCOREHEADER (OS/2 1.x format)
@@ -74,7 +86,10 @@ impl FormatParser for BmpParser {
             // BITMAPINFOHEADER or newer
             self.parse_info_header(reader, &mut metadata, dib_header_size)?;
         } else {
-            return Err(Error::InvalidStructure(format!("Unknown DIB header size: {}", dib_header_size)));
+            return Err(Error::InvalidStructure(format!(
+                "Unknown DIB header size: {}",
+                dib_header_size
+            )));
         }
 
         Ok(metadata)
@@ -93,15 +108,26 @@ impl BmpParser {
         let _planes = u16::from_le_bytes([data[4], data[5]]);
         let bpp = u16::from_le_bytes([data[6], data[7]]);
 
-        metadata.exif.set("ImageWidth", AttrValue::UInt(width as u32));
-        metadata.exif.set("ImageHeight", AttrValue::UInt(height as u32));
-        metadata.exif.set("BitsPerPixel", AttrValue::UInt(bpp as u32));
+        metadata
+            .exif
+            .set("ImageWidth", AttrValue::UInt(width as u32));
+        metadata
+            .exif
+            .set("ImageHeight", AttrValue::UInt(height as u32));
+        metadata
+            .exif
+            .set("BitsPerPixel", AttrValue::UInt(bpp as u32));
 
         Ok(())
     }
 
     /// Parse BITMAPINFOHEADER or newer (40+ bytes).
-    fn parse_info_header(&self, reader: &mut dyn ReadSeek, metadata: &mut Metadata, header_size: u32) -> Result<()> {
+    fn parse_info_header(
+        &self,
+        reader: &mut dyn ReadSeek,
+        metadata: &mut Metadata,
+        header_size: u32,
+    ) -> Result<()> {
         // Already read 4 bytes (header size), need at least 36 more for BITMAPINFOHEADER
         let mut data = [0u8; 36];
         reader.read_exact(&mut data)?;
@@ -124,9 +150,15 @@ impl BmpParser {
             (height, false)
         };
 
-        metadata.exif.set("ImageWidth", AttrValue::UInt(width.unsigned_abs()));
-        metadata.exif.set("ImageHeight", AttrValue::UInt(actual_height as u32));
-        metadata.exif.set("BitsPerPixel", AttrValue::UInt(bpp as u32));
+        metadata
+            .exif
+            .set("ImageWidth", AttrValue::UInt(width.unsigned_abs()));
+        metadata
+            .exif
+            .set("ImageHeight", AttrValue::UInt(actual_height as u32));
+        metadata
+            .exif
+            .set("BitsPerPixel", AttrValue::UInt(bpp as u32));
 
         // Compression type
         let compression_name = match compression {
@@ -139,10 +171,14 @@ impl BmpParser {
             6 => "Bitfields + Alpha (BI_ALPHABITFIELDS)",
             _ => "Unknown",
         };
-        metadata.exif.set("Compression", AttrValue::Str(compression_name.to_string()));
+        metadata
+            .exif
+            .set("Compression", AttrValue::Str(compression_name.to_string()));
 
         if top_down {
-            metadata.exif.set("Orientation", AttrValue::Str("Top-Down".to_string()));
+            metadata
+                .exif
+                .set("Orientation", AttrValue::Str("Top-Down".to_string()));
         }
 
         // Resolution in pixels per meter -> DPI
@@ -156,10 +192,14 @@ impl BmpParser {
         }
 
         if colors_used > 0 {
-            metadata.exif.set("ColorTableSize", AttrValue::UInt(colors_used));
+            metadata
+                .exif
+                .set("ColorTableSize", AttrValue::UInt(colors_used));
         } else if bpp <= 8 {
             // Default color table size for indexed images
-            metadata.exif.set("ColorTableSize", AttrValue::UInt(1 << bpp));
+            metadata
+                .exif
+                .set("ColorTableSize", AttrValue::UInt(1 << bpp));
         }
 
         // Skip remaining header bytes if V4 or V5
@@ -184,7 +224,7 @@ mod tests {
         data.extend_from_slice(&100u32.to_le_bytes()); // File size (dummy)
         data.extend_from_slice(&[0, 0, 0, 0]); // Reserved
         data.extend_from_slice(&54u32.to_le_bytes()); // Pixel data offset
-        // DIB header (BITMAPINFOHEADER - 40 bytes)
+                                                      // DIB header (BITMAPINFOHEADER - 40 bytes)
         data.extend_from_slice(&40u32.to_le_bytes()); // Header size
         data.extend_from_slice(&width.to_le_bytes());
         data.extend_from_slice(&height.to_le_bytes());

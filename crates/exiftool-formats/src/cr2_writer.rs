@@ -69,19 +69,18 @@ mod tests {
         // Use a minimal TIFF (no CR2 marker) - Cr2Writer adds it
         let minimal_tiff = crate::tiff_writer::TiffWriter::write_new;
         let mut metadata = crate::Metadata::new("CR2");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("Canon".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("EOS R5".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("Canon".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("EOS R5".into()));
 
         let mut tiff_output = Vec::new();
         minimal_tiff(&mut tiff_output, &metadata).unwrap();
 
         let mut output = Vec::new();
-        Cr2Writer::write(
-            &mut Cursor::new(&tiff_output),
-            &mut output,
-            &metadata,
-        )
-        .unwrap();
+        Cr2Writer::write(&mut Cursor::new(&tiff_output), &mut output, &metadata).unwrap();
 
         assert_eq!(&output[0..2], b"II");
         assert_eq!(&output[8..12], b"CR\x02\x00");

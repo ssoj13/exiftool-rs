@@ -41,7 +41,8 @@ impl FormatParser for MidiParser {
 
         // Header length (should be 6)
         let header_len = u32::from_be_bytes([header[4], header[5], header[6], header[7]]);
-        meta.exif.set("MIDI:HeaderLength", AttrValue::UInt(header_len));
+        meta.exif
+            .set("MIDI:HeaderLength", AttrValue::UInt(header_len));
 
         // Format type (0, 1, or 2)
         let format = u16::from_be_bytes([header[8], header[9]]);
@@ -52,11 +53,15 @@ impl FormatParser for MidiParser {
             _ => "Unknown",
         };
         meta.exif.set("MIDI:Format", AttrValue::UInt(format as u32));
-        meta.exif.set("MIDI:FormatDescription", AttrValue::Str(format_str.to_string()));
+        meta.exif.set(
+            "MIDI:FormatDescription",
+            AttrValue::Str(format_str.to_string()),
+        );
 
         // Number of tracks
         let num_tracks = u16::from_be_bytes([header[10], header[11]]);
-        meta.exif.set("MIDI:NumTracks", AttrValue::UInt(num_tracks as u32));
+        meta.exif
+            .set("MIDI:NumTracks", AttrValue::UInt(num_tracks as u32));
 
         // Division (timing)
         let division = u16::from_be_bytes([header[12], header[13]]);
@@ -64,13 +69,17 @@ impl FormatParser for MidiParser {
             // SMPTE timing
             let fps = (!(division >> 8) as i8).unsigned_abs();
             let ticks = division & 0xFF;
-            meta.exif.set("MIDI:TimingMode", AttrValue::Str("SMPTE".to_string()));
+            meta.exif
+                .set("MIDI:TimingMode", AttrValue::Str("SMPTE".to_string()));
             meta.exif.set("MIDI:SMPTE_FPS", AttrValue::UInt(fps as u32));
-            meta.exif.set("MIDI:TicksPerFrame", AttrValue::UInt(ticks as u32));
+            meta.exif
+                .set("MIDI:TicksPerFrame", AttrValue::UInt(ticks as u32));
         } else {
             // Ticks per quarter note
-            meta.exif.set("MIDI:TimingMode", AttrValue::Str("PPQ".to_string()));
-            meta.exif.set("MIDI:TicksPerQuarterNote", AttrValue::UInt(division as u32));
+            meta.exif
+                .set("MIDI:TimingMode", AttrValue::Str("PPQ".to_string()));
+            meta.exif
+                .set("MIDI:TicksPerQuarterNote", AttrValue::UInt(division as u32));
         }
 
         // File size
@@ -79,11 +88,11 @@ impl FormatParser for MidiParser {
 
         // Parse tracks for metadata
         reader.seek(SeekFrom::Start(8 + header_len as u64))?;
-        
+
         let mut track_idx = 0u32;
         let mut total_duration_ticks = 0u64;
         let mut tempo = 500000u32; // default 120 BPM
-        
+
         while track_idx < num_tracks as u32 {
             let mut chunk_header = [0u8; 8];
             if reader.read_exact(&mut chunk_header).is_err() {
@@ -95,14 +104,23 @@ impl FormatParser for MidiParser {
             }
 
             let track_len = u32::from_be_bytes([
-                chunk_header[4], chunk_header[5], chunk_header[6], chunk_header[7],
+                chunk_header[4],
+                chunk_header[5],
+                chunk_header[6],
+                chunk_header[7],
             ]);
 
             let track_start = reader.stream_position()?;
-            
+
             // Parse track events for metadata (first track only for speed)
             if track_idx == 0 || track_idx == 1 {
-                parse_track_meta(reader, track_len, &mut meta, &mut tempo, &mut total_duration_ticks)?;
+                parse_track_meta(
+                    reader,
+                    track_len,
+                    &mut meta,
+                    &mut tempo,
+                    &mut total_duration_ticks,
+                )?;
             }
 
             // Skip to next track
@@ -114,10 +132,11 @@ impl FormatParser for MidiParser {
         let division_val = division & 0x7FFF;
         if division & 0x8000 == 0 && division_val > 0 && total_duration_ticks > 0 {
             // Duration = ticks * tempo_us / (ppq * 1000000)
-            let duration_secs = (total_duration_ticks as f64 * tempo as f64) 
-                / (division_val as f64 * 1_000_000.0);
+            let duration_secs =
+                (total_duration_ticks as f64 * tempo as f64) / (division_val as f64 * 1_000_000.0);
             if duration_secs > 0.0 && duration_secs < 86400.0 {
-                meta.exif.set("Audio:Duration", AttrValue::Double(duration_secs));
+                meta.exif
+                    .set("Audio:Duration", AttrValue::Double(duration_secs));
             }
         }
 
@@ -158,31 +177,36 @@ fn parse_track_meta(
                 let mut meta_type = [0u8; 1];
                 reader.read_exact(&mut meta_type)?;
                 let len = read_var_len(reader)? as usize;
-                
+
                 if len > 0 && len < 10000 {
                     let mut data = vec![0u8; len];
                     reader.read_exact(&mut data)?;
-                    
+
                     match meta_type[0] {
                         0x01 => {
                             // Text event
                             if let Ok(text) = String::from_utf8(data) {
                                 if meta.exif.get_str("MIDI:Text").is_none() {
-                                    meta.exif.set("MIDI:Text", AttrValue::Str(text.trim().to_string()));
+                                    meta.exif
+                                        .set("MIDI:Text", AttrValue::Str(text.trim().to_string()));
                                 }
                             }
                         }
                         0x02 => {
                             // Copyright
                             if let Ok(text) = String::from_utf8(data) {
-                                meta.exif.set("MIDI:Copyright", AttrValue::Str(text.trim().to_string()));
+                                meta.exif
+                                    .set("MIDI:Copyright", AttrValue::Str(text.trim().to_string()));
                             }
                         }
                         0x03 => {
                             // Track name
                             if let Ok(text) = String::from_utf8(data) {
                                 if meta.exif.get_str("MIDI:TrackName").is_none() {
-                                    meta.exif.set("MIDI:TrackName", AttrValue::Str(text.trim().to_string()));
+                                    meta.exif.set(
+                                        "MIDI:TrackName",
+                                        AttrValue::Str(text.trim().to_string()),
+                                    );
                                 }
                             }
                         }
@@ -190,7 +214,10 @@ fn parse_track_meta(
                             // Instrument name
                             if let Ok(text) = String::from_utf8(data) {
                                 if meta.exif.get_str("MIDI:Instrument").is_none() {
-                                    meta.exif.set("MIDI:Instrument", AttrValue::Str(text.trim().to_string()));
+                                    meta.exif.set(
+                                        "MIDI:Instrument",
+                                        AttrValue::Str(text.trim().to_string()),
+                                    );
                                 }
                             }
                         }
@@ -202,15 +229,18 @@ fn parse_track_meta(
                             // Marker
                             if let Ok(text) = String::from_utf8(data) {
                                 if meta.exif.get_str("MIDI:Marker").is_none() {
-                                    meta.exif.set("MIDI:Marker", AttrValue::Str(text.trim().to_string()));
+                                    meta.exif.set(
+                                        "MIDI:Marker",
+                                        AttrValue::Str(text.trim().to_string()),
+                                    );
                                 }
                             }
                         }
                         0x51 => {
                             // Tempo (microseconds per quarter note)
                             if data.len() >= 3 {
-                                *tempo = ((data[0] as u32) << 16) 
-                                    | ((data[1] as u32) << 8) 
+                                *tempo = ((data[0] as u32) << 16)
+                                    | ((data[1] as u32) << 8)
                                     | (data[2] as u32);
                             }
                         }
@@ -219,8 +249,10 @@ fn parse_track_meta(
                             if data.len() >= 4 {
                                 let num = data[0];
                                 let denom = 1u32 << data[1];
-                                meta.exif.set("MIDI:TimeSignature", 
-                                    AttrValue::Str(format!("{}/{}", num, denom)));
+                                meta.exif.set(
+                                    "MIDI:TimeSignature",
+                                    AttrValue::Str(format!("{}/{}", num, denom)),
+                                );
                             }
                         }
                         0x59 => {
@@ -288,17 +320,25 @@ fn key_signature_name(sf: i8, mi: u8) -> String {
     let minor_keys = ["A", "E", "B", "F#", "C#", "G#", "D#", "A#"];
     let flat_major = ["C", "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
     let flat_minor = ["A", "D", "G", "C", "F", "Bb", "Eb", "Ab"];
-    
+
     let mode = if mi == 0 { "major" } else { "minor" };
-    
+
     let key = if sf >= 0 {
         let idx = sf.min(7) as usize;
-        if mi == 0 { major_keys[idx] } else { minor_keys[idx] }
+        if mi == 0 {
+            major_keys[idx]
+        } else {
+            minor_keys[idx]
+        }
     } else {
         let idx = (-sf).min(7) as usize;
-        if mi == 0 { flat_major[idx] } else { flat_minor[idx] }
+        if mi == 0 {
+            flat_major[idx]
+        } else {
+            flat_minor[idx]
+        }
     };
-    
+
     format!("{} {}", key, mode)
 }
 
@@ -315,7 +355,7 @@ mod tests {
         data[8..10].copy_from_slice(&format.to_be_bytes());
         data[10..12].copy_from_slice(&tracks.to_be_bytes());
         data[12..14].copy_from_slice(&division.to_be_bytes());
-        
+
         // Empty track
         data[14..18].copy_from_slice(b"MTrk");
         data[18..22].copy_from_slice(&4u32.to_be_bytes());
@@ -324,7 +364,7 @@ mod tests {
         data[23] = 0xFF;
         data[24] = 0x2F;
         data[25] = 0x00;
-        
+
         data
     }
 
@@ -363,7 +403,10 @@ mod tests {
         let meta = parser.parse(&mut cursor).unwrap();
 
         assert_eq!(meta.exif.get_u32("MIDI:Format"), Some(1));
-        assert_eq!(meta.exif.get_str("MIDI:FormatDescription"), Some("Multiple tracks, synchronous"));
+        assert_eq!(
+            meta.exif.get_str("MIDI:FormatDescription"),
+            Some("Multiple tracks, synchronous")
+        );
         assert_eq!(meta.exif.get_u32("MIDI:NumTracks"), Some(4));
     }
 

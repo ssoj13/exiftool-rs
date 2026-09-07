@@ -29,8 +29,7 @@ const J2K_SOC_MARKER: &[u8] = &[0xFF, 0x4F];
 
 /// XMP UUID for JPEG 2000.
 const XMP_UUID: &[u8] = &[
-    0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8,
-    0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC,
+    0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8, 0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC,
 ];
 
 /// JPEG 2000 parser.
@@ -43,7 +42,8 @@ impl FormatParser for Jp2Parser {
             // Check for JP2 signature box
             if header[0..4] == [0x00, 0x00, 0x00, 0x0C]  // size = 12
                 && &header[4..8] == b"jP  "
-                && &header[8..12] == JP2_SIGNATURE {
+                && &header[8..12] == JP2_SIGNATURE
+            {
                 return true;
             }
         }
@@ -84,7 +84,9 @@ impl FormatParser for Jp2Parser {
             let data = crate::utils::read_with_limit(reader)?;
             apply_j2k_codestream(&data, &mut metadata);
         } else {
-            return Err(Error::InvalidStructure("Invalid JPEG 2000 signature".into()));
+            return Err(Error::InvalidStructure(
+                "Invalid JPEG 2000 signature".into(),
+            ));
         }
 
         Ok(metadata)
@@ -114,7 +116,10 @@ fn apply_j2k_codestream(data: &[u8], metadata: &mut Metadata) {
             cs.siz.height(),
             cs.siz.comps.len() as u32,
         );
-        metadata.exif.set("JP2:NumLayers", AttrValue::UInt(u32::from(cs.cod.num_layers)));
+        metadata.exif.set(
+            "JP2:NumLayers",
+            AttrValue::UInt(u32::from(cs.cod.num_layers)),
+        );
         return;
     }
     let mut cursor = std::io::Cursor::new(data);
@@ -123,13 +128,21 @@ fn apply_j2k_codestream(data: &[u8], metadata: &mut Metadata) {
 
 fn set_j2k_geometry(metadata: &mut Metadata, width: u32, height: u32, comps: u32) {
     metadata.exif.set("File:ImageWidth", AttrValue::UInt(width));
-    metadata.exif.set("File:ImageHeight", AttrValue::UInt(height));
-    metadata.exif.set("JP2:NumComponents", AttrValue::UInt(comps));
+    metadata
+        .exif
+        .set("File:ImageHeight", AttrValue::UInt(height));
+    metadata
+        .exif
+        .set("JP2:NumComponents", AttrValue::UInt(comps));
 }
 
 impl Jp2Parser {
     /// Parse JP2 container format.
-    fn parse_jp2_container(&self, reader: &mut dyn ReadSeek, metadata: &mut Metadata) -> Result<()> {
+    fn parse_jp2_container(
+        &self,
+        reader: &mut dyn ReadSeek,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let file_size = crate::utils::get_file_size(reader)?;
         reader.seek(SeekFrom::Start(0))?;
 
@@ -202,7 +215,12 @@ impl Jp2Parser {
     }
 
     /// Parse file type box (ftyp).
-    fn parse_ftyp(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_ftyp(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 4 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -212,7 +230,9 @@ impl Jp2Parser {
         reader.read_exact(&mut brand)?;
         let brand_str = String::from_utf8_lossy(&brand).trim().to_string();
 
-        metadata.exif.set("JP2:Brand", AttrValue::Str(brand_str.clone()));
+        metadata
+            .exif
+            .set("JP2:Brand", AttrValue::Str(brand_str.clone()));
 
         // Update format based on brand
         match brand_str.as_str() {
@@ -235,7 +255,9 @@ impl Jp2Parser {
             let mut minor = [0u8; 4];
             reader.read_exact(&mut minor)?;
             let minor_version = u32::from_be_bytes(minor);
-            metadata.exif.set("JP2:MinorVersion", AttrValue::UInt(minor_version));
+            metadata
+                .exif
+                .set("JP2:MinorVersion", AttrValue::UInt(minor_version));
         }
 
         // Skip remaining (compatibility list)
@@ -248,7 +270,12 @@ impl Jp2Parser {
     }
 
     /// Parse JP2 header super-box (jp2h).
-    fn parse_jp2h(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_jp2h(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let end_pos = reader.stream_position()? + size;
 
         while reader.stream_position()? < end_pos {
@@ -302,7 +329,12 @@ impl Jp2Parser {
     }
 
     /// Parse image header box (ihdr).
-    fn parse_ihdr(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_ihdr(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 14 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -320,18 +352,29 @@ impl Jp2Parser {
         let ipr = ihdr[13]; // Intellectual property
 
         metadata.exif.set("File:ImageWidth", AttrValue::UInt(width));
-        metadata.exif.set("File:ImageHeight", AttrValue::UInt(height));
-        metadata.exif.set("JP2:NumComponents", AttrValue::UInt(num_components as u32));
-        metadata.exif.set("JP2:BitsPerComponent", AttrValue::UInt(bits_per_component as u32));
+        metadata
+            .exif
+            .set("File:ImageHeight", AttrValue::UInt(height));
+        metadata
+            .exif
+            .set("JP2:NumComponents", AttrValue::UInt(num_components as u32));
+        metadata.exif.set(
+            "JP2:BitsPerComponent",
+            AttrValue::UInt(bits_per_component as u32),
+        );
 
         let compression = match compression_type {
             7 => "JPEG 2000",
             _ => "Unknown",
         };
-        metadata.exif.set("JP2:Compression", AttrValue::Str(compression.to_string()));
+        metadata
+            .exif
+            .set("JP2:Compression", AttrValue::Str(compression.to_string()));
 
         if colorspace_unknown == 1 {
-            metadata.exif.set("JP2:ColorspaceUnknown", AttrValue::Bool(true));
+            metadata
+                .exif
+                .set("JP2:ColorspaceUnknown", AttrValue::Bool(true));
         }
         if ipr == 1 {
             metadata.exif.set("JP2:IPR", AttrValue::Bool(true));
@@ -347,7 +390,12 @@ impl Jp2Parser {
     }
 
     /// Parse color specification box (colr).
-    fn parse_colr(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_colr(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 3 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -374,7 +422,9 @@ impl Jp2Parser {
                         18 => "sYCC",
                         _ => "Unknown",
                     };
-                    metadata.exif.set("JP2:ColorSpace", AttrValue::Str(cs_name.to_string()));
+                    metadata
+                        .exif
+                        .set("JP2:ColorSpace", AttrValue::Str(cs_name.to_string()));
 
                     let remaining = size.saturating_sub(7);
                     if remaining > 0 {
@@ -386,12 +436,17 @@ impl Jp2Parser {
             }
             2 => {
                 // Restricted ICC profile
-                metadata.exif.set("JP2:ColorMethod", AttrValue::Str("RestrictedICC".to_string()));
+                metadata.exif.set(
+                    "JP2:ColorMethod",
+                    AttrValue::Str("RestrictedICC".to_string()),
+                );
                 reader.seek(SeekFrom::Current((size - 3) as i64))?;
             }
             3 => {
                 // Any ICC profile (JPX only)
-                metadata.exif.set("JP2:ColorMethod", AttrValue::Str("ICC".to_string()));
+                metadata
+                    .exif
+                    .set("JP2:ColorMethod", AttrValue::Str("ICC".to_string()));
                 reader.seek(SeekFrom::Current((size - 3) as i64))?;
             }
             _ => {
@@ -403,7 +458,12 @@ impl Jp2Parser {
     }
 
     /// Parse resolution box (res).
-    fn parse_res(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_res(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let end_pos = reader.stream_position()? + size;
 
         while reader.stream_position()? < end_pos {
@@ -434,7 +494,11 @@ impl Jp2Parser {
                     let v_res = (vr_n as f64 / vr_d as f64) * 10f64.powi(vr_e as i32);
                     let h_res = (hr_n as f64 / hr_d as f64) * 10f64.powi(hr_e as i32);
 
-                    let prefix = if &sub_type == b"resc" { "Capture" } else { "Display" };
+                    let prefix = if &sub_type == b"resc" {
+                        "Capture"
+                    } else {
+                        "Display"
+                    };
                     metadata.exif.set(
                         format!("JP2:{}XResolution", prefix),
                         AttrValue::Float(h_res as f32),
@@ -458,7 +522,12 @@ impl Jp2Parser {
     }
 
     /// Parse UUID box (may contain XMP).
-    fn parse_uuid(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_uuid(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 16 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -493,7 +562,12 @@ impl Jp2Parser {
     }
 
     /// Parse XML box (may contain XMP).
-    fn parse_xml(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_xml(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size > 10 * 1024 * 1024 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -505,9 +579,10 @@ impl Jp2Parser {
         if let Ok(xml_str) = std::str::from_utf8(&xml_data) {
             // Check if it's XMP (starts with <?xpacket or <x:xmpmeta or <rdf:RDF)
             let trimmed = xml_str.trim_start();
-            if trimmed.starts_with("<?xpacket") || 
-               trimmed.starts_with("<x:xmpmeta") || 
-               trimmed.starts_with("<rdf:RDF") {
+            if trimmed.starts_with("<?xpacket")
+                || trimmed.starts_with("<x:xmpmeta")
+                || trimmed.starts_with("<rdf:RDF")
+            {
                 if let Ok(xmp_attrs) = exiftool_xmp::XmpParser::parse(xml_str) {
                     for (key, value) in xmp_attrs.iter() {
                         metadata.exif.set(format!("XMP:{}", key), value.clone());
@@ -607,8 +682,12 @@ impl Jp2Parser {
         let height = ysiz - yosiz;
 
         metadata.exif.set("File:ImageWidth", AttrValue::UInt(width));
-        metadata.exif.set("File:ImageHeight", AttrValue::UInt(height));
-        metadata.exif.set("JP2:NumComponents", AttrValue::UInt(csiz as u32));
+        metadata
+            .exif
+            .set("File:ImageHeight", AttrValue::UInt(height));
+        metadata
+            .exif
+            .set("JP2:NumComponents", AttrValue::UInt(csiz as u32));
 
         // Skip component info
         let remaining = length.saturating_sub(38);
@@ -693,7 +772,7 @@ mod tests {
         data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00]); // XTOsiz
         data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00]); // YTOsiz
         data.extend_from_slice(&[0x00, 0x03]); // Csiz = 3 components
-        // Component info (3 components, 3 bytes each)
+                                               // Component info (3 components, 3 bytes each)
         data.extend_from_slice(&[0x07, 0x01, 0x01]); // component 0
         data.extend_from_slice(&[0x07, 0x01, 0x01]); // component 1
         data.extend_from_slice(&[0x07, 0x01, 0x01]); // component 2

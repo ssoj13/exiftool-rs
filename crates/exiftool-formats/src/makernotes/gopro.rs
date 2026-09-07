@@ -116,7 +116,12 @@ fn parse_gpmf(data: &[u8], attrs: &mut Attrs, prefix: &str) {
 }
 
 /// Extract typed value from GPMF data.
-fn extract_value(type_char: char, struct_size: usize, repeat: usize, data: &[u8]) -> Option<AttrValue> {
+fn extract_value(
+    type_char: char,
+    struct_size: usize,
+    repeat: usize,
+    data: &[u8],
+) -> Option<AttrValue> {
     match type_char {
         // String types
         'c' | 'U' => {
@@ -141,7 +146,11 @@ fn extract_value(type_char: char, struct_size: usize, repeat: usize, data: &[u8]
             if repeat == 1 {
                 Some(AttrValue::Int(data[0] as i8 as i32))
             } else {
-                let vals: Vec<String> = data.iter().take(repeat).map(|&v| (v as i8).to_string()).collect();
+                let vals: Vec<String> = data
+                    .iter()
+                    .take(repeat)
+                    .map(|&v| (v as i8).to_string())
+                    .collect();
                 Some(AttrValue::Str(vals.join(" ")))
             }
         }

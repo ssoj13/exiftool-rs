@@ -114,7 +114,8 @@ fn parse_pdf_ai(data: &[u8], meta: &mut Metadata) {
     if let Some(pos) = text.find("/CreationDate") {
         let after = &text[pos + 13..];
         if let Some(value) = extract_pdf_string(after) {
-            meta.exif.set("CreateDate", AttrValue::Str(parse_pdf_date(&value)));
+            meta.exif
+                .set("CreateDate", AttrValue::Str(parse_pdf_date(&value)));
         }
     }
 
@@ -122,7 +123,8 @@ fn parse_pdf_ai(data: &[u8], meta: &mut Metadata) {
     if let Some(pos) = text.find("/ModDate") {
         let after = &text[pos + 8..];
         if let Some(value) = extract_pdf_string(after) {
-            meta.exif.set("ModifyDate", AttrValue::Str(parse_pdf_date(&value)));
+            meta.exif
+                .set("ModifyDate", AttrValue::Str(parse_pdf_date(&value)));
         }
     }
 
@@ -132,7 +134,8 @@ fn parse_pdf_ai(data: &[u8], meta: &mut Metadata) {
         if line.starts_with("%%AI") && line.contains("CreatorVersion") {
             if let Some(pos) = line.find(':') {
                 let version = line[pos + 1..].trim();
-                meta.exif.set("AIVersion", AttrValue::Str(version.to_string()));
+                meta.exif
+                    .set("AIVersion", AttrValue::Str(version.to_string()));
                 break;
             }
         }
@@ -158,11 +161,14 @@ fn parse_eps_ai(data: &[u8], meta: &mut Metadata) {
     // Parse DSC comments
     for line in text.lines() {
         if let Some(value) = line.strip_prefix("%%Title:") {
-            meta.exif.set("Title", AttrValue::Str(clean_ps_string(value.trim())));
+            meta.exif
+                .set("Title", AttrValue::Str(clean_ps_string(value.trim())));
         } else if let Some(value) = line.strip_prefix("%%Creator:") {
-            meta.exif.set("Creator", AttrValue::Str(clean_ps_string(value.trim())));
+            meta.exif
+                .set("Creator", AttrValue::Str(clean_ps_string(value.trim())));
         } else if let Some(value) = line.strip_prefix("%%CreationDate:") {
-            meta.exif.set("CreateDate", AttrValue::Str(value.trim().to_string()));
+            meta.exif
+                .set("CreateDate", AttrValue::Str(value.trim().to_string()));
         } else if let Some(value) = line.strip_prefix("%%BoundingBox:") {
             if let Some((w, h)) = parse_bbox(value.trim()) {
                 meta.exif.set("ImageWidth", AttrValue::UInt(w as u32));
@@ -171,7 +177,8 @@ fn parse_eps_ai(data: &[u8], meta: &mut Metadata) {
         } else if line.starts_with("%%AI") && line.contains("CreatorVersion") {
             if let Some(pos) = line.find(':') {
                 let version = line[pos + 1..].trim();
-                meta.exif.set("AIVersion", AttrValue::Str(version.to_string()));
+                meta.exif
+                    .set("AIVersion", AttrValue::Str(version.to_string()));
             }
         } else if line.starts_with("%%EndComments") {
             break;
@@ -234,7 +241,7 @@ fn parse_bbox(s: &str) -> Option<(f64, f64)> {
         .split_whitespace()
         .filter_map(|p| p.parse().ok())
         .collect();
-    
+
     if parts.len() >= 4 {
         let width = parts[2] - parts[0];
         let height = parts[3] - parts[1];
@@ -251,7 +258,7 @@ fn parse_pdf_date(s: &str) -> String {
         let year = &s[0..4];
         let month = &s[4..6];
         let day = &s[6..8];
-        
+
         if s.len() >= 14 {
             let hour = &s[8..10];
             let min = &s[10..12];
@@ -280,7 +287,9 @@ fn find_xmp(data: &[u8]) -> Option<&[u8]> {
 
     let start_pos = data.windows(xmp_start.len()).position(|w| w == xmp_start)?;
     let search_area = &data[start_pos..];
-    let end_pos = search_area.windows(xmp_end.len()).position(|w| w == xmp_end)?;
+    let end_pos = search_area
+        .windows(xmp_end.len())
+        .position(|w| w == xmp_end)?;
     let end_area = &search_area[end_pos..];
     let close_pos = end_area.windows(2).position(|w| w == b"?>")?;
 

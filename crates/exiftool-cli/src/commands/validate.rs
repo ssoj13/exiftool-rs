@@ -49,7 +49,10 @@ pub fn validate_metadata(args: &crate::args::Args, registry: &FormatRegistry) ->
     }
 
     if files_with_issues > 0 {
-        eprintln!("\nFound {} issues in {} files", total_issues, files_with_issues);
+        eprintln!(
+            "\nFound {} issues in {} files",
+            total_issues, files_with_issues
+        );
         std::process::exit(1);
     } else {
         eprintln!("All {} files valid", files.len());
@@ -63,8 +66,7 @@ fn validate_metadata_single(
     path: &Path,
     registry: &FormatRegistry,
 ) -> Result<Vec<(String, String, String)>> {
-    let file = File::open(path)
-        .with_context(|| format!("Cannot open: {}", path.display()))?;
+    let file = File::open(path).with_context(|| format!("Cannot open: {}", path.display()))?;
     let mut reader = BufReader::new(file);
     let metadata = registry
         .parse(&mut reader)

@@ -15,8 +15,7 @@ pub fn extract_thumbnails(args: &Args, registry: &FormatRegistry) -> Result<()> 
     }
 
     for path in &args.files {
-        let file = File::open(path)
-            .with_context(|| format!("Cannot open: {}", path.display()))?;
+        let file = File::open(path).with_context(|| format!("Cannot open: {}", path.display()))?;
         let mut reader = BufReader::new(file);
         let metadata = registry
             .parse(&mut reader)
@@ -53,8 +52,7 @@ pub fn extract_previews(args: &Args, registry: &FormatRegistry) -> Result<()> {
     }
 
     for path in &args.files {
-        let file = File::open(path)
-            .with_context(|| format!("Cannot open: {}", path.display()))?;
+        let file = File::open(path).with_context(|| format!("Cannot open: {}", path.display()))?;
         let mut reader = BufReader::new(file);
         let metadata = registry
             .parse(&mut reader)

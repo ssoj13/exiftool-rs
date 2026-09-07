@@ -7,8 +7,7 @@ use crate::{Error, Metadata, ReadSeek, Result};
 use std::io::{SeekFrom, Write};
 
 const JXL_CONTAINER_MAGIC: &[u8] = &[
-    0x00, 0x00, 0x00, 0x0C, 0x4A, 0x58, 0x4C, 0x20,
-    0x0D, 0x0A, 0x87, 0x0A,
+    0x00, 0x00, 0x00, 0x0C, 0x4A, 0x58, 0x4C, 0x20, 0x0D, 0x0A, 0x87, 0x0A,
 ];
 
 /// JXL format writer.
@@ -35,7 +34,9 @@ impl JxlWriter {
         }
 
         if &data[0..12] != JXL_CONTAINER_MAGIC {
-            return Err(Error::InvalidStructure("Invalid JXL container magic".into()));
+            return Err(Error::InvalidStructure(
+                "Invalid JXL container magic".into(),
+            ));
         }
 
         let exif_payload: Vec<u8> = if let Ok(eb) = crate::utils::build_exif_bytes(metadata) {

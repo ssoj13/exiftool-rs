@@ -28,11 +28,7 @@ impl PngWriter {
     /// - Replaces existing eXIf chunk or inserts new one after IHDR
     /// - Replaces existing XMP iTXt chunk or inserts new one after IHDR
     /// - Preserves all other chunks including image data
-    pub fn write<R, W>(
-        input: &mut R,
-        output: &mut W,
-        metadata: &Metadata,
-    ) -> Result<()>
+    pub fn write<R, W>(input: &mut R, output: &mut W, metadata: &Metadata) -> Result<()>
     where
         R: ReadSeek,
         W: Write,
@@ -60,7 +56,9 @@ impl PngWriter {
         let mut after_ihdr = false;
 
         while pos + 12 <= data.len() {
-            let length = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+            let length =
+                u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
+                    as usize;
             let chunk_type = &data[pos + 4..pos + 8];
 
             if pos + 12 + length > data.len() {
@@ -146,7 +144,7 @@ impl PngWriter {
                 return chunk_data;
             }
         }
-        
+
         Vec::new()
     }
 
@@ -184,7 +182,6 @@ impl PngWriter {
 
         crc ^ 0xFFFF_FFFF
     }
-
 }
 
 /// Pre-computed CRC32 table for PNG.
@@ -216,26 +213,26 @@ mod tests {
 
     fn make_minimal_png() -> Vec<u8> {
         let mut png = Vec::new();
-        
+
         // PNG signature
         png.extend_from_slice(&PNG_SIGNATURE);
-        
+
         // IHDR chunk (13 bytes: width, height, bit depth, color type, etc.)
         let ihdr_data = [
-            0, 0, 0, 1,  // width = 1
-            0, 0, 0, 1,  // height = 1
-            8,           // bit depth = 8
-            2,           // color type = 2 (RGB)
-            0,           // compression = 0
-            0,           // filter = 0
-            0,           // interlace = 0
+            0, 0, 0, 1, // width = 1
+            0, 0, 0, 1, // height = 1
+            8, // bit depth = 8
+            2, // color type = 2 (RGB)
+            0, // compression = 0
+            0, // filter = 0
+            0, // interlace = 0
         ];
         png.extend_from_slice(&(ihdr_data.len() as u32).to_be_bytes());
         png.extend_from_slice(b"IHDR");
         png.extend_from_slice(&ihdr_data);
         let crc = PngWriter::calc_crc(b"IHDR", &ihdr_data);
         png.extend_from_slice(&crc.to_be_bytes());
-        
+
         // IDAT chunk (minimal compressed data)
         let idat_data = [0x08, 0xD7, 0x63, 0xF8, 0x0F, 0x00, 0x00, 0x01, 0x01, 0x00];
         png.extend_from_slice(&(idat_data.len() as u32).to_be_bytes());
@@ -243,23 +240,25 @@ mod tests {
         png.extend_from_slice(&idat_data);
         let crc = PngWriter::calc_crc(b"IDAT", &idat_data);
         png.extend_from_slice(&crc.to_be_bytes());
-        
+
         // IEND chunk
         png.extend_from_slice(&0u32.to_be_bytes());
         png.extend_from_slice(b"IEND");
         let crc = PngWriter::calc_crc(b"IEND", &[]);
         png.extend_from_slice(&crc.to_be_bytes());
-        
+
         png
     }
 
     #[test]
     fn write_exif_to_png() {
         let png = make_minimal_png();
-        
+
         let mut metadata = Metadata::new("PNG");
         metadata.exif.set("Make", AttrValue::Str("TestCam".into()));
-        metadata.exif.set("Software", AttrValue::Str("exiftool-rs".into()));
+        metadata
+            .exif
+            .set("Software", AttrValue::Str("exiftool-rs".into()));
 
         let mut input = Cursor::new(&png);
         let mut output = Vec::new();
@@ -273,19 +272,24 @@ mod tests {
         let mut pos = 8;
         let mut found_exif = false;
         while pos + 12 <= output.len() {
-            let length = u32::from_be_bytes([output[pos], output[pos+1], output[pos+2], output[pos+3]]) as usize;
+            let length = u32::from_be_bytes([
+                output[pos],
+                output[pos + 1],
+                output[pos + 2],
+                output[pos + 3],
+            ]) as usize;
             let chunk_type = &output[pos + 4..pos + 8];
-            
+
             if chunk_type == b"eXIf" {
                 found_exif = true;
                 // eXIf data should start with TIFF header (II or MM)
                 assert!(output[pos + 8] == b'I' || output[pos + 8] == b'M');
                 break;
             }
-            
+
             pos += 12 + length;
         }
-        
+
         assert!(found_exif, "eXIf chunk not found in output");
     }
 
@@ -299,7 +303,7 @@ mod tests {
     #[test]
     fn write_xmp_to_png() {
         let png = make_minimal_png();
-        
+
         let mut metadata = Metadata::new("PNG");
         let xmp_content = r#"<?xml version="1.0" encoding="UTF-8"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
@@ -324,9 +328,14 @@ mod tests {
         let mut pos = 8;
         let mut found_xmp = false;
         while pos + 12 <= output.len() {
-            let length = u32::from_be_bytes([output[pos], output[pos+1], output[pos+2], output[pos+3]]) as usize;
+            let length = u32::from_be_bytes([
+                output[pos],
+                output[pos + 1],
+                output[pos + 2],
+                output[pos + 3],
+            ]) as usize;
             let chunk_type = &output[pos + 4..pos + 8];
-            
+
             if chunk_type == b"iTXt" {
                 let chunk_data = &output[pos + 8..pos + 8 + length];
                 // Check if it starts with XMP keyword
@@ -340,17 +349,17 @@ mod tests {
                     break;
                 }
             }
-            
+
             pos += 12 + length;
         }
-        
+
         assert!(found_xmp, "XMP iTXt chunk not found in output");
     }
 
     #[test]
     fn write_exif_and_xmp_to_png() {
         let png = make_minimal_png();
-        
+
         let mut metadata = Metadata::new("PNG");
         metadata.exif.set("Make", AttrValue::Str("TestCam".into()));
         metadata.xmp = Some(r#"<?xml version="1.0"?><x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description/></rdf:RDF></x:xmpmeta>"#.to_string());
@@ -366,11 +375,16 @@ mod tests {
         let mut found_xmp = false;
         let mut exif_pos = 0;
         let mut xmp_pos = 0;
-        
+
         while pos + 12 <= output.len() {
-            let length = u32::from_be_bytes([output[pos], output[pos+1], output[pos+2], output[pos+3]]) as usize;
+            let length = u32::from_be_bytes([
+                output[pos],
+                output[pos + 1],
+                output[pos + 2],
+                output[pos + 3],
+            ]) as usize;
             let chunk_type = &output[pos + 4..pos + 8];
-            
+
             if chunk_type == b"eXIf" {
                 found_exif = true;
                 exif_pos = pos;
@@ -381,10 +395,10 @@ mod tests {
                     xmp_pos = pos;
                 }
             }
-            
+
             pos += 12 + length;
         }
-        
+
         assert!(found_exif, "eXIf chunk not found");
         assert!(found_xmp, "XMP iTXt chunk not found");
         // eXIf should come before XMP (both after IHDR)

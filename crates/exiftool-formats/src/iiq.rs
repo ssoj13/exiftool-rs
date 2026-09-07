@@ -26,7 +26,7 @@ impl Default for IiqParser {
 
 impl FormatParser for IiqParser {
     fn can_parse(&self, header: &[u8]) -> bool {
-                // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // TIFF-family FileType is classified by TiffParser + tiff_family.
         // Matching TIFF magic here would steal every TIFF from later parsers.
         let _ = header;
         false
@@ -42,7 +42,7 @@ impl FormatParser for IiqParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = self.tiff.parse(reader)?;
-        
+
         // Phase One cameras
         if let Some(make) = meta.exif.get_str("Make") {
             let make_upper = make.to_uppercase();
@@ -50,7 +50,7 @@ impl FormatParser for IiqParser {
                 meta.format = "IIQ";
             }
         }
-        
+
         Ok(meta)
     }
 }

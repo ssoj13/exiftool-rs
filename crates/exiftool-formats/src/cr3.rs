@@ -29,12 +29,12 @@ impl FormatParser for Cr3Parser {
         if header.len() < 12 {
             return false;
         }
-        
+
         // Check for ftyp box
         if &header[4..8] != b"ftyp" {
             return false;
         }
-        
+
         // Check for "crx " brand (CR3)
         &header[8..12] == b"crx "
     }
@@ -52,43 +52,48 @@ impl FormatParser for Cr3Parser {
 
         // Parse ftyp box
         reader.seek(SeekFrom::Start(0))?;
-        
+
         let mut buf = [0u8; 8];
         reader.read_exact(&mut buf)?;
-        
+
         let ftyp_size = u32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as u64;
-        
+
         if &buf[4..8] != b"ftyp" {
             return Err(Error::InvalidStructure("Missing ftyp box".into()));
         }
-        
+
         // Read major brand
         let mut brand = [0u8; 4];
         reader.read_exact(&mut brand)?;
-        metadata.exif.set("MajorBrand", AttrValue::Str(String::from_utf8_lossy(&brand).to_string()));
-        
+        metadata.exif.set(
+            "MajorBrand",
+            AttrValue::Str(String::from_utf8_lossy(&brand).to_string()),
+        );
+
         // Read minor version
         let mut version = [0u8; 4];
         reader.read_exact(&mut version)?;
         let minor_version = u32::from_be_bytes(version);
-        metadata.exif.set("MinorVersion", AttrValue::UInt(minor_version));
-        
+        metadata
+            .exif
+            .set("MinorVersion", AttrValue::UInt(minor_version));
+
         // Parse boxes after ftyp
         reader.seek(SeekFrom::Start(ftyp_size))?;
-        
+
         let file_size = crate::utils::get_file_size(reader)?;
         reader.seek(SeekFrom::Start(ftyp_size))?;
-        
+
         while reader.stream_position()? < file_size {
             let pos = reader.stream_position()?;
-            
+
             if reader.read_exact(&mut buf).is_err() {
                 break;
             }
-            
+
             let mut box_size = u32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as u64;
             let box_type = [buf[4], buf[5], buf[6], buf[7]];
-            
+
             // Handle extended size
             if box_size == 1 {
                 let mut ext_size = [0u8; 8];
@@ -97,14 +102,16 @@ impl FormatParser for Cr3Parser {
             } else if box_size == 0 {
                 box_size = file_size - pos;
             }
-            
+
             match &box_type {
                 b"moov" => {
                     // moov contains Canon metadata boxes
                     self.parse_moov(reader, pos + 8, pos + box_size, &mut metadata)?;
                 }
                 b"mdat" => {
-                    metadata.exif.set("MediaDataSize", AttrValue::UInt((box_size - 8) as u32));
+                    metadata
+                        .exif
+                        .set("MediaDataSize", AttrValue::UInt((box_size - 8) as u32));
                 }
                 b"uuid" => {
                     // Canon may store XMP in uuid box
@@ -112,13 +119,13 @@ impl FormatParser for Cr3Parser {
                 }
                 _ => {}
             }
-            
+
             if box_size == 0 || pos + box_size > file_size {
                 break;
             }
             reader.seek(SeekFrom::Start(pos + box_size))?;
         }
-        
+
         Ok(metadata)
     }
 }
@@ -133,48 +140,54 @@ impl Cr3Parser {
         metadata: &mut Metadata,
     ) -> Result<()> {
         reader.seek(SeekFrom::Start(start))?;
-        
+
         let mut buf = [0u8; 8];
-        
+
         while reader.stream_position()? < end {
             let pos = reader.stream_position()?;
-            
+
             if reader.read_exact(&mut buf).is_err() {
                 break;
             }
-            
+
             let box_size = u32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as u64;
             let box_type = [buf[4], buf[5], buf[6], buf[7]];
-            
+
             if box_size < 8 || pos + box_size > end {
                 break;
             }
-            
+
             match &box_type {
                 b"trak" => {
                     // Track box - may contain CMT boxes
                     self.parse_trak(reader, pos + 8, pos + box_size, metadata)?;
                 }
                 b"uuid" => {
-                    // Canon-specific UUID boxes
                     self.parse_uuid(reader, pos + 8, box_size - 8, metadata)?;
+                    if box_size > 24 {
+                        self.parse_trak(reader, pos + 24, pos + box_size, metadata)?;
+                    }
                 }
                 b"CNCV" => {
                     // Canon Compressor Version
                     let mut cncv = vec![0u8; (box_size - 8) as usize];
                     reader.read_exact(&mut cncv)?;
-                    let version = String::from_utf8_lossy(&cncv).trim_end_matches('\0').to_string();
-                    metadata.exif.set("CanonCompressorVersion", AttrValue::Str(version));
+                    let version = String::from_utf8_lossy(&cncv)
+                        .trim_end_matches('\0')
+                        .to_string();
+                    metadata
+                        .exif
+                        .set("CanonCompressorVersion", AttrValue::Str(version));
                 }
                 _ => {}
             }
-            
+
             reader.seek(SeekFrom::Start(pos + box_size))?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Parse trak box recursively looking for CMT boxes.
     fn parse_trak(
         &self,
@@ -184,23 +197,23 @@ impl Cr3Parser {
         metadata: &mut Metadata,
     ) -> Result<()> {
         reader.seek(SeekFrom::Start(start))?;
-        
+
         let mut buf = [0u8; 8];
-        
+
         while reader.stream_position()? < end {
             let pos = reader.stream_position()?;
-            
+
             if reader.read_exact(&mut buf).is_err() {
                 break;
             }
-            
+
             let box_size = u32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as u64;
             let box_type = [buf[4], buf[5], buf[6], buf[7]];
-            
+
             if box_size < 8 || pos + box_size > end {
                 break;
             }
-            
+
             match &box_type {
                 b"mdia" | b"minf" | b"stbl" => {
                     // Container boxes - recurse
@@ -235,12 +248,17 @@ impl Cr3Parser {
                         if jpeg_size > 100 {
                             let mut thumb_data = vec![0u8; jpeg_size];
                             if reader.read_exact(&mut thumb_data).is_ok()
-                                && thumb_data.len() >= 2 && thumb_data[0] == 0xFF && thumb_data[1] == 0xD8 {
-                                    metadata.thumbnail = Some(thumb_data);
-                                }
+                                && thumb_data.len() >= 2
+                                && thumb_data[0] == 0xFF
+                                && thumb_data[1] == 0xD8
+                            {
+                                metadata.thumbnail = Some(thumb_data);
+                            }
                         }
                     }
-                    metadata.exif.set("ThumbnailSize", AttrValue::UInt((box_size - 8) as u32));
+                    metadata
+                        .exif
+                        .set("ThumbnailSize", AttrValue::UInt((box_size - 8) as u32));
                 }
                 b"PRVW" => {
                     // Preview - larger JPEG preview
@@ -254,22 +272,27 @@ impl Cr3Parser {
                         if jpeg_size > 100 {
                             let mut preview_data = vec![0u8; jpeg_size];
                             if reader.read_exact(&mut preview_data).is_ok()
-                                && preview_data.len() >= 2 && preview_data[0] == 0xFF && preview_data[1] == 0xD8 {
-                                    metadata.preview = Some(preview_data);
-                                }
+                                && preview_data.len() >= 2
+                                && preview_data[0] == 0xFF
+                                && preview_data[1] == 0xD8
+                            {
+                                metadata.preview = Some(preview_data);
+                            }
                         }
                     }
-                    metadata.exif.set("PreviewSize", AttrValue::UInt((box_size - 8) as u32));
+                    metadata
+                        .exif
+                        .set("PreviewSize", AttrValue::UInt((box_size - 8) as u32));
                 }
                 _ => {}
             }
-            
+
             reader.seek(SeekFrom::Start(pos + box_size))?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Parse CMT box containing TIFF IFD.
     fn parse_cmt_box(
         &self,
@@ -282,27 +305,27 @@ impl Cr3Parser {
         if size < 8 {
             return Ok(());
         }
-        
+
         reader.seek(SeekFrom::Start(start))?;
-        
+
         // Read TIFF data
         let mut tiff_data = vec![0u8; size as usize];
         reader.read_exact(&mut tiff_data)?;
-        
+
         // Parse byte order
         let byte_order = match ByteOrder::from_marker([tiff_data[0], tiff_data[1]]) {
             Ok(bo) => bo,
             Err(_) => return Ok(()), // Invalid TIFF header
         };
-        
+
         let ifd_reader = IfdReader::new(&tiff_data, byte_order);
-        
+
         // Parse TIFF header to get IFD offset
         let ifd_offset = match ifd_reader.parse_header() {
             Ok(offset) => offset,
             Err(_) => return Ok(()),
         };
-        
+
         // Read IFD entries
         if let Ok((entries, _)) = ifd_reader.read_ifd(ifd_offset as u64) {
             for entry in entries {
@@ -312,7 +335,7 @@ impl Cr3Parser {
                     "GPS" => lookup_gps(entry.tag),
                     _ => None,
                 };
-                
+
                 if let Some(name) = tag_name {
                     let value = entry_to_attr(&entry);
                     metadata.exif.set(name, value);
@@ -321,16 +344,18 @@ impl Cr3Parser {
         }
 
         if prefix == "MakerNotes" {
-            if let Some(mn) = crate::makernotes::parse(&tiff_data, crate::makernotes::Vendor::Canon, byte_order) {
+            if let Some(mn) =
+                crate::makernotes::parse(&tiff_data, crate::makernotes::Vendor::Canon, byte_order)
+            {
                 for (key, val) in mn.iter() {
                     metadata.exif.set(key.clone(), val.clone());
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Parse UUID box (may contain XMP).
     fn parse_uuid(
         &self,
@@ -342,25 +367,25 @@ impl Cr3Parser {
         if size < 16 {
             return Ok(());
         }
-        
+
         reader.seek(SeekFrom::Start(start))?;
-        
+
         // Read UUID (16 bytes)
         let mut uuid = [0u8; 16];
         reader.read_exact(&mut uuid)?;
-        
+
         // XMP UUID: BE7ACFCB-97A9-42E8-9C71-999491E3AFAC
         const XMP_UUID: [u8; 16] = [
-            0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8,
-            0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC,
+            0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8, 0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3,
+            0xAF, 0xAC,
         ];
-        
+
         if uuid == XMP_UUID {
             let xmp_size = size - 16;
             if xmp_size > 0 && xmp_size < 10_000_000 {
                 let mut xmp_data = vec![0u8; xmp_size as usize];
                 reader.read_exact(&mut xmp_data)?;
-                
+
                 if let Ok(xmp) = String::from_utf8(xmp_data) {
                     // Parse XMP
                     if let Ok(xmp_attrs) = exiftool_xmp::XmpParser::parse(&xmp) {
@@ -372,7 +397,7 @@ impl Cr3Parser {
                 }
             }
         }
-        
+
         Ok(())
     }
 }
@@ -388,9 +413,7 @@ mod tests {
     fn detect_cr3() {
         let parser = Cr3Parser;
         let header = [
-            0x00, 0x00, 0x00, 0x18,
-            b'f', b't', b'y', b'p',
-            b'c', b'r', b'x', b' ',
+            0x00, 0x00, 0x00, 0x18, b'f', b't', b'y', b'p', b'c', b'r', b'x', b' ',
         ];
         assert!(parser.can_parse(&header));
     }
@@ -399,9 +422,7 @@ mod tests {
     fn reject_heic() {
         let parser = Cr3Parser;
         let header = [
-            0x00, 0x00, 0x00, 0x18,
-            b'f', b't', b'y', b'p',
-            b'h', b'e', b'i', b'c',
+            0x00, 0x00, 0x00, 0x18, b'f', b't', b'y', b'p', b'h', b'e', b'i', b'c',
         ];
         assert!(!parser.can_parse(&header));
     }

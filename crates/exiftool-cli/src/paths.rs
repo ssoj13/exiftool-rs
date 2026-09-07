@@ -20,9 +20,7 @@ pub fn matches_exclude(path: &Path, exclude: &[String]) -> bool {
         return false;
     }
 
-    let name = path.file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("");
+    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
     let path_str = path.to_string_lossy();
 
     for pattern in exclude {
@@ -83,16 +81,14 @@ pub fn passes_date_filter(
 
 /// Known image/media extensions for recursive mode.
 const DEFAULT_EXTS: &[&str] = &[
-    "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp", "heic", "heif", "avif",
-    "jxl", "jp2", "j2k", "jpx", "exr", "hdr", "ppm", "pgm", "pbm", "pam", "ico",
-    "tga", "pcx", "sgi", "rgb", "svg", "eps", "ai", "psd", "dpx",
-    "cr2", "cr3", "nef", "arw", "orf", "rw2", "pef", "raf", "dng", "srw", "srf",
-    "sr2", "crw", "dcr", "kdc", "k25", "erf", "mef", "mos", "mrw", "nrw", "rwl",
-    "x3f", "3fr", "fff", "iiq", "braw",
-    "mp4", "mov", "m4v", "3gp", "3g2", "avi", "mkv", "webm", "mxf", "r3d",
-    "mts", "m2ts", "ts", "flv", "wmv", "asf",
-    "mp3", "flac", "m4a", "aac", "ogg", "opus", "wav", "aiff", "aif", "ape",
-    "wv", "dsf", "dff", "tak", "wma", "mid", "midi", "au",
+    "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp", "heic", "heif", "avif", "jxl",
+    "jp2", "j2k", "jpx", "exr", "hdr", "ppm", "pgm", "pbm", "pam", "ico", "tga", "pcx", "sgi",
+    "rgb", "svg", "eps", "ai", "psd", "dpx", "cr2", "cr3", "nef", "arw", "orf", "rw2", "pef",
+    "raf", "dng", "srw", "srf", "sr2", "crw", "dcr", "kdc", "k25", "erf", "mef", "mos", "mrw",
+    "nrw", "rwl", "x3f", "3fr", "fff", "iiq", "braw", "mp4", "mov", "m4v", "3gp", "3g2", "avi",
+    "mkv", "webm", "mxf", "r3d", "mts", "m2ts", "ts", "flv", "wmv", "asf", "mp3", "flac", "m4a",
+    "aac", "ogg", "opus", "wav", "aiff", "aif", "ape", "wv", "dsf", "dff", "tak", "wma", "mid",
+    "midi", "au",
 ];
 
 /// Expand paths: if recursive, walk directories; filter by extensions.
@@ -140,7 +136,10 @@ pub fn expand_paths(
                     }
                 }
             } else {
-                eprintln!("Warning: {} is a directory. Use -r for recursive scan.", path.display());
+                eprintln!(
+                    "Warning: {} is a directory. Use -r for recursive scan.",
+                    path.display()
+                );
             }
         } else if path.is_file() {
             if matches_exclude(path, exclude) {

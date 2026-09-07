@@ -51,16 +51,17 @@ impl VendorParser for SonyParser {
         }
 
         // Detect header type and get IFD data
-        let (ifd_data, byte_order) = if data.starts_with(SONY_DSC_HEADER) || data.starts_with(SONY_CAM_HEADER) {
-            // Skip 12-byte header
-            if data.len() < 14 {
-                return None;
-            }
-            (&data[12..], parent_byte_order)
-        } else {
-            // No header, starts with IFD
-            (data, parent_byte_order)
-        };
+        let (ifd_data, byte_order) =
+            if data.starts_with(SONY_DSC_HEADER) || data.starts_with(SONY_CAM_HEADER) {
+                // Skip 12-byte header
+                if data.len() < 14 {
+                    return None;
+                }
+                (&data[12..], parent_byte_order)
+            } else {
+                // No header, starts with IFD
+                (data, parent_byte_order)
+            };
 
         let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
 
@@ -70,7 +71,9 @@ impl VendorParser for SonyParser {
             match entry.tag {
                 0x0010 => {
                     // CameraSettings
-                    if let Some(sub_attrs) = parse_camera_settings(entry.value.as_bytes()?, byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_camera_settings(entry.value.as_bytes()?, byte_order)
+                    {
                         attrs.set("CameraSettings", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
@@ -201,7 +204,10 @@ fn parse_tag9405(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
 }
 
 /// Format IFD entry value with PrintConv lookup.
-fn format_value(entry: &exiftool_core::IfdEntry, values_map: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+fn format_value(
+    entry: &exiftool_core::IfdEntry,
+    values_map: Option<&'static [(i64, &'static str)]>,
+) -> AttrValue {
     if let Some(map) = values_map {
         if let Some(int_val) = entry.value.as_u32().map(|v| v as i64) {
             for &(key, label) in map {

@@ -35,7 +35,7 @@ Most formats support reading. Writing is available for:
 | 7z | ✓ | ✗ |
 | ZIP / OOXML / ODF | ✓ | ✗ |
 | Other camera RAW (CR2, ARW, ORF, RW2, PEF, …) | ✓ | ✓ |
-| CR3 | ✓ | ✗ |
+| CR3 | ✓ | ✓ |
 | Audio | ✓ | ✓ |
 | Video (MP4/MOV) | ✓ | ✓ |
 

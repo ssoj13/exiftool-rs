@@ -82,7 +82,7 @@ pub use sony::SonyParser;
 pub use vivo::VivoParser;
 pub use xiaomi::XiaomiParser;
 
-use exiftool_attrs::{Attrs, AttrValue};
+use exiftool_attrs::{AttrValue, Attrs};
 use exiftool_core::{ByteOrder, IfdEntry, IfdReader};
 
 /// Parse IFD entries from raw data.
@@ -93,7 +93,11 @@ use exiftool_core::{ByteOrder, IfdEntry, IfdReader};
 /// - `ifd_offset`: Offset to IFD within data (usually 0)
 ///
 /// Returns None if data is too small or IFD parsing fails.
-pub fn parse_ifd_entries(data: &[u8], byte_order: ByteOrder, ifd_offset: u32) -> Option<Vec<IfdEntry>> {
+pub fn parse_ifd_entries(
+    data: &[u8],
+    byte_order: ByteOrder,
+    ifd_offset: u32,
+) -> Option<Vec<IfdEntry>> {
     if data.len() < 2 {
         return None;
     }
@@ -176,11 +180,18 @@ impl Vendor {
             Vendor::Casio
         } else if make_lower.contains("hasselblad") {
             Vendor::Hasselblad
-        } else if make_lower.contains("phase one") || make_lower.contains("phaseone") || make_lower.contains("leaf") || make_lower.contains("mamiya") {
+        } else if make_lower.contains("phase one")
+            || make_lower.contains("phaseone")
+            || make_lower.contains("leaf")
+            || make_lower.contains("mamiya")
+        {
             Vendor::PhaseOne
         } else if make_lower.contains("huawei") || make_lower.contains("honor") {
             Vendor::Huawei
-        } else if make_lower.contains("xiaomi") || make_lower.contains("redmi") || make_lower.contains("poco") {
+        } else if make_lower.contains("xiaomi")
+            || make_lower.contains("redmi")
+            || make_lower.contains("poco")
+        {
             Vendor::Xiaomi
         } else if make_lower.contains("google") {
             Vendor::Google
@@ -306,10 +317,10 @@ pub fn parse(data: &[u8], vendor: Vendor, parent_byte_order: ByteOrder) -> Optio
     debug_assert_eq!(parser.vendor(), vendor, "Parser vendor mismatch");
 
     let mut attrs = parser.parse(data, parent_byte_order)?;
-    
+
     // Add vendor identification to result
     attrs.set("Vendor", AttrValue::Str(parser.vendor().name().to_string()));
-    
+
     Some(attrs)
 }
 

@@ -62,10 +62,7 @@ static MINOLTA_TAGS: &[(u16, &str)] = &[
 ];
 
 /// JPEG Quality values.
-static JPEG_QUALITY: &[(i64, &str)] = &[
-    (0, "Normal"),
-    (1, "Fine"),
-];
+static JPEG_QUALITY: &[(i64, &str)] = &[(0, "Normal"), (1, "Fine")];
 
 /// Exposure Mode values.
 static EXPOSURE_MODE: &[(i64, &str)] = &[

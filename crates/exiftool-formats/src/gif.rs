@@ -52,7 +52,9 @@ impl FormatParser for GifParser {
 
         // GIF version
         let version = std::str::from_utf8(&header[3..6]).unwrap_or("???");
-        metadata.exif.set("GIFVersion", AttrValue::Str(version.to_string()));
+        metadata
+            .exif
+            .set("GIFVersion", AttrValue::Str(version.to_string()));
 
         // Logical Screen Descriptor (7 bytes)
         let mut lsd = [0u8; 7];
@@ -64,8 +66,12 @@ impl FormatParser for GifParser {
         let bg_color = lsd[5];
         let _aspect_ratio = lsd[6];
 
-        metadata.exif.set("ImageWidth", AttrValue::UInt(width as u32));
-        metadata.exif.set("ImageHeight", AttrValue::UInt(height as u32));
+        metadata
+            .exif
+            .set("ImageWidth", AttrValue::UInt(width as u32));
+        metadata
+            .exif
+            .set("ImageHeight", AttrValue::UInt(height as u32));
 
         // Packed field:
         // bit 7: Global Color Table Flag
@@ -76,12 +82,18 @@ impl FormatParser for GifParser {
         let color_resolution = ((packed >> 4) & 0x07) + 1;
         let gct_size_bits = packed & 0x07;
 
-        metadata.exif.set("ColorResolution", AttrValue::UInt(color_resolution as u32));
+        metadata
+            .exif
+            .set("ColorResolution", AttrValue::UInt(color_resolution as u32));
 
         if has_gct {
             let gct_entries = 1 << (gct_size_bits + 1);
-            metadata.exif.set("ColorTableSize", AttrValue::UInt(gct_entries));
-            metadata.exif.set("BackgroundColorIndex", AttrValue::UInt(bg_color as u32));
+            metadata
+                .exif
+                .set("ColorTableSize", AttrValue::UInt(gct_entries));
+            metadata
+                .exif
+                .set("BackgroundColorIndex", AttrValue::UInt(bg_color as u32));
 
             // Skip Global Color Table (3 bytes per entry)
             let gct_bytes = gct_entries * 3;
@@ -129,7 +141,8 @@ impl FormatParser for GifParser {
                                     if let Some(xmp_start) = find_xmp_start(&app_data[11..]) {
                                         let xmp_bytes = &app_data[11 + xmp_start..];
                                         if let Ok(xmp_str) = std::str::from_utf8(xmp_bytes) {
-                                            xmp_data = Some(xmp_str.trim_end_matches('\0').to_string());
+                                            xmp_data =
+                                                Some(xmp_str.trim_end_matches('\0').to_string());
                                         }
                                     }
                                 }
@@ -182,10 +195,16 @@ impl FormatParser for GifParser {
 
         // Set metadata
         if frame_count > 1 {
-            metadata.exif.set("FrameCount", AttrValue::UInt(frame_count));
-            metadata.exif.set("Animation", AttrValue::Str("Yes".to_string()));
+            metadata
+                .exif
+                .set("FrameCount", AttrValue::UInt(frame_count));
+            metadata
+                .exif
+                .set("Animation", AttrValue::Str("Yes".to_string()));
         } else {
-            metadata.exif.set("Animation", AttrValue::Str("No".to_string()));
+            metadata
+                .exif
+                .set("Animation", AttrValue::Str("No".to_string()));
         }
 
         if !comment.is_empty() {
@@ -270,7 +289,7 @@ mod tests {
         data.push(packed);
         data.push(0); // Background color
         data.push(0); // Aspect ratio
-        // GCT (if present)
+                      // GCT (if present)
         if gct_bits > 0 {
             let gct_entries = 1 << gct_bits;
             for _ in 0..(gct_entries * 3) {

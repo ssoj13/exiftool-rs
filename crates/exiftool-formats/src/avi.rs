@@ -7,8 +7,8 @@
 //! - strh/strf: stream headers
 //! - INFO: metadata text fields (INAM, IART, etc.)
 
-use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
 use std::io::SeekFrom;
 
@@ -44,7 +44,9 @@ impl FormatParser for AviParser {
 
         let mut metadata = Metadata::new("AVI");
         metadata.set_file_type("AVI", "video/avi");
-        metadata.exif.set("File:FileSize", AttrValue::UInt(file_size as u32));
+        metadata
+            .exif
+            .set("File:FileSize", AttrValue::UInt(file_size as u32));
 
         // Parse RIFF chunks
         self.parse_chunks(reader, file_size, &mut metadata)?;
@@ -55,7 +57,12 @@ impl FormatParser for AviParser {
 
 impl AviParser {
     /// Parse RIFF chunks.
-    fn parse_chunks(&self, reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_chunks(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end_pos: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
@@ -134,7 +141,12 @@ impl AviParser {
     }
 
     /// Parse AVI header list (hdrl).
-    fn parse_hdrl(&self, reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_hdrl(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end_pos: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
@@ -177,7 +189,12 @@ impl AviParser {
     }
 
     /// Parse AVI main header (avih).
-    fn parse_avih(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_avih(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 56 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -200,15 +217,23 @@ impl AviParser {
         // Frame rate
         if microsec_per_frame > 0 {
             let fps = 1_000_000.0 / microsec_per_frame as f64;
-            metadata.exif.set("AVI:FrameRate", AttrValue::Float(fps as f32));
+            metadata
+                .exif
+                .set("AVI:FrameRate", AttrValue::Float(fps as f32));
         }
 
-        metadata.exif.set("AVI:TotalFrames", AttrValue::UInt(total_frames));
-        metadata.exif.set("AVI:StreamCount", AttrValue::UInt(streams));
+        metadata
+            .exif
+            .set("AVI:TotalFrames", AttrValue::UInt(total_frames));
+        metadata
+            .exif
+            .set("AVI:StreamCount", AttrValue::UInt(streams));
 
         if width > 0 && height > 0 {
             metadata.exif.set("File:ImageWidth", AttrValue::UInt(width));
-            metadata.exif.set("File:ImageHeight", AttrValue::UInt(height));
+            metadata
+                .exif
+                .set("File:ImageHeight", AttrValue::UInt(height));
         }
 
         // Flags
@@ -219,13 +244,17 @@ impl AviParser {
             metadata.exif.set("AVI:MustUseIndex", AttrValue::Bool(true));
         }
         if flags & 0x100 != 0 {
-            metadata.exif.set("AVI:IsInterleaved", AttrValue::Bool(true));
+            metadata
+                .exif
+                .set("AVI:IsInterleaved", AttrValue::Bool(true));
         }
 
         // Duration
         if microsec_per_frame > 0 && total_frames > 0 {
             let duration_secs = (total_frames as f64 * microsec_per_frame as f64) / 1_000_000.0;
-            metadata.exif.set("AVI:Duration", AttrValue::Float(duration_secs as f32));
+            metadata
+                .exif
+                .set("AVI:Duration", AttrValue::Float(duration_secs as f32));
         }
 
         // Skip remaining
@@ -238,7 +267,12 @@ impl AviParser {
     }
 
     /// Parse stream header list (strl).
-    fn parse_strl(&self, reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_strl(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end_pos: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
@@ -263,7 +297,9 @@ impl AviParser {
                             .trim_end_matches('\0')
                             .to_string();
                         if !name_str.is_empty() {
-                            metadata.exif.set("AVI:StreamName", AttrValue::Str(name_str));
+                            metadata
+                                .exif
+                                .set("AVI:StreamName", AttrValue::Str(name_str));
                         }
                     } else {
                         reader.seek(SeekFrom::Current(chunk_size as i64))?;
@@ -289,7 +325,12 @@ impl AviParser {
     }
 
     /// Parse stream header (strh).
-    fn parse_strh(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_strh(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 48 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -305,13 +346,19 @@ impl AviParser {
             "vids" => {
                 let codec = fcc_handler.trim();
                 if !codec.is_empty() && codec != "\0\0\0\0" {
-                    metadata.exif.set("AVI:VideoCodec", AttrValue::Str(codec.trim_end_matches('\0').to_string()));
+                    metadata.exif.set(
+                        "AVI:VideoCodec",
+                        AttrValue::Str(codec.trim_end_matches('\0').to_string()),
+                    );
                 }
             }
             "auds" => {
                 let codec = fcc_handler.trim();
                 if !codec.is_empty() && codec != "\0\0\0\0" {
-                    metadata.exif.set("AVI:AudioCodec", AttrValue::Str(codec.trim_end_matches('\0').to_string()));
+                    metadata.exif.set(
+                        "AVI:AudioCodec",
+                        AttrValue::Str(codec.trim_end_matches('\0').to_string()),
+                    );
                 }
             }
             _ => {}
@@ -326,9 +373,13 @@ impl AviParser {
         Ok(())
     }
 
-
     /// Parse EXIF chunk.
-    fn parse_exif_chunk(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_exif_chunk(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if !(8..=10 * 1024 * 1024).contains(&size) {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -355,7 +406,12 @@ impl AviParser {
     }
 
     /// Parse XMP chunk.
-    fn parse_xmp_chunk(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_xmp_chunk(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size > 10 * 1024 * 1024 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());

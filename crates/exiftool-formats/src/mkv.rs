@@ -175,10 +175,10 @@ impl MkvParser {
 
         // Check for unknown size (all 1s)
         let unknown_size = match size.leading_zeros() {
-            57 => size == 0x7F,                    // 1-byte VINT
-            50 => size == 0x3FFF,                  // 2-byte
-            43 => size == 0x1FFFFF,                // 3-byte
-            36 => size == 0x0FFFFFFF,              // 4-byte
+            57 => size == 0x7F,       // 1-byte VINT
+            50 => size == 0x3FFF,     // 2-byte
+            43 => size == 0x1FFFFF,   // 3-byte
+            36 => size == 0x0FFFFFFF, // 4-byte
             _ => false,
         };
 
@@ -190,14 +190,21 @@ impl MkvParser {
     }
 
     /// Parse EBML header.
-    fn parse_ebml_header(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_ebml_header(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end {
             let (id, size) = self.read_element(reader)?;
 
             match id {
                 EBML_DOC_TYPE => {
                     let doc_type = self.read_string(reader, size)?;
-                    metadata.exif.set("EBML:DocType", AttrValue::Str(doc_type.clone()));
+                    metadata
+                        .exif
+                        .set("EBML:DocType", AttrValue::Str(doc_type.clone()));
 
                     // Set format based on doc type
                     match doc_type.as_str() {
@@ -215,7 +222,9 @@ impl MkvParser {
                 }
                 EBML_DOC_TYPE_VERSION => {
                     let version = self.read_uint(reader, size)?;
-                    metadata.exif.set("EBML:DocTypeVersion", AttrValue::UInt(version as u32));
+                    metadata
+                        .exif
+                        .set("EBML:DocTypeVersion", AttrValue::UInt(version as u32));
                 }
                 _ => {
                     reader.seek(SeekFrom::Current(size as i64))?;
@@ -227,7 +236,12 @@ impl MkvParser {
     }
 
     /// Parse Segment.
-    fn parse_segment(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_segment(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         // Track parsing state
         let mut timecode_scale: u64 = 1_000_000; // Default: 1ms
         let mut duration_raw: Option<f64> = None;
@@ -281,14 +295,21 @@ impl MkvParser {
         // Calculate duration in seconds
         if let Some(raw) = duration_raw {
             let duration_secs = (raw * timecode_scale as f64) / 1_000_000_000.0;
-            metadata.exif.set("MKV:Duration", AttrValue::Float(duration_secs as f32));
+            metadata
+                .exif
+                .set("MKV:Duration", AttrValue::Float(duration_secs as f32));
         }
 
         Ok(())
     }
 
     /// Parse Info element. Returns (timecode_scale, duration).
-    fn parse_info(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<(u64, Option<f64>)> {
+    fn parse_info(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<(u64, Option<f64>)> {
         let mut timecode_scale: u64 = 1_000_000;
         let mut duration: Option<f64> = None;
 
@@ -302,7 +323,9 @@ impl MkvParser {
             match id {
                 TIMECODE_SCALE => {
                     timecode_scale = self.read_uint(reader, size)?;
-                    metadata.exif.set("MKV:TimecodeScale", AttrValue::UInt(timecode_scale as u32));
+                    metadata
+                        .exif
+                        .set("MKV:TimecodeScale", AttrValue::UInt(timecode_scale as u32));
                 }
                 DURATION => {
                     duration = Some(self.read_float(reader, size)?);
@@ -320,7 +343,9 @@ impl MkvParser {
                     let nanos = self.read_int(reader, size)?;
                     // Convert to Unix timestamp (2001-01-01 = 978307200)
                     let unix_secs = 978307200i64 + (nanos / 1_000_000_000);
-                    metadata.exif.set("MKV:DateUTC", AttrValue::Int(unix_secs as i32));
+                    metadata
+                        .exif
+                        .set("MKV:DateUTC", AttrValue::Int(unix_secs as i32));
                 }
                 TITLE => {
                     let title = self.read_string(reader, size)?;
@@ -340,7 +365,12 @@ impl MkvParser {
     }
 
     /// Parse Tracks element.
-    fn parse_tracks(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_tracks(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let mut video_count = 0u32;
         let mut audio_count = 0u32;
 
@@ -369,17 +399,26 @@ impl MkvParser {
         }
 
         if video_count > 0 {
-            metadata.exif.set("MKV:VideoTrackCount", AttrValue::UInt(video_count));
+            metadata
+                .exif
+                .set("MKV:VideoTrackCount", AttrValue::UInt(video_count));
         }
         if audio_count > 0 {
-            metadata.exif.set("MKV:AudioTrackCount", AttrValue::UInt(audio_count));
+            metadata
+                .exif
+                .set("MKV:AudioTrackCount", AttrValue::UInt(audio_count));
         }
 
         Ok(())
     }
 
     /// Parse TrackEntry. Returns track type (1=video, 2=audio, etc.).
-    fn parse_track_entry(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<u8> {
+    fn parse_track_entry(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<u8> {
         let mut track_type: u8 = 0;
 
         while reader.stream_position()? < end {
@@ -427,7 +466,12 @@ impl MkvParser {
     }
 
     /// Parse Video element.
-    fn parse_video(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_video(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end {
             let pos = reader.stream_position()?;
             let (id, size) = match self.read_element(reader) {
@@ -438,19 +482,27 @@ impl MkvParser {
             match id {
                 PIXEL_WIDTH => {
                     let w = self.read_uint(reader, size)?;
-                    metadata.exif.set("File:ImageWidth", AttrValue::UInt(w as u32));
+                    metadata
+                        .exif
+                        .set("File:ImageWidth", AttrValue::UInt(w as u32));
                 }
                 PIXEL_HEIGHT => {
                     let h = self.read_uint(reader, size)?;
-                    metadata.exif.set("File:ImageHeight", AttrValue::UInt(h as u32));
+                    metadata
+                        .exif
+                        .set("File:ImageHeight", AttrValue::UInt(h as u32));
                 }
                 DISPLAY_WIDTH => {
                     let w = self.read_uint(reader, size)?;
-                    metadata.exif.set("MKV:DisplayWidth", AttrValue::UInt(w as u32));
+                    metadata
+                        .exif
+                        .set("MKV:DisplayWidth", AttrValue::UInt(w as u32));
                 }
                 DISPLAY_HEIGHT => {
                     let h = self.read_uint(reader, size)?;
-                    metadata.exif.set("MKV:DisplayHeight", AttrValue::UInt(h as u32));
+                    metadata
+                        .exif
+                        .set("MKV:DisplayHeight", AttrValue::UInt(h as u32));
                 }
                 _ => {
                     reader.seek(SeekFrom::Current(size as i64))?;
@@ -466,7 +518,12 @@ impl MkvParser {
     }
 
     /// Parse Audio element.
-    fn parse_audio(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_audio(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end {
             let pos = reader.stream_position()?;
             let (id, size) = match self.read_element(reader) {
@@ -477,15 +534,21 @@ impl MkvParser {
             match id {
                 SAMPLING_FREQ => {
                     let freq = self.read_float(reader, size)?;
-                    metadata.exif.set("MKV:AudioSampleRate", AttrValue::Float(freq as f32));
+                    metadata
+                        .exif
+                        .set("MKV:AudioSampleRate", AttrValue::Float(freq as f32));
                 }
                 CHANNELS => {
                     let ch = self.read_uint(reader, size)?;
-                    metadata.exif.set("MKV:AudioChannels", AttrValue::UInt(ch as u32));
+                    metadata
+                        .exif
+                        .set("MKV:AudioChannels", AttrValue::UInt(ch as u32));
                 }
                 BIT_DEPTH => {
                     let bits = self.read_uint(reader, size)?;
-                    metadata.exif.set("MKV:AudioBitDepth", AttrValue::UInt(bits as u32));
+                    metadata
+                        .exif
+                        .set("MKV:AudioBitDepth", AttrValue::UInt(bits as u32));
                 }
                 _ => {
                     reader.seek(SeekFrom::Current(size as i64))?;
@@ -501,7 +564,12 @@ impl MkvParser {
     }
 
     /// Parse Tags element.
-    fn parse_tags(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_tags(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end {
             let pos = reader.stream_position()?;
             let (id, size) = match self.read_element(reader) {
@@ -525,7 +593,12 @@ impl MkvParser {
     }
 
     /// Parse Tag element.
-    fn parse_tag(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_tag(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end {
             let pos = reader.stream_position()?;
             let (id, size) = match self.read_element(reader) {
@@ -549,7 +622,12 @@ impl MkvParser {
     }
 
     /// Parse SimpleTag element.
-    fn parse_simple_tag(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_simple_tag(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let mut name: Option<String> = None;
         let mut value: Option<String> = None;
 
@@ -636,7 +714,12 @@ impl MkvParser {
     }
 
     /// Parse Chapters element.
-    fn parse_chapters(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_chapters(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let mut chapter_count = 0u32;
         let mut chapters: Vec<String> = Vec::new();
 
@@ -662,12 +745,17 @@ impl MkvParser {
         }
 
         if chapter_count > 0 {
-            metadata.exif.set("MKV:ChapterCount", AttrValue::UInt(chapter_count));
+            metadata
+                .exif
+                .set("MKV:ChapterCount", AttrValue::UInt(chapter_count));
         }
         if !chapters.is_empty() {
             // Store first few chapter titles
             for (i, title) in chapters.iter().take(10).enumerate() {
-                metadata.exif.set(format!("MKV:Chapter{}Title", i + 1), AttrValue::Str(title.clone()));
+                metadata.exif.set(
+                    format!("MKV:Chapter{}Title", i + 1),
+                    AttrValue::Str(title.clone()),
+                );
             }
         }
 
@@ -766,7 +854,12 @@ impl MkvParser {
     }
 
     /// Parse Attachments element.
-    fn parse_attachments(&self, reader: &mut dyn ReadSeek, end: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_attachments(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         let mut attachment_count = 0u32;
         let mut attachments: Vec<(String, String, u64)> = Vec::new(); // (name, mime, size)
 
@@ -793,20 +886,35 @@ impl MkvParser {
         }
 
         if attachment_count > 0 {
-            metadata.exif.set("MKV:AttachmentCount", AttrValue::UInt(attachment_count));
+            metadata
+                .exif
+                .set("MKV:AttachmentCount", AttrValue::UInt(attachment_count));
         }
         // Store first few attachment names
         for (i, (name, mime, size)) in attachments.iter().take(10).enumerate() {
-            metadata.exif.set(format!("MKV:Attachment{}Name", i + 1), AttrValue::Str(name.clone()));
-            metadata.exif.set(format!("MKV:Attachment{}MIMEType", i + 1), AttrValue::Str(mime.clone()));
-            metadata.exif.set(format!("MKV:Attachment{}Size", i + 1), AttrValue::UInt(*size as u32));
+            metadata.exif.set(
+                format!("MKV:Attachment{}Name", i + 1),
+                AttrValue::Str(name.clone()),
+            );
+            metadata.exif.set(
+                format!("MKV:Attachment{}MIMEType", i + 1),
+                AttrValue::Str(mime.clone()),
+            );
+            metadata.exif.set(
+                format!("MKV:Attachment{}Size", i + 1),
+                AttrValue::UInt(*size as u32),
+            );
         }
 
         Ok(())
     }
 
     /// Parse AttachedFile. Returns (name, mime_type, size).
-    fn parse_attached_file(&self, reader: &mut dyn ReadSeek, end: u64) -> Result<Option<(String, String, u64)>> {
+    fn parse_attached_file(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end: u64,
+    ) -> Result<Option<(String, String, u64)>> {
         let mut name: Option<String> = None;
         let mut mime: Option<String> = None;
         let mut data_size: u64 = 0;

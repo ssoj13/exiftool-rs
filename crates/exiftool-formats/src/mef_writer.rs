@@ -28,8 +28,12 @@ mod tests {
     #[test]
     fn write_mef_roundtrip() {
         let mut metadata = crate::Metadata::new("MEF");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("Mamiya".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("Phase One".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("Mamiya".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("Phase One".into()));
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

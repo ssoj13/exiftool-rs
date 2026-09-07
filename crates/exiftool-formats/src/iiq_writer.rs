@@ -28,8 +28,12 @@ mod tests {
     #[test]
     fn write_iiq_roundtrip() {
         let mut metadata = crate::Metadata::new("IIQ");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("Phase One".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("IQ3 100MP".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("Phase One".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("IQ3 100MP".into()));
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

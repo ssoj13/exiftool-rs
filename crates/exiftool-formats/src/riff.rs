@@ -41,7 +41,7 @@ pub fn info_tag_name(tag: &[u8; 4]) -> &'static str {
 /// INFO chunks contain null-terminated strings with tags like INAM, IART, etc.
 pub fn parse_info(reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metadata) -> Result<()> {
     use std::io::SeekFrom;
-    
+
     while reader.stream_position()? < end_pos {
         let chunk_start = reader.stream_position()?;
 
@@ -65,7 +65,9 @@ pub fn parse_info(reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metada
 
             if !value.is_empty() {
                 let tag_name = info_tag_name(&chunk_id);
-                metadata.exif.set(format!("RIFF:{}", tag_name), AttrValue::Str(value));
+                metadata
+                    .exif
+                    .set(format!("RIFF:{}", tag_name), AttrValue::Str(value));
             }
         } else {
             reader.seek(SeekFrom::Current(chunk_size as i64))?;

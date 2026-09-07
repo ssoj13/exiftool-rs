@@ -134,12 +134,18 @@ impl VendorParser for NikonParser {
                         return None;
                     };
                     let ifd_offset = match byte_order {
-                        ByteOrder::LittleEndian => {
-                            u32::from_le_bytes([tiff_header[4], tiff_header[5], tiff_header[6], tiff_header[7]])
-                        }
-                        ByteOrder::BigEndian => {
-                            u32::from_be_bytes([tiff_header[4], tiff_header[5], tiff_header[6], tiff_header[7]])
-                        }
+                        ByteOrder::LittleEndian => u32::from_le_bytes([
+                            tiff_header[4],
+                            tiff_header[5],
+                            tiff_header[6],
+                            tiff_header[7],
+                        ]),
+                        ByteOrder::BigEndian => u32::from_be_bytes([
+                            tiff_header[4],
+                            tiff_header[5],
+                            tiff_header[6],
+                            tiff_header[7],
+                        ]),
                     };
                     (tiff_header, byte_order, u64::from(ifd_offset))
                 }
@@ -187,15 +193,15 @@ impl VendorParser for NikonParser {
                             // Extract preview offset/length from sub-IFD
                             let mut preview_offset: Option<u32> = None;
                             let mut preview_length: Option<u32> = None;
-                            
+
                             for pe in &preview_entries {
                                 match pe.tag {
                                     0x0201 => preview_offset = pe.value.as_u32(), // PreviewImageStart
-                                    0x0202 => preview_length = pe.value.as_u32(), // PreviewImageLength  
+                                    0x0202 => preview_length = pe.value.as_u32(), // PreviewImageLength
                                     _ => {}
                                 }
                             }
-                            
+
                             // Store as MakerNotes attrs for extraction by TiffParser
                             if let (Some(off), Some(len)) = (preview_offset, preview_length) {
                                 attrs.set("PreviewImageStart", AttrValue::UInt(off));
@@ -206,55 +212,73 @@ impl VendorParser for NikonParser {
                 }
                 0x0025 => {
                     // ISOInfo
-                    if let Some(sub_attrs) = parse_iso_info(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_iso_info(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("ISOInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x002B => {
                     // DistortInfo
-                    if let Some(sub_attrs) = parse_distort_info(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_distort_info(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("DistortInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x002C => {
                     // HDRInfo
-                    if let Some(sub_attrs) = parse_hdr_info(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_hdr_info(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("HDRInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0035 => {
                     // LocationInfo
-                    if let Some(sub_attrs) = parse_location_info(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_location_info(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("LocationInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0037 => {
-                    // BarometerInfo  
-                    if let Some(sub_attrs) = parse_barometer_info(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    // BarometerInfo
+                    if let Some(sub_attrs) =
+                        parse_barometer_info(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("BarometerInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0039 | 0x00B7 => {
                     // AFInfo2
-                    if let Some(sub_attrs) = parse_af_info2(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_af_info2(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("AFInfo2", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x0088 => {
                     // AFInfo (old format)
-                    if let Some(sub_attrs) = parse_af_info(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_af_info(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("AFInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x00A8 => {
                     // FlashInfo
-                    if let Some(sub_attrs) = parse_flash_info(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_flash_info(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("FlashInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
                 0x00B9 => {
                     // AFTune
-                    if let Some(sub_attrs) = parse_af_tune(entry.value.as_bytes().unwrap_or(&[]), byte_order) {
+                    if let Some(sub_attrs) =
+                        parse_af_tune(entry.value.as_bytes().unwrap_or(&[]), byte_order)
+                    {
                         attrs.set("AFTune", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
@@ -466,7 +490,7 @@ fn parse_af_info2(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
 
     // Version check at start
     let version = read_u16(data, 0, byte_order);
-    
+
     // Use appropriate table based on version
     let count = data.len() / 2;
     for i in 0..count.min(20) {
@@ -553,7 +577,8 @@ fn parse_lens_data(data: &[u8], serial: u32, shutter: u32, attrs: &mut Attrs) {
     let ver = String::from_utf8_lossy(&data[..4]).to_string();
     attrs.set("LensDataVersion", AttrValue::Str(ver.clone()));
     let decrypted;
-    let payload: &[u8] = if ver.starts_with("02") || ver.starts_with("04") || ver.starts_with("08") {
+    let payload: &[u8] = if ver.starts_with("02") || ver.starts_with("04") || ver.starts_with("08")
+    {
         decrypted = nikon_decrypt::decrypt(data, 4, serial, shutter);
         &decrypted
     } else {
@@ -691,12 +716,7 @@ fn parse_shot_info(data: &[u8], serial: u32, shutter: u32, attrs: &mut Attrs) {
         ShotCrypt::Offsets { table, big_endian } => {
             let mut buf = data.to_vec();
             if let Some(n) = nikon_decrypt::prepare_nikon_offsets(
-                &mut buf,
-                4,
-                table,
-                big_endian,
-                serial,
-                shutter,
+                &mut buf, 4, table, big_endian, serial, shutter,
             ) {
                 attrs.set("NumberOffsets", AttrValue::UInt(n));
             }
@@ -710,7 +730,8 @@ fn parse_shot_info(data: &[u8], serial: u32, shutter: u32, attrs: &mut Attrs) {
             .trim_end_matches('\0')
             .trim()
             .to_string();
-        if fw.len() >= 3 && fw.as_bytes()[0].is_ascii_digit() && fw.as_bytes().get(1) == Some(&b'.') {
+        if fw.len() >= 3 && fw.as_bytes()[0].is_ascii_digit() && fw.as_bytes().get(1) == Some(&b'.')
+        {
             attrs.set("FirmwareVersion", AttrValue::Str(fw));
         }
     }
@@ -725,7 +746,10 @@ fn parse_shot_info(data: &[u8], serial: u32, shutter: u32, attrs: &mut Attrs) {
     };
     if let Some(off) = shutter_count_offset(&ver, count) {
         if payload.len() >= off + 4 && attrs.get("ShutterCount").is_none() {
-            attrs.set("ShutterCount", AttrValue::UInt(read_u32(payload, off, order)));
+            attrs.set(
+                "ShutterCount",
+                AttrValue::UInt(read_u32(payload, off, order)),
+            );
         }
     }
     if ver.starts_with("0209") && payload.len() > 586 {
@@ -971,7 +995,10 @@ fn nikon_aperture(val: u8) -> String {
 }
 
 /// Format IFD entry value with PrintConv lookup.
-fn format_value(entry: &exiftool_core::IfdEntry, values_map: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+fn format_value(
+    entry: &exiftool_core::IfdEntry,
+    values_map: Option<&'static [(i64, &'static str)]>,
+) -> AttrValue {
     if let Some(map) = values_map {
         if let Some(int_val) = entry.value.as_u32().map(|v| v as i64) {
             for &(key, label) in map {
@@ -1003,8 +1030,18 @@ fn read_u32(data: &[u8], offset: usize, byte_order: ByteOrder) -> u32 {
         return 0;
     }
     match byte_order {
-        ByteOrder::LittleEndian => u32::from_le_bytes([data[offset], data[offset + 1], data[offset + 2], data[offset + 3]]),
-        ByteOrder::BigEndian => u32::from_be_bytes([data[offset], data[offset + 1], data[offset + 2], data[offset + 3]]),
+        ByteOrder::LittleEndian => u32::from_le_bytes([
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
+        ]),
+        ByteOrder::BigEndian => u32::from_be_bytes([
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
+        ]),
     }
 }
 
@@ -1019,14 +1056,16 @@ mod tests {
 
     #[test]
     fn parse_d70_makernotes_blob() {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/testdata/Nikon.nef");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/Nikon.nef");
         if !path.exists() {
             return;
         }
         let data = std::fs::read(&path).unwrap();
         let mn = &data[1744..1744 + 4374];
-        let attrs = NikonParser.parse(mn, ByteOrder::LittleEndian).expect("nikon mn");
+        let attrs = NikonParser
+            .parse(mn, ByteOrder::LittleEndian)
+            .expect("nikon mn");
         assert_eq!(attrs.get_str("LensDataVersion"), Some("0101"));
         assert!(attrs.get_str("WB_RGBGLevels").is_some());
     }

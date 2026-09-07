@@ -14,33 +14,27 @@ use std::io::SeekFrom;
 
 // ASF GUIDs
 const ASF_HEADER_GUID: [u8; 16] = [
-    0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11,
-    0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C,
+    0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C,
 ];
 
 const FILE_PROPERTIES_GUID: [u8; 16] = [
-    0xA1, 0xDC, 0xAB, 0x8C, 0x47, 0xA9, 0xCF, 0x11,
-    0x8E, 0xE4, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65,
+    0xA1, 0xDC, 0xAB, 0x8C, 0x47, 0xA9, 0xCF, 0x11, 0x8E, 0xE4, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65,
 ];
 
 const STREAM_PROPERTIES_GUID: [u8; 16] = [
-    0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11,
-    0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65,
+    0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65,
 ];
 
 const CONTENT_DESC_GUID: [u8; 16] = [
-    0x33, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11,
-    0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C,
+    0x33, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C,
 ];
 
 const EXT_CONTENT_DESC_GUID: [u8; 16] = [
-    0x40, 0xA4, 0xD0, 0xD2, 0x07, 0xE3, 0xD2, 0x11,
-    0x97, 0xF0, 0x00, 0xA0, 0xC9, 0x5E, 0xA8, 0x50,
+    0x40, 0xA4, 0xD0, 0xD2, 0x07, 0xE3, 0xD2, 0x11, 0x97, 0xF0, 0x00, 0xA0, 0xC9, 0x5E, 0xA8, 0x50,
 ];
 
 const AUDIO_MEDIA_GUID: [u8; 16] = [
-    0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11,
-    0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B,
+    0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B,
 ];
 
 /// ASF/WMA/WMV format parser.
@@ -82,8 +76,8 @@ impl FormatParser for AsfParser {
 
         // Header size (8 bytes LE)
         let header_size = u64::from_le_bytes([
-            header[16], header[17], header[18], header[19],
-            header[20], header[21], header[22], header[23],
+            header[16], header[17], header[18], header[19], header[20], header[21], header[22],
+            header[23],
         ]);
 
         // Number of header objects (4 bytes LE)
@@ -107,8 +101,14 @@ impl FormatParser for AsfParser {
 
             let guid = &obj_header[0..16];
             let obj_size = u64::from_le_bytes([
-                obj_header[16], obj_header[17], obj_header[18], obj_header[19],
-                obj_header[20], obj_header[21], obj_header[22], obj_header[23],
+                obj_header[16],
+                obj_header[17],
+                obj_header[18],
+                obj_header[19],
+                obj_header[20],
+                obj_header[21],
+                obj_header[22],
+                obj_header[23],
             ]);
 
             if obj_size < 24 || obj_size > header_end - pos {
@@ -150,34 +150,31 @@ fn parse_file_properties(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Resu
     // File ID GUID (16 bytes) - skip
     // File size (8 bytes)
     let _file_size = u64::from_le_bytes([
-        data[16], data[17], data[18], data[19],
-        data[20], data[21], data[22], data[23],
+        data[16], data[17], data[18], data[19], data[20], data[21], data[22], data[23],
     ]);
 
     // Creation date (8 bytes, FILETIME)
     let creation_time = u64::from_le_bytes([
-        data[24], data[25], data[26], data[27],
-        data[28], data[29], data[30], data[31],
+        data[24], data[25], data[26], data[27], data[28], data[29], data[30], data[31],
     ]);
     if creation_time > 0 {
         // Convert FILETIME to Unix timestamp
         // FILETIME is 100ns intervals since 1601-01-01
         let unix_time = (creation_time / 10_000_000).saturating_sub(11644473600);
-        meta.exif.set("ASF:CreationDate", AttrValue::UInt64(unix_time));
+        meta.exif
+            .set("ASF:CreationDate", AttrValue::UInt64(unix_time));
     }
 
     // Data packets count (8 bytes)
     // Play duration (8 bytes, 100ns units)
     let play_duration = u64::from_le_bytes([
-        data[40], data[41], data[42], data[43],
-        data[44], data[45], data[46], data[47],
+        data[40], data[41], data[42], data[43], data[44], data[45], data[46], data[47],
     ]);
 
     // Send duration (8 bytes)
     // Preroll (8 bytes, ms)
     let preroll = u64::from_le_bytes([
-        data[56], data[57], data[58], data[59],
-        data[60], data[61], data[62], data[63],
+        data[56], data[57], data[58], data[59], data[60], data[61], data[62], data[63],
     ]);
 
     // Calculate actual duration
@@ -185,7 +182,8 @@ fn parse_file_properties(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Resu
         let duration_100ns = play_duration.saturating_sub(preroll * 10_000);
         let duration_secs = duration_100ns as f64 / 10_000_000.0;
         if duration_secs > 0.0 && duration_secs < 86400.0 * 30.0 {
-            meta.exif.set("Audio:Duration", AttrValue::Double(duration_secs));
+            meta.exif
+                .set("Audio:Duration", AttrValue::Double(duration_secs));
         }
     }
 
@@ -194,7 +192,8 @@ fn parse_file_properties(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Resu
     // Max bitrate (4 bytes)
     let max_bitrate = u32::from_le_bytes([data[76], data[77], data[78], data[79]]);
     if max_bitrate > 0 {
-        meta.exif.set("Audio:Bitrate", AttrValue::UInt(max_bitrate / 1000));
+        meta.exif
+            .set("Audio:Bitrate", AttrValue::UInt(max_bitrate / 1000));
     }
 
     Ok(())
@@ -209,8 +208,9 @@ fn parse_stream_properties(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Re
 
     if stream_type == AUDIO_MEDIA_GUID {
         // Audio stream - read WAVEFORMATEX
-        let type_specific_len = u32::from_le_bytes([data[40], data[41], data[42], data[43]]) as usize;
-        
+        let type_specific_len =
+            u32::from_le_bytes([data[40], data[41], data[42], data[43]]) as usize;
+
         if type_specific_len >= 18 {
             let mut wave = vec![0u8; type_specific_len.min(256)];
             // Skip to type-specific data
@@ -224,15 +224,21 @@ fn parse_stream_properties(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Re
             let avg_bytes_per_sec = u32::from_le_bytes([wave[8], wave[9], wave[10], wave[11]]);
             let bits_per_sample = u16::from_le_bytes([wave[14], wave[15]]);
 
-            meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
-            meta.exif.set("Audio:Channels", AttrValue::UInt(channels as u32));
-            
+            meta.exif
+                .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+            meta.exif
+                .set("Audio:Channels", AttrValue::UInt(channels as u32));
+
             if bits_per_sample > 0 {
-                meta.exif.set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample as u32));
+                meta.exif.set(
+                    "Audio:BitsPerSample",
+                    AttrValue::UInt(bits_per_sample as u32),
+                );
             }
 
             if avg_bytes_per_sec > 0 {
-                meta.exif.set("Audio:AvgBytesPerSec", AttrValue::UInt(avg_bytes_per_sec));
+                meta.exif
+                    .set("Audio:AvgBytesPerSec", AttrValue::UInt(avg_bytes_per_sec));
             }
 
             let codec = match format_tag {
@@ -242,7 +248,8 @@ fn parse_stream_properties(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Re
                 0x000A => "WMA Voice",
                 _ => "WMA",
             };
-            meta.exif.set("Audio:Codec", AttrValue::Str(codec.to_string()));
+            meta.exif
+                .set("Audio:Codec", AttrValue::Str(codec.to_string()));
 
             let channel_mode = match channels {
                 1 => "Mono",
@@ -251,11 +258,15 @@ fn parse_stream_properties(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Re
                 8 => "7.1",
                 _ => "Multi-channel",
             };
-            meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_mode.to_string()));
+            meta.exif.set(
+                "Audio:ChannelMode",
+                AttrValue::Str(channel_mode.to_string()),
+            );
         }
     } else {
         // Video stream
-        meta.exif.set("ASF:VideoCodec", AttrValue::Str("WMV".to_string()));
+        meta.exif
+            .set("ASF:VideoCodec", AttrValue::Str("WMV".to_string()));
     }
 
     Ok(())
@@ -305,7 +316,11 @@ fn parse_content_description(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> 
 }
 
 /// Parse Extended Content Description Object.
-fn parse_ext_content_description(reader: &mut dyn ReadSeek, size: u64, meta: &mut Metadata) -> Result<()> {
+fn parse_ext_content_description(
+    reader: &mut dyn ReadSeek,
+    size: u64,
+    meta: &mut Metadata,
+) -> Result<()> {
     let mut count_bytes = [0u8; 2];
     reader.read_exact(&mut count_bytes)?;
     let count = u16::from_le_bytes(count_bytes) as usize;
@@ -368,7 +383,10 @@ fn parse_ext_content_description(reader: &mut dyn ReadSeek, size: u64, meta: &mu
                     // UTF-16LE string
                     let value = read_utf16le_string(reader, value_len)?;
                     if !value.is_empty() {
-                        meta.exif.set(tag, AttrValue::Str(value.trim_end_matches('\0').to_string()));
+                        meta.exif.set(
+                            tag,
+                            AttrValue::Str(value.trim_end_matches('\0').to_string()),
+                        );
                     }
                 }
                 3 => {

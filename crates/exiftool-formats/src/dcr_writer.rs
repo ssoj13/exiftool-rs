@@ -28,8 +28,13 @@ mod tests {
     #[test]
     fn write_dcr_roundtrip() {
         let mut metadata = crate::Metadata::new("DCR");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("Kodak".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("DCS Pro 14n".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("Kodak".into()));
+        metadata.exif.set(
+            "Model",
+            exiftool_attrs::AttrValue::Str("DCS Pro 14n".into()),
+        );
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

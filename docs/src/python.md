@@ -326,7 +326,7 @@ except WriteError as e:
 | `page_count` | int | Number of pages |
 | `is_multi_page` | bool | Has multiple pages |
 | `is_camera_raw` | bool | Is RAW file |
-| `is_writable` | bool | JPEG PNG TIFF DNG WebP HEIC EXR HDR GIF PNM JXL + TIFF-RAW + RAF + MP4 + WAV/FLAC/MP3 (not CR3) |
+| `is_writable` | bool | JPEG PNG TIFF DNG WebP HEIC EXR HDR GIF PNM JXL + TIFF-RAW + RAF + CR3 + MP4 + WAV/FLAC/MP3 |
 
 ### Image Methods
 

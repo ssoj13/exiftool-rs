@@ -50,9 +50,9 @@ impl FormatParser for EpsParser {
             }
             let ps_offset = u32::from_le_bytes([data[4], data[5], data[6], data[7]]) as usize;
             let ps_length = u32::from_le_bytes([data[8], data[9], data[10], data[11]]) as usize;
-            
+
             meta.exif.set("EPSType", AttrValue::Str("DOS EPS".into()));
-            
+
             if ps_offset < data.len() && ps_offset + ps_length <= data.len() {
                 &data[ps_offset..ps_offset + ps_length]
             } else if ps_offset < data.len() {
@@ -89,7 +89,8 @@ fn parse_dsc_comments(data: &[u8], meta: &mut Metadata) {
         if line.starts_with("%!PS-Adobe-") {
             if let Some(ver) = line.strip_prefix("%!PS-Adobe-") {
                 let version = ver.split_whitespace().next().unwrap_or(ver);
-                meta.exif.set("PSVersion", AttrValue::Str(version.to_string()));
+                meta.exif
+                    .set("PSVersion", AttrValue::Str(version.to_string()));
             }
         }
     }
@@ -110,13 +111,16 @@ fn parse_dsc_comments(data: &[u8], meta: &mut Metadata) {
         if let Some((key, value)) = parse_dsc_line(line) {
             match key {
                 "Title" => {
-                    meta.exif.set("Title", AttrValue::Str(clean_ps_string(value)));
+                    meta.exif
+                        .set("Title", AttrValue::Str(clean_ps_string(value)));
                 }
                 "Creator" => {
-                    meta.exif.set("Creator", AttrValue::Str(clean_ps_string(value)));
+                    meta.exif
+                        .set("Creator", AttrValue::Str(clean_ps_string(value)));
                 }
                 "CreationDate" => {
-                    meta.exif.set("CreateDate", AttrValue::Str(value.to_string()));
+                    meta.exif
+                        .set("CreateDate", AttrValue::Str(value.to_string()));
                 }
                 "For" => {
                     meta.exif.set("For", AttrValue::Str(clean_ps_string(value)));
@@ -135,12 +139,14 @@ fn parse_dsc_comments(data: &[u8], meta: &mut Metadata) {
                             let height = ury - lly;
                             meta.exif.set("ImageWidth", AttrValue::UInt(width as u32));
                             meta.exif.set("ImageHeight", AttrValue::UInt(height as u32));
-                            meta.exif.set("BoundingBox", AttrValue::Str(value.to_string()));
+                            meta.exif
+                                .set("BoundingBox", AttrValue::Str(value.to_string()));
                         }
                     }
                 }
                 "HiResBoundingBox" => {
-                    meta.exif.set("HiResBoundingBox", AttrValue::Str(value.to_string()));
+                    meta.exif
+                        .set("HiResBoundingBox", AttrValue::Str(value.to_string()));
                 }
                 "Pages" => {
                     if let Ok(pages) = value.parse::<u32>() {
@@ -148,10 +154,12 @@ fn parse_dsc_comments(data: &[u8], meta: &mut Metadata) {
                     }
                 }
                 "PageOrder" => {
-                    meta.exif.set("PageOrder", AttrValue::Str(value.to_string()));
+                    meta.exif
+                        .set("PageOrder", AttrValue::Str(value.to_string()));
                 }
                 "DocumentData" => {
-                    meta.exif.set("DocumentData", AttrValue::Str(value.to_string()));
+                    meta.exif
+                        .set("DocumentData", AttrValue::Str(value.to_string()));
                 }
                 "LanguageLevel" => {
                     if let Ok(level) = value.parse::<u32>() {
@@ -159,7 +167,8 @@ fn parse_dsc_comments(data: &[u8], meta: &mut Metadata) {
                     }
                 }
                 "Copyright" => {
-                    meta.exif.set("Copyright", AttrValue::Str(clean_ps_string(value)));
+                    meta.exif
+                        .set("Copyright", AttrValue::Str(clean_ps_string(value)));
                 }
                 "DocumentNeededResources" | "DocumentSuppliedResources" => {
                     // Skip multi-line resource lists
@@ -178,7 +187,7 @@ fn parse_dsc_comments(data: &[u8], meta: &mut Metadata) {
 /// Parse a DSC comment line into key-value pair.
 fn parse_dsc_line(line: &str) -> Option<(&str, &str)> {
     let line = line.strip_prefix("%%")?;
-    
+
     // Handle "Key: Value" format
     if let Some(pos) = line.find(':') {
         let key = line[..pos].trim();
@@ -187,7 +196,7 @@ fn parse_dsc_line(line: &str) -> Option<(&str, &str)> {
             return Some((key, value));
         }
     }
-    
+
     None
 }
 
@@ -206,21 +215,20 @@ fn find_xmp_packet(data: &[u8]) -> Option<&[u8]> {
     // Look for XMP packet markers
     let xmp_start = b"<?xpacket begin=";
     let xmp_end = b"<?xpacket end=";
-    
+
     // Find start
-    let start_pos = data.windows(xmp_start.len())
-        .position(|w| w == xmp_start)?;
-    
+    let start_pos = data.windows(xmp_start.len()).position(|w| w == xmp_start)?;
+
     // Find end
     let search_area = &data[start_pos..];
-    let end_pos = search_area.windows(xmp_end.len())
+    let end_pos = search_area
+        .windows(xmp_end.len())
         .position(|w| w == xmp_end)?;
-    
+
     // Find the closing ?>
     let end_area = &search_area[end_pos..];
-    let close_pos = end_area.windows(2)
-        .position(|w| w == b"?>")?;
-    
+    let close_pos = end_area.windows(2).position(|w| w == b"?>")?;
+
     Some(&search_area[..end_pos + close_pos + 2])
 }
 

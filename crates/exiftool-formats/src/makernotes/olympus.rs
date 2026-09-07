@@ -60,8 +60,12 @@ impl VendorParser for OlympusParser {
             };
             // IFD offset at bytes 12-15
             let offset = match byte_order {
-                ByteOrder::LittleEndian => u32::from_le_bytes([data[12], data[13], data[14], data[15]]),
-                ByteOrder::BigEndian => u32::from_be_bytes([data[12], data[13], data[14], data[15]]),
+                ByteOrder::LittleEndian => {
+                    u32::from_le_bytes([data[12], data[13], data[14], data[15]])
+                }
+                ByteOrder::BigEndian => {
+                    u32::from_be_bytes([data[12], data[13], data[14], data[15]])
+                }
             } as usize;
             (data, byte_order, offset)
         } else if data.starts_with(OLYMP_HEADER) {
@@ -89,7 +93,9 @@ impl VendorParser for OlympusParser {
                 0x2020 => {
                     // CameraSettings sub-IFD
                     if let Some(offset) = entry.value.as_u32() {
-                        if let Some(sub_attrs) = parse_camera_settings_ifd(ifd_data, byte_order, offset) {
+                        if let Some(sub_attrs) =
+                            parse_camera_settings_ifd(ifd_data, byte_order, offset)
+                        {
                             attrs.set("CameraSettings", AttrValue::Group(Box::new(sub_attrs)));
                         }
                     }
@@ -97,7 +103,9 @@ impl VendorParser for OlympusParser {
                 0x2040 => {
                     // ImageProcessing sub-IFD
                     if let Some(offset) = entry.value.as_u32() {
-                        if let Some(sub_attrs) = parse_image_processing_ifd(ifd_data, byte_order, offset) {
+                        if let Some(sub_attrs) =
+                            parse_image_processing_ifd(ifd_data, byte_order, offset)
+                        {
                             attrs.set("ImageProcessing", AttrValue::Group(Box::new(sub_attrs)));
                         }
                     }
@@ -105,7 +113,8 @@ impl VendorParser for OlympusParser {
                 0x2050 => {
                     // FocusInfo sub-IFD
                     if let Some(offset) = entry.value.as_u32() {
-                        if let Some(sub_attrs) = parse_focus_info_ifd(ifd_data, byte_order, offset) {
+                        if let Some(sub_attrs) = parse_focus_info_ifd(ifd_data, byte_order, offset)
+                        {
                             attrs.set("FocusInfo", AttrValue::Group(Box::new(sub_attrs)));
                         }
                     }
@@ -189,7 +198,10 @@ fn parse_focus_info_ifd(data: &[u8], byte_order: ByteOrder, offset: u32) -> Opti
 }
 
 /// Format IFD entry value with PrintConv lookup.
-fn format_value(entry: &exiftool_core::IfdEntry, values_map: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+fn format_value(
+    entry: &exiftool_core::IfdEntry,
+    values_map: Option<&'static [(i64, &'static str)]>,
+) -> AttrValue {
     if let Some(map) = values_map {
         if let Some(int_val) = entry.value.as_u32().map(|v| v as i64) {
             for &(key, label) in map {

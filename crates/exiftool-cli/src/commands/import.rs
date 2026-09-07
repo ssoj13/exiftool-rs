@@ -9,7 +9,7 @@ use exiftool_attrs::AttrValue;
 use exiftool_formats::{
     build_xmp_string, ArwWriter, Cr2Writer, DcrWriter, ErfWriter, ExrWriter, FffWriter, FlacWriter,
     FormatRegistry, GifWriter, HdrWriter, HeicWriter, Id3Writer, IiqWriter, JpegWriter, JxlWriter,
-    MefWriter, Mp4Writer, MosWriter, NefWriter, OrfWriter, PefWriter, PngWriter, PnmWriter,
+    MefWriter, MosWriter, Mp4Writer, NefWriter, OrfWriter, PefWriter, PngWriter, PnmWriter,
     RafWriter, Rw2Writer, RwlWriter, SrwWriter, TiffWriter, WavWriter, WebpWriter,
 };
 
@@ -21,19 +21,14 @@ pub fn import_from_json(args: &Args, registry: &FormatRegistry) -> Result<()> {
     let json_str = std::fs::read_to_string(json_path)
         .with_context(|| format!("Cannot read: {}", json_path.display()))?;
 
-    let json: serde_json::Value =
-        serde_json::from_str(&json_str)
-            .with_context(|| format!("Invalid JSON in: {}", json_path.display()))?;
+    let json: serde_json::Value = serde_json::from_str(&json_str)
+        .with_context(|| format!("Invalid JSON in: {}", json_path.display()))?;
 
     let obj = json
         .as_object()
         .ok_or_else(|| anyhow::anyhow!("JSON must be an object"))?;
 
-    let is_file_keyed = obj
-        .values()
-        .next()
-        .map(|v| v.is_object())
-        .unwrap_or(false);
+    let is_file_keyed = obj.values().next().map(|v| v.is_object()).unwrap_or(false);
 
     if is_file_keyed {
         for (file_path, tags_val) in obj {
@@ -323,7 +318,11 @@ fn write_tags_to_file(
             out
         }
         fmt => {
-            eprintln!("Warning: Write not supported for {}: {}", fmt, path.display());
+            eprintln!(
+                "Warning: Write not supported for {}: {}",
+                fmt,
+                path.display()
+            );
             return Ok(());
         }
     };

@@ -126,10 +126,7 @@ impl VendorParser for CasioParser {
         let mut attrs = Attrs::new();
 
         for entry in entries {
-            let tag_name = tags
-                .iter()
-                .find(|(t, _)| *t == entry.tag)
-                .map(|(_, n)| *n);
+            let tag_name = tags.iter().find(|(t, _)| *t == entry.tag).map(|(_, n)| *n);
 
             if let Some(name) = tag_name {
                 attrs.set(name, entry_to_attr(&entry));

@@ -55,12 +55,13 @@ impl FormatParser for AuParser {
         let channels = u32::from_be_bytes([header[20], header[21], header[22], header[23]]);
 
         meta.exif.set("AU:DataOffset", AttrValue::UInt(data_offset));
-        
+
         if data_size != 0xFFFFFFFF {
             meta.exif.set("AU:DataSize", AttrValue::UInt(data_size));
         }
 
-        meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+        meta.exif
+            .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
         meta.exif.set("Audio:Channels", AttrValue::UInt(channels));
 
         // Channel description
@@ -69,15 +70,20 @@ impl FormatParser for AuParser {
             2 => "Stereo",
             _ => "Multi-channel",
         };
-        meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_desc.to_string()));
+        meta.exif.set(
+            "Audio:ChannelMode",
+            AttrValue::Str(channel_desc.to_string()),
+        );
 
         // Encoding format
         let (encoding_name, bits_per_sample) = encoding_info(encoding);
-        meta.exif.set("AU:Encoding", AttrValue::Str(encoding_name.to_string()));
+        meta.exif
+            .set("AU:Encoding", AttrValue::Str(encoding_name.to_string()));
         meta.exif.set("AU:EncodingID", AttrValue::UInt(encoding));
-        
+
         if bits_per_sample > 0 {
-            meta.exif.set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample));
+            meta.exif
+                .set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample));
         }
 
         // Calculate duration if we have enough info
@@ -86,12 +92,14 @@ impl FormatParser for AuParser {
             let total_samples = data_size / (bytes_per_sample * channels);
             let duration = total_samples as f64 / sample_rate as f64;
             meta.exif.set("Audio:Duration", AttrValue::Double(duration));
-            
+
             // Format duration as MM:SS
             let mins = (duration / 60.0) as u32;
             let secs = (duration % 60.0) as u32;
-            meta.exif.set("Audio:DurationFormatted", 
-                AttrValue::Str(format!("{}:{:02}", mins, secs)));
+            meta.exif.set(
+                "Audio:DurationFormatted",
+                AttrValue::Str(format!("{}:{:02}", mins, secs)),
+            );
         }
 
         // Read annotation if present (between header and data)

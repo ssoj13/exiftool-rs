@@ -48,7 +48,10 @@ mod tests {
     #[test]
     fn write_orf_patches_magic() {
         let mut metadata = crate::Metadata::new("ORF");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("OLYMPUS CORPORATION".into()));
+        metadata.exif.set(
+            "Make",
+            exiftool_attrs::AttrValue::Str("OLYMPUS CORPORATION".into()),
+        );
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

@@ -80,7 +80,9 @@ fn parse_7z(reader: &mut dyn ReadSeek) -> Result<Metadata> {
     let next_off = u64::from_le_bytes(nh[0..8].try_into().unwrap());
     let next_size = u64::from_le_bytes(nh[8..16].try_into().unwrap());
     if next_size == 0 || next_size > MAX_HEADER {
-        metadata.exif.set("Zip:Warning", AttrValue::Str("7z header too large".into()));
+        metadata
+            .exif
+            .set("Zip:Warning", AttrValue::Str("7z header too large".into()));
         return Ok(metadata);
     }
     reader.seek(SeekFrom::Start(32 + next_off))?;
@@ -96,7 +98,10 @@ fn parse_7z(reader: &mut dyn ReadSeek) -> Result<Metadata> {
         match extract_header_info(&mut cur) {
             Ok(files) => apply_files(&mut metadata, files),
             Err(e) => {
-                metadata.exif.set("Zip:Warning", AttrValue::Str(format!("Invalid or corrupted file: {e}")));
+                metadata.exif.set(
+                    "Zip:Warning",
+                    AttrValue::Str(format!("Invalid or corrupted file: {e}")),
+                );
             }
         }
     } else if pid == 23 {
@@ -110,7 +115,9 @@ fn parse_7z(reader: &mut dyn ReadSeek) -> Result<Metadata> {
             }
         }
     } else {
-        return Err(Error::InvalidStructure(format!("unknown 7z header id {pid}")));
+        return Err(Error::InvalidStructure(format!(
+            "unknown 7z header id {pid}"
+        )));
     }
     let _ = next_size;
     Ok(metadata)
@@ -122,12 +129,18 @@ fn apply_files(metadata: &mut Metadata, files: Vec<SevenFile>) {
         .map(|f| AttrValue::Str(f.filename.clone()))
         .collect();
     if names.len() == 1 {
-        metadata.exif.set("Zip:ArchivedFileName", names.into_iter().next().unwrap());
+        metadata
+            .exif
+            .set("Zip:ArchivedFileName", names.into_iter().next().unwrap());
     } else if !names.is_empty() {
-        metadata.exif.set("Zip:ArchivedFileName", AttrValue::List(names));
+        metadata
+            .exif
+            .set("Zip:ArchivedFileName", AttrValue::List(names));
     }
     if let Some(ts) = files.iter().find_map(|f| f.lastwritetime) {
-        metadata.exif.set("Zip:ModifyDate", AttrValue::Str(unix_exif(ts)));
+        metadata
+            .exif
+            .set("Zip:ModifyDate", AttrValue::Str(unix_exif(ts)));
     }
 }
 
@@ -157,7 +170,10 @@ fn civil_from_days(z: i64) -> (i32, u32, u32) {
     (y as i32, m, d)
 }
 
-fn decode_encoded_header(reader: &mut dyn ReadSeek, streams_src: &mut Cursor<Vec<u8>>) -> io::Result<Vec<SevenFile>> {
+fn decode_encoded_header(
+    reader: &mut dyn ReadSeek,
+    streams_src: &mut Cursor<Vec<u8>>,
+) -> io::Result<Vec<SevenFile>> {
     let streams = read_streams_info(streams_src)?;
     let folder = streams
         .folders
@@ -497,7 +513,8 @@ fn read_files_info<R: Read>(r: &mut R) -> io::Result<Vec<SevenFile>> {
                 for (i, d) in defined.into_iter().enumerate() {
                     if d {
                         let value = read_u64_le(&mut cur)?;
-                        files[i].lastwritetime = Some(value as f64 / 10_000_000.0 - 11_644_473_600.0);
+                        files[i].lastwritetime =
+                            Some(value as f64 / 10_000_000.0 - 11_644_473_600.0);
                     }
                 }
             }
@@ -625,8 +642,7 @@ mod tests {
 
     #[test]
     fn parse_fixture_seven_7z() {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/testdata/seven.7z");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/seven.7z");
         if !path.exists() {
             return;
         }
@@ -640,8 +656,7 @@ mod tests {
 
     #[test]
     fn parse_fixture_encoded_7z() {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/testdata/encoded.7z");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/encoded.7z");
         if !path.exists() {
             return;
         }
@@ -649,11 +664,18 @@ mod tests {
         let mut cur = Cursor::new(data);
         let meta = SevenZParser.parse(&mut cur).unwrap();
         assert_eq!(meta.format, "7Z");
-        assert!(meta.exif.get_str("Zip:Warning").is_none(), "{:?}", meta.exif.get_str("Zip:Warning"));
+        assert!(
+            meta.exif.get_str("Zip:Warning").is_none(),
+            "{:?}",
+            meta.exif.get_str("Zip:Warning")
+        );
         match meta.exif.get("Zip:ArchivedFileName") {
             Some(AttrValue::List(names)) => {
                 assert_eq!(names.len(), 40);
-                assert_eq!(names[0], AttrValue::Str("file_00_with_a_reasonably_long_name.txt".into()));
+                assert_eq!(
+                    names[0],
+                    AttrValue::Str("file_00_with_a_reasonably_long_name.txt".into())
+                );
             }
             other => panic!("expected 40 archived names, got {other:?}"),
         }

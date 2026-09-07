@@ -26,7 +26,7 @@ impl Default for MosParser {
 
 impl FormatParser for MosParser {
     fn can_parse(&self, header: &[u8]) -> bool {
-                // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // TIFF-family FileType is classified by TiffParser + tiff_family.
         // Matching TIFF magic here would steal every TIFF from later parsers.
         let _ = header;
         false
@@ -42,7 +42,7 @@ impl FormatParser for MosParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = self.tiff.parse(reader)?;
-        
+
         // Leaf cameras - check Make tag
         if let Some(make) = meta.exif.get_str("Make") {
             let make_upper = make.to_uppercase();
@@ -50,7 +50,7 @@ impl FormatParser for MosParser {
                 meta.format = "MOS";
             }
         }
-        
+
         Ok(meta)
     }
 }

@@ -18,9 +18,9 @@
 //!   VP8L <size> <lossless-data>      ; Lossless image data
 //! ```
 
-use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
-use exiftool_attrs::{Attrs, AttrValue};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
+use exiftool_attrs::{AttrValue, Attrs};
 use std::io::SeekFrom;
 
 /// WebP format parser.
@@ -69,9 +69,7 @@ impl Default for WebpParser {
 impl FormatParser for WebpParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         // RIFF....WEBP signature
-        header.len() >= 12
-            && &header[0..4] == b"RIFF"
-            && &header[8..12] == b"WEBP"
+        header.len() >= 12 && &header[0..4] == b"RIFF" && &header[8..12] == b"WEBP"
     }
 
     fn format_name(&self) -> &'static str {
@@ -90,7 +88,7 @@ impl FormatParser for WebpParser {
         }
 
         let file_size = Self::read_u32_le(reader)?;
-        let _ = file_size;  // Total file size minus 8
+        let _ = file_size; // Total file size minus 8
 
         let webp = Self::read_fourcc(reader)?;
         if &webp != b"WEBP" {
@@ -151,7 +149,8 @@ impl FormatParser for WebpParser {
                         reader.read_exact(&mut data)?;
 
                         // VP8 frame header: 3 bytes frame tag + 3 bytes start code + dimensions
-                        if data.len() >= 10 && data[3] == 0x9D && data[4] == 0x01 && data[5] == 0x2A {
+                        if data.len() >= 10 && data[3] == 0x9D && data[4] == 0x01 && data[5] == 0x2A
+                        {
                             width = u16::from_le_bytes([data[6], data[7]]) as u32 & 0x3FFF;
                             height = u16::from_le_bytes([data[8], data[9]]) as u32 & 0x3FFF;
                             attrs.set("ImageWidth", AttrValue::UInt(width));

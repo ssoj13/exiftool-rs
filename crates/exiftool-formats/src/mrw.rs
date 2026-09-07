@@ -41,12 +41,15 @@ impl FormatParser for MrwParser {
 
         // Validate magic
         if header[0] != 0x00 || &header[1..4] != b"MRM" {
-            return Err(crate::Error::InvalidStructure("Not a valid MRW file".to_string()));
+            return Err(crate::Error::InvalidStructure(
+                "Not a valid MRW file".to_string(),
+            ));
         }
 
         // Offset to PRD block (big-endian)
         let prd_offset = u32::from_be_bytes([header[4], header[5], header[6], header[7]]) as u64;
-        meta.exif.set("MRW:DataOffset", AttrValue::UInt64(prd_offset));
+        meta.exif
+            .set("MRW:DataOffset", AttrValue::UInt64(prd_offset));
 
         // File size
         let file_size = crate::utils::get_file_size(reader)?;
@@ -138,10 +141,14 @@ impl MrwParser {
             let image_height = u16::from_be_bytes([dim[4], dim[5]]) as u32;
             let image_width = u16::from_be_bytes([dim[6], dim[7]]) as u32;
 
-            meta.exif.set("MRW:SensorWidth", AttrValue::UInt(sensor_width));
-            meta.exif.set("MRW:SensorHeight", AttrValue::UInt(sensor_height));
-            meta.exif.set("File:ImageWidth", AttrValue::UInt(image_width));
-            meta.exif.set("File:ImageHeight", AttrValue::UInt(image_height));
+            meta.exif
+                .set("MRW:SensorWidth", AttrValue::UInt(sensor_width));
+            meta.exif
+                .set("MRW:SensorHeight", AttrValue::UInt(sensor_height));
+            meta.exif
+                .set("File:ImageWidth", AttrValue::UInt(image_width));
+            meta.exif
+                .set("File:ImageHeight", AttrValue::UInt(image_height));
         }
 
         if size >= 22 {
@@ -151,11 +158,13 @@ impl MrwParser {
 
             // Data size
             let data_size = u8::from_be_bytes([extra[0]]);
-            meta.exif.set("MRW:BitsPerSample", AttrValue::UInt(data_size as u32));
+            meta.exif
+                .set("MRW:BitsPerSample", AttrValue::UInt(data_size as u32));
 
             // Pixel size
             let pixel_size = u8::from_be_bytes([extra[1]]);
-            meta.exif.set("MRW:PixelSize", AttrValue::UInt(pixel_size as u32));
+            meta.exif
+                .set("MRW:PixelSize", AttrValue::UInt(pixel_size as u32));
 
             // Storage method
             let storage = u8::from_be_bytes([extra[2]]);
@@ -164,7 +173,10 @@ impl MrwParser {
                 0x59 => "Linear",
                 _ => "Unknown",
             };
-            meta.exif.set("MRW:StorageMethod", AttrValue::Str(storage_name.to_string()));
+            meta.exif.set(
+                "MRW:StorageMethod",
+                AttrValue::Str(storage_name.to_string()),
+            );
 
             // Bayer pattern
             let bayer = u8::from_be_bytes([extra[5]]);
@@ -173,7 +185,8 @@ impl MrwParser {
                 0x04 => "GBRG",
                 _ => "Unknown",
             };
-            meta.exif.set("MRW:BayerPattern", AttrValue::Str(bayer_name.to_string()));
+            meta.exif
+                .set("MRW:BayerPattern", AttrValue::Str(bayer_name.to_string()));
         }
 
         Ok(())
@@ -200,9 +213,10 @@ impl MrwParser {
             let is_be = &tiff_header[0..2] == b"MM";
 
             if is_le || is_be {
-                meta.exif.set("MRW:TiffByteOrder", AttrValue::Str(
-                    if is_le { "Little-endian" } else { "Big-endian" }.to_string()
-                ));
+                meta.exif.set(
+                    "MRW:TiffByteOrder",
+                    AttrValue::Str(if is_le { "Little-endian" } else { "Big-endian" }.to_string()),
+                );
             }
         }
 
@@ -261,15 +275,18 @@ impl MrwParser {
 
         // Saturation
         let saturation = data[1];
-        meta.exif.set("MRW:Saturation", AttrValue::Int(saturation as i32 - 3));
+        meta.exif
+            .set("MRW:Saturation", AttrValue::Int(saturation as i32 - 3));
 
         // Contrast
         let contrast = data[2];
-        meta.exif.set("MRW:Contrast", AttrValue::Int(contrast as i32 - 3));
+        meta.exif
+            .set("MRW:Contrast", AttrValue::Int(contrast as i32 - 3));
 
         // Sharpness
         let sharpness = data[3];
-        meta.exif.set("MRW:Sharpness", AttrValue::Int(sharpness as i32 - 3));
+        meta.exif
+            .set("MRW:Sharpness", AttrValue::Int(sharpness as i32 - 3));
 
         Ok(())
     }
@@ -295,7 +312,7 @@ mod tests {
 
         // PRD data at offset 16
         data[16..24].copy_from_slice(b"27730001"); // version
-        // Sensor dimensions
+                                                   // Sensor dimensions
         data[24..26].copy_from_slice(&height.to_be_bytes());
         data[26..28].copy_from_slice(&width.to_be_bytes());
         // Image dimensions

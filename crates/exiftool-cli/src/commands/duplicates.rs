@@ -26,7 +26,11 @@ pub fn find_duplicates(args: &Args, registry: &FormatRegistry) -> Result<()> {
         anyhow::bail!("No files specified for -duplicates");
     }
 
-    eprintln!("Scanning {} files for duplicates (by {})...", files.len(), args.dup_by);
+    eprintln!(
+        "Scanning {} files for duplicates (by {})...",
+        files.len(),
+        args.dup_by
+    );
 
     let mut groups: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
@@ -39,52 +43,48 @@ pub fn find_duplicates(args: &Args, registry: &FormatRegistry) -> Result<()> {
                 }
                 Err(_) => continue,
             },
-            "datetime" => {
-                match registry.parse_file(path) {
-                    Ok(metadata) => metadata
+            "datetime" => match registry.parse_file(path) {
+                Ok(metadata) => metadata
+                    .exif
+                    .get("DateTimeOriginal")
+                    .or_else(|| metadata.exif.get("CreateDate"))
+                    .or_else(|| metadata.exif.get("DateTime"))
+                    .map(|v| v.to_string())
+                    .unwrap_or_default(),
+                Err(_) => continue,
+            },
+            "metadata" => match registry.parse_file(path) {
+                Ok(metadata) => {
+                    let make = metadata
+                        .exif
+                        .get("Make")
+                        .map(|v| v.to_string())
+                        .unwrap_or_default();
+                    let model = metadata
+                        .exif
+                        .get("Model")
+                        .map(|v| v.to_string())
+                        .unwrap_or_default();
+                    let dt = metadata
                         .exif
                         .get("DateTimeOriginal")
                         .or_else(|| metadata.exif.get("CreateDate"))
-                        .or_else(|| metadata.exif.get("DateTime"))
                         .map(|v| v.to_string())
-                        .unwrap_or_default(),
-                    Err(_) => continue,
+                        .unwrap_or_default();
+                    let w = metadata
+                        .exif
+                        .get("ImageWidth")
+                        .map(|v| v.to_string())
+                        .unwrap_or_default();
+                    let h = metadata
+                        .exif
+                        .get("ImageHeight")
+                        .map(|v| v.to_string())
+                        .unwrap_or_default();
+                    format!("{}|{}|{}|{}x{}", make, model, dt, w, h)
                 }
-            }
-            "metadata" => {
-                match registry.parse_file(path) {
-                    Ok(metadata) => {
-                        let make = metadata
-                            .exif
-                            .get("Make")
-                            .map(|v| v.to_string())
-                            .unwrap_or_default();
-                        let model = metadata
-                            .exif
-                            .get("Model")
-                            .map(|v| v.to_string())
-                            .unwrap_or_default();
-                        let dt = metadata
-                            .exif
-                            .get("DateTimeOriginal")
-                            .or_else(|| metadata.exif.get("CreateDate"))
-                            .map(|v| v.to_string())
-                            .unwrap_or_default();
-                        let w = metadata
-                            .exif
-                            .get("ImageWidth")
-                            .map(|v| v.to_string())
-                            .unwrap_or_default();
-                        let h = metadata
-                            .exif
-                            .get("ImageHeight")
-                            .map(|v| v.to_string())
-                            .unwrap_or_default();
-                        format!("{}|{}|{}|{}x{}", make, model, dt, w, h)
-                    }
-                    Err(_) => continue,
-                }
-            }
+                Err(_) => continue,
+            },
             _ => {
                 eprintln!(
                     "Unknown duplicate method: {}. Use: hash, content, datetime, metadata",

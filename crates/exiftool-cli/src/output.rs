@@ -36,7 +36,8 @@ pub fn format_value_for_display(tag_name: &str, value: &AttrValue) -> String {
 
 /// Format value using Metadata's get_display (ExposureTime→"1/125 sec", FNumber→"f/2.8", etc).
 fn format_with_display(m: &Metadata, key: &str, value: &AttrValue) -> String {
-    m.get_display(key).unwrap_or_else(|| format_value_for_display(key, value))
+    m.get_display(key)
+        .unwrap_or_else(|| format_value_for_display(key, value))
 }
 
 /// Print metadata to stdout based on format.
@@ -67,7 +68,11 @@ pub fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String)
 
             if filters::is_simple_filter(filter) {
                 if let Some(v) = m.exif.get(&filter[0]) {
-                    let _ = writeln!(out, "{}", serde_json::to_string(&val_json(v)).unwrap_or_else(|_| "null".into()));
+                    let _ = writeln!(
+                        out,
+                        "{}",
+                        serde_json::to_string(&val_json(v)).unwrap_or_else(|_| "null".into())
+                    );
                 } else {
                     let _ = writeln!(out, "null");
                 }
@@ -171,8 +176,14 @@ pub fn format_metadata(path: &Path, m: &Metadata, args: &Args, out: &mut String)
                 if args.tabular {
                     let _ = writeln!(out, "{}{}{}", tag_display, sep, disp);
                 } else {
-                    let _ =
-                        writeln!(out, "{:width$}{}{}", tag_display, sep, disp, width = col_width);
+                    let _ = writeln!(
+                        out,
+                        "{:width$}{}{}",
+                        tag_display,
+                        sep,
+                        disp,
+                        width = col_width
+                    );
                 }
             }
             if filter.is_empty() {
@@ -274,7 +285,10 @@ fn print_json(path: &Path, m: &Metadata, filter: &[String]) {
 
     if filters::is_simple_filter(filter) {
         if let Some(v) = m.exif.get(&filter[0]) {
-            println!("{}", serde_json::to_string(&val_json(v)).unwrap_or_else(|_| "null".into()));
+            println!(
+                "{}",
+                serde_json::to_string(&val_json(v)).unwrap_or_else(|_| "null".into())
+            );
         } else {
             println!("null");
         }
@@ -286,16 +300,20 @@ fn print_json(path: &Path, m: &Metadata, filter: &[String]) {
         map.insert("Format".into(), m.format.into());
         if m.pages.len() > 1 {
             map.insert("PageCount".into(), (m.pages.len() as i64).into());
-            let pages_arr: Vec<_> = m.pages.iter().map(|p| {
-                serde_json::json!({
-                    "index": p.index,
-                    "width": p.width,
-                    "height": p.height,
-                    "bitsPerSample": p.bits_per_sample,
-                    "compression": p.compression,
-                    "subfileType": p.subfile_type
+            let pages_arr: Vec<_> = m
+                .pages
+                .iter()
+                .map(|p| {
+                    serde_json::json!({
+                        "index": p.index,
+                        "width": p.width,
+                        "height": p.height,
+                        "bitsPerSample": p.bits_per_sample,
+                        "compression": p.compression,
+                        "subfileType": p.subfile_type
+                    })
                 })
-            }).collect();
+                .collect();
             map.insert("Pages".into(), serde_json::Value::Array(pages_arr));
         }
         if let Some(ref thumb) = m.thumbnail {
@@ -311,9 +329,9 @@ fn print_json(path: &Path, m: &Metadata, filter: &[String]) {
 
     println!(
         "{}",
-        serde_json::to_string_pretty(&serde_json::Value::Array(vec![
-            serde_json::Value::Object(map)
-        ]))
+        serde_json::to_string_pretty(&serde_json::Value::Array(vec![serde_json::Value::Object(
+            map
+        )]))
         .unwrap_or_else(|_| "[]".into())
     );
 }
@@ -362,11 +380,7 @@ fn val_json(v: &AttrValue) -> serde_json::Value {
 
 /// Output CSV with unified headers across all files.
 /// Collects all metadata first to build superset of columns.
-pub fn output_csv_unified(
-    files: &[PathBuf],
-    registry: &FormatRegistry,
-    args: &Args,
-) -> Result<()> {
+pub fn output_csv_unified(files: &[PathBuf], registry: &FormatRegistry, args: &Args) -> Result<()> {
     use std::fmt::Write;
 
     let mut all_data: Vec<(PathBuf, Metadata)> = Vec::new();
@@ -421,14 +435,18 @@ pub fn output_csv_unified(
                 if col == "SourceFile" {
                     format!("\"{}\"", path.display())
                 } else {
-                    metadata.exif.get(col).map(|v| {
-                        let s = v.to_string();
-                        if s.contains(',') || s.contains('"') || s.contains('\n') {
-                            format!("\"{}\"", s.replace('"', "\"\""))
-                        } else {
-                            format!("\"{}\"", s)
-                        }
-                    }).unwrap_or_default()
+                    metadata
+                        .exif
+                        .get(col)
+                        .map(|v| {
+                            let s = v.to_string();
+                            if s.contains(',') || s.contains('"') || s.contains('\n') {
+                                format!("\"{}\"", s.replace('"', "\"\""))
+                            } else {
+                                format!("\"{}\"", s)
+                            }
+                        })
+                        .unwrap_or_default()
                 }
             })
             .collect();

@@ -37,14 +37,14 @@ use std::io::{Read, Seek};
 use crate::{
     AacParser, AiParser, AiffParser, ApeParser, ArwParser, AsfParser, AuParser, AudibleParser,
     AviParser, BmpParser, BrawParser, CafParser, Cr2Parser, Cr3Parser, CrwParser, DcrParser,
-    DffParser, DpxParser, DsfParser, EpsParser, ErfParser, ExrParser, FffParser, FlacParser,
-    FlvParser, GifParser, HdrParser, HeicParser, IcoParser, Id3Parser, IiqParser, Jp2Parser,
-    JpegParser, JxlParser, K25Parser, KdcParser, MefParser, MidiParser, MkvParser, MosParser,
-    Mp4Parser, MpegTsParser, MrwParser, MxfParser, NefParser, NrwParser, OggParser, OrfParser,
-    PcxParser, PdfParser, PefParser, PngParser, PnmParser, PsdParser, R3dParser, RmParser,
-    RafParser, Rw2Parser, RwlParser, SgiParser, SrfParser, SrwParser, SvgParser, TakParser,
-    TgaParser, TiffParser, WavParser, WebpParser, WvParser, X3fParser, DicomParser, FitsParser,
-    SevenZParser, ZipParser,
+    DffParser, DicomParser, DpxParser, DsfParser, EpsParser, ErfParser, ExrParser, FffParser,
+    FitsParser, FlacParser, FlvParser, GifParser, HdrParser, HeicParser, IcoParser, Id3Parser,
+    IiqParser, Jp2Parser, JpegParser, JxlParser, K25Parser, KdcParser, MefParser, MidiParser,
+    MkvParser, MosParser, Mp4Parser, MpegTsParser, MrwParser, MxfParser, NefParser, NrwParser,
+    OggParser, OrfParser, PcxParser, PdfParser, PefParser, PngParser, PnmParser, PsdParser,
+    R3dParser, RafParser, RmParser, Rw2Parser, RwlParser, SevenZParser, SgiParser, SrfParser,
+    SrwParser, SvgParser, TakParser, TgaParser, TiffParser, WavParser, WebpParser, WvParser,
+    X3fParser, ZipParser,
 };
 
 /// Build the default list of format parsers.

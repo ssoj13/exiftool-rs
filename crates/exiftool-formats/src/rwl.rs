@@ -27,7 +27,7 @@ impl Default for RwlParser {
 impl FormatParser for RwlParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         // RWL uses standard TIFF magic - detected by extension
-                // TIFF-family FileType is classified by TiffParser + tiff_family.
+        // TIFF-family FileType is classified by TiffParser + tiff_family.
         // Matching TIFF magic here would steal every TIFF from later parsers.
         let _ = header;
         false
@@ -43,14 +43,14 @@ impl FormatParser for RwlParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = self.tiff.parse(reader)?;
-        
+
         // Check if this is actually a Leica file
         if let Some(make) = meta.exif.get_str("Make") {
             if make.to_uppercase().contains("LEICA") {
                 meta.format = "RWL";
             }
         }
-        
+
         Ok(meta)
     }
 }

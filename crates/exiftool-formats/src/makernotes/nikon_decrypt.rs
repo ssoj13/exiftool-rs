@@ -84,7 +84,8 @@ impl Decryptor {
             let n = start.saturating_sub(ds) as u64;
             let tri = n.saturating_mul(n.saturating_sub(1)) / 2;
             let inner = n.wrapping_mul(u64::from(self.ck0)).wrapping_add(tri);
-            let cj = (u64::from(self.cj0).wrapping_add(u64::from(self.ci0).wrapping_mul(inner))) & 0xff;
+            let cj =
+                (u64::from(self.cj0).wrapping_add(u64::from(self.ci0).wrapping_mul(inner))) & 0xff;
             let ck = (u64::from(self.ck0).wrapping_add(n)) & 0xff;
             (cj as u32, ck as u32)
         } else {

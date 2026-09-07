@@ -34,7 +34,9 @@ pub fn html_dump(args: &Args, registry: &FormatRegistry) -> Result<()> {
     html.push_str("body { font-family: 'SF Mono', Monaco, Consolas, monospace; margin: 20px; background: #1e1e1e; color: #d4d4d4; }\n");
     html.push_str("h1 { color: #569cd6; }\n");
     html.push_str("h2 { color: #4ec9b0; border-bottom: 1px solid #444; padding-bottom: 5px; }\n");
-    html.push_str(".file-info { background: #252526; padding: 15px; border-radius: 5px; margin: 10px 0; }\n");
+    html.push_str(
+        ".file-info { background: #252526; padding: 15px; border-radius: 5px; margin: 10px 0; }\n",
+    );
     html.push_str(".hex-dump { background: #1e1e1e; border: 1px solid #444; padding: 10px; overflow-x: auto; }\n");
     html.push_str(".hex-row { display: flex; }\n");
     html.push_str(".hex-offset { color: #608b4e; width: 80px; }\n");
@@ -69,12 +71,16 @@ pub fn html_dump(args: &Args, registry: &FormatRegistry) -> Result<()> {
 }
 
 fn html_dump_single(path: &Path, registry: &FormatRegistry, html: &mut String) -> Result<()> {
-    let file_data = std::fs::read(path)
-        .with_context(|| format!("Cannot read: {}", path.display()))?;
+    let file_data =
+        std::fs::read(path).with_context(|| format!("Cannot read: {}", path.display()))?;
 
     let file_size = file_data.len();
     let _ = writeln!(html, "<div class=\"file-info\">");
-    let _ = writeln!(html, "<h2>{}</h2>", escape_html(&path.display().to_string()));
+    let _ = writeln!(
+        html,
+        "<h2>{}</h2>",
+        escape_html(&path.display().to_string())
+    );
     let _ = writeln!(
         html,
         "<p><strong>Size:</strong> {} bytes ({:.2} KB)</p>",
@@ -89,7 +95,10 @@ fn html_dump_single(path: &Path, registry: &FormatRegistry, html: &mut String) -
     show_structure_markers(&file_data, &format, html);
     let _ = writeln!(html, "</div>");
 
-    let _ = writeln!(html, "<div class=\"section\"><h3>Header (first 256 bytes)</h3>");
+    let _ = writeln!(
+        html,
+        "<div class=\"section\"><h3>Header (first 256 bytes)</h3>"
+    );
     let _ = writeln!(html, "<div class=\"hex-dump\">");
     let preview_len = file_data.len().min(256);
     for offset in (0..preview_len).step_by(16) {

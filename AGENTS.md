@@ -62,7 +62,7 @@ IFD0 + ExifIFD + GPS + Interop. Shared `utils::apply_subifd_xmp_iptc`: SubIFD `0
 - RAF: ExifTool WriteRAF -- rewrite preview JPEG EXIF, 4-byte pad, fix header pointers, copy from nextPtr at 0x5C. Do not treat 0x5C/0x60 as CFA offset/length.
 - TIFF-family RAW (NEF/NRW/CR2/ARW/ORF/RW2/…): `tiff_rewrite` — IFD0/Exif/GPS overlay; copy SubIFD, strips/tiles (with original padding), MakerNotes blobs. CR2 keeps 16-byte header (`WriteCR2`). BigTIFF uses 16-byte header / 20-byte entries / 8-byte offsets. A100 ARW: `FinishARW` (do not treat 0x14a as SubIFD; append Minolta MRW then CFA). Do not use the old short `TiffWriter` rebuild.
 - HEIC: update existing EXIF item, or create one when missing (`HeicWriter::create_exif_item`).
-- CR3: not writable (ISOBMFF).
+- CR3: rewrite CMT1/CMT2/CMT4 TIFF boxes (IFD0/Exif/GPS), optional XMP UUID, patch CTBO + stco/co64. Keep CMT3 MakerNotes as a blob. Preserve `mdat` largesize header so chunk offsets stay valid.
 - MP4/MOV: XMP UUID box. WAV/FLAC/MP3: existing writers; `is_writable` true.
 - 7z read: unencoded header or LZMA encoded header (id 23). AES headers warn.
 

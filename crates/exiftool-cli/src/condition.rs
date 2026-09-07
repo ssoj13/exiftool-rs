@@ -75,7 +75,9 @@ impl Condition {
 
     /// Evaluate condition against metadata.
     pub fn eval(&self, metadata: &Metadata) -> bool {
-        let tag_value = metadata.exif.get(&self.tag)
+        let tag_value = metadata
+            .exif
+            .get(&self.tag)
             .map(|v| format_attr_value(v))
             .unwrap_or_default();
 
@@ -133,15 +135,15 @@ impl Condition {
                     tag_value <= self.value
                 }
             }
-            CondOp::Contains => {
-                tag_value.to_lowercase().contains(&self.value.to_lowercase())
-            }
-            CondOp::StartsWith => {
-                tag_value.to_lowercase().starts_with(&self.value.to_lowercase())
-            }
-            CondOp::EndsWith => {
-                tag_value.to_lowercase().ends_with(&self.value.to_lowercase())
-            }
+            CondOp::Contains => tag_value
+                .to_lowercase()
+                .contains(&self.value.to_lowercase()),
+            CondOp::StartsWith => tag_value
+                .to_lowercase()
+                .starts_with(&self.value.to_lowercase()),
+            CondOp::EndsWith => tag_value
+                .to_lowercase()
+                .ends_with(&self.value.to_lowercase()),
             CondOp::Exists => unreachable!(),
         }
     }
@@ -178,10 +180,18 @@ pub fn format_attr_value(v: &AttrValue) -> String {
         AttrValue::Float(f) => format!("{}", f),
         AttrValue::Double(f) => format!("{}", f),
         AttrValue::Rational(n, d) => {
-            if *d == 1 { n.to_string() } else { format!("{}/{}", n, d) }
+            if *d == 1 {
+                n.to_string()
+            } else {
+                format!("{}/{}", n, d)
+            }
         }
         AttrValue::URational(n, d) => {
-            if *d == 1 { n.to_string() } else { format!("{}/{}", n, d) }
+            if *d == 1 {
+                n.to_string()
+            } else {
+                format!("{}/{}", n, d)
+            }
         }
         AttrValue::Bytes(b) => format!("({} bytes)", b.len()),
         AttrValue::DateTime(dt) => dt.to_string(),

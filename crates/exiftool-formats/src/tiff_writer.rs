@@ -6,8 +6,8 @@
 //! - Preserve image data (strip/tile offsets adjusted)
 
 use crate::{Error, Metadata, ReadSeek, Result};
-use exiftool_core::{ByteOrder, ExifWriter, IfdReader, WriteEntry};
 use exiftool_core::writer::tags;
+use exiftool_core::{ByteOrder, ExifWriter, IfdReader, WriteEntry};
 use std::io::{SeekFrom, Write};
 
 /// TIFF tag IDs for image data.
@@ -36,11 +36,7 @@ pub struct TiffWriter;
 
 impl TiffWriter {
     /// Write TIFF with updated metadata, preserving image data.
-    pub fn write<R, W>(
-        input: &mut R,
-        output: &mut W,
-        metadata: &Metadata,
-    ) -> Result<()>
+    pub fn write<R, W>(input: &mut R, output: &mut W, metadata: &Metadata) -> Result<()>
     where
         R: ReadSeek,
         W: Write,
@@ -62,19 +58,19 @@ impl TiffWriter {
         } else {
             return Err(Error::InvalidStructure("invalid TIFF byte order".into()));
         };
-        
+
         let reader = IfdReader::new(data, byte_order);
         let ifd0_offset = reader.parse_header().map_err(Error::Core)?;
-        
+
         let mut chunks = Vec::new();
         let mut is_tiled = false;
-        
+
         if let Ok((entries, _)) = reader.read_ifd(ifd0_offset as u64) {
             let mut strip_offsets: Vec<u32> = Vec::new();
             let mut strip_counts: Vec<u32> = Vec::new();
             let mut tile_offsets: Vec<u32> = Vec::new();
             let mut tile_counts: Vec<u32> = Vec::new();
-            
+
             for entry in &entries {
                 match entry.tag {
                     TAG_STRIP_OFFSETS => {
@@ -93,7 +89,7 @@ impl TiffWriter {
                     _ => {}
                 }
             }
-            
+
             // Build chunks from strips or tiles
             if is_tiled && !tile_offsets.is_empty() {
                 for (offset, length) in tile_offsets.iter().zip(tile_counts.iter()) {
@@ -111,14 +107,14 @@ impl TiffWriter {
                 }
             }
         }
-        
+
         Ok(TiffStructure {
             byte_order,
             chunks,
             is_tiled,
         })
     }
-    
+
     /// Extract u32 array from RawValue.
     #[allow(dead_code)]
     fn extract_u32_array(value: &exiftool_core::RawValue) -> Vec<u32> {
@@ -129,7 +125,7 @@ impl TiffWriter {
             _ => Vec::new(),
         }
     }
-    
+
     /// Build complete TIFF with metadata and image data.
     #[allow(dead_code)]
     fn build_with_image_data(
@@ -139,37 +135,37 @@ impl TiffWriter {
         _image_start: u32,
     ) -> Result<Vec<u8>> {
         // Strategy: Build metadata, append image data, fix offsets
-        
+
         let mut writer = ExifWriter::new(structure.byte_order);
         Self::populate_from_metadata(&mut writer, metadata);
-        
+
         // Get preliminary size to calculate image data position
-        let prelim = writer.serialize().map_err(|e| {
-            Error::InvalidStructure(format!("serialize error: {}", e))
-        })?;
-        
+        let prelim = writer
+            .serialize()
+            .map_err(|e| Error::InvalidStructure(format!("serialize error: {}", e)))?;
+
         // Image data starts right after IFD structure
         // We need some padding to align properly
         let header_size = prelim.len();
         let image_data_offset = header_size.div_ceil(4) * 4; // Align to 4 bytes
-        
+
         // Calculate new offsets for each chunk
         let mut new_offsets: Vec<u32> = Vec::new();
         let mut current_offset = image_data_offset as u32;
-        
+
         for chunk in &structure.chunks {
             new_offsets.push(current_offset);
             current_offset += chunk.length;
         }
-        
+
         // Rebuild writer with correct strip/tile offsets
         let mut writer = ExifWriter::new(structure.byte_order);
         Self::populate_from_metadata(&mut writer, metadata);
-        
+
         // Add strip/tile offset and count tags
         if !new_offsets.is_empty() {
             let counts: Vec<u32> = structure.chunks.iter().map(|c| c.length).collect();
-            
+
             if structure.is_tiled {
                 writer.add_ifd0(WriteEntry::from_u32_array(TAG_TILE_OFFSETS, &new_offsets));
                 writer.add_ifd0(WriteEntry::from_u32_array(TAG_TILE_BYTE_COUNTS, &counts));
@@ -178,32 +174,37 @@ impl TiffWriter {
                 writer.add_ifd0(WriteEntry::from_u32_array(TAG_STRIP_BYTE_COUNTS, &counts));
             }
         }
-        
+
         // Serialize final header
-        let header = writer.serialize().map_err(|e| {
-            Error::InvalidStructure(format!("serialize error: {}", e))
-        })?;
-        
+        let header = writer
+            .serialize()
+            .map_err(|e| Error::InvalidStructure(format!("serialize error: {}", e)))?;
+
         // Build final output
-        let total_size = image_data_offset + structure.chunks.iter().map(|c| c.length as usize).sum::<usize>();
+        let total_size = image_data_offset
+            + structure
+                .chunks
+                .iter()
+                .map(|c| c.length as usize)
+                .sum::<usize>();
         let mut output = vec![0u8; total_size];
-        
+
         // Copy header
         output[..header.len()].copy_from_slice(&header);
-        
+
         // Copy image data from original file
         let mut write_pos = image_data_offset;
         for chunk in &structure.chunks {
             let src_start = chunk.offset as usize;
             let src_end = src_start + chunk.length as usize;
-            
+
             if src_end <= original.len() {
                 output[write_pos..write_pos + chunk.length as usize]
                     .copy_from_slice(&original[src_start..src_end]);
             }
             write_pos += chunk.length as usize;
         }
-        
+
         Ok(output)
     }
 
@@ -212,9 +213,9 @@ impl TiffWriter {
         let mut writer = ExifWriter::new_le();
         Self::populate_from_metadata(&mut writer, metadata);
 
-        let bytes = writer.serialize().map_err(|e| {
-            Error::InvalidStructure(format!("EXIF serialize error: {}", e))
-        })?;
+        let bytes = writer
+            .serialize()
+            .map_err(|e| Error::InvalidStructure(format!("EXIF serialize error: {}", e)))?;
 
         output.write_all(&bytes)?;
         Ok(())
@@ -323,14 +324,16 @@ mod tests {
     fn round_trip_metadata() {
         let mut metadata = Metadata::new("TIFF");
         metadata.exif.set("Make", AttrValue::Str("RustCam".into()));
-        metadata.exif.set("Software", AttrValue::Str("exiftool-rs".into()));
+        metadata
+            .exif
+            .set("Software", AttrValue::Str("exiftool-rs".into()));
 
         let mut output = Vec::new();
         TiffWriter::write_new(&mut output, &metadata).unwrap();
 
         // Parse back
-        use crate::TiffParser;
         use crate::FormatParser;
+        use crate::TiffParser;
 
         let mut cursor = Cursor::new(&output);
         let parsed = TiffParser::default().parse(&mut cursor).unwrap();
@@ -338,43 +341,43 @@ mod tests {
         assert_eq!(parsed.exif.get_str("Make"), Some("RustCam"));
         assert_eq!(parsed.exif.get_str("Software"), Some("exiftool-rs"));
     }
-    
+
     #[test]
     fn preserve_strip_structure() {
         // Create a minimal TIFF with strip data
         let mut tiff = Vec::new();
-        
+
         // Little-endian header
         tiff.extend_from_slice(b"II");
         tiff.extend_from_slice(&42u16.to_le_bytes()); // Magic
-        tiff.extend_from_slice(&8u32.to_le_bytes());  // IFD offset
-        
+        tiff.extend_from_slice(&8u32.to_le_bytes()); // IFD offset
+
         // IFD with 2 entries (StripOffsets, StripByteCounts)
         tiff.extend_from_slice(&2u16.to_le_bytes()); // Entry count
-        
+
         // StripOffsets entry (tag 0x0111)
         tiff.extend_from_slice(&0x0111u16.to_le_bytes());
         tiff.extend_from_slice(&4u16.to_le_bytes()); // LONG
         tiff.extend_from_slice(&1u32.to_le_bytes()); // count
         tiff.extend_from_slice(&50u32.to_le_bytes()); // offset value (where strip data starts)
-        
+
         // StripByteCounts entry (tag 0x0117)
         tiff.extend_from_slice(&0x0117u16.to_le_bytes());
         tiff.extend_from_slice(&4u16.to_le_bytes()); // LONG
         tiff.extend_from_slice(&1u32.to_le_bytes()); // count
         tiff.extend_from_slice(&10u32.to_le_bytes()); // 10 bytes of data
-        
+
         // Next IFD offset (0 = none)
         tiff.extend_from_slice(&0u32.to_le_bytes());
-        
+
         // Pad to offset 50
         while tiff.len() < 50 {
             tiff.push(0);
         }
-        
+
         // Strip data (10 bytes)
         tiff.extend_from_slice(b"PIXELDATA!");
-        
+
         // Parse and verify structure
         let structure = TiffWriter::parse_structure(&tiff).unwrap();
         assert_eq!(structure.chunks.len(), 1);

@@ -3,9 +3,8 @@
 //! Verifies that parsers handle arbitrary input without panicking.
 
 use exiftool_formats::{
-    Cr2Parser, Cr3Parser, ExrParser, HdrParser, HeicParser,
-    JpegParser, NefParser, PngParser, RafParser, TiffParser,
-    FormatParser,
+    Cr2Parser, Cr3Parser, ExrParser, FormatParser, HdrParser, HeicParser, JpegParser, NefParser,
+    PngParser, RafParser, TiffParser,
 };
 use proptest::prelude::*;
 use std::io::Cursor;

@@ -176,7 +176,7 @@ impl VendorParser for PentaxParser {
         // First pass: collect preview offset/length
         let mut preview_length: Option<u32> = None;
         let mut preview_start: Option<u32> = None;
-        
+
         for entry in &entries {
             match entry.tag {
                 0x0003 => preview_length = entry.value.as_u32(),
@@ -184,7 +184,7 @@ impl VendorParser for PentaxParser {
                 _ => {}
             }
         }
-        
+
         // Store preview info if found
         if let (Some(off), Some(len)) = (preview_start, preview_length) {
             attrs.set("PreviewImageStart", AttrValue::UInt(off));
@@ -205,7 +205,7 @@ impl VendorParser for PentaxParser {
                     }
                 }
                 0x0215 => {
-                    // AFInfo sub-IFD  
+                    // AFInfo sub-IFD
                     if let Some(offset) = entry.value.as_u32() {
                         if let Some(sub_attrs) = parse_af_info(ifd_data, byte_order, offset) {
                             attrs.set("AFInfo", AttrValue::Group(Box::new(sub_attrs)));
@@ -259,7 +259,10 @@ fn parse_af_info(data: &[u8], byte_order: ByteOrder, offset: u32) -> Option<Attr
 }
 
 /// Format IFD entry value with PrintConv lookup.
-fn format_value(entry: &exiftool_core::IfdEntry, values_map: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+fn format_value(
+    entry: &exiftool_core::IfdEntry,
+    values_map: Option<&'static [(i64, &'static str)]>,
+) -> AttrValue {
     if let Some(map) = values_map {
         if let Some(int_val) = entry.value.as_u32().map(|v| v as i64) {
             for &(key, label) in map {

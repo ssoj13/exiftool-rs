@@ -46,7 +46,7 @@
 //! - 0x0410: UserData
 
 use super::{parse_ifd_entries, Vendor, VendorParser};
-use exiftool_attrs::{Attrs, AttrValue};
+use exiftool_attrs::{AttrValue, Attrs};
 use exiftool_core::ByteOrder;
 
 /// Leica MakerNotes parser.
@@ -93,18 +93,18 @@ impl LeicaParser {
         (0x0401, "ShutterType"),
         (0x0410, "UserData"),
     ];
-    
+
     /// Find tag name by ID.
     fn tag_name(tag: u16) -> Option<&'static str> {
         Self::TAGS.iter().find(|(t, _)| *t == tag).map(|(_, n)| *n)
     }
-    
+
     /// Detect header type and return (ifd_offset, byte_order).
     fn detect_format(data: &[u8], parent_order: ByteOrder) -> Option<(u32, ByteOrder)> {
         if data.len() < 8 {
             return None;
         }
-        
+
         // Type 1: "LEICA\0\0\0" header (8 bytes)
         if data.starts_with(b"LEICA\0\0\0") {
             // Check byte order after header
@@ -119,22 +119,26 @@ impl LeicaParser {
             };
             return Some((8, order));
         }
-        
+
         // Type 3: "LEICA CAMERA AG\0" header (M9, M-E etc)
         if data.starts_with(b"LEICA CAMERA AG") {
             // IFD starts after header
             return Some((16, ByteOrder::LittleEndian));
         }
-        
+
         // Type 4: "LEICA" at offset 0 with different structure
         if data.starts_with(b"LEICA") {
             // Find end of LEICA header
             let header_end = data.iter().position(|&b| b == 0).unwrap_or(5) + 1;
             // Align to even
-            let ifd_start = if header_end % 2 == 0 { header_end } else { header_end + 1 };
+            let ifd_start = if header_end % 2 == 0 {
+                header_end
+            } else {
+                header_end + 1
+            };
             return Some((ifd_start as u32, parent_order));
         }
-        
+
         // Type 2: No header, standard IFD (M10, SL, Q series)
         // Check for valid IFD structure
         let count = if parent_order == ByteOrder::LittleEndian {
@@ -142,7 +146,7 @@ impl LeicaParser {
         } else {
             u16::from_be_bytes([data[0], data[1]])
         };
-        
+
         // Reasonable entry count (1-100)
         if count > 0 && count < 100 {
             let expected_size = 2 + count as usize * 12 + 4;
@@ -150,7 +154,7 @@ impl LeicaParser {
                 return Some((0, parent_order));
             }
         }
-        
+
         None
     }
 }
@@ -159,21 +163,20 @@ impl VendorParser for LeicaParser {
     fn vendor(&self) -> Vendor {
         Vendor::Leica
     }
-    
+
     fn parse(&self, data: &[u8], parent_byte_order: ByteOrder) -> Option<Attrs> {
         let (ifd_offset, byte_order) = Self::detect_format(data, parent_byte_order)?;
-        
+
         let entries = parse_ifd_entries(data, byte_order, ifd_offset)?;
-        
+
         let mut attrs = Attrs::new();
-        
+
         for entry in entries {
-            let name = Self::tag_name(entry.tag)
-                .unwrap_or_else(|| {
-                    // Store tag number as string if unknown
-                    Box::leak(format!("Tag{:04X}", entry.tag).into_boxed_str())
-                });
-            
+            let name = Self::tag_name(entry.tag).unwrap_or_else(|| {
+                // Store tag number as string if unknown
+                Box::leak(format!("Tag{:04X}", entry.tag).into_boxed_str())
+            });
+
             // Convert entry value to AttrValue
             let value = match &entry.value {
                 exiftool_core::RawValue::String(s) => AttrValue::Str(s.clone()),
@@ -194,10 +197,10 @@ impl VendorParser for LeicaParser {
                 exiftool_core::RawValue::Undefined(v) => AttrValue::Bytes(v.clone()),
                 other => AttrValue::Str(other.to_string()),
             };
-            
+
             attrs.set(&format!("Leica:{}", name), value);
         }
-        
+
         Some(attrs)
     }
 }
@@ -205,12 +208,12 @@ impl VendorParser for LeicaParser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_vendor() {
         assert_eq!(LeicaParser.vendor(), Vendor::Leica);
     }
-    
+
     #[test]
     fn test_detect_format_with_header() {
         let data = b"LEICA\0\0\0II\x2a\0\x01\0\0\0\0\0\0\0\0\0\0\0";
@@ -220,7 +223,7 @@ mod tests {
         assert_eq!(offset, 8);
         assert_eq!(order, ByteOrder::LittleEndian);
     }
-    
+
     #[test]
     fn test_detect_format_camera_ag() {
         let data = b"LEICA CAMERA AG\0\x01\0\0\0\0\0\0\0\0\0";

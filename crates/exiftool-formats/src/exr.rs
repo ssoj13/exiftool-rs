@@ -61,9 +61,10 @@ fn apply_exr_header(header: &Header, prefix: &str, metadata: &mut Metadata) {
                 .set(format!("{prefix}ImageWidth"), AttrValue::UInt(width as u32));
         }
         if height > 0 {
-            metadata
-                .exif
-                .set(format!("{prefix}ImageHeight"), AttrValue::UInt(height as u32));
+            metadata.exif.set(
+                format!("{prefix}ImageHeight"),
+                AttrValue::UInt(height as u32),
+            );
         }
     }
     if let Ok(par) = header.pixel_aspect_ratio() {
@@ -100,7 +101,13 @@ fn apply_exr_header(header: &Header, prefix: &str, metadata: &mut Metadata) {
             format!("{prefix}Chromaticities"),
             AttrValue::Str(format!(
                 "R({:.3},{:.3}) G({:.3},{:.3}) B({:.3},{:.3}) W({:.3},{:.3})",
-                c.red[0], c.red[1], c.green[0], c.green[1], c.blue[0], c.blue[1], c.white[0],
+                c.red[0],
+                c.red[1],
+                c.green[0],
+                c.green[1],
+                c.blue[0],
+                c.blue[1],
+                c.white[0],
                 c.white[1]
             )),
         );
@@ -131,9 +138,10 @@ fn apply_exr_header(header: &Header, prefix: &str, metadata: &mut Metadata) {
         }
         match name.as_str() {
             "comments" => {
-                metadata
-                    .exif
-                    .set(format!("{prefix}ImageDescription"), AttrValue::Str(text.clone()));
+                metadata.exif.set(
+                    format!("{prefix}ImageDescription"),
+                    AttrValue::Str(text.clone()),
+                );
             }
             "owner" => {
                 metadata
@@ -213,8 +221,8 @@ mod tests {
 
     #[test]
     fn parse_openexr_fixture() {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/testdata/OpenEXR.exr");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/OpenEXR.exr");
         if !path.exists() {
             return;
         }
@@ -222,7 +230,10 @@ mod tests {
         let mut cur = Cursor::new(data);
         let meta = ExrParser.parse(&mut cur).unwrap();
         assert_eq!(meta.format, "EXR");
-        assert_eq!(meta.exif.get("ImageWidth").map(|v| v.to_string()), Some("3".into()));
+        assert_eq!(
+            meta.exif.get("ImageWidth").map(|v| v.to_string()),
+            Some("3".into())
+        );
         assert_eq!(meta.exif.get_str("Compression"), Some("PIZ"));
     }
 }

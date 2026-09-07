@@ -5,7 +5,9 @@
 #[must_use]
 pub fn lookup(group: u16, element: u16) -> Option<&'static str> {
     let key = ((group as u32) << 16) | u32::from(element);
-    TAGS.binary_search_by_key(&key, |t| t.0).ok().map(|i| TAGS[i].1)
+    TAGS.binary_search_by_key(&key, |t| t.0)
+        .ok()
+        .map(|i| TAGS[i].1)
 }
 
 const TAGS: &[(u32, &str)] = &[

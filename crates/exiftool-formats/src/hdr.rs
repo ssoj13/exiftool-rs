@@ -59,7 +59,9 @@ impl FormatParser for HdrParser {
         // Extract format identifier from magic line (e.g., "#?RADIANCE")
         let format_id = magic_line.trim_start_matches("#?");
         if !format_id.is_empty() {
-            metadata.exif.set("FormatIdentifier", AttrValue::Str(format_id.to_string()));
+            metadata
+                .exif
+                .set("FormatIdentifier", AttrValue::Str(format_id.to_string()));
         }
 
         // Parse header lines until empty line
@@ -95,54 +97,71 @@ impl FormatParser for HdrParser {
 
                 match key.to_uppercase().as_str() {
                     "FORMAT" => {
-                        metadata.exif.set("Format", AttrValue::Str(value.to_string()));
+                        metadata
+                            .exif
+                            .set("Format", AttrValue::Str(value.to_string()));
                     }
                     "EXPOSURE" => {
                         if let Ok(exp) = value.parse::<f32>() {
                             metadata.exif.set("Exposure", AttrValue::Float(exp));
                         } else {
-                            metadata.exif.set("Exposure", AttrValue::Str(value.to_string()));
+                            metadata
+                                .exif
+                                .set("Exposure", AttrValue::Str(value.to_string()));
                         }
                     }
                     "GAMMA" => {
                         if let Ok(gamma) = value.parse::<f32>() {
                             metadata.exif.set("Gamma", AttrValue::Float(gamma));
                         } else {
-                            metadata.exif.set("Gamma", AttrValue::Str(value.to_string()));
+                            metadata
+                                .exif
+                                .set("Gamma", AttrValue::Str(value.to_string()));
                         }
                     }
                     "PIXASPECT" => {
                         if let Ok(aspect) = value.parse::<f32>() {
-                            metadata.exif.set("PixelAspectRatio", AttrValue::Float(aspect));
+                            metadata
+                                .exif
+                                .set("PixelAspectRatio", AttrValue::Float(aspect));
                         } else {
-                            metadata.exif.set("PixelAspectRatio", AttrValue::Str(value.to_string()));
+                            metadata
+                                .exif
+                                .set("PixelAspectRatio", AttrValue::Str(value.to_string()));
                         }
                     }
                     "SOFTWARE" => {
-                        metadata.exif.set("Software", AttrValue::Str(value.to_string()));
+                        metadata
+                            .exif
+                            .set("Software", AttrValue::Str(value.to_string()));
                     }
                     "PRIMARIES" => {
-                        metadata.exif.set("Primaries", AttrValue::Str(value.to_string()));
+                        metadata
+                            .exif
+                            .set("Primaries", AttrValue::Str(value.to_string()));
                     }
                     "COLORCORR" => {
-                        metadata.exif.set("ColorCorrection", AttrValue::Str(value.to_string()));
+                        metadata
+                            .exif
+                            .set("ColorCorrection", AttrValue::Str(value.to_string()));
                     }
                     "VIEW" => {
                         metadata.exif.set("View", AttrValue::Str(value.to_string()));
                     }
                     _ => {
                         // Store unknown attributes with HDR: prefix
-                        metadata.exif.set(
-                            format!("HDR:{}", key),
-                            AttrValue::Str(value.to_string()),
-                        );
+                        metadata
+                            .exif
+                            .set(format!("HDR:{}", key), AttrValue::Str(value.to_string()));
                     }
                 }
             }
         }
 
         if !found_resolution {
-            return Err(Error::InvalidStructure("Missing resolution in HDR file".into()));
+            return Err(Error::InvalidStructure(
+                "Missing resolution in HDR file".into(),
+            ));
         }
 
         Ok(metadata)

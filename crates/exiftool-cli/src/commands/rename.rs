@@ -51,8 +51,7 @@ pub fn rename_files(args: &crate::args::Args, registry: &FormatRegistry) -> Resu
 }
 
 fn rename_single_file(path: &Path, template: &str, registry: &FormatRegistry) -> Result<PathBuf> {
-    let file = File::open(path)
-        .with_context(|| format!("Cannot open: {}", path.display()))?;
+    let file = File::open(path).with_context(|| format!("Cannot open: {}", path.display()))?;
     let mut reader = BufReader::new(file);
     let metadata = registry
         .parse(&mut reader)
@@ -71,12 +70,7 @@ fn rename_single_file(path: &Path, template: &str, registry: &FormatRegistry) ->
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let new_name = expand_rename_template(
-        template,
-        &metadata,
-        &ext,
-        datetime.as_deref(),
-    )?;
+    let new_name = expand_rename_template(template, &metadata, &ext, datetime.as_deref())?;
 
     let parent = path.parent().unwrap_or(Path::new("."));
     let mut new_path = parent.join(&new_name);

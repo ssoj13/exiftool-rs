@@ -42,14 +42,14 @@ impl FormatParser for ErfParser {
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = self.tiff.parse(reader)?;
-        
+
         // Check if this is actually an Epson file
         if let Some(make) = meta.exif.get_str("Make") {
             if make.to_uppercase().contains("EPSON") {
                 meta.format = "ERF";
             }
         }
-        
+
         Ok(meta)
     }
 }
@@ -72,7 +72,7 @@ mod tests {
         data[12..14].copy_from_slice(&2u16.to_le_bytes()); // ASCII
         data[14..18].copy_from_slice(&(make.len() as u32 + 1).to_le_bytes());
         data[18..22].copy_from_slice(&100u32.to_le_bytes()); // offset
-        // Next IFD = 0
+                                                             // Next IFD = 0
         data[22..26].copy_from_slice(&0u32.to_le_bytes());
         // Make string at offset 100
         data[100..100 + make.len()].copy_from_slice(make.as_bytes());

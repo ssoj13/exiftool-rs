@@ -80,7 +80,11 @@ impl FormatRegistry {
         let ext_lower = ext.to_lowercase();
         self.parsers
             .iter()
-            .find(|p| p.extensions().iter().any(|e| e.eq_ignore_ascii_case(&ext_lower)))
+            .find(|p| {
+                p.extensions()
+                    .iter()
+                    .any(|e| e.eq_ignore_ascii_case(&ext_lower))
+            })
             .map(|p| p.as_ref())
     }
 

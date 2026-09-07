@@ -52,7 +52,14 @@ impl FormatParser for CrwParser {
         let little_endian = &header[0..2] == b"II";
         meta.exif.set(
             "File:ByteOrder",
-            AttrValue::Str(if little_endian { "Little-endian" } else { "Big-endian" }.to_string()),
+            AttrValue::Str(
+                if little_endian {
+                    "Little-endian"
+                } else {
+                    "Big-endian"
+                }
+                .to_string(),
+            ),
         );
 
         // Helper for reading u16/u32
@@ -73,7 +80,8 @@ impl FormatParser for CrwParser {
 
         // Header length
         let header_len = read_u32(&header[2..6]);
-        meta.exif.set("CRW:HeaderLength", AttrValue::UInt(header_len));
+        meta.exif
+            .set("CRW:HeaderLength", AttrValue::UInt(header_len));
 
         // Version
         let version_minor = read_u16(&header[14..16]);
@@ -158,7 +166,15 @@ impl CrwParser {
 
         // Parse tags (reader position may change)
         for (tag, size, data_offset) in entries {
-            self.parse_tag(reader, meta, tag, size, data_offset as u64, heap_end, little_endian)?;
+            self.parse_tag(
+                reader,
+                meta,
+                tag,
+                size,
+                data_offset as u64,
+                heap_end,
+                little_endian,
+            )?;
         }
 
         Ok(())
@@ -254,7 +270,8 @@ impl CrwParser {
                     1 => "Written Document",
                     _ => "Unknown",
                 };
-                meta.exif.set("CRW:TargetImageType", AttrValue::Str(name.to_string()));
+                meta.exif
+                    .set("CRW:TargetImageType", AttrValue::Str(name.to_string()));
             }
             // ShutterReleaseMethod
             0x0010 if size >= 2 => {
@@ -268,29 +285,40 @@ impl CrwParser {
                     1 => "Continuous Shooting",
                     _ => "Unknown",
                 };
-                meta.exif.set("CRW:ShutterReleaseMethod", AttrValue::Str(name.to_string()));
+                meta.exif
+                    .set("CRW:ShutterReleaseMethod", AttrValue::Str(name.to_string()));
             }
             // ThumbnailImage - embedded JPEG thumbnail
             0x2003 => {
-                if size > 100 && size < 1_000_000 && data.len() >= 2
-                    && data[0] == 0xFF && data[1] == 0xD8 {
-                        meta.thumbnail = Some(data.clone());
-                    }
+                if size > 100
+                    && size < 1_000_000
+                    && data.len() >= 2
+                    && data[0] == 0xFF
+                    && data[1] == 0xD8
+                {
+                    meta.thumbnail = Some(data.clone());
+                }
             }
             // RawData offset
             0x2005 => {
-                meta.exif.set("CRW:RawDataOffset", AttrValue::UInt64(offset));
+                meta.exif
+                    .set("CRW:RawDataOffset", AttrValue::UInt64(offset));
                 meta.exif.set("CRW:RawDataLength", AttrValue::UInt(size));
             }
             // JpgFromRaw - embedded JPEG preview
             0x2007 => {
-                meta.exif.set("CRW:JpgFromRawOffset", AttrValue::UInt64(offset));
+                meta.exif
+                    .set("CRW:JpgFromRawOffset", AttrValue::UInt64(offset));
                 meta.exif.set("CRW:JpgFromRawLength", AttrValue::UInt(size));
                 // Extract preview data
-                if size > 100 && size < 50_000_000 && data.len() >= 2
-                    && data[0] == 0xFF && data[1] == 0xD8 {
-                        meta.preview = Some(data.clone());
-                    }
+                if size > 100
+                    && size < 50_000_000
+                    && data.len() >= 2
+                    && data[0] == 0xFF
+                    && data[1] == 0xD8
+                {
+                    meta.preview = Some(data.clone());
+                }
             }
             // Description
             0x0805 => {
@@ -380,7 +408,7 @@ mod tests {
         // Version 1.0
         data[14..16].copy_from_slice(&0u16.to_le_bytes()); // minor
         data[16..18].copy_from_slice(&1u16.to_le_bytes()); // major
-        // Root directory offset at end (pointing to offset 256)
+                                                           // Root directory offset at end (pointing to offset 256)
         let dir_offset = 256u32;
         data[508..512].copy_from_slice(&dir_offset.to_le_bytes());
         // Empty directory at offset 256

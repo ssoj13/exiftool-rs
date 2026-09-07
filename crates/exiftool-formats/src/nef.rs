@@ -39,19 +39,22 @@ impl FormatParser for NefParser {
         // So we only detect via extension in registry
         // This method is called for auto-detection which won't work for NEF
         // unless we read the Make tag
-        
+
         // Check for TIFF signature first
         if header.len() < 8 {
             return false;
         }
-        
-        let is_tiff = (header[0] == b'I' && header[1] == b'I' && header[2] == 0x2A && header[3] == 0x00)
+
+        let is_tiff = (header[0] == b'I'
+            && header[1] == b'I'
+            && header[2] == 0x2A
+            && header[3] == 0x00)
             || (header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2A);
-        
+
         if !is_tiff {
             return false;
         }
-        
+
         // STUB: For proper detection, would need to parse IFD0 and check Make="NIKON"
         // For now, return false - detection happens via extension
         false
@@ -99,8 +102,8 @@ mod tests {
 
     #[test]
     fn parse_nikon_d70_makernotes() {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/testdata/Nikon.nef");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/Nikon.nef");
         if !path.exists() {
             return;
         }

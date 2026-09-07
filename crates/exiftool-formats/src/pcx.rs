@@ -78,17 +78,25 @@ impl FormatParser for PcxParser {
         let width = x_max - x_min + 1;
         let height = y_max - y_min + 1;
 
-        metadata.exif.set("File:ImageWidth", AttrValue::UInt(width as u32));
-        metadata.exif.set("File:ImageHeight", AttrValue::UInt(height as u32));
+        metadata
+            .exif
+            .set("File:ImageWidth", AttrValue::UInt(width as u32));
+        metadata
+            .exif
+            .set("File:ImageHeight", AttrValue::UInt(height as u32));
 
         // DPI
         let h_dpi = u16::from_le_bytes([header[12], header[13]]);
         let v_dpi = u16::from_le_bytes([header[14], header[15]]);
         if h_dpi > 0 && h_dpi < 10000 {
-            metadata.exif.set("PCX:XResolution", AttrValue::UInt(h_dpi as u32));
+            metadata
+                .exif
+                .set("PCX:XResolution", AttrValue::UInt(h_dpi as u32));
         }
         if v_dpi > 0 && v_dpi < 10000 {
-            metadata.exif.set("PCX:YResolution", AttrValue::UInt(v_dpi as u32));
+            metadata
+                .exif
+                .set("PCX:YResolution", AttrValue::UInt(v_dpi as u32));
         }
 
         // Version
@@ -100,22 +108,32 @@ impl FormatParser for PcxParser {
             5 => "3.0+",
             _ => "Unknown",
         };
-        metadata.exif.set("PCX:Version", AttrValue::Str(version_str.to_string()));
+        metadata
+            .exif
+            .set("PCX:Version", AttrValue::Str(version_str.to_string()));
 
         // Encoding
         let encoding_str = if encoding == 1 { "RLE" } else { "None" };
-        metadata.exif.set("PCX:Compression", AttrValue::Str(encoding_str.to_string()));
+        metadata
+            .exif
+            .set("PCX:Compression", AttrValue::Str(encoding_str.to_string()));
 
         // Bits per plane
-        metadata.exif.set("PCX:BitsPerPlane", AttrValue::UInt(bits_per_plane as u32));
+        metadata
+            .exif
+            .set("PCX:BitsPerPlane", AttrValue::UInt(bits_per_plane as u32));
 
         // Number of planes (byte 65)
         let num_planes = header[65];
-        metadata.exif.set("PCX:NumPlanes", AttrValue::UInt(num_planes as u32));
+        metadata
+            .exif
+            .set("PCX:NumPlanes", AttrValue::UInt(num_planes as u32));
 
         // Calculate total bits per pixel
         let total_bpp = bits_per_plane as u32 * num_planes as u32;
-        metadata.exif.set("PCX:BitsPerPixel", AttrValue::UInt(total_bpp));
+        metadata
+            .exif
+            .set("PCX:BitsPerPixel", AttrValue::UInt(total_bpp));
 
         // Color mode
         let color_mode = match (bits_per_plane, num_planes) {
@@ -127,11 +145,15 @@ impl FormatParser for PcxParser {
             (8, 4) => "32-bit RGBA",
             _ => "Custom",
         };
-        metadata.exif.set("PCX:ColorMode", AttrValue::Str(color_mode.to_string()));
+        metadata
+            .exif
+            .set("PCX:ColorMode", AttrValue::Str(color_mode.to_string()));
 
         // Bytes per line (bytes 66-67)
         let bytes_per_line = u16::from_le_bytes([header[66], header[67]]);
-        metadata.exif.set("PCX:BytesPerLine", AttrValue::UInt(bytes_per_line as u32));
+        metadata
+            .exif
+            .set("PCX:BytesPerLine", AttrValue::UInt(bytes_per_line as u32));
 
         // Palette type (bytes 68-69)
         let palette_type = u16::from_le_bytes([header[68], header[69]]);
@@ -140,14 +162,20 @@ impl FormatParser for PcxParser {
             2 => "Grayscale",
             _ => "Unknown",
         };
-        metadata.exif.set("PCX:PaletteType", AttrValue::Str(palette_str.to_string()));
+        metadata
+            .exif
+            .set("PCX:PaletteType", AttrValue::Str(palette_str.to_string()));
 
         // Screen size (bytes 70-73) - PCX 3.0+
         let screen_width = u16::from_le_bytes([header[70], header[71]]);
         let screen_height = u16::from_le_bytes([header[72], header[73]]);
         if screen_width > 0 && screen_height > 0 {
-            metadata.exif.set("PCX:ScreenWidth", AttrValue::UInt(screen_width as u32));
-            metadata.exif.set("PCX:ScreenHeight", AttrValue::UInt(screen_height as u32));
+            metadata
+                .exif
+                .set("PCX:ScreenWidth", AttrValue::UInt(screen_width as u32));
+            metadata
+                .exif
+                .set("PCX:ScreenHeight", AttrValue::UInt(screen_height as u32));
         }
 
         // Check for 256-color palette at EOF (version 5, 8-bit)
@@ -172,7 +200,9 @@ impl PcxParser {
         reader.read_exact(&mut marker)?;
 
         if marker[0] == 0x0C {
-            metadata.exif.set("PCX:HasVGAPalette", AttrValue::Bool(true));
+            metadata
+                .exif
+                .set("PCX:HasVGAPalette", AttrValue::Bool(true));
         }
 
         Ok(())
@@ -250,7 +280,10 @@ mod tests {
         let mut cursor = Cursor::new(header);
         let meta = parser.parse(&mut cursor).unwrap();
 
-        assert_eq!(meta.exif.get_str("PCX:ColorMode"), Some("256-color (indexed)"));
+        assert_eq!(
+            meta.exif.get_str("PCX:ColorMode"),
+            Some("256-color (indexed)")
+        );
         assert_eq!(meta.exif.get_u32("PCX:BitsPerPixel"), Some(8));
     }
 }

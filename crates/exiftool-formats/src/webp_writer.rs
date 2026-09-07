@@ -103,13 +103,17 @@ impl WebpWriter {
                 }
                 b"VP8 " => {
                     // Lossy VP8 - extract dimensions if no VP8X
-                    if canvas_width == 0 && chunk_data.len() >= 10
-                        && chunk_data[3] == 0x9D && chunk_data[4] == 0x01 && chunk_data[5] == 0x2A {
-                            canvas_width =
-                                (u16::from_le_bytes([chunk_data[6], chunk_data[7]]) & 0x3FFF) as u32;
-                            canvas_height =
-                                (u16::from_le_bytes([chunk_data[8], chunk_data[9]]) & 0x3FFF) as u32;
-                        }
+                    if canvas_width == 0
+                        && chunk_data.len() >= 10
+                        && chunk_data[3] == 0x9D
+                        && chunk_data[4] == 0x01
+                        && chunk_data[5] == 0x2A
+                    {
+                        canvas_width =
+                            (u16::from_le_bytes([chunk_data[6], chunk_data[7]]) & 0x3FFF) as u32;
+                        canvas_height =
+                            (u16::from_le_bytes([chunk_data[8], chunk_data[9]]) & 0x3FFF) as u32;
+                    }
                     chunks.push(Chunk {
                         id: chunk_id,
                         data: chunk_data,
@@ -117,19 +121,18 @@ impl WebpWriter {
                 }
                 b"VP8L" => {
                     // Lossless VP8L - extract dimensions if no VP8X
-                    if canvas_width == 0 && chunk_data.len() >= 5
-                        && chunk_data[0] == 0x2F {
-                            let bits = u32::from_le_bytes([
-                                chunk_data[1],
-                                chunk_data[2],
-                                chunk_data[3],
-                                chunk_data[4],
-                            ]);
-                            canvas_width = (bits & 0x3FFF) + 1;
-                            canvas_height = ((bits >> 14) & 0x3FFF) + 1;
-                            // Check alpha flag in VP8L
-                            has_alpha_in_vp8l = (bits & 0x100000) != 0;
-                        }
+                    if canvas_width == 0 && chunk_data.len() >= 5 && chunk_data[0] == 0x2F {
+                        let bits = u32::from_le_bytes([
+                            chunk_data[1],
+                            chunk_data[2],
+                            chunk_data[3],
+                            chunk_data[4],
+                        ]);
+                        canvas_width = (bits & 0x3FFF) + 1;
+                        canvas_height = ((bits >> 14) & 0x3FFF) + 1;
+                        // Check alpha flag in VP8L
+                        has_alpha_in_vp8l = (bits & 0x100000) != 0;
+                    }
                     chunks.push(Chunk {
                         id: chunk_id,
                         data: chunk_data,
@@ -380,9 +383,16 @@ mod tests {
 
         // VP8X chunk with ICCP flag
         let vp8x = vec![
-            VP8X_FLAG_ICCP, 0, 0, 0, // flags + reserved
-            0, 0, 0, // width-1 (24-bit) = 0 -> 1px
-            0, 0, 0, // height-1 (24-bit) = 0 -> 1px
+            VP8X_FLAG_ICCP,
+            0,
+            0,
+            0, // flags + reserved
+            0,
+            0,
+            0, // width-1 (24-bit) = 0 -> 1px
+            0,
+            0,
+            0, // height-1 (24-bit) = 0 -> 1px
         ];
         webp.extend_from_slice(b"VP8X");
         webp.extend_from_slice(&(vp8x.len() as u32).to_le_bytes());

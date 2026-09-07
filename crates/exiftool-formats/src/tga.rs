@@ -94,9 +94,15 @@ impl FormatParser for TgaParser {
         let descriptor = header[17];
 
         // Image dimensions
-        metadata.exif.set("File:ImageWidth", AttrValue::UInt(width as u32));
-        metadata.exif.set("File:ImageHeight", AttrValue::UInt(height as u32));
-        metadata.exif.set("TGA:BitsPerPixel", AttrValue::UInt(pixel_depth as u32));
+        metadata
+            .exif
+            .set("File:ImageWidth", AttrValue::UInt(width as u32));
+        metadata
+            .exif
+            .set("File:ImageHeight", AttrValue::UInt(height as u32));
+        metadata
+            .exif
+            .set("TGA:BitsPerPixel", AttrValue::UInt(pixel_depth as u32));
 
         // Image type
         let (type_name, compression) = match image_type {
@@ -111,25 +117,39 @@ impl FormatParser for TgaParser {
             33 => ("Color-Mapped", "Huffman/Delta/RLE (4-pass)"),
             _ => ("Unknown", "Unknown"),
         };
-        metadata.exif.set("TGA:ImageType", AttrValue::Str(type_name.to_string()));
-        metadata.exif.set("TGA:Compression", AttrValue::Str(compression.to_string()));
+        metadata
+            .exif
+            .set("TGA:ImageType", AttrValue::Str(type_name.to_string()));
+        metadata
+            .exif
+            .set("TGA:Compression", AttrValue::Str(compression.to_string()));
 
         // Color map info
         if color_map_type == 1 {
-            metadata.exif.set("TGA:ColorMapEntries", AttrValue::UInt(cm_length as u32));
-            metadata.exif.set("TGA:ColorMapDepth", AttrValue::UInt(cm_depth as u32));
+            metadata
+                .exif
+                .set("TGA:ColorMapEntries", AttrValue::UInt(cm_length as u32));
+            metadata
+                .exif
+                .set("TGA:ColorMapDepth", AttrValue::UInt(cm_depth as u32));
         }
 
         // Origin
         if x_origin != 0 || y_origin != 0 {
-            metadata.exif.set("TGA:XOrigin", AttrValue::UInt(x_origin as u32));
-            metadata.exif.set("TGA:YOrigin", AttrValue::UInt(y_origin as u32));
+            metadata
+                .exif
+                .set("TGA:XOrigin", AttrValue::UInt(x_origin as u32));
+            metadata
+                .exif
+                .set("TGA:YOrigin", AttrValue::UInt(y_origin as u32));
         }
 
         // Alpha bits
         let alpha_bits = descriptor & 0x0F;
         if alpha_bits > 0 {
-            metadata.exif.set("TGA:AlphaBits", AttrValue::UInt(alpha_bits as u32));
+            metadata
+                .exif
+                .set("TGA:AlphaBits", AttrValue::UInt(alpha_bits as u32));
         }
 
         // Image origin (top-left vs bottom-left)
@@ -141,7 +161,9 @@ impl FormatParser for TgaParser {
             (true, false) => "Top-Left",
             (true, true) => "Top-Right",
         };
-        metadata.exif.set("TGA:ImageOrigin", AttrValue::Str(origin_str.to_string()));
+        metadata
+            .exif
+            .set("TGA:ImageOrigin", AttrValue::Str(origin_str.to_string()));
 
         // Read image ID if present
         if id_length > 0 {
@@ -179,7 +201,9 @@ impl TgaParser {
             return Ok(()); // Not TGA 2.0
         }
 
-        metadata.exif.set("TGA:Version", AttrValue::Str("2.0".to_string()));
+        metadata
+            .exif
+            .set("TGA:Version", AttrValue::Str("2.0".to_string()));
 
         let ext_offset = u32::from_le_bytes([footer[0], footer[1], footer[2], footer[3]]);
         let dev_offset = u32::from_le_bytes([footer[4], footer[5], footer[6], footer[7]]);
@@ -190,14 +214,21 @@ impl TgaParser {
         }
 
         if dev_offset != 0 {
-            metadata.exif.set("TGA:HasDeveloperArea", AttrValue::Bool(true));
+            metadata
+                .exif
+                .set("TGA:HasDeveloperArea", AttrValue::Bool(true));
         }
 
         Ok(())
     }
 
     /// Parse TGA 2.0 extension area.
-    fn parse_extension(&self, reader: &mut dyn ReadSeek, offset: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_extension(
+        &self,
+        reader: &mut dyn ReadSeek,
+        offset: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         reader.seek(SeekFrom::Start(offset))?;
 
         let mut ext = [0u8; 495];
@@ -249,7 +280,9 @@ impl TgaParser {
                 "{:04}:{:02}:{:02} {:02}:{:02}:{:02}",
                 year, month, day, hour, minute, second
             );
-            metadata.exif.set("TGA:DateTimeCreated", AttrValue::Str(datetime));
+            metadata
+                .exif
+                .set("TGA:DateTimeCreated", AttrValue::Str(datetime));
         }
 
         // Job name (bytes 379-419)
@@ -273,11 +306,18 @@ impl TgaParser {
         let sw_ver_letter = ext[469];
         if sw_ver_num != 0 {
             let version = if sw_ver_letter != 0 && sw_ver_letter != b' ' {
-                format!("{}.{}{}", sw_ver_num / 100, sw_ver_num % 100, sw_ver_letter as char)
+                format!(
+                    "{}.{}{}",
+                    sw_ver_num / 100,
+                    sw_ver_num % 100,
+                    sw_ver_letter as char
+                )
             } else {
                 format!("{}.{}", sw_ver_num / 100, sw_ver_num % 100)
             };
-            metadata.exif.set("TGA:SoftwareVersion", AttrValue::Str(version));
+            metadata
+                .exif
+                .set("TGA:SoftwareVersion", AttrValue::Str(version));
         }
 
         // Key color (bytes 470-473) - ARGB
@@ -295,7 +335,9 @@ impl TgaParser {
         let aspect_den = u16::from_le_bytes([ext[476], ext[477]]);
         if aspect_den != 0 && aspect_num != 0 {
             let ratio = aspect_num as f32 / aspect_den as f32;
-            metadata.exif.set("TGA:PixelAspectRatio", AttrValue::Float(ratio));
+            metadata
+                .exif
+                .set("TGA:PixelAspectRatio", AttrValue::Float(ratio));
         }
 
         // Gamma (bytes 478-481)
@@ -316,7 +358,9 @@ impl TgaParser {
             4 => "Pre-multiplied Alpha",
             _ => "Unknown",
         };
-        metadata.exif.set("TGA:AlphaType", AttrValue::Str(alpha_str.to_string()));
+        metadata
+            .exif
+            .set("TGA:AlphaType", AttrValue::Str(alpha_str.to_string()));
 
         Ok(())
     }
@@ -397,10 +441,10 @@ mod tests {
     fn test_parse_with_footer() {
         let parser = TgaParser;
         let mut data = make_tga_header(64, 64, 24, 2);
-        
+
         // Add minimal image data
         data.extend(vec![0u8; 64 * 64 * 3]);
-        
+
         // TGA 2.0 footer
         data.extend_from_slice(&0u32.to_le_bytes()); // Extension offset (none)
         data.extend_from_slice(&0u32.to_le_bytes()); // Developer offset (none)

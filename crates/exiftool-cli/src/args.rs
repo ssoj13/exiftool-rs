@@ -87,9 +87,18 @@ pub fn parse_date(s: &str) -> Option<std::time::SystemTime> {
         let t = t.split('.').next().unwrap_or(t);
         let time_parts: Vec<&str> = t.split(':').collect();
         (
-            time_parts.get(0).and_then(|s| s.parse().ok()).unwrap_or(0u32),
-            time_parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0u32),
-            time_parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(0u32),
+            time_parts
+                .get(0)
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0u32),
+            time_parts
+                .get(1)
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0u32),
+            time_parts
+                .get(2)
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0u32),
         )
     } else {
         (0, 0, 0)
@@ -274,7 +283,7 @@ OPTIONS:
     -v, --version        Show version
 
 FORMATS (read):  JPEG PNG TIFF DNG CR2 CR3 NEF ARW ORF RW2 PEF RAF WebP HEIC AVIF EXR HDR GIF WAV JXL MP3 FLAC
-FORMATS (write): JPEG PNG TIFF DNG EXR HDR WebP HEIC GIF PNM JXL NEF NRW RAF CR2 ARW ORF RW2 PEF MP4 WAV FLAC MP3
+FORMATS (write): JPEG PNG TIFF DNG EXR HDR WebP HEIC GIF PNM JXL NEF NRW RAF CR2 CR3 ARW ORF RW2 PEF MP4 WAV FLAC MP3
 
 COMMON TAGS:
     Make, Model, Software, Artist, Copyright, DateTime,

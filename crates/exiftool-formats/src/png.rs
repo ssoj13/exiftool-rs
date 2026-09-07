@@ -12,8 +12,8 @@
 //!
 //! XMP is stored in iTXt with keyword "XML:com.adobe.xmp"
 
-use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
 use exiftool_attrs::AttrValue;
 use exiftool_xmp::XmpParser;
 use flate2::read::ZlibDecoder;
@@ -53,7 +53,9 @@ impl FormatParser for PngParser {
 
         while pos + 12 <= data.len() {
             // Chunk: length (4) + type (4) + data + CRC (4)
-            let length = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+            let length =
+                u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
+                    as usize;
             let chunk_type = &data[pos + 4..pos + 8];
 
             // Check we have enough data
@@ -67,18 +69,30 @@ impl FormatParser for PngParser {
                 b"IHDR" => {
                     // Image header - dimensions, bit depth, color type
                     if chunk_data.len() >= 13 {
-                        let width = u32::from_be_bytes([chunk_data[0], chunk_data[1], chunk_data[2], chunk_data[3]]);
-                        let height = u32::from_be_bytes([chunk_data[4], chunk_data[5], chunk_data[6], chunk_data[7]]);
+                        let width = u32::from_be_bytes([
+                            chunk_data[0],
+                            chunk_data[1],
+                            chunk_data[2],
+                            chunk_data[3],
+                        ]);
+                        let height = u32::from_be_bytes([
+                            chunk_data[4],
+                            chunk_data[5],
+                            chunk_data[6],
+                            chunk_data[7],
+                        ]);
                         let bit_depth = chunk_data[8];
                         let color_type = chunk_data[9];
                         let compression = chunk_data[10];
                         let _filter = chunk_data[11];
                         let interlace = chunk_data[12];
-                        
+
                         metadata.exif.set("ImageWidth", AttrValue::UInt(width));
                         metadata.exif.set("ImageHeight", AttrValue::UInt(height));
-                        metadata.exif.set("BitDepth", AttrValue::UInt(bit_depth as u32));
-                        
+                        metadata
+                            .exif
+                            .set("BitDepth", AttrValue::UInt(bit_depth as u32));
+
                         let color_type_str = match color_type {
                             0 => "Grayscale",
                             2 => "RGB",
@@ -87,32 +101,53 @@ impl FormatParser for PngParser {
                             6 => "RGBA",
                             _ => "Unknown",
                         };
-                        metadata.exif.set("ColorType", AttrValue::Str(color_type_str.into()));
-                        
+                        metadata
+                            .exif
+                            .set("ColorType", AttrValue::Str(color_type_str.into()));
+
                         if compression == 0 {
-                            metadata.exif.set("Compression", AttrValue::Str("Deflate".into()));
+                            metadata
+                                .exif
+                                .set("Compression", AttrValue::Str("Deflate".into()));
                         }
                         if interlace == 1 {
-                            metadata.exif.set("Interlace", AttrValue::Str("Adam7".into()));
+                            metadata
+                                .exif
+                                .set("Interlace", AttrValue::Str("Adam7".into()));
                         }
                     }
                 }
                 b"pHYs" => {
                     // Physical dimensions
                     if chunk_data.len() >= 9 {
-                        let x_pixels = u32::from_be_bytes([chunk_data[0], chunk_data[1], chunk_data[2], chunk_data[3]]);
-                        let y_pixels = u32::from_be_bytes([chunk_data[4], chunk_data[5], chunk_data[6], chunk_data[7]]);
+                        let x_pixels = u32::from_be_bytes([
+                            chunk_data[0],
+                            chunk_data[1],
+                            chunk_data[2],
+                            chunk_data[3],
+                        ]);
+                        let y_pixels = u32::from_be_bytes([
+                            chunk_data[4],
+                            chunk_data[5],
+                            chunk_data[6],
+                            chunk_data[7],
+                        ]);
                         let unit = chunk_data[8];
-                        
+
                         if unit == 1 {
                             // Pixels per meter -> DPI
                             let x_dpi = (x_pixels as f64 * 0.0254).round() as u32;
                             let y_dpi = (y_pixels as f64 * 0.0254).round() as u32;
                             metadata.exif.set("XResolution", AttrValue::UInt(x_dpi));
                             metadata.exif.set("YResolution", AttrValue::UInt(y_dpi));
-                            metadata.exif.set("ResolutionUnit", AttrValue::Str("dpi".into()));
+                            metadata
+                                .exif
+                                .set("ResolutionUnit", AttrValue::Str("dpi".into()));
                         } else {
-                            metadata.exif.set("PixelAspectRatio", AttrValue::Str(format!("{}:{}", x_pixels, y_pixels)));
+                            metadata.exif.set(
+                                "PixelAspectRatio",
+                                AttrValue::Str(format!("{}:{}", x_pixels, y_pixels)),
+                            );
                         }
                     }
                 }
@@ -125,22 +160,35 @@ impl FormatParser for PngParser {
                         let hour = chunk_data[4];
                         let minute = chunk_data[5];
                         let second = chunk_data[6];
-                        metadata.exif.set("ModifyDate", AttrValue::Str(
-                            format!("{:04}:{:02}:{:02} {:02}:{:02}:{:02}", year, month, day, hour, minute, second)
-                        ));
+                        metadata.exif.set(
+                            "ModifyDate",
+                            AttrValue::Str(format!(
+                                "{:04}:{:02}:{:02} {:02}:{:02}:{:02}",
+                                year, month, day, hour, minute, second
+                            )),
+                        );
                     }
                 }
                 b"gAMA" => {
                     // Gamma
                     if chunk_data.len() >= 4 {
-                        let gamma = u32::from_be_bytes([chunk_data[0], chunk_data[1], chunk_data[2], chunk_data[3]]);
-                        metadata.exif.set("Gamma", AttrValue::Float(gamma as f32 / 100000.0));
+                        let gamma = u32::from_be_bytes([
+                            chunk_data[0],
+                            chunk_data[1],
+                            chunk_data[2],
+                            chunk_data[3],
+                        ]);
+                        metadata
+                            .exif
+                            .set("Gamma", AttrValue::Float(gamma as f32 / 100000.0));
                     }
                 }
                 b"cHRM" => {
                     // Chromaticity
                     if chunk_data.len() >= 32 {
-                        metadata.exif.set("Chromaticity", AttrValue::Str("Present".into()));
+                        metadata
+                            .exif
+                            .set("Chromaticity", AttrValue::Str("Present".into()));
                     }
                 }
                 b"sRGB" => {
@@ -153,14 +201,18 @@ impl FormatParser for PngParser {
                             3 => "Absolute Colorimetric",
                             _ => "Unknown",
                         };
-                        metadata.exif.set("sRGBRendering", AttrValue::Str(intent.into()));
+                        metadata
+                            .exif
+                            .set("sRGBRendering", AttrValue::Str(intent.into()));
                     }
                 }
                 b"iCCP" => {
                     // ICC Profile
                     if let Some(null_pos) = chunk_data.iter().position(|&b| b == 0) {
                         if let Ok(name) = std::str::from_utf8(&chunk_data[..null_pos]) {
-                            metadata.exif.set("ICCProfileName", AttrValue::Str(name.into()));
+                            metadata
+                                .exif
+                                .set("ICCProfileName", AttrValue::Str(name.into()));
                         }
                         // Compression method at null_pos+1, then zlib data
                         if null_pos + 2 < chunk_data.len() {
@@ -168,9 +220,13 @@ impl FormatParser for PngParser {
                             let mut decoder = ZlibDecoder::new(compressed);
                             let mut profile = Vec::new();
                             if decoder.read_to_end(&mut profile).is_ok() && profile.len() >= 20 {
-                                metadata.exif.set("ICCProfileSize", AttrValue::UInt(profile.len() as u32));
+                                metadata
+                                    .exif
+                                    .set("ICCProfileSize", AttrValue::UInt(profile.len() as u32));
                                 if let Ok(space) = std::str::from_utf8(&profile[16..20]) {
-                                    metadata.exif.set("ICCColorSpace", AttrValue::Str(space.trim().into()));
+                                    metadata
+                                        .exif
+                                        .set("ICCColorSpace", AttrValue::Str(space.trim().into()));
                                 }
                             }
                         }
@@ -299,7 +355,9 @@ impl PngParser {
                                     // Parse XMP and add tags to metadata
                                     if let Ok(xmp_attrs) = XmpParser::parse(&xmp) {
                                         for (key, value) in xmp_attrs.iter() {
-                                            metadata.exif.set(format!("XMP:{}", key), value.clone());
+                                            metadata
+                                                .exif
+                                                .set(format!("XMP:{}", key), value.clone());
                                         }
                                     }
                                     metadata.xmp = Some(xmp);
@@ -309,7 +367,9 @@ impl PngParser {
                                 if let Some(xmp) = decompress_zlib(text_data) {
                                     if let Ok(xmp_attrs) = XmpParser::parse(&xmp) {
                                         for (key, value) in xmp_attrs.iter() {
-                                            metadata.exif.set(format!("XMP:{}", key), value.clone());
+                                            metadata
+                                                .exif
+                                                .set(format!("XMP:{}", key), value.clone());
                                         }
                                     }
                                     metadata.xmp = Some(xmp);
@@ -364,7 +424,6 @@ fn decompress_zlib_bytes(data: &[u8]) -> Option<Vec<u8>> {
 fn decompress_zlib(data: &[u8]) -> Option<String> {
     String::from_utf8(decompress_zlib_bytes(data)?).ok()
 }
-
 
 #[cfg(test)]
 mod tests {

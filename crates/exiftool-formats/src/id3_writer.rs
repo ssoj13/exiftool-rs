@@ -228,13 +228,16 @@ mod tests {
 
     fn make_mp3_with_id3v2() -> Vec<u8> {
         let mut data = Vec::new();
-        
+
         // ID3v2.3 header with 10 bytes of frames
         data.extend_from_slice(b"ID3");
         data.push(3); // version 2.3
         data.push(0);
         data.push(0); // flags
-        data.push(0); data.push(0); data.push(0); data.push(10); // size = 10 (syncsafe)
+        data.push(0);
+        data.push(0);
+        data.push(0);
+        data.push(10); // size = 10 (syncsafe)
 
         // Dummy frame data (10 bytes)
         data.extend_from_slice(&[0u8; 10]);
@@ -253,7 +256,8 @@ mod tests {
 
         let mut meta = Metadata::new("MP3");
         meta.exif.set("Title", AttrValue::Str("Test Song".into()));
-        meta.exif.set("Artist", AttrValue::Str("Test Artist".into()));
+        meta.exif
+            .set("Artist", AttrValue::Str("Test Artist".into()));
 
         Id3Writer::write(&mut input, &mut output, &meta).unwrap();
 
@@ -278,7 +282,7 @@ mod tests {
 
         // Should have new ID3v2
         assert_eq!(&output[0..3], b"ID3");
-        
+
         // Should contain "New Title" in output
         let output_str = String::from_utf8_lossy(&output);
         assert!(output_str.contains("New Title"));
@@ -287,7 +291,7 @@ mod tests {
     #[test]
     fn test_build_text_frame() {
         let frame = build_text_frame(b"TIT2", "Hello");
-        
+
         assert_eq!(&frame[0..4], b"TIT2");
         // Size = 6 (1 encoding + 5 text bytes)
         assert_eq!(&frame[4..8], &[0, 0, 0, 6]);
@@ -302,7 +306,7 @@ mod tests {
     #[test]
     fn test_preserves_id3v1() {
         let mut input_data = make_minimal_mp3();
-        
+
         // Add ID3v1 tag at end
         input_data.extend_from_slice(b"TAG");
         input_data.extend_from_slice(&[0u8; 125]); // rest of 128-byte tag

@@ -24,13 +24,13 @@ No `path = "C:/projects/..."` for sibling git repos.
 - [x] **E.** Nikon NEF/NRW: Type-3 MakerNotes IFD, decrypt (`ProcessNikonEncrypted` / `@xlat`), LensData 0100/0101/02xx, ColorBalance layouts, ShotInfo version dispatch (D40–Z9 / `NIKON_OFFSETS` piecewise decrypt), PreviewIFD offsets relocated.
 - [x] **F.** Switch EXR parser/writer from crates.io `exr` to `exr-core` SSH git. Keep public `exr` out after switch.
 - [x] **F2.** JPEG 2000: `jpg-rs` + HTJ2K `jph-rs` via SSH (not local path).
-- [x] **G.** RAW writers: RAF = WriteRAF. TIFF-family RAW (NEF/CR2/ARW/ORF/…) = `tiff_rewrite` via `TiffWriter::write`; `is_writable` true except CR3.
+- [x] **G.** RAW writers: RAF = WriteRAF. TIFF-family RAW (NEF/CR2/ARW/ORF/…) = `tiff_rewrite` via `TiffWriter::write`; CR3 = `Cr3Writer` (CMT + CTBO). `is_writable` true for those.
 - [x] **H.** JPEG post-EOI trailers (AFCP / FotoStation / PhotoMechanic / Samsung / CanonVRD detect). PNG `zXIf` (zlib EXIF, same as `eXIf`).
 
 ## Still open
 
 1. MakerNotes field write (not only blob copy).
-2. CR3 write.
+2. ~~CR3 write.~~ Done: `Cr3Writer` (CMT1/2/4, XMP UUID, CTBO, stco/co64; CMT3 blob).
 3. 1:1 remaining MakerNotes vendors (NikonCustom ShotInfo subdirs, other brands).
 
 ## Out of scope unless asked

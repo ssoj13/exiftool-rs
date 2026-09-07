@@ -70,7 +70,9 @@ impl FormatParser for Mp4Parser {
     }
 
     fn extensions(&self) -> &'static [&'static str] {
-        &["mp4", "m4v", "m4a", "m4b", "m4p", "mov", "3gp", "3g2", "f4v"]
+        &[
+            "mp4", "m4v", "m4a", "m4b", "m4p", "mov", "3gp", "3g2", "f4v",
+        ]
     }
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
@@ -94,7 +96,9 @@ impl FormatParser for Mp4Parser {
         reader.read_exact(&mut brand)?;
 
         let brand_str = String::from_utf8_lossy(&brand).trim().to_string();
-        metadata.exif.set("MajorBrand", AttrValue::Str(brand_str.clone()));
+        metadata
+            .exif
+            .set("MajorBrand", AttrValue::Str(brand_str.clone()));
 
         // Determine format variant
         metadata.format = match brand_str.as_str() {
@@ -112,7 +116,9 @@ impl FormatParser for Mp4Parser {
         let mut version = [0u8; 4];
         reader.read_exact(&mut version)?;
         let minor_version = u32::from_be_bytes(version);
-        metadata.exif.set("MinorVersion", AttrValue::UInt(minor_version));
+        metadata
+            .exif
+            .set("MinorVersion", AttrValue::UInt(minor_version));
 
         // Read compatible brands
         let brands_size = ftyp_size.saturating_sub(16);
@@ -128,7 +134,9 @@ impl FormatParser for Mp4Parser {
                 .collect();
 
             if !brands.is_empty() {
-                metadata.exif.set("CompatibleBrands", AttrValue::Str(brands.join(", ")));
+                metadata
+                    .exif
+                    .set("CompatibleBrands", AttrValue::Str(brands.join(", ")));
             }
         }
 
@@ -163,7 +171,9 @@ impl FormatParser for Mp4Parser {
                 }
                 b"mdat" => {
                     let mdat_size = box_size.saturating_sub(8);
-                    metadata.exif.set("MediaDataSize", AttrValue::UInt64(mdat_size));
+                    metadata
+                        .exif
+                        .set("MediaDataSize", AttrValue::UInt64(mdat_size));
                 }
                 b"uuid" => {
                     // UUID extension boxes (XMP often stored here)
@@ -180,8 +190,12 @@ impl FormatParser for Mp4Parser {
 
         // Set track count
         if state.video_tracks > 0 || state.audio_tracks > 0 {
-            metadata.exif.set("VideoTrackCount", AttrValue::UInt(state.video_tracks));
-            metadata.exif.set("AudioTrackCount", AttrValue::UInt(state.audio_tracks));
+            metadata
+                .exif
+                .set("VideoTrackCount", AttrValue::UInt(state.video_tracks));
+            metadata
+                .exif
+                .set("AudioTrackCount", AttrValue::UInt(state.audio_tracks));
         }
 
         Ok(metadata)
@@ -275,10 +289,16 @@ impl Mp4Parser {
 
             // Convert timestamps (seconds since 1904-01-01)
             if creation_time > 0 {
-                metadata.exif.set("CreationTime", AttrValue::Str(mac_time_to_string(creation_time as u64)));
+                metadata.exif.set(
+                    "CreationTime",
+                    AttrValue::Str(mac_time_to_string(creation_time as u64)),
+                );
             }
             if modification_time > 0 {
-                metadata.exif.set("ModificationTime", AttrValue::Str(mac_time_to_string(modification_time as u64)));
+                metadata.exif.set(
+                    "ModificationTime",
+                    AttrValue::Str(mac_time_to_string(modification_time as u64)),
+                );
             }
 
             metadata.exif.set("TimeScale", AttrValue::UInt(timescale));
@@ -286,41 +306,63 @@ impl Mp4Parser {
             // Calculate duration in seconds
             if timescale > 0 {
                 let duration_secs = duration as f64 / timescale as f64;
-                metadata.exif.set("Duration", AttrValue::Str(format_duration(duration_secs)));
-                metadata.exif.set("DurationSeconds", AttrValue::Double(duration_secs));
+                metadata
+                    .exif
+                    .set("Duration", AttrValue::Str(format_duration(duration_secs)));
+                metadata
+                    .exif
+                    .set("DurationSeconds", AttrValue::Double(duration_secs));
             }
 
             // Preferred rate (fixed point 16.16)
             let rate = u32::from_be_bytes([buf[16], buf[17], buf[18], buf[19]]);
             let rate_float = rate as f64 / 65536.0;
             if (rate_float - 1.0).abs() > 0.001 {
-                metadata.exif.set("PreferredRate", AttrValue::Double(rate_float));
+                metadata
+                    .exif
+                    .set("PreferredRate", AttrValue::Double(rate_float));
             }
         } else {
             // Version 1: 64-bit timestamps
             let mut buf = [0u8; 32];
             reader.read_exact(&mut buf)?;
 
-            let creation_time = u64::from_be_bytes([buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]]);
-            let modification_time = u64::from_be_bytes([buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15]]);
+            let creation_time = u64::from_be_bytes([
+                buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7],
+            ]);
+            let modification_time = u64::from_be_bytes([
+                buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
+            ]);
             let timescale = u32::from_be_bytes([buf[16], buf[17], buf[18], buf[19]]);
-            let duration = u64::from_be_bytes([buf[20], buf[21], buf[22], buf[23], buf[24], buf[25], buf[26], buf[27]]);
+            let duration = u64::from_be_bytes([
+                buf[20], buf[21], buf[22], buf[23], buf[24], buf[25], buf[26], buf[27],
+            ]);
 
             state.timescale = timescale;
 
             if creation_time > 0 {
-                metadata.exif.set("CreationTime", AttrValue::Str(mac_time_to_string(creation_time)));
+                metadata.exif.set(
+                    "CreationTime",
+                    AttrValue::Str(mac_time_to_string(creation_time)),
+                );
             }
             if modification_time > 0 {
-                metadata.exif.set("ModificationTime", AttrValue::Str(mac_time_to_string(modification_time)));
+                metadata.exif.set(
+                    "ModificationTime",
+                    AttrValue::Str(mac_time_to_string(modification_time)),
+                );
             }
 
             metadata.exif.set("TimeScale", AttrValue::UInt(timescale));
 
             if timescale > 0 {
                 let duration_secs = duration as f64 / timescale as f64;
-                metadata.exif.set("Duration", AttrValue::Str(format_duration(duration_secs)));
-                metadata.exif.set("DurationSeconds", AttrValue::Double(duration_secs));
+                metadata
+                    .exif
+                    .set("Duration", AttrValue::Str(format_duration(duration_secs)));
+                metadata
+                    .exif
+                    .set("DurationSeconds", AttrValue::Double(duration_secs));
             }
         }
 
@@ -501,7 +543,9 @@ impl Mp4Parser {
             _ => &handler_str,
         };
 
-        metadata.exif.set("HandlerType", AttrValue::Str(handler_name.to_string()));
+        metadata
+            .exif
+            .set("HandlerType", AttrValue::Str(handler_name.to_string()));
 
         Ok(Some(handler))
     }
@@ -604,8 +648,18 @@ impl Mp4Parser {
         let mut entry_header = [0u8; 8];
         reader.read_exact(&mut entry_header)?;
 
-        let entry_size = u32::from_be_bytes([entry_header[0], entry_header[1], entry_header[2], entry_header[3]]) as u64;
-        let codec_fourcc = [entry_header[4], entry_header[5], entry_header[6], entry_header[7]];
+        let entry_size = u32::from_be_bytes([
+            entry_header[0],
+            entry_header[1],
+            entry_header[2],
+            entry_header[3],
+        ]) as u64;
+        let codec_fourcc = [
+            entry_header[4],
+            entry_header[5],
+            entry_header[6],
+            entry_header[7],
+        ];
         let codec_str = String::from_utf8_lossy(&codec_fourcc).trim().to_string();
 
         // Decode codec name
@@ -644,8 +698,12 @@ impl Mp4Parser {
         };
 
         if handler_type == Some(*b"vide") {
-            metadata.exif.set("VideoCodec", AttrValue::Str(codec_name.to_string()));
-            metadata.exif.set("VideoCodecFourCC", AttrValue::Str(codec_str.clone()));
+            metadata
+                .exif
+                .set("VideoCodec", AttrValue::Str(codec_name.to_string()));
+            metadata
+                .exif
+                .set("VideoCodecFourCC", AttrValue::Str(codec_str.clone()));
 
             // Parse video sample entry for dimensions
             if entry_size >= 86 {
@@ -660,8 +718,12 @@ impl Mp4Parser {
                 let height = u16::from_be_bytes([dim[2], dim[3]]);
 
                 if width > 0 && height > 0 {
-                    metadata.exif.set("ImageWidth", AttrValue::UInt(width as u32));
-                    metadata.exif.set("ImageHeight", AttrValue::UInt(height as u32));
+                    metadata
+                        .exif
+                        .set("ImageWidth", AttrValue::UInt(width as u32));
+                    metadata
+                        .exif
+                        .set("ImageHeight", AttrValue::UInt(height as u32));
                 }
 
                 // Horizontal and vertical resolution (fixed point 16.16)
@@ -671,7 +733,10 @@ impl Mp4Parser {
                 let vres = u32::from_be_bytes([res[4], res[5], res[6], res[7]]) >> 16;
 
                 if hres > 0 {
-                    metadata.exif.set("VideoResolution", AttrValue::Str(format!("{}x{} dpi", hres, vres)));
+                    metadata.exif.set(
+                        "VideoResolution",
+                        AttrValue::Str(format!("{}x{} dpi", hres, vres)),
+                    );
                 }
 
                 // Skip reserved (4) + frame_count (2) = 6
@@ -679,7 +744,9 @@ impl Mp4Parser {
                 reader.read_exact(&mut skip2)?;
                 let frame_count = u16::from_be_bytes([skip2[4], skip2[5]]);
                 if frame_count > 1 {
-                    metadata.exif.set("FrameCount", AttrValue::UInt(frame_count as u32));
+                    metadata
+                        .exif
+                        .set("FrameCount", AttrValue::UInt(frame_count as u32));
                 }
 
                 // Compressor name (32 bytes, pascal string)
@@ -687,7 +754,9 @@ impl Mp4Parser {
                 reader.read_exact(&mut compressor)?;
                 let name_len = compressor[0] as usize;
                 if name_len > 0 && name_len < 32 {
-                    let name = String::from_utf8_lossy(&compressor[1..1 + name_len]).trim().to_string();
+                    let name = String::from_utf8_lossy(&compressor[1..1 + name_len])
+                        .trim()
+                        .to_string();
                     if !name.is_empty() {
                         metadata.exif.set("CompressorName", AttrValue::Str(name));
                     }
@@ -698,12 +767,18 @@ impl Mp4Parser {
                 reader.read_exact(&mut depth)?;
                 let bit_depth = u16::from_be_bytes(depth);
                 if bit_depth > 0 && bit_depth != 0xFFFF {
-                    metadata.exif.set("BitDepth", AttrValue::UInt(bit_depth as u32));
+                    metadata
+                        .exif
+                        .set("BitDepth", AttrValue::UInt(bit_depth as u32));
                 }
             }
         } else if handler_type == Some(*b"soun") {
-            metadata.exif.set("AudioCodec", AttrValue::Str(codec_name.to_string()));
-            metadata.exif.set("AudioCodecFourCC", AttrValue::Str(codec_str));
+            metadata
+                .exif
+                .set("AudioCodec", AttrValue::Str(codec_name.to_string()));
+            metadata
+                .exif
+                .set("AudioCodecFourCC", AttrValue::Str(codec_str));
 
             // Parse audio sample entry
             if entry_size >= 36 {
@@ -718,10 +793,14 @@ impl Mp4Parser {
                 let sample_size = u16::from_be_bytes([audio[2], audio[3]]);
 
                 if channels > 0 {
-                    metadata.exif.set("AudioChannels", AttrValue::UInt(channels as u32));
+                    metadata
+                        .exif
+                        .set("AudioChannels", AttrValue::UInt(channels as u32));
                 }
                 if sample_size > 0 {
-                    metadata.exif.set("AudioSampleSize", AttrValue::UInt(sample_size as u32));
+                    metadata
+                        .exif
+                        .set("AudioSampleSize", AttrValue::UInt(sample_size as u32));
                 }
 
                 // Skip compression_id (2) + packet_size (2) = 4
@@ -734,7 +813,9 @@ impl Mp4Parser {
                 let sample_rate = u32::from_be_bytes(rate) >> 16;
 
                 if sample_rate > 0 {
-                    metadata.exif.set("AudioSampleRate", AttrValue::UInt(sample_rate));
+                    metadata
+                        .exif
+                        .set("AudioSampleRate", AttrValue::UInt(sample_rate));
                 }
             }
         }
@@ -980,7 +1061,9 @@ impl Mp4Parser {
                 _ => {
                     let idx = u32::from_be_bytes(box_type);
                     if box_type[0] == 0 && idx >= 1 {
-                        key_names.get((idx as usize) - 1).map(|n| format!("Keys:{}", n))
+                        key_names
+                            .get((idx as usize) - 1)
+                            .map(|n| format!("Keys:{}", n))
                     } else {
                         None
                     }
@@ -1096,8 +1179,8 @@ impl Mp4Parser {
     ) -> Result<()> {
         // XMP UUID: BE7ACFCB-97A9-42E8-9C71-999491E3AFAC
         const XMP_UUID: [u8; 16] = [
-            0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8,
-            0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC,
+            0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8, 0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3,
+            0xAF, 0xAC,
         ];
 
         reader.seek(SeekFrom::Start(box_start + 8))?;

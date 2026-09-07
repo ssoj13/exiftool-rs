@@ -29,13 +29,12 @@ impl FormatParser for AudibleParser {
         }
         // Version 4+: has ftyp box with "aax " or "aaxc"
         // (handled by Mp4Parser, but we check anyway)
-        if &header[4..8] == b"ftyp"
-            && header.len() >= 12 {
-                let brand = &header[8..12];
-                if brand == b"aax " || brand == b"aaxc" || brand == b"M4A " {
-                    return true;
-                }
+        if &header[4..8] == b"ftyp" && header.len() >= 12 {
+            let brand = &header[8..12];
+            if brand == b"aax " || brand == b"aaxc" || brand == b"M4A " {
+                return true;
             }
+        }
         false
     }
 
@@ -65,7 +64,8 @@ impl FormatParser for AudibleParser {
         if &header[4..8] == b"ftyp" {
             meta.format = "AAX";
             meta.set_file_type("AAX", "audio/vnd.audible.aax");
-            meta.exif.set("Audible:Format", AttrValue::Str("AAX (MPEG-4)".to_string()));
+            meta.exif
+                .set("Audible:Format", AttrValue::Str("AAX (MPEG-4)".to_string()));
             // AAX parsing is handled better by Mp4Parser
             return Ok(meta);
         }
@@ -104,18 +104,21 @@ fn parse_aa_header(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Result<()>
     reader.read_exact(&mut toc_offset_bytes)?;
     let toc_offset = u32::from_be_bytes(toc_offset_bytes);
 
-    meta.exif.set("Audible:Format", AttrValue::Str("AA (Legacy)".to_string()));
-    meta.exif.set("Audible:TOCOffset", AttrValue::UInt(toc_offset));
+    meta.exif
+        .set("Audible:Format", AttrValue::Str("AA (Legacy)".to_string()));
+    meta.exif
+        .set("Audible:TOCOffset", AttrValue::UInt(toc_offset));
 
     // Try to read TOC if valid
     if toc_offset > 16 && toc_offset < 100000 {
         reader.seek(SeekFrom::Start(toc_offset as u64))?;
-        
+
         // TOC has entries: name (null-terminated) + offset + size
         let mut toc_header = [0u8; 4];
         if reader.read_exact(&mut toc_header).is_ok() {
             let num_entries = u32::from_be_bytes(toc_header);
-            meta.exif.set("Audible:TOCEntries", AttrValue::UInt(num_entries.min(100)));
+            meta.exif
+                .set("Audible:TOCEntries", AttrValue::UInt(num_entries.min(100)));
 
             // Parse metadata entries
             for _ in 0..num_entries.min(50) {
@@ -135,14 +138,16 @@ fn parse_aa_toc_entry(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Result<
     let mut len_bytes = [0u8; 4];
     reader.read_exact(&mut len_bytes)?;
     let key_len = u32::from_be_bytes(len_bytes) as usize;
-    
+
     if key_len == 0 || key_len > 256 {
         return Ok(());
     }
 
     let mut key_buf = vec![0u8; key_len];
     reader.read_exact(&mut key_buf)?;
-    let key = String::from_utf8_lossy(&key_buf).trim_end_matches('\0').to_string();
+    let key = String::from_utf8_lossy(&key_buf)
+        .trim_end_matches('\0')
+        .to_string();
 
     reader.read_exact(&mut len_bytes)?;
     let value_len = u32::from_be_bytes(len_bytes) as usize;
@@ -153,7 +158,9 @@ fn parse_aa_toc_entry(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Result<
 
     let mut value_buf = vec![0u8; value_len];
     reader.read_exact(&mut value_buf)?;
-    let value = String::from_utf8_lossy(&value_buf).trim_end_matches('\0').to_string();
+    let value = String::from_utf8_lossy(&value_buf)
+        .trim_end_matches('\0')
+        .to_string();
 
     // Map known Audible metadata keys
     let tag_name = match key.as_str() {
@@ -171,7 +178,8 @@ fn parse_aa_toc_entry(reader: &mut dyn ReadSeek, meta: &mut Metadata) -> Result<
         "asin" => "Audible:ASIN",
         "duration" => {
             if let Ok(dur) = value.parse::<f64>() {
-                meta.exif.set("Audio:Duration", AttrValue::Double(dur / 1000.0));
+                meta.exif
+                    .set("Audio:Duration", AttrValue::Double(dur / 1000.0));
             }
             return Ok(());
         }

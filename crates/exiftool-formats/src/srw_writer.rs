@@ -28,8 +28,12 @@ mod tests {
     #[test]
     fn write_srw_roundtrip() {
         let mut metadata = crate::Metadata::new("SRW");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("SAMSUNG".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("NX500".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("SAMSUNG".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("NX500".into()));
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

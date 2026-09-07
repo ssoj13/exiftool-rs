@@ -20,9 +20,8 @@ impl ExrWriter {
     {
         let source_data = crate::utils::read_with_limit(input)?;
         let mut istream = MemIStream::new(source_data);
-        let image = Image::read_from(&mut istream).map_err(|e| {
-            crate::Error::InvalidStructure(format!("EXR read: {e}"))
-        })?;
+        let image = Image::read_from(&mut istream)
+            .map_err(|e| crate::Error::InvalidStructure(format!("EXR read: {e}")))?;
         let extra = extra_attrs(metadata);
         let mut ostream = MemOStream::new();
         image
@@ -71,8 +70,8 @@ mod tests {
 
     #[test]
     fn rewrite_openexr_fixture_comments() {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/testdata/OpenEXR.exr");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/OpenEXR.exr");
         if !path.exists() {
             return;
         }

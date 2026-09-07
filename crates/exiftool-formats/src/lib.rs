@@ -28,7 +28,7 @@
 //! | PNG | .png | [`PngParser`] | [`PngWriter`] |
 //! | HEIC/HEIF | .heic, .heif | [`HeicParser`] | [`HeicWriter`] |
 //! | Canon CR2 | .cr2 | [`Cr2Parser`] | [`Cr2Writer`] |
-//! | Canon CR3 | .cr3 | [`Cr3Parser`] | - |
+//! | Canon CR3 | .cr3 | [`Cr3Parser`] | [`Cr3Writer`] |
 //! | Nikon NEF | .nef | [`NefParser`] | [`NefWriter`] |
 //! | Sony ARW | .arw | [`ArwParser`] | [`ArwWriter`] |
 //! | Olympus ORF | .orf | [`OrfParser`] | [`OrfWriter`] |
@@ -85,12 +85,12 @@ mod aac;
 mod ai;
 mod aiff;
 mod alac;
-mod asf;
-mod audible;
 mod ape;
 mod arw;
 mod arw_writer;
+mod asf;
 mod au;
+mod audible;
 mod avi;
 mod bmp;
 mod braw;
@@ -98,13 +98,14 @@ mod composite;
 mod cr2;
 mod cr2_writer;
 mod cr3;
+mod cr3_writer;
 mod crw;
 mod dcr;
 mod dcr_writer;
-mod dpx;
-mod dsf;
 mod dicom;
 mod dicom_tags;
+mod dpx;
+mod dsf;
 mod eps;
 mod erf;
 mod erf_writer;
@@ -122,6 +123,7 @@ mod gif_writer;
 mod hdr;
 mod hdr_writer;
 mod heic;
+mod heic_writer;
 mod ico;
 mod id3;
 mod id3_writer;
@@ -138,15 +140,13 @@ mod mef;
 mod mef_writer;
 mod midi;
 mod mkv;
-mod mpeg_ts;
 mod mos;
 mod mos_writer;
 mod mp4;
 mod mp4_writer;
+mod mpeg_ts;
 mod mrw;
 mod mxf;
-mod pcx;
-mod pdf;
 mod nef;
 mod nef_writer;
 mod nrw;
@@ -154,6 +154,8 @@ mod ogg;
 mod orf;
 mod orf_writer;
 mod parsers;
+mod pcx;
+mod pdf;
 mod pef;
 mod pef_writer;
 mod png;
@@ -162,21 +164,23 @@ mod pnm;
 mod pnm_writer;
 mod psd;
 mod r3d;
-mod rm;
 mod raf;
 mod raf_writer;
-mod riff;
 mod registry;
+mod riff;
+mod rm;
 mod rw2;
 mod rw2_writer;
 mod rwl;
 mod rwl_writer;
+mod seven_z;
 mod sgi;
+mod srf;
 mod srw;
 mod srw_writer;
-mod srf;
 mod svg;
 mod tag_lookup;
+mod tak;
 mod tga;
 mod tiff;
 mod tiff_family;
@@ -188,23 +192,20 @@ mod wav;
 mod wav_writer;
 mod webp;
 mod webp_writer;
-mod heic_writer;
-mod tak;
 mod wv;
 mod x3f;
-mod seven_z;
 mod zip;
 
 pub use aac::AacParser;
 pub use ai::AiParser;
 pub use aiff::AiffParser;
 pub use alac::CafParser;
-pub use asf::AsfParser;
-pub use audible::AudibleParser;
 pub use ape::ApeParser;
 pub use arw::ArwParser;
 pub use arw_writer::ArwWriter;
+pub use asf::AsfParser;
 pub use au::AuParser;
+pub use audible::AudibleParser;
 pub use avi::AviParser;
 pub use bmp::BmpParser;
 pub use braw::BrawParser;
@@ -212,28 +213,32 @@ pub use composite::add_composite_tags;
 pub use cr2::Cr2Parser;
 pub use cr2_writer::Cr2Writer;
 pub use cr3::Cr3Parser;
+pub use cr3_writer::Cr3Writer;
 pub use crw::CrwParser;
-pub use dcr::{DcrParser, KdcParser, K25Parser};
+pub use dcr::{DcrParser, K25Parser, KdcParser};
 pub use dcr_writer::DcrWriter;
-pub use dpx::DpxParser;
-pub use dsf::{DsfParser, DffParser};
 pub use dicom::DicomParser;
+pub use dpx::DpxParser;
+pub use dsf::{DffParser, DsfParser};
 pub use eps::EpsParser;
 pub use erf::ErfParser;
 pub use erf_writer::ErfWriter;
-pub use fff::FffParser;
-pub use fff_writer::FffWriter;
-pub use fits::FitsParser;
 pub use error::{Error, Result};
 use exiftool_attrs::AttrValue;
 pub use exr::ExrParser;
+pub use exr_writer::ExrWriter;
+pub use fff::FffParser;
+pub use fff_writer::FffWriter;
+pub use fits::FitsParser;
 pub use flac::FlacParser;
 pub use flac_writer::FlacWriter;
 pub use flv::FlvParser;
 pub use gif::GifParser;
 pub use gif_writer::GifWriter;
 pub use hdr::HdrParser;
+pub use hdr_writer::HdrWriter;
 pub use heic::HeicParser;
+pub use heic_writer::HeicWriter;
 pub use ico::IcoParser;
 pub use id3::Id3Parser;
 pub use id3_writer::Id3Writer;
@@ -242,70 +247,67 @@ pub use iiq_writer::IiqWriter;
 pub use iptc::{IptcParser, IptcWriter};
 pub use jp2::Jp2Parser;
 pub use jpeg::JpegParser;
+pub use jpeg_writer::JpegWriter;
 pub use jxl::JxlParser;
 pub use jxl_writer::JxlWriter;
 pub use mef::MefParser;
 pub use mef_writer::MefWriter;
 pub use midi::MidiParser;
 pub use mkv::MkvParser;
-pub use mpeg_ts::MpegTsParser;
 pub use mos::MosParser;
 pub use mos_writer::MosWriter;
 pub use mp4::Mp4Parser;
 pub use mp4_writer::Mp4Writer;
+pub use mpeg_ts::MpegTsParser;
 pub use mrw::MrwParser;
 pub use mxf::MxfParser;
 pub use nef::NefParser;
+pub use nef_writer::NefWriter;
 pub use nrw::NrwParser;
 pub use ogg::OggParser;
 pub use orf::OrfParser;
 pub use orf_writer::OrfWriter;
+pub use parsers::{default_parsers, parse_with};
+pub use pcx::PcxParser;
+pub use pdf::PdfParser;
 pub use pef::PefParser;
 pub use pef_writer::PefWriter;
 pub use png::PngParser;
+pub use png_writer::PngWriter;
 pub use pnm::PnmParser;
 pub use pnm_writer::PnmWriter;
 pub use psd::PsdParser;
 pub use r3d::R3dParser;
-pub use rm::RmParser;
 pub use raf::RafParser;
+pub use raf_writer::RafWriter;
+pub use registry::FormatRegistry;
+pub use rm::RmParser;
 pub use rw2::Rw2Parser;
 pub use rw2_writer::Rw2Writer;
 pub use rwl::RwlParser;
 pub use rwl_writer::RwlWriter;
+pub use seven_z::SevenZParser;
 pub use sgi::SgiParser;
 pub use srf::SrfParser;
 pub use srw::SrwParser;
 pub use srw_writer::SrwWriter;
 pub use svg::SvgParser;
+pub use tak::TakParser;
 pub use tga::TgaParser;
-pub use pcx::PcxParser;
-pub use pdf::PdfParser;
+pub use tiff::{TiffConfig, TiffParser};
+pub use tiff_writer::TiffWriter;
+pub use traits::{read_detect_header, FormatParser, ReadSeek, DETECT_HEADER_LEN};
+pub use utils::{
+    build_exif_bytes, build_xmp_string, entry_to_attr, ifd_tags, parse_tiff_exif,
+    raw_value_to_attr, read_with_limit, ParseTiffExifOptions, MAX_FILE_SIZE,
+};
 pub use wav::WavParser;
 pub use wav_writer::WavWriter;
-pub use tiff::{TiffConfig, TiffParser};
 pub use webp::WebpParser;
 pub use webp_writer::WebpWriter;
-pub use heic_writer::HeicWriter;
-pub use tak::TakParser;
 pub use wv::WvParser;
 pub use x3f::X3fParser;
-pub use seven_z::SevenZParser;
 pub use zip::ZipParser;
-pub use parsers::{default_parsers, parse_with};
-pub use registry::FormatRegistry;
-pub use traits::{DETECT_HEADER_LEN, FormatParser, ReadSeek, read_detect_header};
-pub use jpeg_writer::JpegWriter;
-pub use tiff_writer::TiffWriter;
-pub use png_writer::PngWriter;
-pub use exr_writer::ExrWriter;
-pub use hdr_writer::HdrWriter;
-pub use raf_writer::RafWriter;
-pub use nef_writer::NefWriter;
-pub use utils::{
-    build_exif_bytes, build_xmp_string, entry_to_attr, ifd_tags, parse_tiff_exif, raw_value_to_attr,
-    read_with_limit, MAX_FILE_SIZE, ParseTiffExifOptions,
-};
 
 /// Info about a single page/subfile in multi-page TIFF.
 #[derive(Debug, Clone, Default)]
@@ -387,59 +389,66 @@ impl Metadata {
         self.pages.len() > 1
     }
 
-    /// Check if this is a camera RAW file (not writable).
-    /// 
+    /// Check if this is a camera RAW file.
+    ///
     /// Detection methods:
     /// 1. By format name (ARW, CR2, CR3, NEF, ORF, RW2, PEF, RAF)
     /// 2. By Make tag for TIFF-based RAW (catches renamed files)
     pub fn is_camera_raw(&self) -> bool {
         // Known RAW format names
         const RAW_FORMATS: &[&str] = &[
-            "ARW", "CR2", "CR3", "NEF", "ORF", "RW2", "PEF", "RAF",
-            "SRW", "RWL", "3FR", "FFF", "ERF", "MEF", "DCR", "KDC", "K25",
-            "MOS", "IIQ", "SRF", "SR2",
+            "ARW", "CR2", "CR3", "NEF", "ORF", "RW2", "PEF", "RAF", "SRW", "RWL", "3FR", "FFF",
+            "ERF", "MEF", "DCR", "KDC", "K25", "MOS", "IIQ", "SRF", "SR2",
         ];
-        
+
         if RAW_FORMATS.contains(&self.format) {
             return true;
         }
-        
+
         // TIFF-based RAW detection via Make tag
         if self.format == "TIFF" {
             if let Some(make) = self.exif.get_str("Make") {
                 let make_lower = make.to_lowercase();
                 const RAW_VENDORS: &[&str] = &[
-                    "sony", "nikon", "canon", "fuji", "olympus",
-                    "panasonic", "pentax", "leica", "ricoh", 
-                    "hasselblad", "phase one", "samsung"
+                    "sony",
+                    "nikon",
+                    "canon",
+                    "fuji",
+                    "olympus",
+                    "panasonic",
+                    "pentax",
+                    "leica",
+                    "ricoh",
+                    "hasselblad",
+                    "phase one",
+                    "samsung",
                 ];
                 return RAW_VENDORS.iter().any(|v| make_lower.contains(v));
             }
         }
-        
+
         false
     }
 
     /// Check if this format supports writing.
     ///
     /// JPEG, PNG, TIFF, DNG, EXR, HDR, WebP, HEIC/AVIF, GIF, PNM, JXL,
-    /// TIFF-family RAW (not CR3), RAF, MP4/MOV family, WAV, FLAC, MP3.
+    /// TIFF-family RAW, RAF, CR3, MP4/MOV family, WAV, FLAC, MP3.
     pub fn is_writable(&self) -> bool {
         const WRITABLE: &[&str] = &[
-            "JPEG", "PNG", "TIFF", "DNG", "EXR", "HDR", "WebP", "HEIC", "HEIF", "AVIF",
-            "PNM", "PBM", "PGM", "PPM", "PAM", "GIF", "JXL",
+            "JPEG", "PNG", "TIFF", "DNG", "EXR", "HDR", "WebP", "HEIC", "HEIF", "AVIF", "PNM",
+            "PBM", "PGM", "PPM", "PAM", "GIF", "JXL",
         ];
-        // TIFF-family RAW via tiff_rewrite (SubIFD/raw copied). CR3 is ISOBMFF, not this path.
+        // TIFF-family RAW via tiff_rewrite. CR3 via Cr3Writer (CMT + CTBO).
         const RAW_WRITABLE: &[&str] = &[
-            "RAF", "NEF", "NRW", "ARW", "SRF", "SR2", "CR2", "ORF", "RW2", "PEF",
-            "SRW", "RWL", "3FR", "FFF", "ERF", "MEF", "DCR", "KDC", "K25", "MOS", "IIQ",
+            "RAF", "NEF", "NRW", "ARW", "SRF", "SR2", "CR2", "ORF", "RW2", "PEF", "SRW", "RWL",
+            "3FR", "FFF", "ERF", "MEF", "DCR", "KDC", "K25", "MOS", "IIQ", "CR3",
         ];
         if RAW_WRITABLE.contains(&self.format) {
             return true;
         }
         const MEDIA: &[&str] = &[
-            "MP4", "MOV", "M4V", "M4A", "M4B", "M4P", "3GP", "3G2", "F4V", "WAV", "FLAC",
-            "MP3",
+            "MP4", "MOV", "M4V", "M4A", "M4B", "M4P", "3GP", "3G2", "F4V", "WAV", "FLAC", "MP3",
         ];
         if MEDIA.contains(&self.format) {
             return true;
@@ -456,7 +465,8 @@ impl Metadata {
         if let Some(num) = self.exif.get_i32(key) {
             // Strip group prefix for interpretation lookup
             let tag_name = key.split(':').next_back().unwrap_or(key);
-            if let Some(interpreted) = exiftool_tags::interp::interpret_value(tag_name, num as i64) {
+            if let Some(interpreted) = exiftool_tags::interp::interpret_value(tag_name, num as i64)
+            {
                 return Some(interpreted);
             }
         }
@@ -475,21 +485,26 @@ impl Metadata {
         let tag_name = key.split(':').next_back().unwrap_or(key);
 
         match tag_name {
-            "ExposureTime" => {
-                self.exif.get_f64(key).map(exiftool_tags::interp::format_exposure_time)
-            }
-            "FNumber" | "ApertureValue" => {
-                self.exif.get_f64(key).map(exiftool_tags::interp::format_fnumber)
-            }
-            "FocalLength" | "FocalLengthIn35mmFilm" => {
-                self.exif.get_f64(key).map(exiftool_tags::interp::format_focal_length)
-            }
-            "GPSLatitude" => {
-                self.exif.get_f64(key).map(|v| exiftool_tags::interp::format_gps_coord(v, true))
-            }
-            "GPSLongitude" => {
-                self.exif.get_f64(key).map(|v| exiftool_tags::interp::format_gps_coord(v, false))
-            }
+            "ExposureTime" => self
+                .exif
+                .get_f64(key)
+                .map(exiftool_tags::interp::format_exposure_time),
+            "FNumber" | "ApertureValue" => self
+                .exif
+                .get_f64(key)
+                .map(exiftool_tags::interp::format_fnumber),
+            "FocalLength" | "FocalLengthIn35mmFilm" => self
+                .exif
+                .get_f64(key)
+                .map(exiftool_tags::interp::format_focal_length),
+            "GPSLatitude" => self
+                .exif
+                .get_f64(key)
+                .map(|v| exiftool_tags::interp::format_gps_coord(v, true)),
+            "GPSLongitude" => self
+                .exif
+                .get_f64(key)
+                .map(|v| exiftool_tags::interp::format_gps_coord(v, false)),
             _ => self.get_interpreted(key),
         }
     }
@@ -498,7 +513,9 @@ impl Metadata {
     ///
     /// Single source of truth for file type setting used by all format parsers.
     pub fn set_file_type(&mut self, file_type: &str, mime_type: &str) {
-        self.exif.set("File:FileType", AttrValue::Str(file_type.to_string()));
-        self.exif.set("File:MIMEType", AttrValue::Str(mime_type.to_string()));
+        self.exif
+            .set("File:FileType", AttrValue::Str(file_type.to_string()));
+        self.exif
+            .set("File:MIMEType", AttrValue::Str(mime_type.to_string()));
     }
 }

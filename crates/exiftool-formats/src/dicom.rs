@@ -46,7 +46,8 @@ impl FormatParser for DicomParser {
 /// ExifTool.pm `%magicNumber` DICOM: `.{128}DICM` or ACR group in first bytes.
 #[must_use]
 pub fn looks_like_dicom(header: &[u8]) -> bool {
-    if header.len() >= DICOM_PREAMBLE + 4 && &header[DICOM_PREAMBLE..DICOM_PREAMBLE + 4] == b"DICM" {
+    if header.len() >= DICOM_PREAMBLE + 4 && &header[DICOM_PREAMBLE..DICOM_PREAMBLE + 4] == b"DICM"
+    {
         return true;
     }
     acr_header(header).is_some()
@@ -141,8 +142,8 @@ fn walk_elements(
         if !applied_ts {
             if let Some(ts) = transfer_syntax.as_deref() {
                 let group_peek = u16_at(&hdr, 0, little);
-                let past_g2 = group_peek != 0x0002
-                    || group2_end.map(|end| pos + 8 > end).unwrap_or(false);
+                let past_g2 =
+                    group_peek != 0x0002 || group2_end.map(|end| pos + 8 > end).unwrap_or(false);
                 if past_g2 {
                     let ts = ts.trim_end_matches('\0').trim();
                     if ts == TS_DEFLATED {
@@ -188,10 +189,9 @@ fn walk_elements(
 
         if group == 0x7FE0 && element == 0x0010 {
             let name = dicom_tags::lookup(group, element).unwrap_or("PixelData");
-            metadata.exif.set(
-                name,
-                AttrValue::Str(format!("Binary data {len} bytes")),
-            );
+            metadata
+                .exif
+                .set(name, AttrValue::Str(format!("Binary data {len} bytes")));
             if len != 0xFFFF_FFFF {
                 reader.seek(SeekFrom::Current(i64::from(len)))?;
             }
@@ -207,10 +207,9 @@ fn walk_elements(
             if len > MAX_META_VALUE {
                 reader.seek(SeekFrom::Current(i64::from(len)))?;
                 if let Some(name) = dicom_tags::lookup(group, element) {
-                    metadata.exif.set(
-                        name,
-                        AttrValue::Str(format!("Binary data {len} bytes")),
-                    );
+                    metadata
+                        .exif
+                        .set(name, AttrValue::Str(format!("Binary data {len} bytes")));
                 }
                 continue;
             }
@@ -317,7 +316,11 @@ fn decode_value(buf: &[u8], vr: Option<&[u8]>, little: bool) -> String {
             f64::from_bits(bits).to_string()
         }
         Some(b"AT") if buf.len() >= 4 => {
-            format!("{:04X},{:04X}", u16_at(buf, 0, little), u16_at(buf, 2, little))
+            format!(
+                "{:04X},{:04X}",
+                u16_at(buf, 0, little),
+                u16_at(buf, 2, little)
+            )
         }
         Some(b"DA") => format_da(buf),
         Some(b"TM") => format_tm(buf),

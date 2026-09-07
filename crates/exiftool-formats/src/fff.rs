@@ -80,10 +80,10 @@ impl FormatParser for FffParser {
             })
             .unwrap_or(false);
 
-        if !is_hasselblad
-            && meta.exif.get_str("Make").is_none() {
-                meta.exif.set("Make", AttrValue::Str("Hasselblad".to_string()));
-            }
+        if !is_hasselblad && meta.exif.get_str("Make").is_none() {
+            meta.exif
+                .set("Make", AttrValue::Str("Hasselblad".to_string()));
+        }
 
         Ok(meta)
     }
@@ -120,7 +120,7 @@ mod tests {
         let make_len = make.len() + 1;
         data[14..18].copy_from_slice(&(make_len as u32).to_be_bytes());
         data[18..22].copy_from_slice(&200u32.to_be_bytes()); // offset
-        // Next IFD: 0
+                                                             // Next IFD: 0
         data[22..26].copy_from_slice(&0u32.to_be_bytes());
         // Make value
         let make_bytes = make.as_bytes();

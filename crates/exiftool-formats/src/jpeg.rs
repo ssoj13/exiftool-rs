@@ -8,13 +8,13 @@
 //! - DQT, DHT, SOF, SOS... - image data
 //! - EOI (0xFFD9) - End of Image
 
-use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
-use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
-use exiftool_attrs::AttrValue;
-use exiftool_xmp::XmpParser;
 use crate::iptc::IptcParser;
-use exiftool_icc::IccParser;
+use crate::utils::{parse_tiff_exif, ParseTiffExifOptions};
+use crate::{Error, FormatParser, Metadata, ReadSeek, Result};
+use exiftool_attrs::AttrValue;
 use exiftool_core::{ByteOrder, IfdReader};
+use exiftool_icc::IccParser;
+use exiftool_xmp::XmpParser;
 use std::collections::HashMap;
 use std::io::SeekFrom;
 
@@ -123,13 +123,13 @@ impl FormatParser for JpegParser {
                     } else if data.starts_with(b"http://ns.adobe.com/xap/1.0/\x00") {
                         let xmp_start = b"http://ns.adobe.com/xap/1.0/\x00".len();
                         let xmp_data = &data[xmp_start..];
-                        
+
                         let xmp = if let Ok(s) = String::from_utf8(xmp_data.to_vec()) {
                             Some(s)
                         } else {
                             decode_utf16(xmp_data)
                         };
-                        
+
                         if let Some(xmp) = xmp {
                             if let Ok(xmp_attrs) = XmpParser::parse(&xmp) {
                                 for (key, value) in xmp_attrs.iter() {
@@ -146,7 +146,7 @@ impl FormatParser for JpegParser {
                     // APP2 - ICC Profile
                     let mut data = vec![0u8; data_len];
                     reader.read_exact(&mut data)?;
-                    
+
                     if data.starts_with(b"ICC_PROFILE\x00") && data.len() > 14 {
                         let chunk_num = data[12];
                         let total_chunks = data[13];
@@ -156,8 +156,8 @@ impl FormatParser for JpegParser {
                         parse_mpf(&data[4..], &mut metadata);
                     }
                 }
-                0xC0 | 0xC1 | 0xC2 | 0xC3 | 0xC5 | 0xC6 | 0xC7 |
-                0xC9 | 0xCA | 0xCB | 0xCD | 0xCE | 0xCF => {
+                0xC0 | 0xC1 | 0xC2 | 0xC3 | 0xC5 | 0xC6 | 0xC7 | 0xC9 | 0xCA | 0xCB | 0xCD
+                | 0xCE | 0xCF => {
                     // SOF - Start of Frame (image dimensions)
                     let mut data = vec![0u8; data_len];
                     reader.read_exact(&mut data)?;
@@ -191,7 +191,9 @@ impl FormatParser for JpegParser {
                             2 => "YCCK",
                             _ => "Unknown",
                         };
-                        metadata.exif.set("AdobeColorTransform", AttrValue::Str(transform_name.into()));
+                        metadata
+                            .exif
+                            .set("AdobeColorTransform", AttrValue::Str(transform_name.into()));
                     }
                 }
                 0xFE => {
@@ -201,7 +203,9 @@ impl FormatParser for JpegParser {
                     if let Ok(comment) = String::from_utf8(data.clone()) {
                         let comment = comment.trim_end_matches('\0').trim();
                         if !comment.is_empty() {
-                            metadata.exif.set("Comment", AttrValue::Str(comment.to_string()));
+                            metadata
+                                .exif
+                                .set("Comment", AttrValue::Str(comment.to_string()));
                         }
                     }
                 }
@@ -235,31 +239,44 @@ fn parse_jfif(data: &[u8], metadata: &mut Metadata) {
     if data.starts_with(b"JFIF\x00") && data.len() >= 14 {
         let version_major = data[5];
         let version_minor = data[6];
-        metadata.exif.set("JFIFVersion", AttrValue::Str(format!("{}.{:02}", version_major, version_minor)));
-        
+        metadata.exif.set(
+            "JFIFVersion",
+            AttrValue::Str(format!("{}.{:02}", version_major, version_minor)),
+        );
+
         let units = data[7];
         let x_density = u16::from_be_bytes([data[8], data[9]]);
         let y_density = u16::from_be_bytes([data[10], data[11]]);
-        
+
         let unit_str = match units {
             0 => "aspect ratio",
             1 => "dpi",
             2 => "dpcm",
             _ => "unknown",
         };
-        
+
         if x_density > 0 && y_density > 0 {
-            metadata.exif.set("XResolution", AttrValue::UInt(x_density as u32));
-            metadata.exif.set("YResolution", AttrValue::UInt(y_density as u32));
-            metadata.exif.set("ResolutionUnit", AttrValue::Str(unit_str.to_string()));
+            metadata
+                .exif
+                .set("XResolution", AttrValue::UInt(x_density as u32));
+            metadata
+                .exif
+                .set("YResolution", AttrValue::UInt(y_density as u32));
+            metadata
+                .exif
+                .set("ResolutionUnit", AttrValue::Str(unit_str.to_string()));
         }
-        
+
         // Thumbnail dimensions (if present)
         let thumb_w = data[12];
         let thumb_h = data[13];
         if thumb_w > 0 && thumb_h > 0 {
-            metadata.exif.set("ThumbnailWidth", AttrValue::UInt(thumb_w as u32));
-            metadata.exif.set("ThumbnailHeight", AttrValue::UInt(thumb_h as u32));
+            metadata
+                .exif
+                .set("ThumbnailWidth", AttrValue::UInt(thumb_w as u32));
+            metadata
+                .exif
+                .set("ThumbnailHeight", AttrValue::UInt(thumb_h as u32));
         }
     } else if data.starts_with(b"JFXX\x00") && data.len() >= 6 {
         // JFXX extension
@@ -270,7 +287,9 @@ fn parse_jfif(data: &[u8], metadata: &mut Metadata) {
             0x13 => "3 byte/pixel thumbnail",
             _ => "unknown",
         };
-        metadata.exif.set("JFXXExtension", AttrValue::Str(ext_type.to_string()));
+        metadata
+            .exif
+            .set("JFXXExtension", AttrValue::Str(ext_type.to_string()));
     }
 }
 
@@ -279,17 +298,25 @@ fn parse_sof(marker: u8, data: &[u8], metadata: &mut Metadata) {
     if data.len() < 6 {
         return;
     }
-    
+
     let precision = data[0];
     let height = u16::from_be_bytes([data[1], data[2]]);
     let width = u16::from_be_bytes([data[3], data[4]]);
     let components = data[5];
-    
-    metadata.exif.set("ImageWidth", AttrValue::UInt(width as u32));
-    metadata.exif.set("ImageHeight", AttrValue::UInt(height as u32));
-    metadata.exif.set("BitsPerSample", AttrValue::UInt(precision as u32));
-    metadata.exif.set("ColorComponents", AttrValue::UInt(components as u32));
-    
+
+    metadata
+        .exif
+        .set("ImageWidth", AttrValue::UInt(width as u32));
+    metadata
+        .exif
+        .set("ImageHeight", AttrValue::UInt(height as u32));
+    metadata
+        .exif
+        .set("BitsPerSample", AttrValue::UInt(precision as u32));
+    metadata
+        .exif
+        .set("ColorComponents", AttrValue::UInt(components as u32));
+
     // Compression type based on SOF marker
     let compression = match marker {
         0xC0 => "Baseline DCT",
@@ -307,20 +334,22 @@ fn parse_sof(marker: u8, data: &[u8], metadata: &mut Metadata) {
         0xCF => "Differential Lossless (Arithmetic)",
         _ => "Unknown",
     };
-    metadata.exif.set("Compression", AttrValue::Str(compression.to_string()));
+    metadata
+        .exif
+        .set("Compression", AttrValue::Str(compression.to_string()));
 }
 
 /// Parse ICC profile chunks using exiftool-icc crate.
 fn parse_icc_profile(chunks: &mut [(u8, u8, Vec<u8>)], metadata: &mut Metadata) {
     // Sort by chunk number
     chunks.sort_by_key(|(num, _, _)| *num);
-    
+
     // Concatenate chunks
     let mut profile_data = Vec::new();
     for (_, _, data) in chunks {
         profile_data.extend_from_slice(data);
     }
-    
+
     // Parse with IccParser
     match IccParser::parse(&profile_data) {
         Ok(icc_attrs) => {
@@ -331,7 +360,10 @@ fn parse_icc_profile(chunks: &mut [(u8, u8, Vec<u8>)], metadata: &mut Metadata) 
         }
         Err(_) => {
             // Fallback: just store size
-            metadata.exif.set("ICC:ProfileSize", AttrValue::UInt(profile_data.len() as u32));
+            metadata.exif.set(
+                "ICC:ProfileSize",
+                AttrValue::UInt(profile_data.len() as u32),
+            );
         }
     }
 }
@@ -341,23 +373,28 @@ fn parse_ducky(data: &[u8], metadata: &mut Metadata) {
     if !data.starts_with(b"Ducky") || data.len() < 8 {
         return;
     }
-    
+
     let mut pos = 5; // Skip "Ducky"
-    
+
     while pos + 4 <= data.len() {
         let tag = u16::from_be_bytes([data[pos], data[pos + 1]]);
         let len = u16::from_be_bytes([data[pos + 2], data[pos + 3]]) as usize;
         pos += 4;
-        
+
         if pos + len > data.len() {
             break;
         }
-        
+
         match tag {
             1 => {
                 // Quality
                 if len >= 4 {
-                    let quality = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]);
+                    let quality = u32::from_be_bytes([
+                        data[pos],
+                        data[pos + 1],
+                        data[pos + 2],
+                        data[pos + 3],
+                    ]);
                     metadata.exif.set("DuckyQuality", AttrValue::UInt(quality));
                 }
             }
@@ -366,7 +403,9 @@ fn parse_ducky(data: &[u8], metadata: &mut Metadata) {
                 if let Ok(comment) = String::from_utf8(data[pos..pos + len].to_vec()) {
                     let comment = comment.trim_end_matches('\0').trim();
                     if !comment.is_empty() {
-                        metadata.exif.set("DuckyComment", AttrValue::Str(comment.to_string()));
+                        metadata
+                            .exif
+                            .set("DuckyComment", AttrValue::Str(comment.to_string()));
                     }
                 }
             }
@@ -375,13 +414,15 @@ fn parse_ducky(data: &[u8], metadata: &mut Metadata) {
                 if let Ok(copyright) = String::from_utf8(data[pos..pos + len].to_vec()) {
                     let copyright = copyright.trim_end_matches('\0').trim();
                     if !copyright.is_empty() {
-                        metadata.exif.set("DuckyCopyright", AttrValue::Str(copyright.to_string()));
+                        metadata
+                            .exif
+                            .set("DuckyCopyright", AttrValue::Str(copyright.to_string()));
                     }
                 }
             }
             _ => {}
         }
-        
+
         pos += len;
     }
 }
@@ -392,9 +433,9 @@ fn parse_photoshop_irb(data: &[u8], metadata: &mut Metadata) {
     if !data.starts_with(HEADER) {
         return;
     }
-    
+
     let mut pos = HEADER.len();
-    
+
     // Parse 8BIM resources
     while pos + 12 <= data.len() {
         // 8BIM signature
@@ -402,11 +443,11 @@ fn parse_photoshop_irb(data: &[u8], metadata: &mut Metadata) {
             break;
         }
         pos += 4;
-        
+
         // Resource ID
         let resource_id = u16::from_be_bytes([data[pos], data[pos + 1]]);
         pos += 2;
-        
+
         // Pascal string (name) - first byte is length
         let name_len = data[pos] as usize;
         pos += 1 + name_len;
@@ -414,24 +455,25 @@ fn parse_photoshop_irb(data: &[u8], metadata: &mut Metadata) {
         if !(1 + name_len).is_multiple_of(2) {
             pos += 1;
         }
-        
+
         if pos + 4 > data.len() {
             break;
         }
-        
+
         // Resource size
-        let size = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+        let size =
+            u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
         pos += 4;
-        
+
         if pos + size > data.len() {
             break;
         }
-        
+
         // IPTC-NAA record is resource ID 0x0404
         if resource_id == 0x0404 {
             parse_iptc(&data[pos..pos + size], metadata);
         }
-        
+
         pos += size;
         // Pad to even
         if !size.is_multiple_of(2) {
@@ -453,21 +495,22 @@ fn parse_iptc(data: &[u8], metadata: &mut Metadata) {
 /// Adobe Extended XMP (XMP spec): header + 32-byte GUID + u32be length + u32be offset + payload.
 const EXTENDED_XMP_HEADER: &[u8] = b"http://ns.adobe.com/xmp/extension/\0";
 
-fn collect_extended_xmp(
-    data: &[u8],
-    dest: &mut HashMap<String, (u32, Vec<(u32, Vec<u8>)>)>,
-) {
+fn collect_extended_xmp(data: &[u8], dest: &mut HashMap<String, (u32, Vec<(u32, Vec<u8>)>)>) {
     let min = EXTENDED_XMP_HEADER.len() + 32 + 8;
     if data.len() < min {
         return;
     }
-    let guid = String::from_utf8_lossy(&data[EXTENDED_XMP_HEADER.len()..EXTENDED_XMP_HEADER.len() + 32])
-        .into_owned();
+    let guid =
+        String::from_utf8_lossy(&data[EXTENDED_XMP_HEADER.len()..EXTENDED_XMP_HEADER.len() + 32])
+            .into_owned();
     let rest = &data[EXTENDED_XMP_HEADER.len() + 32..];
     let full_len = u32::from_be_bytes([rest[0], rest[1], rest[2], rest[3]]);
     let offset = u32::from_be_bytes([rest[4], rest[5], rest[6], rest[7]]);
     let payload = rest[8..].to_vec();
-    dest.entry(guid).or_insert_with(|| (full_len, Vec::new())).1.push((offset, payload));
+    dest.entry(guid)
+        .or_insert_with(|| (full_len, Vec::new()))
+        .1
+        .push((offset, payload));
 }
 
 fn assemble_extended_xmp(chunks: &HashMap<String, (u32, Vec<(u32, Vec<u8>)>)>) -> Option<String> {
@@ -485,7 +528,11 @@ fn assemble_extended_xmp(chunks: &HashMap<String, (u32, Vec<(u32, Vec<u8>)>)>) -
         buf[start..end].copy_from_slice(payload);
     }
     String::from_utf8(buf.clone()).ok().or_else(|| {
-        let end = buf.iter().rposition(|&b| b != 0).map(|i| i + 1).unwrap_or(0);
+        let end = buf
+            .iter()
+            .rposition(|&b| b != 0)
+            .map(|i| i + 1)
+            .unwrap_or(0);
         String::from_utf8(buf[..end].to_vec()).ok()
     })
 }
@@ -511,7 +558,9 @@ fn parse_mpf(tiff_data: &[u8], metadata: &mut Metadata) {
                 }
             }
             0xB001 => {
-                metadata.exif.set("MPF:MPEntry", entry_to_mpf_attr(&entry.value));
+                metadata
+                    .exif
+                    .set("MPF:MPEntry", entry_to_mpf_attr(&entry.value));
             }
             0xB002 => {
                 if let Some(n) = entry.value.as_u32() {
@@ -530,9 +579,12 @@ fn parse_mpf(tiff_data: &[u8], metadata: &mut Metadata) {
 
 fn entry_to_mpf_attr(value: &exiftool_core::RawValue) -> AttrValue {
     match value {
-        exiftool_core::RawValue::UInt32(v) => {
-            AttrValue::Str(v.iter().map(|n| n.to_string()).collect::<Vec<_>>().join(","))
-        }
+        exiftool_core::RawValue::UInt32(v) => AttrValue::Str(
+            v.iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<_>>()
+                .join(","),
+        ),
         exiftool_core::RawValue::Undefined(b) => AttrValue::UInt(b.len() as u32),
         _ => AttrValue::Str(format!("{:?}", value)),
     }
@@ -543,7 +595,7 @@ fn decode_utf16(data: &[u8]) -> Option<String> {
     if data.len() < 2 {
         return None;
     }
-    
+
     let (is_be, start) = if data.starts_with(&[0xFE, 0xFF]) {
         (true, 2)
     } else if data.starts_with(&[0xFF, 0xFE]) {
@@ -552,12 +604,12 @@ fn decode_utf16(data: &[u8]) -> Option<String> {
         let is_le = data.len() >= 2 && data[1] == 0x00 && data[0] != 0x00;
         (!is_le, 0)
     };
-    
+
     let bytes = &data[start..];
     if !bytes.len().is_multiple_of(2) {
         return None;
     }
-    
+
     let u16_iter = bytes.chunks_exact(2).map(|chunk| {
         if is_be {
             u16::from_be_bytes([chunk[0], chunk[1]])
@@ -565,7 +617,7 @@ fn decode_utf16(data: &[u8]) -> Option<String> {
             u16::from_le_bytes([chunk[0], chunk[1]])
         }
     });
-    
+
     String::from_utf16(&u16_iter.collect::<Vec<_>>()).ok()
 }
 
@@ -611,7 +663,9 @@ fn apply_jpeg_trailer(reader: &mut dyn ReadSeek, metadata: &mut Metadata) {
         .exif
         .set("TrailerLength", AttrValue::UInt(rest.len() as u32));
     if let Some(kind) = classify_jpeg_trailer(&rest) {
-        metadata.exif.set("TrailerType", AttrValue::Str(kind.into()));
+        metadata
+            .exif
+            .set("TrailerType", AttrValue::Str(kind.into()));
     }
 }
 
@@ -637,7 +691,6 @@ fn classify_jpeg_trailer(data: &[u8]) -> Option<&'static str> {
     None
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -659,13 +712,18 @@ mod tests {
 
     #[test]
     fn parse_jpeg_with_afcp_trailer() {
-        let mut jpeg = vec![0xFF, 0xD8, 0xFF, 0xDA, 0x00, 0x08, 0x01, 0x00, 0x00, 0x3F, 0x00, 0x00];
+        let mut jpeg = vec![
+            0xFF, 0xD8, 0xFF, 0xDA, 0x00, 0x08, 0x01, 0x00, 0x00, 0x3F, 0x00, 0x00,
+        ];
         jpeg.extend_from_slice(&[0xFF, 0xD9]);
         jpeg.extend_from_slice(b"AXS!");
         jpeg.extend_from_slice(&[0u8; 8]);
         let mut cur = std::io::Cursor::new(jpeg);
         let meta = JpegParser.parse(&mut cur).unwrap();
         assert_eq!(meta.exif.get_str("TrailerType"), Some("AFCP"));
-        assert_eq!(meta.exif.get("TrailerLength").map(|v| v.to_string()), Some("12".into()));
+        assert_eq!(
+            meta.exif.get("TrailerLength").map(|v| v.to_string()),
+            Some("12".into())
+        );
     }
 }

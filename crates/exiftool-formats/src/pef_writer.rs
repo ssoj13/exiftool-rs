@@ -28,8 +28,12 @@ mod tests {
     #[test]
     fn write_pef_roundtrip() {
         let mut metadata = crate::Metadata::new("PEF");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("PENTAX".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("K-1".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("PENTAX".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("K-1".into()));
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

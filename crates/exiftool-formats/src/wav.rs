@@ -42,7 +42,9 @@ impl FormatParser for WavParser {
 
         let mut metadata = Metadata::new("WAV");
         metadata.set_file_type("WAV", "audio/wav");
-        metadata.exif.set("File:FileSize", AttrValue::UInt(file_size as u32));
+        metadata
+            .exif
+            .set("File:FileSize", AttrValue::UInt(file_size as u32));
 
         self.parse_chunks(reader, file_size, &mut metadata)?;
 
@@ -52,7 +54,12 @@ impl FormatParser for WavParser {
 
 impl WavParser {
     /// Parse RIFF chunks.
-    fn parse_chunks(&self, reader: &mut dyn ReadSeek, end_pos: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_chunks(
+        &self,
+        reader: &mut dyn ReadSeek,
+        end_pos: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         while reader.stream_position()? < end_pos {
             let chunk_start = reader.stream_position()?;
 
@@ -65,7 +72,9 @@ impl WavParser {
                     self.parse_fmt(reader, chunk_size, metadata)?;
                 }
                 b"data" => {
-                    metadata.exif.set("WAV:DataSize", AttrValue::UInt(chunk_size as u32));
+                    metadata
+                        .exif
+                        .set("WAV:DataSize", AttrValue::UInt(chunk_size as u32));
                     reader.seek(SeekFrom::Current(chunk_size as i64))?;
                 }
                 b"fact" => {
@@ -121,7 +130,12 @@ impl WavParser {
     }
 
     /// Parse fmt chunk (audio format).
-    fn parse_fmt(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_fmt(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 16 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -150,13 +164,25 @@ impl WavParser {
             0xFFFE => "Extensible",
             _ => "Unknown",
         };
-        metadata.exif.set("WAV:AudioFormat", AttrValue::Str(format_name.to_string()));
-        metadata.exif.set("WAV:AudioFormatID", AttrValue::UInt(audio_format as u32));
+        metadata
+            .exif
+            .set("WAV:AudioFormat", AttrValue::Str(format_name.to_string()));
+        metadata
+            .exif
+            .set("WAV:AudioFormatID", AttrValue::UInt(audio_format as u32));
 
-        metadata.exif.set("WAV:NumChannels", AttrValue::UInt(num_channels as u32));
-        metadata.exif.set("WAV:SampleRate", AttrValue::UInt(sample_rate));
-        metadata.exif.set("WAV:ByteRate", AttrValue::UInt(byte_rate));
-        metadata.exif.set("WAV:BitsPerSample", AttrValue::UInt(bits_per_sample as u32));
+        metadata
+            .exif
+            .set("WAV:NumChannels", AttrValue::UInt(num_channels as u32));
+        metadata
+            .exif
+            .set("WAV:SampleRate", AttrValue::UInt(sample_rate));
+        metadata
+            .exif
+            .set("WAV:ByteRate", AttrValue::UInt(byte_rate));
+        metadata
+            .exif
+            .set("WAV:BitsPerSample", AttrValue::UInt(bits_per_sample as u32));
 
         // Calculate bitrate
         let bitrate = byte_rate * 8 / 1000;
@@ -172,12 +198,19 @@ impl WavParser {
     }
 
     /// Parse fact chunk (sample count for compressed audio).
-    fn parse_fact(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_fact(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size >= 4 {
             let mut buf = [0u8; 4];
             reader.read_exact(&mut buf)?;
             let sample_count = u32::from_le_bytes(buf);
-            metadata.exif.set("WAV:SampleCount", AttrValue::UInt(sample_count));
+            metadata
+                .exif
+                .set("WAV:SampleCount", AttrValue::UInt(sample_count));
 
             let remaining = size.saturating_sub(4);
             if remaining > 0 {
@@ -191,13 +224,20 @@ impl WavParser {
     }
 
     /// Parse bext chunk (Broadcast Wave Extension).
-    fn parse_bext(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_bext(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 602 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
         }
 
-        metadata.exif.set("WAV:IsBroadcastWave", AttrValue::Bool(true));
+        metadata
+            .exif
+            .set("WAV:IsBroadcastWave", AttrValue::Bool(true));
 
         let mut bext = vec![0u8; 602];
         reader.read_exact(&mut bext)?;
@@ -215,7 +255,9 @@ impl WavParser {
             .trim_end_matches('\0')
             .to_string();
         if !originator.is_empty() {
-            metadata.exif.set("BWF:Originator", AttrValue::Str(originator));
+            metadata
+                .exif
+                .set("BWF:Originator", AttrValue::Str(originator));
         }
 
         // OriginatorReference (32 bytes)
@@ -223,7 +265,9 @@ impl WavParser {
             .trim_end_matches('\0')
             .to_string();
         if !orig_ref.is_empty() {
-            metadata.exif.set("BWF:OriginatorReference", AttrValue::Str(orig_ref));
+            metadata
+                .exif
+                .set("BWF:OriginatorReference", AttrValue::Str(orig_ref));
         }
 
         // OriginationDate (10 bytes) YYYY-MM-DD
@@ -231,7 +275,9 @@ impl WavParser {
             .trim_end_matches('\0')
             .to_string();
         if !date.is_empty() && date.len() == 10 {
-            metadata.exif.set("BWF:OriginationDate", AttrValue::Str(date));
+            metadata
+                .exif
+                .set("BWF:OriginationDate", AttrValue::Str(date));
         }
 
         // OriginationTime (8 bytes) HH:MM:SS
@@ -239,21 +285,26 @@ impl WavParser {
             .trim_end_matches('\0')
             .to_string();
         if !time.is_empty() && time.len() == 8 {
-            metadata.exif.set("BWF:OriginationTime", AttrValue::Str(time));
+            metadata
+                .exif
+                .set("BWF:OriginationTime", AttrValue::Str(time));
         }
 
         // TimeReference (8 bytes) - sample count since midnight
         let time_ref = u64::from_le_bytes([
-            bext[338], bext[339], bext[340], bext[341],
-            bext[342], bext[343], bext[344], bext[345],
+            bext[338], bext[339], bext[340], bext[341], bext[342], bext[343], bext[344], bext[345],
         ]);
         if time_ref > 0 {
-            metadata.exif.set("BWF:TimeReference", AttrValue::UInt(time_ref as u32));
+            metadata
+                .exif
+                .set("BWF:TimeReference", AttrValue::UInt(time_ref as u32));
         }
 
         // Version (2 bytes)
         let version = u16::from_le_bytes([bext[346], bext[347]]);
-        metadata.exif.set("BWF:Version", AttrValue::UInt(version as u32));
+        metadata
+            .exif
+            .set("BWF:Version", AttrValue::UInt(version as u32));
 
         // UMID (64 bytes)
         // SMPTE UMID - complex format, just note presence
@@ -271,7 +322,9 @@ impl WavParser {
                 .trim_end_matches('\0')
                 .to_string();
             if !history_str.is_empty() {
-                metadata.exif.set("BWF:CodingHistory", AttrValue::Str(history_str));
+                metadata
+                    .exif
+                    .set("BWF:CodingHistory", AttrValue::Str(history_str));
             }
         } else if remaining > 0 {
             reader.seek(SeekFrom::Current(remaining as i64))?;
@@ -281,7 +334,12 @@ impl WavParser {
     }
 
     /// Parse smpl chunk (sampler info).
-    fn parse_smpl(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_smpl(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size < 36 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -300,19 +358,27 @@ impl WavParser {
         let num_loops = u32::from_le_bytes([smpl[28], smpl[29], smpl[30], smpl[31]]);
         let _sampler_data = u32::from_le_bytes([smpl[32], smpl[33], smpl[34], smpl[35]]);
 
-        metadata.exif.set("WAV:HasSamplerInfo", AttrValue::Bool(true));
+        metadata
+            .exif
+            .set("WAV:HasSamplerInfo", AttrValue::Bool(true));
 
         if sample_period > 0 {
             // Sample period in nanoseconds
-            metadata.exif.set("WAV:SamplePeriod", AttrValue::UInt(sample_period));
+            metadata
+                .exif
+                .set("WAV:SamplePeriod", AttrValue::UInt(sample_period));
         }
 
         if midi_unity_note < 128 {
-            metadata.exif.set("WAV:MIDIUnityNote", AttrValue::UInt(midi_unity_note));
+            metadata
+                .exif
+                .set("WAV:MIDIUnityNote", AttrValue::UInt(midi_unity_note));
         }
 
         if num_loops > 0 {
-            metadata.exif.set("WAV:NumLoops", AttrValue::UInt(num_loops));
+            metadata
+                .exif
+                .set("WAV:NumLoops", AttrValue::UInt(num_loops));
         }
 
         // Skip loop data and remaining
@@ -325,7 +391,12 @@ impl WavParser {
     }
 
     /// Parse XMP chunk.
-    fn parse_xmp(&self, reader: &mut dyn ReadSeek, size: u64, metadata: &mut Metadata) -> Result<()> {
+    fn parse_xmp(
+        &self,
+        reader: &mut dyn ReadSeek,
+        size: u64,
+        metadata: &mut Metadata,
+    ) -> Result<()> {
         if size > 10 * 1024 * 1024 {
             reader.seek(SeekFrom::Current(size as i64))?;
             return Ok(());
@@ -345,8 +416,6 @@ impl WavParser {
 
         Ok(())
     }
-
-
 }
 
 #[cfg(test)]

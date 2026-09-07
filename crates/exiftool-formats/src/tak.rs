@@ -35,7 +35,8 @@ impl FormatParser for TakParser {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("TAK");
         meta.set_file_type("TAK", "audio/x-tak");
-        meta.exif.set("Audio:Codec", AttrValue::Str("TAK".to_string()));
+        meta.exif
+            .set("Audio:Codec", AttrValue::Str("TAK".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -74,13 +75,18 @@ impl FormatParser for TakParser {
                     // Encoder info
                     if block_data.len() >= 4 {
                         let encoder_ver = u32::from_le_bytes([
-                            block_data[0], block_data[1], block_data[2], block_data[3],
+                            block_data[0],
+                            block_data[1],
+                            block_data[2],
+                            block_data[3],
                         ]);
                         let major = encoder_ver >> 16;
                         let minor = (encoder_ver >> 8) & 0xFF;
                         let patch = encoder_ver & 0xFF;
-                        meta.exif.set("TAK:EncoderVersion", 
-                            AttrValue::Str(format!("{}.{}.{}", major, minor, patch)));
+                        meta.exif.set(
+                            "TAK:EncoderVersion",
+                            AttrValue::Str(format!("{}.{}.{}", major, minor, patch)),
+                        );
                     }
                 }
                 3 => {
@@ -100,7 +106,8 @@ impl FormatParser for TakParser {
             reader.seek(SeekFrom::Start(file_size - 32))?;
             let mut footer = [0u8; 32];
             if reader.read_exact(&mut footer).is_ok() && &footer[0..8] == b"APETAGEX" {
-                meta.exif.set("TAK:HasAPEv2Tag", AttrValue::Str("Yes".to_string()));
+                meta.exif
+                    .set("TAK:HasAPEv2Tag", AttrValue::Str("Yes".to_string()));
             }
         }
 
@@ -117,7 +124,7 @@ fn parse_tak_stream_info(data: &[u8], meta: &mut Metadata) {
     // Stream info is bit-packed, simplified parsing
     // First 2 bytes contain encoder profile and sample rate info
     let info = u16::from_le_bytes([data[0], data[1]]);
-    
+
     // Sample rate index (bits 0-3)
     let sr_index = info & 0x0F;
     let sample_rate = match sr_index {
@@ -137,7 +144,8 @@ fn parse_tak_stream_info(data: &[u8], meta: &mut Metadata) {
         13 => 192000,
         _ => 44100,
     };
-    meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+    meta.exif
+        .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
 
     // Bits per sample (bits 4-5): 0=8, 1=16, 2=24
     let bps_index = (info >> 4) & 0x03;
@@ -147,18 +155,23 @@ fn parse_tak_stream_info(data: &[u8], meta: &mut Metadata) {
         2 => 24,
         _ => 16,
     };
-    meta.exif.set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample));
+    meta.exif
+        .set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample));
 
     // Channels (bits 6-9): value + 1
     let channels = ((info >> 6) & 0x0F) + 1;
-    meta.exif.set("Audio:Channels", AttrValue::UInt(channels as u32));
-    
+    meta.exif
+        .set("Audio:Channels", AttrValue::UInt(channels as u32));
+
     let channel_mode = match channels {
         1 => "Mono",
         2 => "Stereo",
         _ => "Multi-channel",
     };
-    meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_mode.to_string()));
+    meta.exif.set(
+        "Audio:ChannelMode",
+        AttrValue::Str(channel_mode.to_string()),
+    );
 
     // Total samples (if available in extended info)
     if data.len() >= 10 {
@@ -168,11 +181,13 @@ fn parse_tak_stream_info(data: &[u8], meta: &mut Metadata) {
         if total_samples > 0 && sample_rate > 0 {
             let duration = total_samples as f64 / sample_rate as f64;
             meta.exif.set("Audio:Duration", AttrValue::Double(duration));
-            
+
             let mins = (duration / 60.0) as u32;
             let secs = (duration % 60.0) as u32;
-            meta.exif.set("Audio:DurationFormatted", 
-                AttrValue::Str(format!("{}:{:02}", mins, secs)));
+            meta.exif.set(
+                "Audio:DurationFormatted",
+                AttrValue::Str(format!("{}:{:02}", mins, secs)),
+            );
         }
     }
 }
@@ -186,23 +201,23 @@ mod tests {
         let mut data = vec![0u8; 512];
         // TAK magic
         data[0..4].copy_from_slice(b"tBaK");
-        
+
         // Stream info block (type 1, size 10)
         let type_and_size: u32 = 1 | (10 << 5);
         data[4..8].copy_from_slice(&type_and_size.to_le_bytes());
-        
+
         // Stream info: 44100 Hz (8), 16-bit (1), stereo (1 channel = 2-1)
         // sr_index=8, bps=1, channels=1 => 0x0048 + 0x0010 + 0x0040 = 0x0058... simplified
         let info: u16 = 8 | (1 << 4) | (1 << 6); // 44100, 16-bit, stereo
         data[8..10].copy_from_slice(&info.to_le_bytes());
-        
+
         // Sample count (10 seconds at 44100)
         data[10..18].copy_from_slice(&441000u64.to_le_bytes());
-        
+
         // End block (type 3)
         let end_block: u32 = 3 | (0 << 5);
         data[18..22].copy_from_slice(&end_block.to_le_bytes());
-        
+
         data
     }
 

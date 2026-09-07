@@ -36,7 +36,8 @@ impl WavWriter {
 
         while pos + 8 <= data.len() && pos < 12 + riff_size {
             let chunk_id: [u8; 4] = data[pos..pos + 4].try_into().unwrap();
-            let chunk_size = u32::from_le_bytes(data[pos + 4..pos + 8].try_into().unwrap()) as usize;
+            let chunk_size =
+                u32::from_le_bytes(data[pos + 4..pos + 8].try_into().unwrap()) as usize;
             pos += 8;
 
             if chunk_id == *b"LIST" && pos + 4 <= data.len() {
@@ -74,10 +75,13 @@ impl WavWriter {
 
         if !found_list_info {
             let idx = insert_info_after.unwrap_or(new_chunks.len());
-            new_chunks.insert(idx.min(new_chunks.len()), Chunk {
-                id: *b"LIST",
-                data: list_info,
-            });
+            new_chunks.insert(
+                idx.min(new_chunks.len()),
+                Chunk {
+                    id: *b"LIST",
+                    data: list_info,
+                },
+            );
         }
 
         // Build output
@@ -119,7 +123,10 @@ fn build_list_info(metadata: &Metadata) -> Result<Vec<u8>> {
     ];
 
     for (key, tag) in mappings {
-        let val = metadata.exif.get_str(key).or_else(|| metadata.exif.get_str(&format!("RIFF:{}", key)));
+        let val = metadata
+            .exif
+            .get_str(key)
+            .or_else(|| metadata.exif.get_str(&format!("RIFF:{}", key)));
         if let Some(val) = val {
             if !val.is_empty() {
                 let bytes = format!("{}\0", val).into_bytes();

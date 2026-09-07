@@ -45,18 +45,25 @@ impl FormatParser for FlvParser {
 
         // Version
         let version = header[3];
-        meta.exif.set("FLV:Version", AttrValue::UInt(version as u32));
+        meta.exif
+            .set("FLV:Version", AttrValue::UInt(version as u32));
 
         // Flags
         let flags = header[4];
         let has_audio = flags & 0x04 != 0;
         let has_video = flags & 0x01 != 0;
-        meta.exif.set("FLV:HasAudio", AttrValue::Str(if has_audio { "Yes" } else { "No" }.to_string()));
-        meta.exif.set("FLV:HasVideo", AttrValue::Str(if has_video { "Yes" } else { "No" }.to_string()));
+        meta.exif.set(
+            "FLV:HasAudio",
+            AttrValue::Str(if has_audio { "Yes" } else { "No" }.to_string()),
+        );
+        meta.exif.set(
+            "FLV:HasVideo",
+            AttrValue::Str(if has_video { "Yes" } else { "No" }.to_string()),
+        );
 
         // Header size (usually 9)
         let header_size = u32::from_be_bytes([header[5], header[6], header[7], header[8]]);
-        
+
         // Skip to first tag (after previous tag size = 0)
         reader.seek(SeekFrom::Start(header_size as u64 + 4))?;
 
@@ -77,8 +84,8 @@ impl FormatParser for FlvParser {
             }
 
             let tag_type = tag_header[0];
-            let data_size = ((tag_header[1] as u32) << 16) 
-                | ((tag_header[2] as u32) << 8) 
+            let data_size = ((tag_header[1] as u32) << 16)
+                | ((tag_header[2] as u32) << 8)
                 | (tag_header[3] as u32);
 
             if data_size == 0 || data_size > 10_000_000 {
@@ -91,7 +98,7 @@ impl FormatParser for FlvParser {
                     if audio_codec.is_none() && data_size > 0 {
                         let mut audio_byte = [0u8; 1];
                         reader.read_exact(&mut audio_byte)?;
-                        
+
                         let sound_format = (audio_byte[0] >> 4) & 0x0F;
                         audio_codec = Some(match sound_format {
                             0 => "Linear PCM",
@@ -109,7 +116,7 @@ impl FormatParser for FlvParser {
                             15 => "Device-specific",
                             _ => "Unknown",
                         });
-                        
+
                         let sample_rate = match (audio_byte[0] >> 2) & 0x03 {
                             0 => 5500,
                             1 => 11025,
@@ -118,7 +125,8 @@ impl FormatParser for FlvParser {
                             _ => 0,
                         };
                         if sample_rate > 0 {
-                            meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+                            meta.exif
+                                .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
                         }
 
                         let bits = if audio_byte[0] & 0x02 != 0 { 16 } else { 8 };
@@ -138,7 +146,7 @@ impl FormatParser for FlvParser {
                     if video_codec.is_none() && data_size > 0 {
                         let mut video_byte = [0u8; 1];
                         reader.read_exact(&mut video_byte)?;
-                        
+
                         let codec_id = video_byte[0] & 0x0F;
                         video_codec = Some(match codec_id {
                             1 => "JPEG",
@@ -161,7 +169,7 @@ impl FormatParser for FlvParser {
                     if !found_metadata && data_size > 0 && data_size < 100000 {
                         let mut script_data = vec![0u8; data_size as usize];
                         reader.read_exact(&mut script_data)?;
-                        
+
                         parse_flv_metadata(&script_data, &mut meta);
                         found_metadata = true;
                     } else {
@@ -183,10 +191,12 @@ impl FormatParser for FlvParser {
         }
 
         if let Some(codec) = video_codec {
-            meta.exif.set("Video:Codec", AttrValue::Str(codec.to_string()));
+            meta.exif
+                .set("Video:Codec", AttrValue::Str(codec.to_string()));
         }
         if let Some(codec) = audio_codec {
-            meta.exif.set("Audio:Codec", AttrValue::Str(codec.to_string()));
+            meta.exif
+                .set("Audio:Codec", AttrValue::Str(codec.to_string()));
         }
 
         Ok(meta)
@@ -260,8 +270,14 @@ fn parse_flv_metadata(data: &[u8], meta: &mut Metadata) {
                     break;
                 }
                 let bits = u64::from_be_bytes([
-                    data[pos], data[pos + 1], data[pos + 2], data[pos + 3],
-                    data[pos + 4], data[pos + 5], data[pos + 6], data[pos + 7],
+                    data[pos],
+                    data[pos + 1],
+                    data[pos + 2],
+                    data[pos + 3],
+                    data[pos + 4],
+                    data[pos + 5],
+                    data[pos + 6],
+                    data[pos + 7],
                 ]);
                 let value = f64::from_bits(bits);
                 pos += 8;
@@ -280,8 +296,11 @@ fn parse_flv_metadata(data: &[u8], meta: &mut Metadata) {
                 };
 
                 if let Some(tag_name) = tag {
-                    if tag_name.contains("Width") || tag_name.contains("Height") 
-                        || tag_name.contains("Bitrate") || tag_name.contains("Sample") {
+                    if tag_name.contains("Width")
+                        || tag_name.contains("Height")
+                        || tag_name.contains("Bitrate")
+                        || tag_name.contains("Sample")
+                    {
                         meta.exif.set(tag_name, AttrValue::UInt(value as u32));
                     } else {
                         meta.exif.set(tag_name, AttrValue::Double(value));
@@ -303,7 +322,7 @@ fn parse_flv_metadata(data: &[u8], meta: &mut Metadata) {
                 }
                 let str_len = u16::from_be_bytes([data[pos], data[pos + 1]]) as usize;
                 pos += 2;
-                
+
                 if pos + str_len > data.len() {
                     break;
                 }
@@ -344,7 +363,7 @@ mod tests {
         data[0..3].copy_from_slice(b"FLV");
         data[3] = 0x01; // Version 1
         data[4] = 0x05; // Has audio + video
-        // Header size = 9
+                        // Header size = 9
         data[5..9].copy_from_slice(&9u32.to_be_bytes());
         // Previous tag size = 0
         data[9..13].copy_from_slice(&0u32.to_be_bytes());

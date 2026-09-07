@@ -27,6 +27,15 @@ const MAX_IFDS: usize = 64;
 /// BigTIFF (magic 43) is rewritten with 16-byte header, 20-byte IFD entries, and 8-byte offsets.
 /// CR2 16-byte header (`CR\x02`) is kept; IFD0 is rewritten at offset 16 (ExifTool `WriteCR2`).
 pub fn rewrite_preserving(original: &[u8], metadata: &Metadata) -> Result<Vec<u8>> {
+    rewrite_preserving_kind(original, metadata, IfdKind::Ifd0)
+}
+
+/// Overlay `root_kind` on the TIFF root (CR3 CMT1=IFD0, CMT2=Exif, CMT4=GPS).
+pub(crate) fn rewrite_preserving_kind(
+    original: &[u8],
+    metadata: &Metadata,
+    root_kind: IfdKind,
+) -> Result<Vec<u8>> {
     if original.len() < 8 {
         return Err(Error::InvalidStructure("TIFF too small".into()));
     }
@@ -47,7 +56,9 @@ pub fn rewrite_preserving(original: &[u8], metadata: &Metadata) -> Result<Vec<u8
         .parse_header_ex_with_magic(&allowed)
         .map_err(Error::Core)?;
     if is_bt != bigtiff {
-        return Err(Error::InvalidStructure("TIFF/BigTIFF header mismatch".into()));
+        return Err(Error::InvalidStructure(
+            "TIFF/BigTIFF header mismatch".into(),
+        ));
     }
     if ifd0_u64 > u32::MAX as u64 {
         return Err(Error::InvalidStructure(
@@ -58,7 +69,7 @@ pub fn rewrite_preserving(original: &[u8], metadata: &Metadata) -> Result<Vec<u8
     let mut seen = HashSet::new();
     let a100 = detect_a100_mrw(original, &reader, ifd0_u64, order);
     let mut root = parse_ifd_tree(&reader, ifd0_u64, &mut seen, 0, a100.is_some())?;
-    overlay_ifd(&mut root, metadata, IfdKind::Ifd0);
+    overlay_ifd(&mut root, metadata, root_kind);
     apply_child_overlays(&mut root, metadata);
     let mut out = emit_tiff(original, order, magic, root, ifd0_off, bigtiff)?;
     if let Some(layout) = a100 {
@@ -68,7 +79,7 @@ pub fn rewrite_preserving(original: &[u8], metadata: &Metadata) -> Result<Vec<u8
 }
 
 #[derive(Clone, Copy)]
-enum IfdKind {
+pub(crate) enum IfdKind {
     Ifd0,
     Exif,
     Gps,
@@ -350,13 +361,11 @@ fn finish_a100_arw(
     if remain != 0 {
         out.resize(out.len() + (4 - remain), 0);
     }
-    let mrw_at = u32::try_from(out.len()).map_err(|_| {
-        Error::InvalidStructure("A100 MRW offset exceeds 4GB".into())
-    })?;
+    let mrw_at = u32::try_from(out.len())
+        .map_err(|_| Error::InvalidStructure("A100 MRW offset exceeds 4GB".into()))?;
     out.extend_from_slice(&mrw);
-    let raw_at = u32::try_from(out.len()).map_err(|_| {
-        Error::InvalidStructure("A100 CFA offset exceeds 4GB".into())
-    })?;
+    let raw_at = u32::try_from(out.len())
+        .map_err(|_| Error::InvalidStructure("A100 CFA offset exceeds 4GB".into()))?;
     out.extend_from_slice(trailer);
     patch_ifd0_u32(out, order, TAG_SR2_PRIVATE, mrw_at)?;
     patch_ifd0_u32(out, order, TAG_SUB_IFD, raw_at)?;
@@ -372,7 +381,9 @@ fn patch_ifd0_u32(out: &mut [u8], order: ByteOrder, tag: u16, value: u32) -> Res
         ByteOrder::BigEndian => u32::from_be_bytes(out[4..8].try_into().unwrap()),
     } as usize;
     if ifd + 2 > out.len() {
-        return Err(Error::InvalidStructure("IFD0 past EOF on A100 patch".into()));
+        return Err(Error::InvalidStructure(
+            "IFD0 past EOF on A100 patch".into(),
+        ));
     }
     let n = match order {
         ByteOrder::LittleEndian => u16::from_le_bytes(out[ifd..ifd + 2].try_into().unwrap()),
@@ -401,10 +412,7 @@ fn u32s(v: &RawValue) -> Vec<u32> {
     match v {
         RawValue::UInt16(x) => x.iter().map(|&n| u32::from(n)).collect(),
         RawValue::UInt32(x) => x.clone(),
-        RawValue::UInt64(x) => x
-            .iter()
-            .filter_map(|&n| u32::try_from(n).ok())
-            .collect(),
+        RawValue::UInt64(x) => x.iter().filter_map(|&n| u32::try_from(n).ok()).collect(),
         _ => v.as_u32_vec().unwrap_or_default(),
     }
 }
@@ -475,20 +483,27 @@ fn prepare(node: IfdNode, original: &[u8], order: ByteOrder) -> Result<PrepIfd> 
             });
             continue;
         }
-        let (body, part_pad) = if entry.tag == TAG_STRIP_OFFSETS && !strip_off.is_empty() && strip_off.len() == strip_len.len()
+        let (body, part_pad) = if entry.tag == TAG_STRIP_OFFSETS
+            && !strip_off.is_empty()
+            && strip_off.len() == strip_len.len()
         {
             (
                 Body::Image(copy_parts(original, &strip_off, &strip_len)?),
                 pads_after(original, &strip_off, &strip_len),
             )
-        } else if entry.tag == TAG_TILE_OFFSETS && !tile_off.is_empty() && tile_off.len() == tile_len.len()
+        } else if entry.tag == TAG_TILE_OFFSETS
+            && !tile_off.is_empty()
+            && tile_off.len() == tile_len.len()
         {
             (
                 Body::Image(copy_parts(original, &tile_off, &tile_len)?),
                 pads_after(original, &tile_off, &tile_len),
             )
         } else if entry.tag == TAG_JPEG_OFF && jpeg_off.len() == 1 && jpeg_len.len() == 1 {
-            (Body::Image(vec![copy_blob(original, jpeg_off[0], jpeg_len[0])?]), Vec::new())
+            (
+                Body::Image(vec![copy_blob(original, jpeg_off[0], jpeg_len[0])?]),
+                Vec::new(),
+            )
         } else {
             (Body::Bytes(encode_value(&entry.value, order)?), Vec::new())
         };
@@ -1014,7 +1029,9 @@ mod tests {
         let out = rewrite_preserving(&orf, &meta).unwrap();
         assert_eq!(&out[0..4], b"IIRO");
         assert!(crate::OrfParser::new().can_parse(&out));
-        let _ = crate::OrfParser::new().parse(&mut Cursor::new(&out)).unwrap();
+        let _ = crate::OrfParser::new()
+            .parse(&mut Cursor::new(&out))
+            .unwrap();
     }
 
     fn minimal_bigtiff() -> Vec<u8> {
@@ -1022,9 +1039,13 @@ mod tests {
         data.extend_from_slice(&[0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00]);
         data.extend_from_slice(&[0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         data.extend_from_slice(&[0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-        data.extend_from_slice(&[0x00, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[
+            0x00, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
         data.extend_from_slice(&[0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-        data.extend_from_slice(&[0x01, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[
+            0x01, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
         data.extend_from_slice(&[0x38, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         data
@@ -1052,8 +1073,8 @@ mod tests {
     }
 
     fn a100_fixture() -> Option<Vec<u8>> {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/testdata/RAW_SONY_A100.ARW");
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/RAW_SONY_A100.ARW");
         path.exists().then(|| std::fs::read(path).unwrap())
     }
 

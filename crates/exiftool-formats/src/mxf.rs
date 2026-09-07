@@ -15,20 +15,17 @@ use std::io::SeekFrom;
 
 // MXF Partition Pack Key prefix (first 13 bytes)
 const PARTITION_PACK_KEY: [u8; 13] = [
-    0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0x01,
-    0x0D, 0x01, 0x02, 0x01, 0x01,
+    0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0D, 0x01, 0x02, 0x01, 0x01,
 ];
 
 // Preface Set Key
 const PREFACE_KEY: [u8; 16] = [
-    0x06, 0x0E, 0x2B, 0x34, 0x02, 0x53, 0x01, 0x01,
-    0x0D, 0x01, 0x01, 0x01, 0x01, 0x01, 0x2F, 0x00,
+    0x06, 0x0E, 0x2B, 0x34, 0x02, 0x53, 0x01, 0x01, 0x0D, 0x01, 0x01, 0x01, 0x01, 0x01, 0x2F, 0x00,
 ];
 
-// Identification Set Key  
+// Identification Set Key
 const IDENTIFICATION_KEY: [u8; 16] = [
-    0x06, 0x0E, 0x2B, 0x34, 0x02, 0x53, 0x01, 0x01,
-    0x0D, 0x01, 0x01, 0x01, 0x01, 0x01, 0x30, 0x00,
+    0x06, 0x0E, 0x2B, 0x34, 0x02, 0x53, 0x01, 0x01, 0x0D, 0x01, 0x01, 0x01, 0x01, 0x01, 0x30, 0x00,
 ];
 
 /// MXF format parser.
@@ -79,7 +76,10 @@ impl FormatParser for MxfParser {
             0x05 => "Header (Closed Complete)",
             _ => "Unknown",
         };
-        meta.exif.set("MXF:PartitionType", AttrValue::Str(partition_type.to_string()));
+        meta.exif.set(
+            "MXF:PartitionType",
+            AttrValue::Str(partition_type.to_string()),
+        );
 
         // Read BER length
         let length = read_ber_length(reader)?;
@@ -94,7 +94,10 @@ impl FormatParser for MxfParser {
         // Major/Minor version (bytes 0-3)
         let major = u16::from_be_bytes([pack[0], pack[1]]);
         let minor = u16::from_be_bytes([pack[2], pack[3]]);
-        meta.exif.set("MXF:Version", AttrValue::Str(format!("{}.{}", major, minor)));
+        meta.exif.set(
+            "MXF:Version",
+            AttrValue::Str(format!("{}.{}", major, minor)),
+        );
 
         // KAG size (bytes 4-7)
         let kag_size = u32::from_be_bytes([pack[4], pack[5], pack[6], pack[7]]);
@@ -105,14 +108,14 @@ impl FormatParser for MxfParser {
         // This partition offset (bytes 8-15)
         // Previous partition offset (bytes 16-23)
         // Footer partition offset (bytes 24-31)
-        
+
         // Header byte count (bytes 32-39)
         let header_size = u64::from_be_bytes([
-            pack[32], pack[33], pack[34], pack[35],
-            pack[36], pack[37], pack[38], pack[39],
+            pack[32], pack[33], pack[34], pack[35], pack[36], pack[37], pack[38], pack[39],
         ]);
         if header_size > 0 {
-            meta.exif.set("MXF:HeaderSize", AttrValue::UInt64(header_size));
+            meta.exif
+                .set("MXF:HeaderSize", AttrValue::UInt64(header_size));
         }
 
         // Index byte count (bytes 40-47)
@@ -128,7 +131,7 @@ impl FormatParser for MxfParser {
 
         // Now scan for metadata sets
         let header_end = (header_size + 200).min(file_size);
-        
+
         while reader.stream_position()? < header_end {
             let mut set_key = [0u8; 16];
             if reader.read_exact(&mut set_key).is_err() {
@@ -175,7 +178,7 @@ fn read_ber_length(reader: &mut dyn ReadSeek) -> Result<u64> {
         if num_bytes > 8 {
             return Ok(0);
         }
-        
+
         let mut bytes = [0u8; 8];
         reader.read_exact(&mut bytes[8 - num_bytes..])?;
         Ok(u64::from_be_bytes(bytes))
@@ -231,9 +234,13 @@ fn parse_preface_set(reader: &mut dyn ReadSeek, _len: u64, meta: &mut Metadata) 
                 let min = ts[5];
                 let sec = ts[6];
 
-                meta.exif.set("MXF:ModificationDate", AttrValue::Str(
-                    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", year, month, day, hour, min, sec)
-                ));
+                meta.exif.set(
+                    "MXF:ModificationDate",
+                    AttrValue::Str(format!(
+                        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+                        year, month, day, hour, min, sec
+                    )),
+                );
                 break;
             }
         }
@@ -243,7 +250,11 @@ fn parse_preface_set(reader: &mut dyn ReadSeek, _len: u64, meta: &mut Metadata) 
 }
 
 /// Parse Identification set for product info.
-fn parse_identification_set(reader: &mut dyn ReadSeek, _len: u64, meta: &mut Metadata) -> Result<()> {
+fn parse_identification_set(
+    reader: &mut dyn ReadSeek,
+    _len: u64,
+    meta: &mut Metadata,
+) -> Result<()> {
     let mut buf = [0u8; 512];
     let read = reader.read(&mut buf)?;
 
@@ -278,9 +289,10 @@ fn parse_identification_set(reader: &mut dyn ReadSeek, _len: u64, meta: &mut Met
                 let major = u16::from_be_bytes([ver[0], ver[1]]);
                 let minor = u16::from_be_bytes([ver[2], ver[3]]);
                 let patch = u16::from_be_bytes([ver[4], ver[5]]);
-                meta.exif.set("MXF:ProductVersion", AttrValue::Str(
-                    format!("{}.{}.{}", major, minor, patch)
-                ));
+                meta.exif.set(
+                    "MXF:ProductVersion",
+                    AttrValue::Str(format!("{}.{}.{}", major, minor, patch)),
+                );
             }
         }
     }
@@ -311,14 +323,14 @@ mod tests {
         data[14..16].copy_from_slice(&[0x00, 0x00]);
         // BER length (short form)
         data[16] = 88; // Pack is 88 bytes
-        // Pack data
-        // Major version
+                       // Pack data
+                       // Major version
         data[17..19].copy_from_slice(&1u16.to_be_bytes());
         // Minor version
         data[19..21].copy_from_slice(&3u16.to_be_bytes());
         // KAG size
         data[21..25].copy_from_slice(&512u32.to_be_bytes());
-        
+
         data
     }
 
@@ -344,7 +356,10 @@ mod tests {
         let meta = parser.parse(&mut cursor).unwrap();
 
         assert_eq!(meta.format, "MXF");
-        assert_eq!(meta.exif.get_str("MXF:PartitionType"), Some("Header (Open Complete)"));
+        assert_eq!(
+            meta.exif.get_str("MXF:PartitionType"),
+            Some("Header (Open Complete)")
+        );
     }
 
     #[test]

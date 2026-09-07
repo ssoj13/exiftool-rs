@@ -47,12 +47,21 @@ impl FormatParser for IcoParser {
         let (format_name, type_name) = match file_type {
             1 => ("ICO", "Icon"),
             2 => ("CUR", "Cursor"),
-            _ => return Err(Error::InvalidStructure(format!("Unknown ICO type: {}", file_type))),
+            _ => {
+                return Err(Error::InvalidStructure(format!(
+                    "Unknown ICO type: {}",
+                    file_type
+                )))
+            }
         };
 
         let mut metadata = Metadata::new(format_name);
-        metadata.exif.set("FileType", AttrValue::Str(type_name.to_string()));
-        metadata.exif.set("ImageCount", AttrValue::UInt(image_count as u32));
+        metadata
+            .exif
+            .set("FileType", AttrValue::Str(type_name.to_string()));
+        metadata
+            .exif
+            .set("ImageCount", AttrValue::UInt(image_count as u32));
 
         // Parse directory entries
         let mut max_width = 0u32;
@@ -64,9 +73,21 @@ impl FormatParser for IcoParser {
             reader.read_exact(&mut entry)?;
 
             // Width/height: 0 means 256
-            let width = if entry[0] == 0 { 256u32 } else { entry[0] as u32 };
-            let height = if entry[1] == 0 { 256u32 } else { entry[1] as u32 };
-            let color_count = if entry[2] == 0 { 256u32 } else { entry[2] as u32 };
+            let width = if entry[0] == 0 {
+                256u32
+            } else {
+                entry[0] as u32
+            };
+            let height = if entry[1] == 0 {
+                256u32
+            } else {
+                entry[1] as u32
+            };
+            let color_count = if entry[2] == 0 {
+                256u32
+            } else {
+                entry[2] as u32
+            };
             let _reserved = entry[3];
 
             // For icons: planes (2 bytes) and bits per pixel (2 bytes)
@@ -89,36 +110,56 @@ impl FormatParser for IcoParser {
             if i < 10 {
                 let prefix = format!("Image{}", i);
 
-                metadata.exif.set(format!("{}Width", prefix), AttrValue::UInt(width));
-                metadata.exif.set(format!("{}Height", prefix), AttrValue::UInt(height));
+                metadata
+                    .exif
+                    .set(format!("{}Width", prefix), AttrValue::UInt(width));
+                metadata
+                    .exif
+                    .set(format!("{}Height", prefix), AttrValue::UInt(height));
 
                 if file_type == 1 {
                     // Icon
                     let bpp = bpp_or_hotspot_y as u32;
                     if bpp > 0 {
-                        metadata.exif.set(format!("{}BitsPerPixel", prefix), AttrValue::UInt(bpp));
+                        metadata
+                            .exif
+                            .set(format!("{}BitsPerPixel", prefix), AttrValue::UInt(bpp));
                         if bpp > max_bpp {
                             max_bpp = bpp;
                         }
                     } else if color_count > 0 {
                         // Estimate BPP from color count
                         let estimated_bpp = (color_count as f64).log2().ceil() as u32;
-                        metadata.exif.set(format!("{}BitsPerPixel", prefix), AttrValue::UInt(estimated_bpp));
+                        metadata.exif.set(
+                            format!("{}BitsPerPixel", prefix),
+                            AttrValue::UInt(estimated_bpp),
+                        );
                     }
                     if color_count > 0 && color_count < 256 {
-                        metadata.exif.set(format!("{}ColorCount", prefix), AttrValue::UInt(color_count));
+                        metadata.exif.set(
+                            format!("{}ColorCount", prefix),
+                            AttrValue::UInt(color_count),
+                        );
                     }
                 } else {
                     // Cursor
-                    metadata.exif.set(format!("{}HotspotX", prefix), AttrValue::UInt(planes_or_hotspot_x as u32));
-                    metadata.exif.set(format!("{}HotspotY", prefix), AttrValue::UInt(bpp_or_hotspot_y as u32));
+                    metadata.exif.set(
+                        format!("{}HotspotX", prefix),
+                        AttrValue::UInt(planes_or_hotspot_x as u32),
+                    );
+                    metadata.exif.set(
+                        format!("{}HotspotY", prefix),
+                        AttrValue::UInt(bpp_or_hotspot_y as u32),
+                    );
                 }
             }
         }
 
         // Set overall dimensions (largest image)
         metadata.exif.set("ImageWidth", AttrValue::UInt(max_width));
-        metadata.exif.set("ImageHeight", AttrValue::UInt(max_height));
+        metadata
+            .exif
+            .set("ImageHeight", AttrValue::UInt(max_height));
         if max_bpp > 0 {
             metadata.exif.set("BitsPerPixel", AttrValue::UInt(max_bpp));
         }
@@ -188,11 +229,15 @@ mod tests {
     #[test]
     fn parse_multi_icon() {
         let parser = IcoParser;
-        let data = make_ico(1, 3, &[
-            (16, 16, 0, 32),
-            (32, 32, 0, 32),
-            (0, 0, 0, 32), // 256x256
-        ]);
+        let data = make_ico(
+            1,
+            3,
+            &[
+                (16, 16, 0, 32),
+                (32, 32, 0, 32),
+                (0, 0, 0, 32), // 256x256
+            ],
+        );
         let mut cursor = Cursor::new(data);
 
         let meta = parser.parse(&mut cursor).unwrap();

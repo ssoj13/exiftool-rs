@@ -20,9 +20,9 @@ pub fn lookup_gps(tag: u16) -> Option<&'static str> {
 /// IFD0 tag lookup - handles special pointer tags.
 pub fn lookup_ifd0(tag: u16) -> Option<&'static str> {
     match tag {
-        0x8769 => Some("ExifOffset"),  // EXIF sub-IFD pointer
-        0x8825 => Some("GPSInfo"),     // GPS sub-IFD pointer
-        0x014A => Some("SubIFDs"),     // Sub-IFD pointers
+        0x8769 => Some("ExifOffset"),    // EXIF sub-IFD pointer
+        0x8825 => Some("GPSInfo"),       // GPS sub-IFD pointer
+        0x014A => Some("SubIFDs"),       // Sub-IFD pointers
         0xA005 => Some("InteropOffset"), // Interoperability pointer
         _ => lookup_exif(tag),
     }

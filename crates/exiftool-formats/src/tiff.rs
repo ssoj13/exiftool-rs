@@ -42,7 +42,7 @@ impl Default for TiffConfig {
 }
 
 /// TIFF format parser.
-/// 
+///
 /// Handles standard TIFF files and serves as base for TIFF-based RAW formats.
 /// Use `with_config()` to customize for vendor-specific formats.
 #[derive(Default)]
@@ -57,7 +57,6 @@ impl TiffParser {
     }
 }
 
-
 impl FormatParser for TiffParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         if header.len() < 4 {
@@ -67,10 +66,14 @@ impl FormatParser for TiffParser {
         // Big-endian TIFF: "MM" + 0x002A
         // Little-endian BigTIFF: "II" + 0x002B
         // Big-endian BigTIFF: "MM" + 0x002B
-        let is_tiff_le = header[0] == b'I' && header[1] == b'I' && header[2] == 0x2A && header[3] == 0x00;
-        let is_tiff_be = header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2A;
-        let is_bigtiff_le = header[0] == b'I' && header[1] == b'I' && header[2] == 0x2B && header[3] == 0x00;
-        let is_bigtiff_be = header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2B;
+        let is_tiff_le =
+            header[0] == b'I' && header[1] == b'I' && header[2] == 0x2A && header[3] == 0x00;
+        let is_tiff_be =
+            header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2A;
+        let is_bigtiff_le =
+            header[0] == b'I' && header[1] == b'I' && header[2] == 0x2B && header[3] == 0x00;
+        let is_bigtiff_be =
+            header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2B;
         is_tiff_le || is_tiff_be || is_bigtiff_le || is_bigtiff_be
     }
 
@@ -123,11 +126,7 @@ impl FormatParser for TiffParser {
         let mut metadata = self.parse(reader)?;
         if self.config.format_name == "TIFF" {
             let make = metadata.exif.get_str("Make").map(|s| s.to_string());
-            crate::tiff_family::classify(
-                &mut metadata.format,
-                ext_hint,
-                make.as_deref(),
-            );
+            crate::tiff_family::classify(&mut metadata.format, ext_hint, make.as_deref());
         }
         Ok(metadata)
     }
@@ -174,7 +173,7 @@ impl TiffParser {
 
             // Collect page info for this IFD
             let page_info = self.extract_page_info(&entries, ifd_index, current_offset as u64);
-            
+
             // First pass: extract Make to detect vendor (if not pre-set), and detect DNG
             if ifd_index == 0 && self.config.vendor.is_none() {
                 for entry in &entries {
@@ -195,8 +194,8 @@ impl TiffParser {
             }
 
             // Determine if this IFD is a thumbnail or a real page
-            let is_thumbnail_ifd = page_info.is_thumbnail() || 
-                (ifd_index == 1 && page_info.subfile_type == 0 && page_info.width < 1000);
+            let is_thumbnail_ifd = page_info.is_thumbnail()
+                || (ifd_index == 1 && page_info.subfile_type == 0 && page_info.width < 1000);
 
             if is_thumbnail_ifd {
                 // Extract thumbnail data from this IFD
@@ -235,9 +234,13 @@ impl TiffParser {
     /// Extract preview using PreviewImageStart/Length from MakerNotes.
     fn extract_makernotes_preview(&self, reader: &IfdReader, metadata: &mut Metadata) {
         // Check if MakerNotes provided preview offset/length
-        let preview_start = metadata.exif.get("PreviewImageStart")
+        let preview_start = metadata
+            .exif
+            .get("PreviewImageStart")
             .and_then(|v| v.as_u32());
-        let preview_length = metadata.exif.get("PreviewImageLength")
+        let preview_length = metadata
+            .exif
+            .get("PreviewImageLength")
             .and_then(|v| v.as_u32());
 
         if let (Some(offset), Some(length)) = (preview_start, preview_length) {
@@ -257,7 +260,12 @@ impl TiffParser {
     }
 
     /// Extract page info from IFD entries.
-    fn extract_page_info(&self, entries: &[IfdEntry], _ifd_index: usize, ifd_offset: u64) -> PageInfo {
+    fn extract_page_info(
+        &self,
+        entries: &[IfdEntry],
+        _ifd_index: usize,
+        ifd_offset: u64,
+    ) -> PageInfo {
         let mut info = PageInfo {
             ifd_offset,
             ..Default::default()
@@ -304,12 +312,7 @@ impl TiffParser {
     }
 
     /// Extract thumbnail from IFD1 entries.
-    fn extract_thumbnail(
-        &self,
-        entries: &[IfdEntry],
-        reader: &IfdReader,
-        metadata: &mut Metadata,
-    ) {
+    fn extract_thumbnail(&self, entries: &[IfdEntry], reader: &IfdReader, metadata: &mut Metadata) {
         let mut thumb_offset: Option<u64> = None;
         let mut thumb_length: Option<u64> = None;
         let mut compression: Option<u16> = None;
@@ -338,7 +341,7 @@ impl TiffParser {
             if is_jpeg && length > 0 && length < 1_000_000 && offset <= usize::MAX as u64 {
                 let offset = offset as usize;
                 let length = length as usize;
-                
+
                 if offset + length <= reader.len() {
                     // Read thumbnail bytes directly from reader's data
                     // We need access to raw bytes - use value_offset approach
@@ -362,12 +365,7 @@ impl TiffParser {
     /// Extract preview JPEG from IFD0 (for RAW formats like CR2).
     /// Uses StripOffsets/StripByteCounts when compression is JPEG.
     /// Supports LONG8 (Vec<u64>) for BigTIFF per spec.
-    fn extract_preview(
-        &self,
-        entries: &[IfdEntry],
-        reader: &IfdReader,
-        metadata: &mut Metadata,
-    ) {
+    fn extract_preview(&self, entries: &[IfdEntry], reader: &IfdReader, metadata: &mut Metadata) {
         let mut strip_offsets: Option<Vec<u64>> = None;
         let mut strip_byte_counts: Option<Vec<u64>> = None;
         let mut compression: Option<u16> = None;
@@ -421,7 +419,9 @@ impl TiffParser {
                 // Multiple strips - concatenate
                 let mut preview_data = Vec::with_capacity(total_size);
                 for (offset, count) in offsets.iter().zip(counts.iter()) {
-                    if let Some(data) = self.read_bytes_at(reader, *offset as usize, *count as usize) {
+                    if let Some(data) =
+                        self.read_bytes_at(reader, *offset as usize, *count as usize)
+                    {
                         preview_data.extend_from_slice(&data);
                     } else {
                         return; // Failed to read strip
@@ -457,9 +457,16 @@ impl TiffParser {
                             // Parse MakerNotes with vendor-specific decoder
                             if e.tag == 0x927C {
                                 if let RawValue::Undefined(bytes) = &e.value {
-                                    if let Some(mn_data) = makernotes::parse(bytes, vendor, reader.byte_order()) {
+                                    if let Some(mn_data) =
+                                        makernotes::parse(bytes, vendor, reader.byte_order())
+                                    {
                                         for (key, val) in mn_data.iter() {
-                                            let val = adjust_nikon_preview_offset(bytes, e.value_offset, key, val.clone());
+                                            let val = adjust_nikon_preview_offset(
+                                                bytes,
+                                                e.value_offset,
+                                                key,
+                                                val.clone(),
+                                            );
                                             metadata.exif.set(key.clone(), val);
                                         }
                                     }
@@ -576,9 +583,9 @@ mod tests {
     #[test]
     fn extract_page_info() {
         use exiftool_core::RawValue;
-        
+
         let parser = TiffParser::default();
-        
+
         // Create mock IFD entries with page info
         let entries = vec![
             mock_entry(ifd_tags::TAG_IMAGE_WIDTH, RawValue::UInt32(vec![1920])),
@@ -587,9 +594,9 @@ mod tests {
             mock_entry(ifd_tags::TAG_COMPRESSION, RawValue::UInt16(vec![1])), // No compression
             mock_entry(ifd_tags::TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![0])), // Full-res
         ];
-        
+
         let info = parser.extract_page_info(&entries, 0, 8);
-        
+
         assert_eq!(info.width, 1920);
         assert_eq!(info.height, 1080);
         assert_eq!(info.bits_per_sample, 8);
@@ -602,18 +609,18 @@ mod tests {
     #[test]
     fn extract_thumbnail_page_info() {
         use exiftool_core::RawValue;
-        
+
         let parser = TiffParser::default();
-        
+
         // Thumbnail IFD (NewSubfileType = 1 means reduced resolution)
         let entries = vec![
             mock_entry(ifd_tags::TAG_IMAGE_WIDTH, RawValue::UInt32(vec![160])),
             mock_entry(ifd_tags::TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![120])),
             mock_entry(ifd_tags::TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![1])), // Reduced-res
         ];
-        
+
         let info = parser.extract_page_info(&entries, 1, 1000);
-        
+
         assert_eq!(info.width, 160);
         assert_eq!(info.height, 120);
         assert!(info.is_thumbnail()); // bit 0 set = reduced res
@@ -623,18 +630,18 @@ mod tests {
     #[test]
     fn extract_multipage_info() {
         use exiftool_core::RawValue;
-        
+
         let parser = TiffParser::default();
-        
+
         // Multi-page document (NewSubfileType = 2 means single page of multi-page)
         let entries = vec![
             mock_entry(ifd_tags::TAG_IMAGE_WIDTH, RawValue::UInt32(vec![2480])),
             mock_entry(ifd_tags::TAG_IMAGE_HEIGHT, RawValue::UInt32(vec![3508])), // A4 @ 300dpi
             mock_entry(ifd_tags::TAG_NEW_SUBFILE_TYPE, RawValue::UInt32(vec![2])), // Page
         ];
-        
+
         let info = parser.extract_page_info(&entries, 2, 50000);
-        
+
         assert_eq!(info.width, 2480);
         assert_eq!(info.height, 3508);
         assert!(!info.is_thumbnail());
@@ -649,11 +656,15 @@ mod tests {
         data.extend_from_slice(&[0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00]);
         data.extend_from_slice(&[0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         data.extend_from_slice(&[0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // IFD count 2
-        // ImageWidth (0x0100) LONG8 = 1920
-        data.extend_from_slice(&[0x00, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+                                                                                   // ImageWidth (0x0100) LONG8 = 1920
+        data.extend_from_slice(&[
+            0x00, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
         data.extend_from_slice(&[0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // ImageHeight (0x0101) LONG8 = 1080
-        data.extend_from_slice(&[0x01, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        data.extend_from_slice(&[
+            0x01, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
         data.extend_from_slice(&[0x38, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         data.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // next IFD = 0
 
@@ -667,9 +678,9 @@ mod tests {
 
     #[test]
     fn parse_tiff_ifd_chain_with_thumbnail() {
-        use std::io::Cursor;
-        use exiftool_core::{ExifWriter, WriteEntry};
         use exiftool_core::writer::tags;
+        use exiftool_core::{ExifWriter, WriteEntry};
+        use std::io::Cursor;
         // Create valid TIFF via ExifWriter (IFD0 + IFD1 thumbnail)
         let mut writer = ExifWriter::new(exiftool_core::ByteOrder::LittleEndian);
         writer.add_ifd0(WriteEntry::from_str(tags::MAKE, "Test"));
@@ -693,29 +704,29 @@ mod tests {
         // BigTIFF with StripOffsets/StripByteCounts as LONG8 (as_u64_vec path)
         let mut data = vec![0u8; 112];
         data[0..16].copy_from_slice(&[
-            0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00,
-            0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x49, 0x49, 0x2B, 0x00, 0x08, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00,
         ]);
         data[16..24].copy_from_slice(&[0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         // Make: String, inline "Test\0" (5 bytes <= 8)
         data[24..44].copy_from_slice(&[
-            0x0F, 0x01, 0x02, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x54, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x00,
+            0x0F, 0x01, 0x02, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0x65,
+            0x73, 0x74, 0x00, 0x00, 0x00, 0x00,
         ]);
         // StripOffsets: LONG8, count 1, value 0
         data[44..64].copy_from_slice(&[
-            0x11, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x11, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         ]);
         // StripByteCounts: LONG8
         data[64..84].copy_from_slice(&[
-            0x17, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x17, 0x01, 0x10, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         ]);
         // Compression: Short, 1
         data[84..104].copy_from_slice(&[
-            0x03, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x03, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         ]);
         data[104..112].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 

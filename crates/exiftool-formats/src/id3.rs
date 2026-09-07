@@ -106,7 +106,10 @@ impl Id3Parser {
             | ((header[8] as u32) << 7)
             | (header[9] as u32);
 
-        metadata.exif.set("ID3Version", AttrValue::Str(format!("2.{}.{}", version_major, version_minor)));
+        metadata.exif.set(
+            "ID3Version",
+            AttrValue::Str(format!("2.{}.{}", version_major, version_minor)),
+        );
         metadata.exif.set("ID3Size", AttrValue::UInt(size));
 
         let unsynchronization = flags & 0x80 != 0;
@@ -115,7 +118,9 @@ impl Id3Parser {
         let _footer = flags & 0x10 != 0;
 
         if unsynchronization {
-            metadata.exif.set("ID3Unsynchronization", AttrValue::Bool(true));
+            metadata
+                .exif
+                .set("ID3Unsynchronization", AttrValue::Bool(true));
         }
 
         let mut pos = 10u64;
@@ -168,7 +173,11 @@ impl Id3Parser {
     }
 
     /// Read ID3v2.3/v2.4 frame (4-byte ID, 4-byte size, 2-byte flags).
-    fn read_frame_v23(&self, reader: &mut dyn ReadSeek, version: u8) -> Result<Option<(String, Vec<u8>)>> {
+    fn read_frame_v23(
+        &self,
+        reader: &mut dyn ReadSeek,
+        version: u8,
+    ) -> Result<Option<(String, Vec<u8>)>> {
         let mut frame_header = [0u8; 10];
         if reader.read_exact(&mut frame_header).is_err() {
             return Ok(None);
@@ -194,7 +203,12 @@ impl Id3Parser {
                 | (frame_header[7] as u32)
         } else {
             // v2.3: normal integer
-            u32::from_be_bytes([frame_header[4], frame_header[5], frame_header[6], frame_header[7]])
+            u32::from_be_bytes([
+                frame_header[4],
+                frame_header[5],
+                frame_header[6],
+                frame_header[7],
+            ])
         };
 
         if size == 0 || size > 10 * 1024 * 1024 {
@@ -314,7 +328,9 @@ impl Id3Parser {
             let (mime, pic_type) = self.decode_apic_info(data);
             metadata.exif.set("AlbumArtMime", AttrValue::Str(mime));
             metadata.exif.set("AlbumArtType", AttrValue::Str(pic_type));
-            metadata.exif.set("AlbumArtSize", AttrValue::UInt(data.len() as u32));
+            metadata
+                .exif
+                .set("AlbumArtSize", AttrValue::UInt(data.len() as u32));
         }
 
         Ok(())
@@ -372,7 +388,10 @@ impl Id3Parser {
             }
             3 => {
                 // UTF-8
-                let end = text_data.iter().position(|&b| b == 0).unwrap_or(text_data.len());
+                let end = text_data
+                    .iter()
+                    .position(|&b| b == 0)
+                    .unwrap_or(text_data.len());
                 String::from_utf8_lossy(&text_data[..end]).to_string()
             }
             _ => String::new(),
@@ -400,7 +419,11 @@ impl Id3Parser {
             pos
         } else {
             // Single byte encoding: find single null
-            data[4..].iter().position(|&b| b == 0).map(|p| p + 5).unwrap_or(data.len())
+            data[4..]
+                .iter()
+                .position(|&b| b == 0)
+                .map(|p| p + 5)
+                .unwrap_or(data.len())
         };
 
         if text_start >= data.len() {
@@ -441,33 +464,154 @@ impl Id3Parser {
     /// Get genre name from ID3v1 genre number.
     fn genre_name(&self, num: u8) -> &'static str {
         const GENRES: &[&str] = &[
-            "Blues", "Classic Rock", "Country", "Dance", "Disco", "Funk", "Grunge",
-            "Hip-Hop", "Jazz", "Metal", "New Age", "Oldies", "Other", "Pop", "R&B",
-            "Rap", "Reggae", "Rock", "Techno", "Industrial", "Alternative", "Ska",
-            "Death Metal", "Pranks", "Soundtrack", "Euro-Techno", "Ambient",
-            "Trip-Hop", "Vocal", "Jazz+Funk", "Fusion", "Trance", "Classical",
-            "Instrumental", "Acid", "House", "Game", "Sound Clip", "Gospel",
-            "Noise", "AlternRock", "Bass", "Soul", "Punk", "Space", "Meditative",
-            "Instrumental Pop", "Instrumental Rock", "Ethnic", "Gothic",
-            "Darkwave", "Techno-Industrial", "Electronic", "Pop-Folk", "Eurodance",
-            "Dream", "Southern Rock", "Comedy", "Cult", "Gangsta", "Top 40",
-            "Christian Rap", "Pop/Funk", "Jungle", "Native American", "Cabaret",
-            "New Wave", "Psychedelic", "Rave", "Showtunes", "Trailer", "Lo-Fi",
-            "Tribal", "Acid Punk", "Acid Jazz", "Polka", "Retro", "Musical",
-            "Rock & Roll", "Hard Rock", "Folk", "Folk-Rock", "National Folk",
-            "Swing", "Fast Fusion", "Bebop", "Latin", "Revival", "Celtic",
-            "Bluegrass", "Avantgarde", "Gothic Rock", "Progressive Rock",
-            "Psychedelic Rock", "Symphonic Rock", "Slow Rock", "Big Band",
-            "Chorus", "Easy Listening", "Acoustic", "Humour", "Speech", "Chanson",
-            "Opera", "Chamber Music", "Sonata", "Symphony", "Booty Bass", "Primus",
-            "Porn Groove", "Satire", "Slow Jam", "Club", "Tango", "Samba",
-            "Folklore", "Ballad", "Power Ballad", "Rhythmic Soul", "Freestyle",
-            "Duet", "Punk Rock", "Drum Solo", "A Cappella", "Euro-House",
-            "Dance Hall", "Goa", "Drum & Bass", "Club-House", "Hardcore",
-            "Terror", "Indie", "BritPop", "Negerpunk", "Polsk Punk", "Beat",
-            "Christian Gangsta Rap", "Heavy Metal", "Black Metal", "Crossover",
-            "Contemporary Christian", "Christian Rock", "Merengue", "Salsa",
-            "Thrash Metal", "Anime", "Jpop", "Synthpop",
+            "Blues",
+            "Classic Rock",
+            "Country",
+            "Dance",
+            "Disco",
+            "Funk",
+            "Grunge",
+            "Hip-Hop",
+            "Jazz",
+            "Metal",
+            "New Age",
+            "Oldies",
+            "Other",
+            "Pop",
+            "R&B",
+            "Rap",
+            "Reggae",
+            "Rock",
+            "Techno",
+            "Industrial",
+            "Alternative",
+            "Ska",
+            "Death Metal",
+            "Pranks",
+            "Soundtrack",
+            "Euro-Techno",
+            "Ambient",
+            "Trip-Hop",
+            "Vocal",
+            "Jazz+Funk",
+            "Fusion",
+            "Trance",
+            "Classical",
+            "Instrumental",
+            "Acid",
+            "House",
+            "Game",
+            "Sound Clip",
+            "Gospel",
+            "Noise",
+            "AlternRock",
+            "Bass",
+            "Soul",
+            "Punk",
+            "Space",
+            "Meditative",
+            "Instrumental Pop",
+            "Instrumental Rock",
+            "Ethnic",
+            "Gothic",
+            "Darkwave",
+            "Techno-Industrial",
+            "Electronic",
+            "Pop-Folk",
+            "Eurodance",
+            "Dream",
+            "Southern Rock",
+            "Comedy",
+            "Cult",
+            "Gangsta",
+            "Top 40",
+            "Christian Rap",
+            "Pop/Funk",
+            "Jungle",
+            "Native American",
+            "Cabaret",
+            "New Wave",
+            "Psychedelic",
+            "Rave",
+            "Showtunes",
+            "Trailer",
+            "Lo-Fi",
+            "Tribal",
+            "Acid Punk",
+            "Acid Jazz",
+            "Polka",
+            "Retro",
+            "Musical",
+            "Rock & Roll",
+            "Hard Rock",
+            "Folk",
+            "Folk-Rock",
+            "National Folk",
+            "Swing",
+            "Fast Fusion",
+            "Bebop",
+            "Latin",
+            "Revival",
+            "Celtic",
+            "Bluegrass",
+            "Avantgarde",
+            "Gothic Rock",
+            "Progressive Rock",
+            "Psychedelic Rock",
+            "Symphonic Rock",
+            "Slow Rock",
+            "Big Band",
+            "Chorus",
+            "Easy Listening",
+            "Acoustic",
+            "Humour",
+            "Speech",
+            "Chanson",
+            "Opera",
+            "Chamber Music",
+            "Sonata",
+            "Symphony",
+            "Booty Bass",
+            "Primus",
+            "Porn Groove",
+            "Satire",
+            "Slow Jam",
+            "Club",
+            "Tango",
+            "Samba",
+            "Folklore",
+            "Ballad",
+            "Power Ballad",
+            "Rhythmic Soul",
+            "Freestyle",
+            "Duet",
+            "Punk Rock",
+            "Drum Solo",
+            "A Cappella",
+            "Euro-House",
+            "Dance Hall",
+            "Goa",
+            "Drum & Bass",
+            "Club-House",
+            "Hardcore",
+            "Terror",
+            "Indie",
+            "BritPop",
+            "Negerpunk",
+            "Polsk Punk",
+            "Beat",
+            "Christian Gangsta Rap",
+            "Heavy Metal",
+            "Black Metal",
+            "Crossover",
+            "Contemporary Christian",
+            "Christian Rock",
+            "Merengue",
+            "Salsa",
+            "Thrash Metal",
+            "Anime",
+            "Jpop",
+            "Synthpop",
         ];
 
         GENRES.get(num as usize).copied().unwrap_or("Unknown")
@@ -532,7 +676,9 @@ impl Id3Parser {
             return Ok(());
         }
 
-        metadata.exif.set("ID3Version", AttrValue::Str("1.x".to_string()));
+        metadata
+            .exif
+            .set("ID3Version", AttrValue::Str("1.x".to_string()));
 
         // Title: bytes 3-32
         let title = self.trim_null_string(&data[3..33]);
@@ -562,12 +708,16 @@ impl Id3Parser {
         // ID3v1.1: if byte 125 is 0 and byte 126 is non-zero, it's track number
         if data[125] == 0 && data[126] != 0 {
             // ID3v1.1
-            metadata.exif.set("ID3Version", AttrValue::Str("1.1".to_string()));
+            metadata
+                .exif
+                .set("ID3Version", AttrValue::Str("1.1".to_string()));
             let comment = self.trim_null_string(&data[97..125]);
             if !comment.is_empty() {
                 metadata.exif.set("Comment", AttrValue::Str(comment));
             }
-            metadata.exif.set("Track", AttrValue::UInt(data[126] as u32));
+            metadata
+                .exif
+                .set("Track", AttrValue::UInt(data[126] as u32));
         } else {
             let comment = self.trim_null_string(&data[97..127]);
             if !comment.is_empty() {
@@ -578,7 +728,9 @@ impl Id3Parser {
         // Genre: byte 127
         let genre = self.genre_name(data[127]);
         if genre != "Unknown" {
-            metadata.exif.set("Genre", AttrValue::Str(genre.to_string()));
+            metadata
+                .exif
+                .set("Genre", AttrValue::Str(genre.to_string()));
         }
 
         Ok(())
@@ -665,10 +817,22 @@ impl Id3Parser {
 
                 // Bitrate (kbps) for Layer III
                 const BITRATES_L3: [[u16; 2]; 16] = [
-                    [0, 0], [32, 8], [40, 16], [48, 24],
-                    [56, 32], [64, 40], [80, 48], [96, 56],
-                    [112, 64], [128, 80], [160, 96], [192, 112],
-                    [224, 128], [256, 144], [320, 160], [0, 0],
+                    [0, 0],
+                    [32, 8],
+                    [40, 16],
+                    [48, 24],
+                    [56, 32],
+                    [64, 40],
+                    [80, 48],
+                    [96, 56],
+                    [112, 64],
+                    [128, 80],
+                    [160, 96],
+                    [192, 112],
+                    [224, 128],
+                    [256, 144],
+                    [320, 160],
+                    [0, 0],
                 ];
                 let bitrate = if version == 3 {
                     BITRATES_L3[bitrate_idx as usize][0]
@@ -685,14 +849,23 @@ impl Id3Parser {
                     _ => "Unknown",
                 };
 
-                metadata.exif.set("AudioFormat", AttrValue::Str(format!("{} {}", mpeg_version, layer_name)));
+                metadata.exif.set(
+                    "AudioFormat",
+                    AttrValue::Str(format!("{} {}", mpeg_version, layer_name)),
+                );
                 if sample_rate > 0 {
-                    metadata.exif.set("SampleRate", AttrValue::UInt(sample_rate));
+                    metadata
+                        .exif
+                        .set("SampleRate", AttrValue::UInt(sample_rate));
                 }
                 if bitrate > 0 {
-                    metadata.exif.set("AudioBitrate", AttrValue::Str(format!("{} kbps", bitrate)));
+                    metadata
+                        .exif
+                        .set("AudioBitrate", AttrValue::Str(format!("{} kbps", bitrate)));
                 }
-                metadata.exif.set("ChannelMode", AttrValue::Str(channels.to_string()));
+                metadata
+                    .exif
+                    .set("ChannelMode", AttrValue::Str(channels.to_string()));
 
                 return Ok(());
             }
@@ -716,7 +889,7 @@ mod tests {
         data.push(4); // version 2.4
         data.push(0); // revision
         data.push(0); // flags
-        // Sync-safe size
+                      // Sync-safe size
         data.push(((size >> 21) & 0x7F) as u8);
         data.push(((size >> 14) & 0x7F) as u8);
         data.push(((size >> 7) & 0x7F) as u8);
@@ -729,7 +902,7 @@ mod tests {
         frame.extend_from_slice(id.as_bytes());
         let text_bytes = text.as_bytes();
         let size = 1 + text_bytes.len() as u32; // encoding byte + text
-        // Sync-safe size for v2.4
+                                                // Sync-safe size for v2.4
         frame.push(((size >> 21) & 0x7F) as u8);
         frame.push(((size >> 14) & 0x7F) as u8);
         frame.push(((size >> 7) & 0x7F) as u8);

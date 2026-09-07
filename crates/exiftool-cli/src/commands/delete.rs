@@ -62,8 +62,7 @@ pub fn delete_metadata(args: &Args, registry: &FormatRegistry) -> Result<()> {
 
 /// Delete metadata from a single file.
 fn delete_metadata_single(path: &Path, args: &Args, registry: &FormatRegistry) -> Result<()> {
-    let file = File::open(path)
-        .with_context(|| format!("Cannot open: {}", path.display()))?;
+    let file = File::open(path).with_context(|| format!("Cannot open: {}", path.display()))?;
     let mut reader = BufReader::new(file);
     let mut metadata = registry
         .parse(&mut reader)
@@ -113,7 +112,9 @@ fn delete_metadata_single(path: &Path, args: &Args, registry: &FormatRegistry) -
                 "HDR" => HdrWriter::write(&mut reader, &mut out, &metadata)?,
                 "MP3" => Id3Writer::write(&mut reader, &mut out, &metadata)?,
                 "FLAC" => FlacWriter::write(&mut reader, &mut out, &metadata)?,
-                "PBM" | "PGM" | "PPM" | "PAM" => PnmWriter::write(&mut reader, &mut out, &metadata)?,
+                "PBM" | "PGM" | "PPM" | "PAM" => {
+                    PnmWriter::write(&mut reader, &mut out, &metadata)?
+                }
                 "GIF" => GifWriter::write(&mut reader, &mut out, &metadata)?,
                 "WAV" => WavWriter::write(&mut reader, &mut out, &metadata)?,
                 "JXL" => JxlWriter::write(&mut reader, &mut out, &metadata)?,

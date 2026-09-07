@@ -143,7 +143,9 @@ mod tests {
         data.extend_from_slice(b"fLaC");
         // STREAMINFO block (last)
         data.push(0x80); // last, type 0
-        data.push(0); data.push(0); data.push(34);
+        data.push(0);
+        data.push(0);
+        data.push(34);
         data.extend_from_slice(&[0u8; 34]);
         data
     }

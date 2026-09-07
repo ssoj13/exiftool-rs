@@ -37,15 +37,18 @@ impl FormatParser for ArwParser {
         if header.len() < 8 {
             return false;
         }
-        
+
         // Check TIFF signature
-        let is_tiff = (header[0] == b'I' && header[1] == b'I' && header[2] == 0x2A && header[3] == 0x00)
+        let is_tiff = (header[0] == b'I'
+            && header[1] == b'I'
+            && header[2] == 0x2A
+            && header[3] == 0x00)
             || (header[0] == b'M' && header[1] == b'M' && header[2] == 0x00 && header[3] == 0x2A);
-        
+
         if !is_tiff {
             return false;
         }
-        
+
         // Detection via extension - can't easily check Make without parsing
         false
     }
@@ -55,13 +58,13 @@ impl FormatParser for ArwParser {
     }
 
     fn extensions(&self) -> &'static [&'static str] {
-        &["arw", "srf", "sr2"]  // ARW, SRF (old), SR2 (older)
+        &["arw", "srf", "sr2"] // ARW, SRF (old), SR2 (older)
     }
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut metadata = self.tiff.parse(reader)?;
         metadata.format = "ARW";
-        
+
         // Sony MakerNotes will be parsed via the MakerNotes module
         // which handles Sony-specific tags like:
         // - SonyModelID
@@ -70,7 +73,7 @@ impl FormatParser for ArwParser {
         // - ColorTemperature
         // - DynamicRangeOptimizer
         // - CreativeStyle
-        
+
         Ok(metadata)
     }
 }

@@ -28,8 +28,12 @@ mod tests {
     #[test]
     fn write_fff_roundtrip() {
         let mut metadata = crate::Metadata::new("3FR");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("Hasselblad".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("H6D-100c".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("Hasselblad".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("H6D-100c".into()));
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

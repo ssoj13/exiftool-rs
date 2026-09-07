@@ -267,7 +267,7 @@ File → FormatRegistry::parse() → detect(header) → Parser::parse()
 | HEIC   | Yes  | Yes   | ISOBMFF with EXIF item extraction |
 | AVIF   | Yes  | Yes   | Via HEIC parser |
 | CR2    | Yes  | Yes   | Canon RAW; 16-byte header preserved (`WriteCR2`) |
-| CR3    | Yes  | -     | Canon RAW (ISOBMFF); not writable |
+| CR3    | Yes  | Yes   | Canon RAW (ISOBMFF); CMT1/2/4 + XMP UUID, CTBO/stco/co64 |
 | NEF    | Yes  | Yes   | Nikon RAW; IFD0/Exif overlay, SubIFD/raw copied |
 | ARW    | Yes  | Yes   | Sony RAW (`tiff_rewrite` + A100 `FinishARW`) |
 | ORF    | Yes  | Yes   | Olympus RAW (IIRO magic + strip padding) |
@@ -439,7 +439,7 @@ cp testdata/*.jpg fuzz/corpus/fuzz_jpeg/
 Current version (0.1.0) has some documented limitations:
 
 - **BigTIFF rewrite**: IFD overlay uses the same preserve path as classic TIFF (16-byte header, 20-byte entries, LONG8 pointers). Files >4GB are still not loaded (max 100MB).
-- **NEF/RAF write**: standard EXIF only. MakerNotes field tables are copied as blobs. CR3 is not writable. Other TIFF-RAW uses the same preserve rewrite (`TiffWriter::write`). Sony A100 ARW uses ExifTool `FinishARW` (MRW pad + `A100DataOffset`).
+- **NEF/RAF/CR3 write**: standard EXIF only. MakerNotes field tables are copied as blobs. CR3 rewrites CMT1/2/4 and XMP UUID (`Cr3Writer`), then patches CTBO and stco/co64. Other TIFF-RAW uses the same preserve rewrite (`TiffWriter::write`). Sony A100 ARW uses ExifTool `FinishARW` (MRW pad + `A100DataOffset`).
 - **7z**: encoded header (id 23) LZMA via `lzma-rs`. AES-encrypted headers warn. LZMA2-encoded headers are not decoded (ExifTool `7Z.pm` is LZMA1-only).
 - **Value interpretation**: many enums still returned as numbers unless `get_interpreted` is used.
 

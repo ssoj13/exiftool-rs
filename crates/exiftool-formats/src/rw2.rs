@@ -36,15 +36,15 @@ impl FormatParser for Rw2Parser {
         if header.len() < 8 {
             return false;
         }
-        
+
         // Panasonic uses 0x55 magic instead of standard 0x2A
-        let is_panasonic = header[0] == b'I' && header[1] == b'I' 
-            && header[2] == 0x55 && header[3] == 0x00;
-        
+        let is_panasonic =
+            header[0] == b'I' && header[1] == b'I' && header[2] == 0x55 && header[3] == 0x00;
+
         if is_panasonic {
             return true;
         }
-        
+
         // Standard TIFF magic - detect via extension only
         false
     }

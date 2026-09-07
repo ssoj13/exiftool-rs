@@ -54,7 +54,7 @@ impl FormatParser for SvgParser {
                 return true;
             }
         }
-        
+
         // Also check for <svg anywhere in first 1KB (handles whitespace/comments)
         if header.len() >= 4 {
             let search = &header[..header.len().min(1024)];
@@ -63,20 +63,20 @@ impl FormatParser for SvgParser {
                 return lower.contains("<svg") || lower.contains("<!doctype svg");
             }
         }
-        
+
         false
     }
 
     fn parse(&self, reader: &mut dyn ReadSeek) -> crate::Result<Metadata> {
         let mut metadata = Metadata::new("SVG");
-        
+
         // Read entire file (SVG files are typically small)
         let mut content = String::new();
         reader.read_to_string(&mut content)?;
-        
+
         // Parse XML structure
         parse_svg_content(&content, &mut metadata);
-        
+
         Ok(metadata)
     }
 }
@@ -89,23 +89,27 @@ fn parse_svg_content(content: &str, metadata: &mut Metadata) {
         // Inkscape attributes are on the <svg> tag itself
         parse_inkscape_elements(svg_tag, metadata);
     }
-    
+
     // Extract <metadata> content
     if let Some(meta_content) = extract_tag_content(content, "metadata") {
         parse_metadata_element(&meta_content, metadata);
     }
-    
+
     // Extract <title> at document level
     if let Some(title) = extract_simple_tag_content(content, "title") {
         if !title.trim().is_empty() {
-            metadata.exif.set("SVG:Title", AttrValue::Str(title.trim().to_string()));
+            metadata
+                .exif
+                .set("SVG:Title", AttrValue::Str(title.trim().to_string()));
         }
     }
-    
+
     // Extract <desc> at document level
     if let Some(desc) = extract_simple_tag_content(content, "desc") {
         if !desc.trim().is_empty() {
-            metadata.exif.set("SVG:Description", AttrValue::Str(desc.trim().to_string()));
+            metadata
+                .exif
+                .set("SVG:Description", AttrValue::Str(desc.trim().to_string()));
         }
     }
 }
@@ -116,12 +120,12 @@ fn parse_svg_attributes(svg_tag: &str, metadata: &mut Metadata) {
     if let Some(width) = extract_attribute(svg_tag, "width") {
         metadata.exif.set("SVG:Width", AttrValue::Str(width));
     }
-    
+
     // Height
     if let Some(height) = extract_attribute(svg_tag, "height") {
         metadata.exif.set("SVG:Height", AttrValue::Str(height));
     }
-    
+
     // ViewBox
     if let Some(viewbox) = extract_attribute(svg_tag, "viewBox") {
         // Parse viewBox components: minX minY width height
@@ -129,40 +133,48 @@ fn parse_svg_attributes(svg_tag: &str, metadata: &mut Metadata) {
         metadata.exif.set("SVG:ViewBox", AttrValue::Str(viewbox));
         if parts.len() == 4 {
             if let (Ok(w), Ok(h)) = (parts[2].parse::<f64>(), parts[3].parse::<f64>()) {
-                metadata.exif.set("SVG:ViewBoxWidth", AttrValue::Float(w as f32));
-                metadata.exif.set("SVG:ViewBoxHeight", AttrValue::Float(h as f32));
+                metadata
+                    .exif
+                    .set("SVG:ViewBoxWidth", AttrValue::Float(w as f32));
+                metadata
+                    .exif
+                    .set("SVG:ViewBoxHeight", AttrValue::Float(h as f32));
             }
         }
     }
-    
+
     // Version
     if let Some(version) = extract_attribute(svg_tag, "version") {
         metadata.exif.set("SVG:Version", AttrValue::Str(version));
     }
-    
+
     // xmlns (namespace)
     if let Some(xmlns) = extract_attribute(svg_tag, "xmlns") {
         metadata.exif.set("SVG:Namespace", AttrValue::Str(xmlns));
     }
-    
+
     // xmlns:xlink
     if let Some(xlink) = extract_attribute(svg_tag, "xmlns:xlink") {
-        metadata.exif.set("SVG:XLinkNamespace", AttrValue::Str(xlink));
+        metadata
+            .exif
+            .set("SVG:XLinkNamespace", AttrValue::Str(xlink));
     }
-    
+
     // id
     if let Some(id) = extract_attribute(svg_tag, "id") {
         metadata.exif.set("SVG:ID", AttrValue::Str(id));
     }
-    
+
     // style
     if let Some(style) = extract_attribute(svg_tag, "style") {
         metadata.exif.set("SVG:Style", AttrValue::Str(style));
     }
-    
+
     // preserveAspectRatio
     if let Some(par) = extract_attribute(svg_tag, "preserveAspectRatio") {
-        metadata.exif.set("SVG:PreserveAspectRatio", AttrValue::Str(par));
+        metadata
+            .exif
+            .set("SVG:PreserveAspectRatio", AttrValue::Str(par));
     }
 }
 
@@ -170,10 +182,10 @@ fn parse_svg_attributes(svg_tag: &str, metadata: &mut Metadata) {
 fn parse_metadata_element(content: &str, metadata: &mut Metadata) {
     // Dublin Core (dc:) elements
     parse_dc_elements(content, metadata);
-    
+
     // RDF metadata
     parse_rdf_elements(content, metadata);
-    
+
     // CC (Creative Commons) license
     parse_cc_elements(content, metadata);
 }
@@ -198,7 +210,7 @@ fn parse_dc_elements(content: &str, metadata: &mut Metadata) {
         ("dc:coverage", "DC:Coverage"),
         ("dc:rights", "DC:Rights"),
     ];
-    
+
     for (xml_tag, attr_name) in dc_tags {
         if let Some(value) = extract_dc_value(content, xml_tag) {
             metadata.exif.set(attr_name, AttrValue::Str(value));
@@ -210,34 +222,41 @@ fn parse_dc_elements(content: &str, metadata: &mut Metadata) {
 fn extract_dc_value(content: &str, tag: &str) -> Option<String> {
     // Try to find the tag content
     let tag_content = extract_tag_content(content, tag)?;
-    
+
     // Check for RDF containers
     if tag_content.contains("rdf:li") {
         // Collect all rdf:li values
         let mut values = Vec::new();
         let mut search_pos = 0;
-        
+
         while let Some(li_content) = extract_tag_content_from(&tag_content, "rdf:li", search_pos) {
             let clean = strip_tags(&li_content).trim().to_string();
             if !clean.is_empty() {
                 values.push(clean);
             }
-            search_pos = tag_content.find("rdf:li").map(|p| p + 1).unwrap_or(tag_content.len());
+            search_pos = tag_content
+                .find("rdf:li")
+                .map(|p| p + 1)
+                .unwrap_or(tag_content.len());
             if let Some(pos) = tag_content[search_pos..].find("rdf:li") {
                 search_pos += pos + 1;
             } else {
                 break;
             }
         }
-        
+
         if !values.is_empty() {
             return Some(values.join(", "));
         }
     }
-    
+
     // Simple text content
     let clean = strip_tags(&tag_content).trim().to_string();
-    if clean.is_empty() { None } else { Some(clean) }
+    if clean.is_empty() {
+        None
+    } else {
+        Some(clean)
+    }
 }
 
 /// Parse RDF elements.
@@ -260,7 +279,7 @@ fn parse_cc_elements(content: &str, metadata: &mut Metadata) {
             metadata.exif.set("CC:Work", AttrValue::Str(license));
         }
     }
-    
+
     // License URI
     if let Some(license_tag) = find_tag(content, "cc:license") {
         if let Some(license_uri) = extract_attribute(license_tag, "rdf:resource") {
@@ -273,11 +292,15 @@ fn parse_cc_elements(content: &str, metadata: &mut Metadata) {
 fn parse_inkscape_elements(svg_tag: &str, metadata: &mut Metadata) {
     // sodipodi:docname
     if let Some(docname) = extract_attribute(svg_tag, "sodipodi:docname") {
-        metadata.exif.set("Inkscape:DocumentName", AttrValue::Str(docname));
+        metadata
+            .exif
+            .set("Inkscape:DocumentName", AttrValue::Str(docname));
     }
-    
+
     if let Some(version) = extract_attribute(svg_tag, "inkscape:version") {
-        metadata.exif.set("Inkscape:Version", AttrValue::Str(version));
+        metadata
+            .exif
+            .set("Inkscape:Version", AttrValue::Str(version));
     }
 }
 
@@ -288,11 +311,11 @@ fn find_tag<'a>(content: &'a str, tag_name: &str) -> Option<&'a str> {
     let pattern = format!("<{}", tag_name);
     let start = content.find(&pattern)?;
     let tag_start = start + 1; // Skip <
-    
+
     // Find end of tag (either > or />)
     let remaining = &content[tag_start..];
     let end = remaining.find('>')? + tag_start;
-    
+
     Some(&content[start..=end])
 }
 
@@ -306,17 +329,17 @@ fn extract_tag_content_from(content: &str, tag_name: &str, from: usize) -> Optio
     let search = &content[from..];
     let open_pattern = format!("<{}", tag_name);
     let close_pattern = format!("</{}", tag_name);
-    
+
     let open_start = search.find(&open_pattern)?;
     let tag_end = search[open_start..].find('>')? + open_start + 1;
-    
+
     // Handle self-closing tags
     if search[open_start..tag_end].ends_with("/>") {
         return None;
     }
-    
+
     let close_start = search[tag_end..].find(&close_pattern)? + tag_end;
-    
+
     Some(search[tag_end..close_start].to_string())
 }
 
@@ -325,55 +348,52 @@ fn extract_simple_tag_content(content: &str, tag_name: &str) -> Option<String> {
     // Look for tag not inside <metadata>
     let metadata_start = content.find("<metadata");
     let metadata_end = content.find("</metadata>");
-    
+
     // Find all occurrences and pick one outside metadata
     let open_pattern = format!("<{}>", tag_name);
     let close_pattern = format!("</{}>", tag_name);
-    
+
     let mut pos = 0;
     while let Some(open) = content[pos..].find(&open_pattern) {
         let abs_open = pos + open;
         let content_start = abs_open + open_pattern.len();
-        
+
         if let Some(close) = content[content_start..].find(&close_pattern) {
             let abs_close = content_start + close;
-            
+
             // Check if this tag is outside <metadata>
             let inside_metadata = metadata_start
                 .zip(metadata_end)
                 .map(|(s, e)| abs_open > s && abs_close < e)
                 .unwrap_or(false);
-            
+
             if !inside_metadata {
                 return Some(content[content_start..abs_close].to_string());
             }
         }
-        
+
         pos = abs_open + 1;
     }
-    
+
     None
 }
 
 /// Extract attribute value from tag.
 fn extract_attribute(tag: &str, attr_name: &str) -> Option<String> {
     // Pattern: attr_name="value" or attr_name='value'
-    let patterns = [
-        format!("{}=\"", attr_name),
-        format!("{}='", attr_name),
-    ];
-    
+    let patterns = [format!("{}=\"", attr_name), format!("{}='", attr_name)];
+
     for pattern in &patterns {
         if let Some(start) = tag.find(pattern) {
             let value_start = start + pattern.len();
             let quote_char = if pattern.ends_with('"') { '"' } else { '\'' };
-            
+
             if let Some(end) = tag[value_start..].find(quote_char) {
                 return Some(tag[value_start..value_start + end].to_string());
             }
         }
     }
-    
+
     None
 }
 
@@ -381,7 +401,7 @@ fn extract_attribute(tag: &str, attr_name: &str) -> Option<String> {
 fn strip_tags(content: &str) -> String {
     let mut result = String::new();
     let mut in_tag = false;
-    
+
     for c in content.chars() {
         match c {
             '<' => in_tag = true,
@@ -390,7 +410,7 @@ fn strip_tags(content: &str) -> String {
             _ => {}
         }
     }
-    
+
     // Decode common XML entities
     result
         .replace("&amp;", "&")
@@ -453,7 +473,10 @@ mod tests {
         let meta = parse_svg(svg);
 
         assert_eq!(meta.exif.get_str("SVG:Title"), Some("Test Title"));
-        assert_eq!(meta.exif.get_str("SVG:Description"), Some("Test Description"));
+        assert_eq!(
+            meta.exif.get_str("SVG:Description"),
+            Some("Test Description")
+        );
     }
 
     #[test]
@@ -471,7 +494,10 @@ mod tests {
 
         assert_eq!(meta.exif.get_str("DC:Title"), Some("DC Title"));
         assert_eq!(meta.exif.get_str("DC:Creator"), Some("Artist Name"));
-        assert_eq!(meta.exif.get_str("DC:Description"), Some("A vector graphic"));
+        assert_eq!(
+            meta.exif.get_str("DC:Description"),
+            Some("A vector graphic")
+        );
     }
 
     #[test]
@@ -483,7 +509,12 @@ mod tests {
         let meta = parse_svg(svg);
 
         assert_eq!(meta.exif.get_str("Inkscape:DocumentName"), Some("test.svg"));
-        assert_eq!(meta.exif.get_str("Inkscape:Version").map(|s| s.contains("1.2")), Some(true));
+        assert_eq!(
+            meta.exif
+                .get_str("Inkscape:Version")
+                .map(|s| s.contains("1.2")),
+            Some(true)
+        );
     }
 
     #[test]

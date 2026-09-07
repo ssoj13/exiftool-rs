@@ -16,62 +16,64 @@ pub struct PdfParser;
 impl PdfParser {
     /// PDF magic: "%PDF-"
     const MAGIC: &'static [u8] = b"%PDF-";
-    
+
     /// Parse PDF and extract metadata.
     fn parse_pdf<R: Read + Seek + ?Sized>(reader: &mut R) -> Result<(Attrs, Option<String>)> {
         let mut attrs = Attrs::new();
         let xmp;
-        
+
         // Read entire file (PDF requires random access)
         let mut data = Vec::new();
         reader.read_to_end(&mut data)?;
-        
+
         if data.len() < 8 {
             return Err(crate::Error::InvalidStructure("PDF too small".into()));
         }
-        
+
         // Extract PDF version from header
         if let Some(version) = Self::parse_version(&data) {
             attrs.set("PDFVersion", AttrValue::Str(version));
         }
-        
+
         // Find and parse Info dictionary
         Self::parse_info_dict(&data, &mut attrs);
-        
+
         // Find and extract XMP metadata
         xmp = Self::find_xmp(&data);
-        
+
         // Count pages if possible
         if let Some(page_count) = Self::count_pages(&data) {
             attrs.set("PageCount", AttrValue::UInt(page_count));
         }
-        
+
         Ok((attrs, xmp))
     }
-    
+
     /// Parse PDF version from header.
     fn parse_version(data: &[u8]) -> Option<String> {
         // Format: %PDF-1.7
         if data.len() >= 8 && &data[0..5] == b"%PDF-" {
             // Find end of version (newline)
-            let end = data[5..].iter().position(|&b| b == b'\n' || b == b'\r')
+            let end = data[5..]
+                .iter()
+                .position(|&b| b == b'\n' || b == b'\r')
                 .map(|p| p + 5)
                 .unwrap_or(8.min(data.len()));
-            
+
             if let Ok(s) = std::str::from_utf8(&data[5..end]) {
                 return Some(s.trim().to_string());
             }
         }
         None
     }
-    
+
     /// Find and parse the Info dictionary.
     fn parse_info_dict(data: &[u8], attrs: &mut Attrs) {
         // Look for /Info reference in trailer
         // Format: /Info N 0 R  (where N is object number)
         if let Some(pos) = Self::find_bytes(data, b"/Info") {
             let remaining = &data[pos + 5..];
-            
+
             // Parse object reference: " N 0 R"
             if let Some((obj_num, _gen)) = Self::parse_obj_ref(remaining) {
                 // Find the object: "N 0 obj"
@@ -86,7 +88,7 @@ impl PdfParser {
             }
         }
     }
-    
+
     /// Parse object reference "N G R" returning (obj_num, gen_num).
     fn parse_obj_ref(data: &[u8]) -> Option<(u32, u32)> {
         let s = std::str::from_utf8(data).ok()?;
@@ -100,7 +102,7 @@ impl PdfParser {
             None
         }
     }
-    
+
     /// Parse dictionary entries and extract metadata.
     fn parse_dict_entries(data: &[u8], attrs: &mut Attrs) {
         let mappings = [
@@ -113,23 +115,23 @@ impl PdfParser {
             ("/CreationDate", "CreateDate"),
             ("/ModDate", "ModifyDate"),
         ];
-        
+
         for (pdf_key, attr_name) in mappings {
             if let Some(value) = Self::extract_dict_value(data, pdf_key.as_bytes()) {
                 attrs.set(attr_name, AttrValue::Str(value));
             }
         }
     }
-    
+
     /// Extract a string value from a dictionary.
     fn extract_dict_value(data: &[u8], key: &[u8]) -> Option<String> {
         let pos = Self::find_bytes(data, key)?;
         let remaining = &data[pos + key.len()..];
-        
+
         // Skip whitespace
         let start = remaining.iter().position(|&b| !b.is_ascii_whitespace())?;
         let value_data = &remaining[start..];
-        
+
         // Check for string types
         if value_data.starts_with(b"(") {
             // Literal string: (text)
@@ -141,17 +143,17 @@ impl PdfParser {
             None
         }
     }
-    
+
     /// Parse PDF literal string: (text).
     fn parse_literal_string(data: &[u8]) -> Option<String> {
         if !data.starts_with(b"(") {
             return None;
         }
-        
+
         let mut result = Vec::new();
         let mut depth = 0;
         let mut escape = false;
-        
+
         for &b in &data[1..] {
             if escape {
                 match b {
@@ -181,7 +183,7 @@ impl PdfParser {
                 result.push(b);
             }
         }
-        
+
         // Handle BOM for UTF-16BE or assume UTF-8/Latin1
         if result.len() >= 2 && result[0] == 0xFE && result[1] == 0xFF {
             // UTF-16BE with BOM
@@ -193,32 +195,34 @@ impl PdfParser {
                 .ok()
         }
     }
-    
+
     /// Decode UTF-16BE bytes to String.
     fn decode_utf16be(data: &[u8]) -> Option<String> {
         if data.len() % 2 != 0 {
             return None;
         }
-        
-        let chars: Vec<u16> = data.chunks(2)
+
+        let chars: Vec<u16> = data
+            .chunks(2)
             .map(|c| u16::from_be_bytes([c[0], c[1]]))
             .collect();
-        
+
         String::from_utf16(&chars).ok()
     }
-    
+
     /// Parse PDF hex string: <hex>.
     fn parse_hex_string(data: &[u8]) -> Option<String> {
         if !data.starts_with(b"<") || data.starts_with(b"<<") {
             return None;
         }
-        
+
         let end = data.iter().position(|&b| b == b'>')?;
-        let hex_str: String = data[1..end].iter()
+        let hex_str: String = data[1..end]
+            .iter()
             .filter(|b| !b.is_ascii_whitespace())
             .map(|&b| b as char)
             .collect();
-        
+
         // Decode hex to bytes
         let mut bytes = Vec::new();
         let chars: Vec<char> = hex_str.chars().collect();
@@ -228,7 +232,7 @@ impl PdfParser {
                 bytes.push(b);
             }
         }
-        
+
         // Handle BOM
         if bytes.len() >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF {
             Self::decode_utf16be(&bytes[2..])
@@ -238,42 +242,44 @@ impl PdfParser {
                 .ok()
         }
     }
-    
+
     /// Find XMP metadata in PDF.
     fn find_xmp(data: &[u8]) -> Option<String> {
         // XMP is typically in a stream with /Subtype /XML
         // Or we can find the packet directly
-        
+
         // Method 1: Look for xpacket markers
         let begin = b"<?xpacket begin=";
         let end = b"<?xpacket end=";
-        
+
         if let Some(start) = Self::find_bytes(data, begin) {
             // Find the actual start of XMP (skip to <x:xmpmeta or <rdf:RDF)
             let xmp_start = &data[start..];
             if let Some(end_pos) = Self::find_bytes(xmp_start, end) {
                 // Include the end packet
-                let packet_end = xmp_start[end_pos..].iter()
+                let packet_end = xmp_start[end_pos..]
+                    .iter()
                     .position(|&b| b == b'>')
                     .map(|p| end_pos + p + 1)
                     .unwrap_or(end_pos + 20);
-                
-                return std::str::from_utf8(&xmp_start[..packet_end]).ok()
+
+                return std::str::from_utf8(&xmp_start[..packet_end])
+                    .ok()
                     .map(|s| s.to_string());
             }
         }
-        
+
         // Method 2: Look for /Metadata reference with XML subtype
         // This is more complex, skip for now
-        
+
         None
     }
-    
+
     /// Count pages in PDF.
     fn count_pages(data: &[u8]) -> Option<u32> {
         // Look for /Count in Pages object
         // Format: /Type /Pages ... /Count N
-        
+
         // Find /Type /Pages
         if let Some(pos) = Self::find_bytes(data, b"/Type /Pages") {
             // Look for /Count nearby (within ~200 bytes)
@@ -282,7 +288,8 @@ impl PdfParser {
                 let remaining = &search_area[count_pos + 6..];
                 // Skip whitespace and parse number
                 let s = std::str::from_utf8(remaining).ok()?;
-                let num_str: String = s.chars()
+                let num_str: String = s
+                    .chars()
                     .skip_while(|c| c.is_whitespace())
                     .take_while(|c| c.is_ascii_digit())
                     .collect();
@@ -291,11 +298,10 @@ impl PdfParser {
         }
         None
     }
-    
+
     /// Find bytes in data, return position.
     fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-        haystack.windows(needle.len())
-            .position(|w| w == needle)
+        haystack.windows(needle.len()).position(|w| w == needle)
     }
 }
 
@@ -303,23 +309,23 @@ impl FormatParser for PdfParser {
     fn can_parse(&self, header: &[u8]) -> bool {
         header.len() >= 5 && &header[0..5] == Self::MAGIC
     }
-    
+
     fn format_name(&self) -> &'static str {
         "PDF"
     }
-    
+
     fn extensions(&self) -> &'static [&'static str] {
         &["pdf"]
     }
-    
+
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let (attrs, xmp) = Self::parse_pdf(reader)?;
-        
+
         let mut metadata = Metadata::new("PDF");
         metadata.exif = attrs;
         metadata.xmp = xmp;
         metadata.set_file_type("PDF", "application/pdf");
-        
+
         Ok(metadata)
     }
 }
@@ -327,7 +333,7 @@ impl FormatParser for PdfParser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_can_parse() {
         let parser = PdfParser;
@@ -337,13 +343,19 @@ mod tests {
         assert!(!parser.can_parse(b"8BPS\x00\x01"));
         assert!(!parser.can_parse(b"\xFF\xD8\xFF"));
     }
-    
+
     #[test]
     fn test_parse_version() {
-        assert_eq!(PdfParser::parse_version(b"%PDF-1.4\n"), Some("1.4".to_string()));
-        assert_eq!(PdfParser::parse_version(b"%PDF-2.0\r\n"), Some("2.0".to_string()));
+        assert_eq!(
+            PdfParser::parse_version(b"%PDF-1.4\n"),
+            Some("1.4".to_string())
+        );
+        assert_eq!(
+            PdfParser::parse_version(b"%PDF-2.0\r\n"),
+            Some("2.0".to_string())
+        );
     }
-    
+
     #[test]
     fn test_parse_literal_string() {
         assert_eq!(
@@ -359,7 +371,7 @@ mod tests {
             Some("Nested (parens) here".to_string())
         );
     }
-    
+
     #[test]
     fn test_parse_hex_string() {
         assert_eq!(

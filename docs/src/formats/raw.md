@@ -1,6 +1,6 @@
 # RAW Formats
 
-Camera RAW contains sensor data and MakerNotes. CR3 stays read-only.
+Camera RAW contains sensor data and MakerNotes. CR3 is writable for IFD0/Exif/GPS (CMT1/2/4) and XMP UUID; CMT3 MakerNotes stay a blob.
 TIFF-family RAW and RAF are writable for standard EXIF (see `docs/src/writing.md`); CFA / SubIFD pixels are copied, not recompressed.
 
 ## Canon
@@ -8,7 +8,7 @@ TIFF-family RAW and RAF are writable for standard EXIF (see `docs/src/writing.md
 | Format | Extension | Notes |
 |--------|-----------|-------|
 | CR2 | .cr2 | TIFF-based, older DSLRs |
-| CR3 | .cr3 | ISOBMFF-based, modern cameras |
+| CR3 | .cr3 | ISOBMFF; CMT1/2/4 + XMP writable (`Cr3Writer`) |
 | CRW | .crw | Legacy CIFF format |
 
 ## Nikon
@@ -81,7 +81,7 @@ RAW files are detected by format signature and/or Make tag:
 
 ```rust
 if metadata.is_camera_raw() {
-    // CR3 is read-only; TIFF-family RAW and RAF use is_writable()
+    // CR3, TIFF-family RAW, and RAF use is_writable()
     println!("RAW file from: {}", metadata.exif.get_str("Make").unwrap_or("Unknown"));
 }
 ```

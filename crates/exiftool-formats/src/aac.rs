@@ -37,7 +37,8 @@ impl FormatParser for AacParser {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("AAC");
         meta.set_file_type("AAC", "audio/aac");
-        meta.exif.set("Audio:Codec", AttrValue::Str("AAC".to_string()));
+        meta.exif
+            .set("Audio:Codec", AttrValue::Str("AAC".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -58,7 +59,8 @@ impl FormatParser for AacParser {
 
         // MPEG version (bit 3 of byte 1): 0 = MPEG-4, 1 = MPEG-2
         let mpeg_version = if header[1] & 0x08 != 0 { 2 } else { 4 };
-        meta.exif.set("AAC:MPEGVersion", AttrValue::UInt(mpeg_version));
+        meta.exif
+            .set("AAC:MPEGVersion", AttrValue::UInt(mpeg_version));
 
         // Layer (bits 1-2 of byte 1): always 0 for AAC
         let layer = (header[1] >> 1) & 0x03;
@@ -69,7 +71,8 @@ impl FormatParser for AacParser {
         // Protection absent (bit 0 of byte 1): 1 = no CRC, 0 = CRC present
         let protection_absent = header[1] & 0x01 != 0;
         let header_size = if protection_absent { 7 } else { 9 };
-        meta.exif.set("AAC:HeaderSize", AttrValue::UInt(header_size));
+        meta.exif
+            .set("AAC:HeaderSize", AttrValue::UInt(header_size));
 
         // Profile (bits 6-7 of byte 2): 0=Main, 1=LC, 2=SSR, 3=LTP
         let profile = (header[2] >> 6) & 0x03;
@@ -80,7 +83,8 @@ impl FormatParser for AacParser {
             3 => "LTP (Long Term Prediction)",
             _ => "Unknown",
         };
-        meta.exif.set("AAC:Profile", AttrValue::Str(profile_name.to_string()));
+        meta.exif
+            .set("AAC:Profile", AttrValue::Str(profile_name.to_string()));
 
         // Sample rate index (bits 2-5 of byte 2)
         let sr_index = (header[2] >> 2) & 0x0F;
@@ -101,7 +105,8 @@ impl FormatParser for AacParser {
             _ => 0,
         };
         if sample_rate > 0 {
-            meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+            meta.exif
+                .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
         }
 
         // Channel configuration (bit 0 of byte 2 + bits 6-7 of byte 3)
@@ -120,22 +125,27 @@ impl FormatParser for AacParser {
         if channels > 0 {
             meta.exif.set("Audio:Channels", AttrValue::UInt(channels));
         }
-        meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_mode.to_string()));
+        meta.exif.set(
+            "Audio:ChannelMode",
+            AttrValue::Str(channel_mode.to_string()),
+        );
 
         // Frame length (13 bits: bits 0-1 of byte 3 + byte 4 + bits 5-7 of byte 5)
         let frame_length = (((header[3] & 0x03) as u32) << 11)
             | ((header[4] as u32) << 3)
             | ((header[5] >> 5) as u32);
-        meta.exif.set("AAC:FrameLength", AttrValue::UInt(frame_length));
+        meta.exif
+            .set("AAC:FrameLength", AttrValue::UInt(frame_length));
 
         // Calculate approximate duration by counting frames
         if sample_rate > 0 && frame_length > 0 {
             reader.seek(SeekFrom::Start(0))?;
             let frame_count = count_adts_frames(reader, file_size, 1000)?;
-            
+
             if frame_count > 0 {
-                meta.exif.set("AAC:FrameCount", AttrValue::UInt(frame_count));
-                
+                meta.exif
+                    .set("AAC:FrameCount", AttrValue::UInt(frame_count));
+
                 // Each AAC frame = 1024 samples
                 let total_samples = frame_count as u64 * 1024;
                 let duration = total_samples as f64 / sample_rate as f64;
@@ -145,7 +155,8 @@ impl FormatParser for AacParser {
                 let bitrate = (file_size as f64 * 8.0 / duration / 1000.0) as u32;
                 if bitrate > 0 && bitrate < 1000 {
                     meta.exif.set("Audio:Bitrate", AttrValue::UInt(bitrate));
-                    meta.exif.set("Audio:BitrateMode", AttrValue::Str("VBR".to_string()));
+                    meta.exif
+                        .set("Audio:BitrateMode", AttrValue::Str("VBR".to_string()));
                 }
             }
         }
@@ -161,7 +172,7 @@ fn count_adts_frames(reader: &mut dyn ReadSeek, file_size: u64, max_frames: u32)
 
     while pos < file_size && count < max_frames {
         reader.seek(SeekFrom::Start(pos))?;
-        
+
         let mut header = [0u8; 7];
         if reader.read_exact(&mut header).is_err() {
             break;
@@ -207,11 +218,11 @@ mod tests {
         // Sync word + MPEG-4 + Layer 0 + No CRC
         data[0] = 0xFF;
         data[1] = 0xF1; // 1111 0001: MPEG-4, layer 0, no CRC
-        // Profile LC (01) + SR index 4 (44100) + private 0 + channel config start
+                        // Profile LC (01) + SR index 4 (44100) + private 0 + channel config start
         data[2] = 0x50; // 0101 0000: LC profile, 44100 Hz
-        // Channel config (2=stereo) + frame length start
+                        // Channel config (2=stereo) + frame length start
         data[3] = 0x80; // 1000 0000: stereo
-        // Frame length middle
+                        // Frame length middle
         data[4] = 0x00;
         // Frame length end + buffer fullness start
         data[5] = 0x1F; // frame length = 7 (minimum)
@@ -243,7 +254,10 @@ mod tests {
 
         assert_eq!(meta.format, "AAC");
         assert_eq!(meta.exif.get_u32("Audio:SampleRate"), Some(44100));
-        assert_eq!(meta.exif.get_str("AAC:Profile"), Some("LC (Low Complexity)"));
+        assert_eq!(
+            meta.exif.get_str("AAC:Profile"),
+            Some("LC (Low Complexity)")
+        );
     }
 
     #[test]

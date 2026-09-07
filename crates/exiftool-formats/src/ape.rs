@@ -32,7 +32,8 @@ impl FormatParser for ApeParser {
     fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut meta = Metadata::new("APE");
         meta.set_file_type("APE", "audio/x-ape");
-        meta.exif.set("Audio:Codec", AttrValue::Str("Monkey's Audio".to_string()));
+        meta.exif
+            .set("Audio:Codec", AttrValue::Str("Monkey's Audio".to_string()));
 
         reader.seek(SeekFrom::Start(0))?;
 
@@ -41,11 +42,13 @@ impl FormatParser for ApeParser {
         if reader.read_exact(&mut header).is_ok() {
             // Version (offset 4, 2 bytes LE)
             let version = u16::from_le_bytes([header[4], header[5]]);
-            meta.exif.set("APE:Version", AttrValue::UInt(version as u32));
-            
+            meta.exif
+                .set("APE:Version", AttrValue::UInt(version as u32));
+
             // Format version string
             let version_str = format!("{}.{}", version / 1000, (version % 1000) / 10);
-            meta.exif.set("APE:VersionString", AttrValue::Str(version_str));
+            meta.exif
+                .set("APE:VersionString", AttrValue::Str(version_str));
 
             // For version >= 3980, header structure changed
             if version >= 3980 {
@@ -53,64 +56,87 @@ impl FormatParser for ApeParser {
                 let compression = u16::from_le_bytes([header[52], header[53]]);
                 let compression_name = match compression {
                     1000 => "Fast",
-                    2000 => "Normal", 
+                    2000 => "Normal",
                     3000 => "High",
                     4000 => "Extra High",
                     5000 => "Insane",
                     _ => "Unknown",
                 };
-                meta.exif.set("APE:CompressionType", AttrValue::Str(compression_name.to_string()));
-                meta.exif.set("APE:CompressionLevel", AttrValue::UInt(compression as u32));
+                meta.exif.set(
+                    "APE:CompressionType",
+                    AttrValue::Str(compression_name.to_string()),
+                );
+                meta.exif
+                    .set("APE:CompressionLevel", AttrValue::UInt(compression as u32));
 
                 // Format flags (offset 54)
                 let format_flags = u16::from_le_bytes([header[54], header[55]]);
-                meta.exif.set("APE:FormatFlags", AttrValue::UInt(format_flags as u32));
+                meta.exif
+                    .set("APE:FormatFlags", AttrValue::UInt(format_flags as u32));
 
                 // Blocks per frame (offset 56)
-                let blocks_per_frame = u32::from_le_bytes([header[56], header[57], header[58], header[59]]);
-                meta.exif.set("APE:BlocksPerFrame", AttrValue::UInt(blocks_per_frame));
+                let blocks_per_frame =
+                    u32::from_le_bytes([header[56], header[57], header[58], header[59]]);
+                meta.exif
+                    .set("APE:BlocksPerFrame", AttrValue::UInt(blocks_per_frame));
 
                 // Final frame blocks (offset 60)
-                let final_frame_blocks = u32::from_le_bytes([header[60], header[61], header[62], header[63]]);
-                meta.exif.set("APE:FinalFrameBlocks", AttrValue::UInt(final_frame_blocks));
+                let final_frame_blocks =
+                    u32::from_le_bytes([header[60], header[61], header[62], header[63]]);
+                meta.exif
+                    .set("APE:FinalFrameBlocks", AttrValue::UInt(final_frame_blocks));
 
                 // Total frames (offset 64)
-                let total_frames = u32::from_le_bytes([header[64], header[65], header[66], header[67]]);
-                meta.exif.set("APE:TotalFrames", AttrValue::UInt(total_frames));
+                let total_frames =
+                    u32::from_le_bytes([header[64], header[65], header[66], header[67]]);
+                meta.exif
+                    .set("APE:TotalFrames", AttrValue::UInt(total_frames));
 
                 // Bits per sample (offset 68)
                 let bits_per_sample = u16::from_le_bytes([header[68], header[69]]);
-                meta.exif.set("Audio:BitsPerSample", AttrValue::UInt(bits_per_sample as u32));
+                meta.exif.set(
+                    "Audio:BitsPerSample",
+                    AttrValue::UInt(bits_per_sample as u32),
+                );
 
                 // Channels (offset 70)
                 let channels = u16::from_le_bytes([header[70], header[71]]);
-                meta.exif.set("Audio:Channels", AttrValue::UInt(channels as u32));
-                
+                meta.exif
+                    .set("Audio:Channels", AttrValue::UInt(channels as u32));
+
                 let channel_mode = match channels {
                     1 => "Mono",
                     2 => "Stereo",
                     _ => "Multi-channel",
                 };
-                meta.exif.set("Audio:ChannelMode", AttrValue::Str(channel_mode.to_string()));
+                meta.exif.set(
+                    "Audio:ChannelMode",
+                    AttrValue::Str(channel_mode.to_string()),
+                );
 
                 // Sample rate (offset 72)
-                let sample_rate = u32::from_le_bytes([header[72], header[73], header[74], header[75]]);
-                meta.exif.set("Audio:SampleRate", AttrValue::UInt(sample_rate));
+                let sample_rate =
+                    u32::from_le_bytes([header[72], header[73], header[74], header[75]]);
+                meta.exif
+                    .set("Audio:SampleRate", AttrValue::UInt(sample_rate));
 
                 // Calculate duration
                 if total_frames > 0 && sample_rate > 0 {
                     let total_blocks = if total_frames > 1 {
-                        (total_frames - 1) as u64 * blocks_per_frame as u64 + final_frame_blocks as u64
+                        (total_frames - 1) as u64 * blocks_per_frame as u64
+                            + final_frame_blocks as u64
                     } else {
                         final_frame_blocks as u64
                     };
                     let duration = total_blocks as f64 / sample_rate as f64;
                     meta.exif.set("Audio:Duration", AttrValue::Double(duration));
-                    
+
                     let mins = (duration / 60.0) as u32;
                     let secs = (duration % 60.0) as u32;
-                    meta.exif.set("Audio:DurationFormatted", 
-                        AttrValue::Str(format!("{}:{:02}", mins, secs)));
+                    meta.exif.set(
+                        "Audio:DurationFormatted",
+                        AttrValue::Str(format!("{}:{:02}", mins, secs)),
+                    );
                 }
             }
         }
@@ -134,7 +160,8 @@ impl FormatParser for ApeParser {
             let mut footer = [0u8; 32];
             if reader.read_exact(&mut footer).is_ok() && &footer[0..8] == b"APETAGEX" {
                 let tag_size = u32::from_le_bytes([footer[12], footer[13], footer[14], footer[15]]);
-                let item_count = u32::from_le_bytes([footer[16], footer[17], footer[18], footer[19]]);
+                let item_count =
+                    u32::from_le_bytes([footer[16], footer[17], footer[18], footer[19]]);
 
                 // Read tag data
                 if tag_size > 0 && tag_size < 1_000_000 {
@@ -162,7 +189,8 @@ fn parse_apev2_items(data: &[u8], item_count: u32, meta: &mut Metadata) {
         }
 
         // Value size (4 bytes LE)
-        let value_size = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+        let value_size =
+            u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
         pos += 4;
 
         // Flags (4 bytes LE)

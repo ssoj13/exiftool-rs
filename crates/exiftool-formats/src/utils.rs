@@ -27,8 +27,8 @@ use std::io::SeekFrom;
 
 /// IFD tag constants shared across parsers (thumbnail, compression, etc.).
 pub mod ifd_tags {
-    pub const TAG_THUMBNAIL_OFFSET: u16 = 0x0201;     // JPEGInterchangeFormat
-    pub const TAG_THUMBNAIL_LENGTH: u16 = 0x0202;     // JPEGInterchangeFormatLength
+    pub const TAG_THUMBNAIL_OFFSET: u16 = 0x0201; // JPEGInterchangeFormat
+    pub const TAG_THUMBNAIL_LENGTH: u16 = 0x0202; // JPEGInterchangeFormatLength
     pub const TAG_COMPRESSION: u16 = 0x0103;
     pub const TAG_STRIP_OFFSETS: u16 = 0x0111;
     pub const TAG_STRIP_BYTE_COUNTS: u16 = 0x0117;
@@ -150,9 +150,7 @@ pub fn parse_tiff_exif(
         if let Some(thumb_out) = thumbnail {
             if next_ifd != 0 {
                 if let Ok((ifd1_entries, _)) = reader.read_ifd(next_ifd) {
-                    if let Some(data) =
-                        extract_jpeg_thumbnail_from_ifd(&ifd1_entries, &reader)
-                    {
+                    if let Some(data) = extract_jpeg_thumbnail_from_ifd(&ifd1_entries, &reader) {
                         *thumb_out = Some(data);
                     }
                 }
@@ -233,10 +231,7 @@ pub(crate) fn apply_subifd_xmp_iptc(
     }
 }
 
-fn extract_jpeg_thumbnail_from_ifd(
-    entries: &[IfdEntry],
-    reader: &IfdReader,
-) -> Option<Vec<u8>> {
+fn extract_jpeg_thumbnail_from_ifd(entries: &[IfdEntry], reader: &IfdReader) -> Option<Vec<u8>> {
     let mut thumb_offset: Option<u32> = None;
     let mut thumb_length: Option<u32> = None;
     let mut compression: Option<u16> = None;
@@ -290,7 +285,10 @@ pub fn read_with_limit<R: ReadSeek + ?Sized>(reader: &mut R) -> Result<Vec<u8>> 
 }
 
 /// Read entire file into memory with custom size limit.
-pub fn read_with_limit_custom<R: ReadSeek + ?Sized>(reader: &mut R, max_size: u64) -> Result<Vec<u8>> {
+pub fn read_with_limit_custom<R: ReadSeek + ?Sized>(
+    reader: &mut R,
+    max_size: u64,
+) -> Result<Vec<u8>> {
     // Get file size
     let current = reader.stream_position()?;
     let end = reader.seek(SeekFrom::End(0))?;
@@ -411,13 +409,26 @@ pub fn build_exif_bytes(metadata: &Metadata) -> Result<Vec<u8>> {
         w.add_exif(WriteEntry::from_urational(tags::FOCAL_LENGTH, *n, *d));
     }
 
-    w.serialize().map_err(|e| Error::InvalidStructure(format!("EXIF build failed: {}", e)))
+    w.serialize()
+        .map_err(|e| Error::InvalidStructure(format!("EXIF build failed: {}", e)))
 }
 
 /// XMP namespace prefixes that we can serialize.
 const XMP_NS_PREFIXES: &[&str] = &[
-    "XMP:", "DC:", "xmp:", "dc:", "EXIF:", "TIFF:", "Photoshop:", "IPTC:",
-    "xmpMM:", "xmpRights:", "exif:", "tiff:", "photoshop:", "Iptc4xmpCore:",
+    "XMP:",
+    "DC:",
+    "xmp:",
+    "dc:",
+    "EXIF:",
+    "TIFF:",
+    "Photoshop:",
+    "IPTC:",
+    "xmpMM:",
+    "xmpRights:",
+    "exif:",
+    "tiff:",
+    "photoshop:",
+    "Iptc4xmpCore:",
 ];
 
 /// Check if a tag key belongs to XMP namespace.
@@ -479,8 +490,12 @@ mod tests {
     #[test]
     fn build_xmp_from_attrs() {
         let mut metadata = Metadata::new("JPEG");
-        metadata.exif.set("XMP:Rating", exiftool_attrs::AttrValue::Str("5".into()));
-        metadata.exif.set("DC:title", exiftool_attrs::AttrValue::Str("Test".into()));
+        metadata
+            .exif
+            .set("XMP:Rating", exiftool_attrs::AttrValue::Str("5".into()));
+        metadata
+            .exif
+            .set("DC:title", exiftool_attrs::AttrValue::Str("Test".into()));
 
         let xmp = build_xmp_string(&metadata).unwrap();
         assert!(xmp.is_some());

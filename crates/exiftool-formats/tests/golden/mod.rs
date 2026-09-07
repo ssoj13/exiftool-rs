@@ -27,34 +27,38 @@ const GOLDEN_DIR: &str = "tests/golden/expected";
 /// Convert metadata to sorted JSON for stable comparison.
 fn metadata_to_json(m: &Metadata) -> serde_json::Value {
     let mut map = serde_json::Map::new();
-    
+
     map.insert("format".into(), m.format.into());
-    
+
     // Sort EXIF tags for stable output
     let mut exif: BTreeMap<String, String> = BTreeMap::new();
     for (k, v) in m.exif.iter() {
         exif.insert(k.clone(), v.to_string());
     }
     map.insert("exif".into(), serde_json::to_value(&exif).unwrap());
-    
+
     // Page info
     if !m.pages.is_empty() {
-        let pages: Vec<_> = m.pages.iter().map(|p| {
-            serde_json::json!({
-                "index": p.index,
-                "width": p.width,
-                "height": p.height,
-                "bits_per_sample": p.bits_per_sample,
+        let pages: Vec<_> = m
+            .pages
+            .iter()
+            .map(|p| {
+                serde_json::json!({
+                    "index": p.index,
+                    "width": p.width,
+                    "height": p.height,
+                    "bits_per_sample": p.bits_per_sample,
+                })
             })
-        }).collect();
+            .collect();
         map.insert("pages".into(), serde_json::Value::Array(pages));
     }
-    
+
     // Thumbnail/preview presence (not content, as it's binary)
     map.insert("has_thumbnail".into(), m.thumbnail.is_some().into());
     map.insert("has_preview".into(), m.preview.is_some().into());
     map.insert("has_xmp".into(), m.xmp.is_some().into());
-    
+
     serde_json::Value::Object(map)
 }
 
@@ -74,7 +78,9 @@ fn testdata_path(image_name: &str) -> PathBuf {
 
 /// Check if golden files should be updated.
 fn should_update() -> bool {
-    std::env::var("UPDATE_GOLDEN").map(|v| v == "1").unwrap_or(false)
+    std::env::var("UPDATE_GOLDEN")
+        .map(|v| v == "1")
+        .unwrap_or(false)
 }
 
 /// Run golden test for a single file.
@@ -83,24 +89,24 @@ pub fn golden_test(image_name: &str) -> Result<(), String> {
     let registry = FormatRegistry::new();
     let image_path = testdata_path(image_name);
     let golden = golden_path(image_name);
-    
+
     // Parse image
-    let metadata = registry.parse_file(&image_path)
+    let metadata = registry
+        .parse_file(&image_path)
         .map_err(|e| format!("Parse error: {}", e))?;
-    
+
     let actual_json = metadata_to_json(&metadata);
     let actual_str = serde_json::to_string_pretty(&actual_json).unwrap();
-    
+
     // Update mode: write golden file
     if should_update() {
         if let Some(parent) = golden.parent() {
             fs::create_dir_all(parent).ok();
         }
-        fs::write(&golden, &actual_str)
-            .map_err(|e| format!("Cannot write golden: {}", e))?;
+        fs::write(&golden, &actual_str).map_err(|e| format!("Cannot write golden: {}", e))?;
         return Ok(());
     }
-    
+
     // Compare mode: check against golden
     if !golden.exists() {
         return Err(format!(
@@ -108,16 +114,18 @@ pub fn golden_test(image_name: &str) -> Result<(), String> {
             golden.display()
         ));
     }
-    
-    let expected_str = fs::read_to_string(&golden)
-        .map_err(|e| format!("Cannot read golden: {}", e))?;
-    
+
+    let expected_str =
+        fs::read_to_string(&golden).map_err(|e| format!("Cannot read golden: {}", e))?;
+
     if actual_str.trim() == expected_str.trim() {
         Ok(())
     } else {
         Err(format!(
             "Golden mismatch for {}:\n\n--- expected ---\n{}\n\n--- actual ---\n{}\n",
-            image_name, expected_str.trim(), actual_str.trim()
+            image_name,
+            expected_str.trim(),
+            actual_str.trim()
         ))
     }
 }
@@ -126,11 +134,11 @@ pub fn golden_test(image_name: &str) -> Result<(), String> {
 pub fn run_all_golden_tests() -> Vec<(String, Result<(), String>)> {
     let testdata = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(TESTDATA_DIR);
     let mut results = Vec::new();
-    
+
     if !testdata.exists() {
         return results;
     }
-    
+
     if let Ok(entries) = fs::read_dir(&testdata) {
         for entry in entries.flatten() {
             let path = entry.path();
@@ -140,44 +148,81 @@ pub fn run_all_golden_tests() -> Vec<(String, Result<(), String>)> {
                         continue;
                     }
                     // Large camera RAWs (e.g. rawsamples.ch A100) are unit-test fixtures, not golden.
-                    if entry.metadata().map(|m| m.len() > 1_000_000).unwrap_or(false) {
+                    if entry
+                        .metadata()
+                        .map(|m| m.len() > 1_000_000)
+                        .unwrap_or(false)
+                    {
                         continue;
                     }
                     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-                    if !matches!(ext.to_lowercase().as_str(), 
-                        "jpg" | "jpeg" | "png" | "tiff" | "tif" | "gif" | "bmp" |
-                        "webp" | "heic" | "heif" | "cr2" | "cr3" | "nef" | "arw" |
-                        "dng" | "orf" | "rw2" | "pef" | "raf" | "exr" | "hdr" |
-                        "jp2" | "j2k" | "j2c" | "jpc" | "jph" | "jpx" |
-                        "dcm" | "dicom" | "fits" | "fts" | "zip" | "7z" | "docx" | "xlsx" | "pptx" | "odt"
+                    if !matches!(
+                        ext.to_lowercase().as_str(),
+                        "jpg"
+                            | "jpeg"
+                            | "png"
+                            | "tiff"
+                            | "tif"
+                            | "gif"
+                            | "bmp"
+                            | "webp"
+                            | "heic"
+                            | "heif"
+                            | "cr2"
+                            | "cr3"
+                            | "nef"
+                            | "arw"
+                            | "dng"
+                            | "orf"
+                            | "rw2"
+                            | "pef"
+                            | "raf"
+                            | "exr"
+                            | "hdr"
+                            | "jp2"
+                            | "j2k"
+                            | "j2c"
+                            | "jpc"
+                            | "jph"
+                            | "jpx"
+                            | "dcm"
+                            | "dicom"
+                            | "fits"
+                            | "fts"
+                            | "zip"
+                            | "7z"
+                            | "docx"
+                            | "xlsx"
+                            | "pptx"
+                            | "odt"
                     ) {
                         continue;
                     }
-                    
+
                     results.push((name.to_string(), golden_test(name)));
                 }
             }
         }
     }
-    
+
     results
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_golden_files() {
         let results = run_all_golden_tests();
-        
+
         if results.is_empty() {
             panic!(
                 "No golden images in {}. Empty testdata must not pass.",
                 TESTDATA_DIR
             );
         }
-        
+
         let mut failures = Vec::new();
         for (name, result) in results {
             match result {
@@ -188,7 +233,7 @@ mod tests {
                 }
             }
         }
-        
+
         if !failures.is_empty() {
             for (name, err) in &failures {
                 eprintln!("\n=== {} ===\n{}", name, err);

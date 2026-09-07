@@ -8,8 +8,7 @@ use std::io::Write;
 
 /// XMP UUID per Adobe XMP in QuickTime spec.
 const XMP_UUID: [u8; 16] = [
-    0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8,
-    0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC,
+    0xBE, 0x7A, 0xCF, 0xCB, 0x97, 0xA9, 0x42, 0xE8, 0x9C, 0x71, 0x99, 0x94, 0x91, 0xE3, 0xAF, 0xAC,
 ];
 
 /// MP4/MOV writer.
@@ -32,8 +31,7 @@ impl Mp4Writer {
         let xmp_bytes = xmp_data.map(|s| s.as_bytes());
 
         let mut pos = 0usize;
-        let reserve_len = data.len()
-            + xmp_bytes.map(|b| 64 + b.len()).unwrap_or(0);
+        let reserve_len = data.len() + xmp_bytes.map(|b| 64 + b.len()).unwrap_or(0);
         let mut output_buf = Vec::with_capacity(reserve_len);
         let mut found_xmp_uuid = false;
 
@@ -105,7 +103,9 @@ impl Mp4Writer {
             ]);
             (ext, 16u8)
         } else if size32 == 0 {
-            return Err(Error::InvalidStructure("Box size 0 not supported for write".into()));
+            return Err(Error::InvalidStructure(
+                "Box size 0 not supported for write".into(),
+            ));
         } else {
             (size32 as u64, 8u8)
         };

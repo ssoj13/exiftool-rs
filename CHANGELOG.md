@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **CR3 write** (`Cr3Writer`): ExifTool WriteQuickTime CR3 map — rewrite CMT1/CMT2/CMT4, optional XMP UUID, patch CTBO and stco/co64; keep `mdat` largesize header; CMT3 blob copy. `is_writable` true.
 - **RAF write** (`RafWriter`): ExifTool `WriteRAF` — rewrite preview JPEG EXIF, 4-byte pad, fix header pointers, copy RAF directory + CFA from `nextPtr` at 0x5C. `is_writable` true.
 - **NEF/NRW write** (`tiff_rewrite` + `NefWriter`): overlay IFD0 / ExifIFD / GPS; copy SubIFD trees, strips/tiles, MakerNotes/ICC blobs. Does not use `TiffWriter` (that path drops SubIFD/raw). CLI and Python `save()` dispatch both formats.
 - **Nikon MakerNotes**: Type-3 IFD, decrypt (`ProcessNikonEncrypted` / `@xlat` including `NIKON_OFFSETS` piecewise), LensData 0100/0101/02xx, ColorBalance, ShotInfo per-model dispatch (D40–Z9). PreviewIFD offsets relocated.
@@ -16,13 +17,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - TIFF-family FileType: unique magics first; generic TIFF classified by `DNGVersion`, extension, Make (`tiff_family`). Wrappers no longer steal TIFF magic.
-- `Metadata::is_writable`: TIFF-family RAW, RAF, MP4/MOV, WAV/FLAC/MP3; CR3 stays false.
+- `Metadata::is_writable`: TIFF-family RAW, RAF, CR3, MP4/MOV, WAV/FLAC/MP3.
 - Bootstrap build defaults to release; use `--debug` for debug builds.
 - Removed `python release` subcommand from bootstrap scripts.
 
 ### Fixed
 - RAF writer no longer treats 0x5C/0x60 as CFA offset/length.
-- **TIFF-family RAW write** via `tiff_rewrite` (also used by `TiffWriter::write`): CR2 16-byte header (`WriteCR2`), ORF/RW2 magics, strip padding, BigTIFF (16-byte header / 20-byte IFDs), Sony A100 `FinishARW` (MRW + `A100DataOffset`). `is_writable` true except CR3.
+- **TIFF-family RAW write** via `tiff_rewrite` (also used by `TiffWriter::write`): CR2 16-byte header (`WriteCR2`), ORF/RW2 magics, strip padding, BigTIFF (16-byte header / 20-byte IFDs), Sony A100 `FinishARW` (MRW + `A100DataOffset`).
 - **HEIC write**: create an EXIF item when the file has none (`HeicWriter`).
 - **MP4/MOV, WAV, FLAC, MP3**: `is_writable` matches existing writers (XMP UUID / tags).
 

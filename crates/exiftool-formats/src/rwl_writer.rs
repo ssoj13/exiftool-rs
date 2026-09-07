@@ -28,8 +28,12 @@ mod tests {
     #[test]
     fn write_rwl_roundtrip() {
         let mut metadata = crate::Metadata::new("RWL");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("Leica".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("M10".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("Leica".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("M10".into()));
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

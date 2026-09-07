@@ -70,13 +70,15 @@ impl FormatParser for DpxParser {
             }
         };
 
-        meta.exif.set("DPX:ByteOrder", AttrValue::Str(
-            if be { "Big-endian" } else { "Little-endian" }.to_string()
-        ));
+        meta.exif.set(
+            "DPX:ByteOrder",
+            AttrValue::Str(if be { "Big-endian" } else { "Little-endian" }.to_string()),
+        );
 
         // Image offset (4 bytes at offset 4)
         let image_offset = read_u32(&header[4..8]);
-        meta.exif.set("DPX:ImageOffset", AttrValue::UInt(image_offset));
+        meta.exif
+            .set("DPX:ImageOffset", AttrValue::UInt(image_offset));
 
         // Version (8 bytes at offset 8)
         let version = read_string(&header[8..16]);
@@ -126,7 +128,8 @@ impl FormatParser for DpxParser {
         // Encryption key (4 bytes at offset 660)
         let encrypt_key = read_u32(&header[660..664]);
         if encrypt_key != 0xFFFFFFFF {
-            meta.exif.set("DPX:EncryptionKey", AttrValue::UInt(encrypt_key));
+            meta.exif
+                .set("DPX:EncryptionKey", AttrValue::UInt(encrypt_key));
         }
 
         // Read image header (at offset 768)
@@ -146,11 +149,13 @@ impl FormatParser for DpxParser {
             7 => "Bottom to top, right to left",
             _ => "Unknown",
         };
-        meta.exif.set("DPX:Orientation", AttrValue::Str(orient_str.to_string()));
+        meta.exif
+            .set("DPX:Orientation", AttrValue::Str(orient_str.to_string()));
 
         // Number of image elements (2 bytes at offset 2)
         let num_elements = read_u16(&img_header[2..4]);
-        meta.exif.set("DPX:ImageElements", AttrValue::UInt(num_elements as u32));
+        meta.exif
+            .set("DPX:ImageElements", AttrValue::UInt(num_elements as u32));
 
         // Pixels per line (4 bytes at offset 4)
         let width = read_u32(&img_header[4..8]);
@@ -166,16 +171,17 @@ impl FormatParser for DpxParser {
 
             // Data sign (4 bytes)
             let data_sign = read_u32(&elem[0..4]);
-            meta.exif.set("DPX:DataSign", AttrValue::Str(
-                if data_sign == 0 { "Unsigned" } else { "Signed" }.to_string()
-            ));
+            meta.exif.set(
+                "DPX:DataSign",
+                AttrValue::Str(if data_sign == 0 { "Unsigned" } else { "Signed" }.to_string()),
+            );
 
             // Descriptor (1 byte at offset 20)
             let descriptor = elem[20];
             let desc_str = match descriptor {
                 0 => "User defined",
                 1 => "Red",
-                2 => "Green", 
+                2 => "Green",
                 3 => "Blue",
                 4 => "Alpha",
                 6 => "Luma (Y)",
@@ -198,7 +204,8 @@ impl FormatParser for DpxParser {
                 156 => "User 8-component",
                 _ => "Unknown",
             };
-            meta.exif.set("DPX:Descriptor", AttrValue::Str(desc_str.to_string()));
+            meta.exif
+                .set("DPX:Descriptor", AttrValue::Str(desc_str.to_string()));
 
             // Transfer characteristic (1 byte at offset 21)
             let transfer = elem[21];
@@ -218,7 +225,10 @@ impl FormatParser for DpxParser {
                 12 => "Z (homogeneous)",
                 _ => "Unknown",
             };
-            meta.exif.set("DPX:TransferCharacteristic", AttrValue::Str(transfer_str.to_string()));
+            meta.exif.set(
+                "DPX:TransferCharacteristic",
+                AttrValue::Str(transfer_str.to_string()),
+            );
 
             // Colorimetric (1 byte at offset 22)
             let colorimetric = elem[22];
@@ -234,11 +244,13 @@ impl FormatParser for DpxParser {
                 10 => "Composite PAL",
                 _ => "Unknown",
             };
-            meta.exif.set("DPX:Colorimetric", AttrValue::Str(color_str.to_string()));
+            meta.exif
+                .set("DPX:Colorimetric", AttrValue::Str(color_str.to_string()));
 
             // Bit depth (1 byte at offset 23)
             let bit_depth = elem[23];
-            meta.exif.set("Image:BitDepth", AttrValue::UInt(bit_depth as u32));
+            meta.exif
+                .set("Image:BitDepth", AttrValue::UInt(bit_depth as u32));
 
             // Packing (2 bytes at offset 24)
             let packing = read_u16(&elem[24..26]);
@@ -248,7 +260,8 @@ impl FormatParser for DpxParser {
                 2 => "Filled (32-bit word, type B)",
                 _ => "Unknown",
             };
-            meta.exif.set("DPX:Packing", AttrValue::Str(pack_str.to_string()));
+            meta.exif
+                .set("DPX:Packing", AttrValue::Str(pack_str.to_string()));
         }
 
         // Read orientation header (at offset 768+640 = 1408)
@@ -262,7 +275,8 @@ impl FormatParser for DpxParser {
         // Source file name (100 bytes at offset 24)
         let source_file = read_string(&orient_header[24..124]);
         if !source_file.is_empty() {
-            meta.exif.set("DPX:SourceFileName", AttrValue::Str(source_file));
+            meta.exif
+                .set("DPX:SourceFileName", AttrValue::Str(source_file));
         }
 
         // Source time/date (24 bytes at offset 124)
@@ -274,13 +288,15 @@ impl FormatParser for DpxParser {
         // Input device (32 bytes at offset 148)
         let input_device = read_string(&orient_header[148..180]);
         if !input_device.is_empty() {
-            meta.exif.set("DPX:InputDevice", AttrValue::Str(input_device));
+            meta.exif
+                .set("DPX:InputDevice", AttrValue::Str(input_device));
         }
 
         // Input serial (32 bytes at offset 180)
         let input_serial = read_string(&orient_header[180..212]);
         if !input_serial.is_empty() {
-            meta.exif.set("DPX:InputDeviceSerial", AttrValue::Str(input_serial));
+            meta.exif
+                .set("DPX:InputDeviceSerial", AttrValue::Str(input_serial));
         }
 
         // Read film header (at offset 1664)
@@ -289,14 +305,14 @@ impl FormatParser for DpxParser {
 
         // Film manufacturer ID (2 bytes)
         let film_mfg = read_string(&film_header[0..2]);
-        
+
         // Film type (2 bytes)
         let film_type = read_string(&film_header[2..4]);
-        
+
         // Offset in perfs (2 bytes)
         // Prefix (6 bytes)
         // Count (4 bytes)
-        
+
         // Format (32 bytes at offset 16)
         let format = read_string(&film_header[16..48]);
         if !format.is_empty() {
@@ -306,25 +322,31 @@ impl FormatParser for DpxParser {
         // Frame position (4 bytes at offset 48)
         let frame_pos = read_u32(&film_header[48..52]);
         if frame_pos != 0xFFFFFFFF {
-            meta.exif.set("DPX:FramePosition", AttrValue::UInt(frame_pos));
+            meta.exif
+                .set("DPX:FramePosition", AttrValue::UInt(frame_pos));
         }
 
         // Sequence length (4 bytes at offset 52)
         let seq_len = read_u32(&film_header[52..56]);
         if seq_len != 0xFFFFFFFF {
-            meta.exif.set("DPX:SequenceLength", AttrValue::UInt(seq_len));
+            meta.exif
+                .set("DPX:SequenceLength", AttrValue::UInt(seq_len));
         }
 
         // Frame rate (4 bytes float at offset 60)
         let frame_rate_bits = read_u32(&film_header[60..64]);
         let frame_rate = f32::from_bits(frame_rate_bits);
         if frame_rate > 0.0 && frame_rate < 1000.0 {
-            meta.exif.set("DPX:FrameRate", AttrValue::Double(frame_rate as f64));
+            meta.exif
+                .set("DPX:FrameRate", AttrValue::Double(frame_rate as f64));
         }
 
         // Combine film info
         if !film_mfg.is_empty() || !film_type.is_empty() {
-            meta.exif.set("DPX:FilmStock", AttrValue::Str(format!("{} {}", film_mfg, film_type).trim().to_string()));
+            meta.exif.set(
+                "DPX:FilmStock",
+                AttrValue::Str(format!("{} {}", film_mfg, film_type).trim().to_string()),
+            );
         }
 
         Ok(meta)
@@ -352,7 +374,7 @@ mod tests {
         data[8..16].copy_from_slice(b"V2.0\0\0\0\0");
         // File size
         data[16..20].copy_from_slice(&4096u32.to_be_bytes());
-        
+
         // Image header at 768
         // Orientation
         data[768..770].copy_from_slice(&0u16.to_be_bytes());
@@ -365,9 +387,9 @@ mod tests {
         // First element (starts at 768+12=780)
         // Descriptor at offset 20 within element = 780+20=800
         data[800] = 50; // RGB
-        // Bit depth at offset 23 within element = 780+23=803
+                        // Bit depth at offset 23 within element = 780+23=803
         data[803] = 10;
-        
+
         data
     }
 

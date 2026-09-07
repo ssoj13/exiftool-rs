@@ -23,8 +23,7 @@ impl FormatParser for AiffParser {
             return false;
         }
         // FORM + size + AIFF/AIFC
-        &header[0..4] == b"FORM"
-            && (&header[8..12] == b"AIFF" || &header[8..12] == b"AIFC")
+        &header[0..4] == b"FORM" && (&header[8..12] == b"AIFF" || &header[8..12] == b"AIFC")
     }
 
     fn format_name(&self) -> &'static str {
@@ -45,7 +44,9 @@ impl FormatParser for AiffParser {
 
         // Validate
         if &header[0..4] != b"FORM" {
-            return Err(crate::Error::InvalidStructure("Not a valid AIFF file".to_string()));
+            return Err(crate::Error::InvalidStructure(
+                "Not a valid AIFF file".to_string(),
+            ));
         }
 
         // File size
@@ -99,8 +100,10 @@ impl AiffParser {
             match chunk_id {
                 b"COMM" => self.parse_comm(reader, meta, data_start, chunk_size)?,
                 b"SSND" => {
-                    meta.exif.set("AIFF:SoundDataOffset", AttrValue::UInt64(data_start));
-                    meta.exif.set("AIFF:SoundDataSize", AttrValue::UInt64(chunk_size));
+                    meta.exif
+                        .set("AIFF:SoundDataOffset", AttrValue::UInt64(data_start));
+                    meta.exif
+                        .set("AIFF:SoundDataSize", AttrValue::UInt64(chunk_size));
                 }
                 b"NAME" => {
                     if let Some(s) = self.read_string(reader, data_start, chunk_size)? {
@@ -124,7 +127,8 @@ impl AiffParser {
                 }
                 b"COMT" => self.parse_comments(reader, meta, data_start, chunk_size)?,
                 b"ID3 " => {
-                    meta.exif.set("AIFF:ID3Offset", AttrValue::UInt64(data_start));
+                    meta.exif
+                        .set("AIFF:ID3Offset", AttrValue::UInt64(data_start));
                     meta.exif.set("AIFF:ID3Size", AttrValue::UInt64(chunk_size));
                 }
                 _ => {}
@@ -158,28 +162,36 @@ impl AiffParser {
 
         // Number of channels
         let num_channels = u16::from_be_bytes([data[0], data[1]]);
-        meta.exif.set("AIFF:NumChannels", AttrValue::UInt(num_channels as u32));
+        meta.exif
+            .set("AIFF:NumChannels", AttrValue::UInt(num_channels as u32));
 
         // Number of sample frames
         let num_frames = u32::from_be_bytes([data[2], data[3], data[4], data[5]]);
-        meta.exif.set("AIFF:NumSampleFrames", AttrValue::UInt(num_frames));
+        meta.exif
+            .set("AIFF:NumSampleFrames", AttrValue::UInt(num_frames));
 
         // Sample size (bits)
         let sample_size = u16::from_be_bytes([data[6], data[7]]);
-        meta.exif.set("AIFF:BitsPerSample", AttrValue::UInt(sample_size as u32));
+        meta.exif
+            .set("AIFF:BitsPerSample", AttrValue::UInt(sample_size as u32));
 
         // Sample rate (80-bit extended precision float)
         let sample_rate = self.read_extended(&data[8..18]);
-        meta.exif.set("AIFF:SampleRate", AttrValue::UInt(sample_rate as u32));
+        meta.exif
+            .set("AIFF:SampleRate", AttrValue::UInt(sample_rate as u32));
 
         // Calculate duration
         if sample_rate > 0.0 {
             let duration = num_frames as f64 / sample_rate;
-            meta.exif.set("AIFF:Duration", AttrValue::Float(duration as f32));
+            meta.exif
+                .set("AIFF:Duration", AttrValue::Float(duration as f32));
 
             // Calculate bitrate
             let bitrate = (sample_rate * num_channels as f64 * sample_size as f64) / 1000.0;
-            meta.exif.set("AIFF:Bitrate", AttrValue::Str(format!("{:.0} kbps", bitrate)));
+            meta.exif.set(
+                "AIFF:Bitrate",
+                AttrValue::Str(format!("{:.0} kbps", bitrate)),
+            );
         }
 
         // Audio channels description
@@ -190,7 +202,10 @@ impl AiffParser {
             8 => "7.1 Surround",
             _ => "Multi-channel",
         };
-        meta.exif.set("AIFF:ChannelMode", AttrValue::Str(channels_desc.to_string()));
+        meta.exif.set(
+            "AIFF:ChannelMode",
+            AttrValue::Str(channels_desc.to_string()),
+        );
 
         Ok(())
     }
@@ -242,7 +257,8 @@ impl AiffParser {
         }
 
         if !comments.is_empty() {
-            meta.exif.set("AIFF:Comments", AttrValue::Str(comments.join("; ")));
+            meta.exif
+                .set("AIFF:Comments", AttrValue::Str(comments.join("; ")));
         }
 
         Ok(())

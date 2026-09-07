@@ -70,7 +70,9 @@ fn parse_raf(reader: &mut dyn ReadSeek) -> Result<Metadata> {
         let mut jpeg_data = vec![0u8; jlen as usize];
         reader.read_exact(&mut jpeg_data)?;
         let mut jpeg_reader = Cursor::new(&jpeg_data);
-        let mut metadata = JpegParser.parse(&mut jpeg_reader).unwrap_or_else(|_| Metadata::new("RAF"));
+        let mut metadata = JpegParser
+            .parse(&mut jpeg_reader)
+            .unwrap_or_else(|_| Metadata::new("RAF"));
         metadata.preview = Some(jpeg_data);
         metadata
     } else {
@@ -80,8 +82,12 @@ fn parse_raf(reader: &mut dyn ReadSeek) -> Result<Metadata> {
     metadata.format = "RAF";
     metadata.set_file_type("RAF", "image/x-fujifilm-raf");
     if !version.is_empty() {
-        metadata.exif.set("RAFVersion", AttrValue::Str(version.clone()));
-        metadata.exif.set("FirmwareVersion", AttrValue::Str(version));
+        metadata
+            .exif
+            .set("RAFVersion", AttrValue::Str(version.clone()));
+        metadata
+            .exif
+            .set("FirmwareVersion", AttrValue::Str(version));
     }
     if header.len() >= 0x70 && header[0x6c..0x6f] == [0, 0, 0] {
         let c = be_u32(&header, 0x6c);
@@ -92,7 +98,9 @@ fn parse_raf(reader: &mut dyn ReadSeek) -> Result<Metadata> {
             _ => "",
         };
         if !s.is_empty() {
-            metadata.exif.set("RAFCompression", AttrValue::Str(s.into()));
+            metadata
+                .exif
+                .set("RAFCompression", AttrValue::Str(s.into()));
         }
     }
 
@@ -224,7 +232,11 @@ fn apply_raf_tag(
                         _ => ' ',
                     })
                     .collect();
-                let chunks: Vec<&str> = rgb.as_bytes().chunks(6).filter_map(|c| std::str::from_utf8(c).ok()).collect();
+                let chunks: Vec<&str> = rgb
+                    .as_bytes()
+                    .chunks(6)
+                    .filter_map(|c| std::str::from_utf8(c).ok())
+                    .collect();
                 set_first(metadata, name, AttrValue::Str(chunks.join(" ")));
             }
         }

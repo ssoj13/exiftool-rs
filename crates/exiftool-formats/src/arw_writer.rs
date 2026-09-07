@@ -29,8 +29,12 @@ mod tests {
     #[test]
     fn write_arw_roundtrip() {
         let mut metadata = crate::Metadata::new("ARW");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("SONY".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("ILCE-7M3".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("SONY".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("ILCE-7M3".into()));
 
         let mut tiff_out = Vec::new();
         TiffWriter::write_new(&mut tiff_out, &metadata).unwrap();

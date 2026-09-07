@@ -38,7 +38,9 @@ impl RafWriter {
 
         // ExifTool: ($mpos > 0x94 or $jpos > 0x94 + $mlen) or $jpos < 0x68 or $jpos & 0x03
         if mpos > 0x94 || (jpos as u32) > 0x94 + mlen || jpos < 0x68 || jpos & 0x03 != 0 {
-            return Err(Error::InvalidStructure("unsupported or corrupted RAF image".into()));
+            return Err(Error::InvalidStructure(
+                "unsupported or corrupted RAF image".into(),
+            ));
         }
         if jlen == 0 || jpos + jlen > data.len() {
             return Err(Error::InvalidStructure("truncated RAF JPEG".into()));
@@ -59,12 +61,16 @@ impl RafWriter {
                 || hdr[0xC0..0xC8] != [0u8; 8]
                 || hdr[0xC8..0xD0] != hdr[0x110..0x118]
             {
-                return Err(Error::InvalidStructure("unexpected M-RAW header layout".into()));
+                return Err(Error::InvalidStructure(
+                    "unexpected M-RAW header layout".into(),
+                ));
             }
         }
 
         if jpos > hdr.len() {
-            return Err(Error::InvalidStructure("RAF JPEG starts past header".into()));
+            return Err(Error::InvalidStructure(
+                "RAF JPEG starts past header".into(),
+            ));
         }
 
         let jpeg = &data[jpos..jpos + jlen];
@@ -128,7 +134,9 @@ fn apply_raf_ptr(hdr: &mut [u8], offset: usize, old: u32, ptr_diff: i64) -> Resu
         return Ok(());
     }
     if offset < 0xCC {
-        return Err(Error::InvalidStructure("invalid offset in RAF header".into()));
+        return Err(Error::InvalidStructure(
+            "invalid offset in RAF header".into(),
+        ));
     }
     if offset < 4 {
         return Err(Error::InvalidStructure("RAF header offset error".into()));

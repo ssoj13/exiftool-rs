@@ -49,7 +49,9 @@ impl FormatParser for FlacParser {
             return Err(crate::Error::InvalidStructure("Invalid FLAC magic".into()));
         }
 
-        metadata.exif.set("FileType", AttrValue::Str("FLAC".to_string()));
+        metadata
+            .exif
+            .set("FileType", AttrValue::Str("FLAC".to_string()));
 
         // Parse metadata blocks
         let mut is_last = false;
@@ -109,7 +111,8 @@ impl FlacParser {
 
         // Sample rate (20 bits), channels (3 bits), bits per sample (5 bits), total samples (36 bits)
         // Bytes 10-17 contain these packed values
-        let sample_rate = ((data[10] as u32) << 12) | ((data[11] as u32) << 4) | ((data[12] as u32) >> 4);
+        let sample_rate =
+            ((data[10] as u32) << 12) | ((data[11] as u32) << 4) | ((data[12] as u32) >> 4);
         let channels = ((data[12] >> 1) & 0x07) + 1;
         let bits_per_sample = (((data[12] & 0x01) << 4) | ((data[13] >> 4) & 0x0F)) + 1;
         let total_samples = (((data[13] & 0x0F) as u64) << 32)
@@ -121,32 +124,52 @@ impl FlacParser {
         // MD5 signature (16 bytes) at data[18..34]
         let md5: String = data[18..34].iter().map(|b| format!("{:02x}", b)).collect();
 
-        metadata.exif.set("SampleRate", AttrValue::UInt(sample_rate));
-        metadata.exif.set("AudioChannels", AttrValue::UInt(channels as u32));
-        metadata.exif.set("BitsPerSample", AttrValue::UInt(bits_per_sample as u32));
+        metadata
+            .exif
+            .set("SampleRate", AttrValue::UInt(sample_rate));
+        metadata
+            .exif
+            .set("AudioChannels", AttrValue::UInt(channels as u32));
+        metadata
+            .exif
+            .set("BitsPerSample", AttrValue::UInt(bits_per_sample as u32));
 
         if total_samples > 0 {
-            metadata.exif.set("TotalSamples", AttrValue::UInt64(total_samples));
+            metadata
+                .exif
+                .set("TotalSamples", AttrValue::UInt64(total_samples));
 
             // Calculate duration
             if sample_rate > 0 {
                 let duration_secs = total_samples as f64 / sample_rate as f64;
-                metadata.exif.set("Duration", AttrValue::Str(format_duration(duration_secs)));
-                metadata.exif.set("DurationSeconds", AttrValue::Double(duration_secs));
+                metadata
+                    .exif
+                    .set("Duration", AttrValue::Str(format_duration(duration_secs)));
+                metadata
+                    .exif
+                    .set("DurationSeconds", AttrValue::Double(duration_secs));
             }
         }
 
         if min_block_size > 0 {
-            metadata.exif.set("MinBlockSize", AttrValue::UInt(min_block_size as u32));
+            metadata
+                .exif
+                .set("MinBlockSize", AttrValue::UInt(min_block_size as u32));
         }
         if max_block_size > 0 {
-            metadata.exif.set("MaxBlockSize", AttrValue::UInt(max_block_size as u32));
+            metadata
+                .exif
+                .set("MaxBlockSize", AttrValue::UInt(max_block_size as u32));
         }
         if min_frame_size > 0 {
-            metadata.exif.set("MinFrameSize", AttrValue::UInt(min_frame_size));
+            metadata
+                .exif
+                .set("MinFrameSize", AttrValue::UInt(min_frame_size));
         }
         if max_frame_size > 0 {
-            metadata.exif.set("MaxFrameSize", AttrValue::UInt(max_frame_size));
+            metadata
+                .exif
+                .set("MaxFrameSize", AttrValue::UInt(max_frame_size));
         }
 
         // Only store non-zero MD5
@@ -238,12 +261,16 @@ impl FlacParser {
                         _ => {
                             // Store custom fields with "Vorbis:" prefix
                             let custom_key = format!("Vorbis:{}", field);
-                            metadata.exif.set(&custom_key, AttrValue::Str(value.to_string()));
+                            metadata
+                                .exif
+                                .set(&custom_key, AttrValue::Str(value.to_string()));
                             continue;
                         }
                     };
 
-                    metadata.exif.set(tag_name, AttrValue::Str(value.to_string()));
+                    metadata
+                        .exif
+                        .set(tag_name, AttrValue::Str(value.to_string()));
                 }
             }
         }
@@ -294,7 +321,9 @@ impl FlacParser {
             _ => "Unknown",
         };
 
-        metadata.exif.set("PictureType", AttrValue::Str(type_name.to_string()));
+        metadata
+            .exif
+            .set("PictureType", AttrValue::Str(type_name.to_string()));
 
         // MIME type length (4 bytes)
         let mut len_buf = [0u8; 4];
@@ -320,7 +349,9 @@ impl FlacParser {
             reader.read_exact(&mut desc)?;
             if let Ok(desc_str) = String::from_utf8(desc) {
                 if !desc_str.is_empty() {
-                    metadata.exif.set("PictureDescription", AttrValue::Str(desc_str));
+                    metadata
+                        .exif
+                        .set("PictureDescription", AttrValue::Str(desc_str));
                 }
             }
         } else {
@@ -352,7 +383,9 @@ impl FlacParser {
             metadata.exif.set("PictureHeight", AttrValue::UInt(height));
         }
         if color_depth > 0 {
-            metadata.exif.set("PictureColorDepth", AttrValue::UInt(color_depth));
+            metadata
+                .exif
+                .set("PictureColorDepth", AttrValue::UInt(color_depth));
         }
         metadata.exif.set("PictureSize", AttrValue::UInt(data_len));
 
@@ -428,7 +461,7 @@ mod tests {
         block.push(0xC4); // byte 11
         block.push(0x42); // byte 12: sample_rate lower | channels | bps upper
         block.push(0xF0); // byte 13: bps lower | samples upper
-        // Total samples: 441000 = 0x6BA98
+                          // Total samples: 441000 = 0x6BA98
         block.push(0x00); // byte 14
         block.push(0x06); // byte 15
         block.push(0xBA); // byte 16
@@ -478,11 +511,7 @@ mod tests {
 
         // VORBIS_COMMENT block
         let vendor = b"Test Encoder";
-        let comments = [
-            "TITLE=Test Song",
-            "ARTIST=Test Artist",
-            "ALBUM=Test Album",
-        ];
+        let comments = ["TITLE=Test Song", "ARTIST=Test Artist", "ALBUM=Test Album"];
 
         let mut comment_data = Vec::new();
         // Vendor length (little-endian)

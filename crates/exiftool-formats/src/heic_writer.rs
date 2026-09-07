@@ -34,7 +34,7 @@ struct BoxInfo {
 }
 
 /// Item location entry from iloc box (ISO/IEC 14496-12).
-/// 
+///
 /// Fields are parsed per spec for format completeness. Not all fields
 /// are used in current write implementation, but kept for future
 /// extension (e.g., adding EXIF to files without existing metadata).
@@ -44,7 +44,7 @@ struct ItemLocation {
     item_id: u32,
     #[allow(dead_code)] // HEIF spec field, needed for full iloc rebuild
     construction_method: u8,
-    #[allow(dead_code)] // HEIF spec field, needed for full iloc rebuild  
+    #[allow(dead_code)] // HEIF spec field, needed for full iloc rebuild
     data_ref_index: u16,
     base_offset: u64,
     extents: Vec<ItemExtent>,
@@ -138,9 +138,10 @@ impl HeicWriter {
             b"heic" | b"heix" | b"hevc" | b"hevx" | b"mif1" | b"msf1" | b"avif" | b"avis"
         );
         if !is_heic {
-            return Err(Error::InvalidStructure(
-                format!("Unknown brand: {:?}", String::from_utf8_lossy(brand)),
-            ));
+            return Err(Error::InvalidStructure(format!(
+                "Unknown brand: {:?}",
+                String::from_utf8_lossy(brand)
+            )));
         }
 
         // Parse structure
@@ -177,7 +178,13 @@ impl HeicWriter {
 
             let mut buf = Vec::new();
             if let Some(exif_id) = structure.exif_item_id {
-                Self::update_exif_item(&current_data, &mut buf, &mut structure, exif_id, &heic_exif)?;
+                Self::update_exif_item(
+                    &current_data,
+                    &mut buf,
+                    &mut structure,
+                    exif_id,
+                    &heic_exif,
+                )?;
             } else {
                 Self::create_exif_item(&current_data, &mut buf, &mut structure, &heic_exif)?;
             }
@@ -304,7 +311,11 @@ impl HeicWriter {
     }
 
     /// Parse meta box and its children.
-    fn parse_meta_box(data: &[u8], meta_box: &BoxInfo, structure: &mut HeicStructure) -> Result<()> {
+    fn parse_meta_box(
+        data: &[u8],
+        meta_box: &BoxInfo,
+        structure: &mut HeicStructure,
+    ) -> Result<()> {
         // meta is a FullBox - skip version (1) + flags (3) after header
         let meta_start = meta_box.offset as usize + meta_box.header_size as usize + 4;
         let meta_end = (meta_box.offset + meta_box.size) as usize;
@@ -331,8 +342,7 @@ impl HeicWriter {
                 }
                 b"iinf" => {
                     Self::parse_iinf_box(data, &box_info, structure)?;
-                    structure.iinf_box_raw =
-                        Some(data[pos..pos + box_info.size as usize].to_vec());
+                    structure.iinf_box_raw = Some(data[pos..pos + box_info.size as usize].to_vec());
                 }
                 b"hdlr" | b"iprp" | b"irot" => {
                     structure.preserved_meta_boxes.push(PreservedBox {
@@ -422,7 +432,8 @@ impl HeicWriter {
             if pos + 10 > data.len() {
                 return Ok(());
             }
-            let count = u32::from_be_bytes([data[pos + 6], data[pos + 7], data[pos + 8], data[pos + 9]]);
+            let count =
+                u32::from_be_bytes([data[pos + 6], data[pos + 7], data[pos + 8], data[pos + 9]]);
             (count, pos + 10)
         };
 
@@ -524,7 +535,12 @@ impl HeicWriter {
                 if *pos + 4 > data.len() {
                     return 0;
                 }
-                let val = u32::from_be_bytes([data[*pos], data[*pos + 1], data[*pos + 2], data[*pos + 3]]);
+                let val = u32::from_be_bytes([
+                    data[*pos],
+                    data[*pos + 1],
+                    data[*pos + 2],
+                    data[*pos + 3],
+                ]);
                 *pos += 4;
                 val as u64
             }
@@ -550,7 +566,7 @@ impl HeicWriter {
     }
 
     /// Write variable-size integer (for iloc offset patching).
-    /// 
+    ///
     /// Currently unused - will be needed when implementing full
     /// iloc box rebuild for adding EXIF to files without metadata.
     #[allow(dead_code)]
@@ -582,7 +598,8 @@ impl HeicWriter {
             if pos + 8 > data.len() {
                 return Ok(());
             }
-            let count = u32::from_be_bytes([data[pos + 4], data[pos + 5], data[pos + 6], data[pos + 7]]);
+            let count =
+                u32::from_be_bytes([data[pos + 4], data[pos + 5], data[pos + 6], data[pos + 7]]);
             (count, pos + 8)
         };
 
@@ -659,7 +676,8 @@ impl HeicWriter {
                         name_end_pos = i + 1;
                     }
                     if name_end_pos > name_start {
-                        let name = String::from_utf8_lossy(&data[name_start..name_end_pos]).to_string();
+                        let name =
+                            String::from_utf8_lossy(&data[name_start..name_end_pos]).to_string();
                         if !name.is_empty() {
                             content_type = Some(name);
                         }
@@ -755,7 +773,14 @@ impl HeicWriter {
 
         // Now patch iloc entries that point to data after the EXIF
         // We need to adjust offsets for any item that comes after EXIF in mdat
-        Self::patch_iloc_offsets(&mut out_data, structure, exif_item_id, old_offset, length_delta, new_exif.len() as u64)?;
+        Self::patch_iloc_offsets(
+            &mut out_data,
+            structure,
+            exif_item_id,
+            old_offset,
+            length_delta,
+            new_exif.len() as u64,
+        )?;
 
         // Update mdat size if it changed
         if length_delta != 0 && structure.mdat_offset > 0 {
@@ -812,14 +837,26 @@ impl HeicWriter {
             out_data.extend_from_slice(&data[after_old..]);
         }
 
-        Self::patch_iloc_offsets(&mut out_data, structure, xmp_item_id, old_offset, length_delta, new_xmp.len() as u64)?;
+        Self::patch_iloc_offsets(
+            &mut out_data,
+            structure,
+            xmp_item_id,
+            old_offset,
+            length_delta,
+            new_xmp.len() as u64,
+        )?;
 
         if length_delta != 0 && structure.mdat_offset > 0 {
-            let mdat_header_size = if structure.mdat_size > u32::MAX as u64 { 16 } else { 8 };
+            let mdat_header_size = if structure.mdat_size > u32::MAX as u64 {
+                16
+            } else {
+                8
+            };
             let mdat_pos = structure.mdat_offset as usize;
             let new_mdat_size = (structure.mdat_size as i64 + length_delta) as u64;
             if mdat_header_size == 8 {
-                out_data[mdat_pos..mdat_pos + 4].copy_from_slice(&(new_mdat_size as u32).to_be_bytes());
+                out_data[mdat_pos..mdat_pos + 4]
+                    .copy_from_slice(&(new_mdat_size as u32).to_be_bytes());
             } else {
                 out_data[mdat_pos + 8..mdat_pos + 16].copy_from_slice(&new_mdat_size.to_be_bytes());
             }
@@ -873,7 +910,8 @@ impl HeicWriter {
                 if pos + 4 > data.len() {
                     break;
                 }
-                let id = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]);
+                let id =
+                    u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]);
                 pos += 4;
                 id
             };
@@ -914,7 +952,12 @@ impl HeicWriter {
 
                 if item_id == exif_item_id {
                     // Update length for this EXIF item
-                    Self::write_var_int_at(data, extent_length_pos, layout.length_size, new_exif_length);
+                    Self::write_var_int_at(
+                        data,
+                        extent_length_pos,
+                        layout.length_size,
+                        new_exif_length,
+                    );
                 } else if absolute_offset > exif_offset && length_delta != 0 {
                     // This item comes after EXIF, adjust its offset
                     let new_offset = if layout.offset_size > 0 {
@@ -925,9 +968,19 @@ impl HeicWriter {
                     };
 
                     if layout.offset_size > 0 {
-                        Self::write_var_int_at(data, extent_offset_pos, layout.offset_size, new_offset);
+                        Self::write_var_int_at(
+                            data,
+                            extent_offset_pos,
+                            layout.offset_size,
+                            new_offset,
+                        );
                     } else if layout.base_offset_size > 0 {
-                        Self::write_var_int_at(data, base_offset_pos, layout.base_offset_size, new_offset);
+                        Self::write_var_int_at(
+                            data,
+                            base_offset_pos,
+                            layout.base_offset_size,
+                            new_offset,
+                        );
                     }
                 }
             }
@@ -1000,12 +1053,10 @@ impl HeicWriter {
             iloc_data.extend_from_slice(&(item_count as u32).to_be_bytes());
         }
 
-        let write_var = |buf: &mut Vec<u8>, val: u64, size: u8| {
-            match size {
-                4 => buf.extend_from_slice(&(val as u32).to_be_bytes()),
-                8 => buf.extend_from_slice(&val.to_be_bytes()),
-                _ => {}
-            }
+        let write_var = |buf: &mut Vec<u8>, val: u64, size: u8| match size {
+            4 => buf.extend_from_slice(&(val as u32).to_be_bytes()),
+            8 => buf.extend_from_slice(&val.to_be_bytes()),
+            _ => {}
         };
 
         // Existing items
@@ -1163,12 +1214,10 @@ impl HeicWriter {
             .as_ref()
             .ok_or_else(|| Error::InvalidStructure("iloc layout required".into()))?;
 
-        let write_var = |buf: &mut Vec<u8>, val: u64, size: u8| {
-            match size {
-                4 => buf.extend_from_slice(&(val as u32).to_be_bytes()),
-                8 => buf.extend_from_slice(&val.to_be_bytes()),
-                _ => {}
-            }
+        let write_var = |buf: &mut Vec<u8>, val: u64, size: u8| match size {
+            4 => buf.extend_from_slice(&(val as u32).to_be_bytes()),
+            8 => buf.extend_from_slice(&val.to_be_bytes()),
+            _ => {}
         };
 
         let mut iloc_data = Vec::new();
@@ -1268,7 +1317,8 @@ impl HeicWriter {
             iinf_box[entry_count_pos..entry_count_pos + 2]
                 .copy_from_slice(&(new_count as u16).to_be_bytes());
         } else {
-            iinf_box[entry_count_pos..entry_count_pos + 4].copy_from_slice(&new_count.to_be_bytes());
+            iinf_box[entry_count_pos..entry_count_pos + 4]
+                .copy_from_slice(&new_count.to_be_bytes());
         }
         iinf_box.extend_from_slice(&xmp_infe);
 
@@ -1281,7 +1331,11 @@ impl HeicWriter {
         cdsc_box.extend_from_slice(&1u32.to_be_bytes());
         cdsc_box.extend_from_slice(&primary_id.to_be_bytes());
 
-        let iref_box = if let Some(pb) = structure.preserved_meta_boxes.iter().find(|p| p.box_type == *b"iref") {
+        let iref_box = if let Some(pb) = structure
+            .preserved_meta_boxes
+            .iter()
+            .find(|p| p.box_type == *b"iref")
+        {
             let mut iref = pb.data.clone();
             let new_iref_size = iref.len() + cdsc_box.len();
             iref[0..4].copy_from_slice(&(new_iref_size as u32).to_be_bytes());
@@ -1310,7 +1364,11 @@ impl HeicWriter {
         }
         meta_content.extend_from_slice(&iinf_box);
         meta_content.extend_from_slice(&iloc_box);
-        if structure.preserved_meta_boxes.iter().all(|p| p.box_type != *b"iref") {
+        if structure
+            .preserved_meta_boxes
+            .iter()
+            .all(|p| p.box_type != *b"iref")
+        {
             meta_content.extend_from_slice(&iref_box);
         }
 
@@ -1331,21 +1389,33 @@ impl HeicWriter {
         out_buf.extend_from_slice(new_xmp);
         // XMP offset = first byte after mdat (parser uses same logic)
         let xmp_offset = {
-            let p = out_buf.windows(4).position(|w| w == b"mdat").expect("mdat in output");
+            let p = out_buf
+                .windows(4)
+                .position(|w| w == b"mdat")
+                .expect("mdat in output");
             let mdat_start = p.saturating_sub(4);
-            let mdat_size = u32::from_be_bytes([out_buf[mdat_start], out_buf[mdat_start + 1], out_buf[mdat_start + 2], out_buf[mdat_start + 3]]) as usize;
+            let mdat_size = u32::from_be_bytes([
+                out_buf[mdat_start],
+                out_buf[mdat_start + 1],
+                out_buf[mdat_start + 2],
+                out_buf[mdat_start + 3],
+            ]) as usize;
             (mdat_start + mdat_size) as u64
         };
 
         // Patch iloc: find "iloc" in output and patch second item's extent_offset
         // iloc layout v0: [size][iloc][v(4)][sizes(2)][count(2)][item1(14)][item2: id(2)dri(2)ec(2) off(4) len(4)]
-        let iloc_type_pos = out_buf.windows(4).position(|w| w == b"iloc").expect("iloc in output");
+        let iloc_type_pos = out_buf
+            .windows(4)
+            .position(|w| w == b"iloc")
+            .expect("iloc in output");
         let iloc_box_start = iloc_type_pos - 4; // size field precedes type
         let item2_extent_offset_pos = iloc_box_start + 8 + 4 + 2 + 2 + 14 + 2 + 2 + 2; // +8 box, +8 v+sizes+count, +14 item1, +6 item2 pre-extent
         match layout.offset_size {
             4 => out_buf[item2_extent_offset_pos..item2_extent_offset_pos + 4]
                 .copy_from_slice(&(xmp_offset as u32).to_be_bytes()),
-            8 => out_buf[item2_extent_offset_pos..item2_extent_offset_pos + 8].copy_from_slice(&xmp_offset.to_be_bytes()),
+            8 => out_buf[item2_extent_offset_pos..item2_extent_offset_pos + 8]
+                .copy_from_slice(&xmp_offset.to_be_bytes()),
             _ => {}
         }
 
@@ -1466,8 +1536,12 @@ mod tests {
     fn test_add_exif_when_none_exists() {
         let heic = make_minimal_heic();
         let mut metadata = Metadata::new("HEIC");
-        metadata.exif.set("Make", exiftool_attrs::AttrValue::Str("Test".into()));
-        metadata.exif.set("Model", exiftool_attrs::AttrValue::Str("Model X".into()));
+        metadata
+            .exif
+            .set("Make", exiftool_attrs::AttrValue::Str("Test".into()));
+        metadata
+            .exif
+            .set("Model", exiftool_attrs::AttrValue::Str("Model X".into()));
 
         let mut input = Cursor::new(&heic);
         let mut output = Vec::new();
@@ -1477,7 +1551,11 @@ mod tests {
         assert!(output.len() > heic.len());
         // Verify structure: should have meta, mdat, and appended EXIF
         assert!(output.windows(4).any(|w| w == b"meta"));
-        assert!(output.windows(4).any(|w| w == b"Exif") || output.windows(4).any(|w| w == b"II\0*") || output.windows(4).any(|w| w == b"MM\0*"));
+        assert!(
+            output.windows(4).any(|w| w == b"Exif")
+                || output.windows(4).any(|w| w == b"II\0*")
+                || output.windows(4).any(|w| w == b"MM\0*")
+        );
     }
 
     #[test]

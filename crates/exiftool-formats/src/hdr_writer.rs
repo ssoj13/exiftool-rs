@@ -27,7 +27,7 @@ impl HdrWriter {
         // Find header end (empty line before resolution)
         let mut resolution_start = 0;
         let mut i = 0;
-        
+
         while i < data.len() {
             // Find line end
             let line_start = i;
@@ -55,12 +55,18 @@ impl HdrWriter {
         }
 
         // Write magic
-        let format_id = metadata.exif.get_str("FormatIdentifier").unwrap_or("RADIANCE");
+        let format_id = metadata
+            .exif
+            .get_str("FormatIdentifier")
+            .unwrap_or("RADIANCE");
         writeln!(output, "#?{}", format_id)?;
 
         // Write metadata as key=value pairs
-        Self::write_header_field(output, "FORMAT", 
-            metadata.exif.get_str("Format").unwrap_or("32-bit_rle_rgbe"))?;
+        Self::write_header_field(
+            output,
+            "FORMAT",
+            metadata.exif.get_str("Format").unwrap_or("32-bit_rle_rgbe"),
+        )?;
 
         if let Some(v) = metadata.exif.get_str("Software") {
             Self::write_header_field(output, "SOFTWARE", v)?;
@@ -113,7 +119,10 @@ impl HdrWriter {
         width: u32,
         height: u32,
     ) -> Result<()> {
-        let format_id = metadata.exif.get_str("FormatIdentifier").unwrap_or("RADIANCE");
+        let format_id = metadata
+            .exif
+            .get_str("FormatIdentifier")
+            .unwrap_or("RADIANCE");
         writeln!(output, "#?{}", format_id)?;
 
         Self::write_header_field(output, "FORMAT", "32-bit_rle_rgbe")?;
@@ -157,9 +166,11 @@ mod tests {
     #[test]
     fn write_hdr_preserves_pixels() {
         let hdr = make_minimal_hdr();
-        
+
         let mut metadata = Metadata::new("HDR");
-        metadata.exif.set("Software", AttrValue::Str("exiftool-rs".into()));
+        metadata
+            .exif
+            .set("Software", AttrValue::Str("exiftool-rs".into()));
         metadata.exif.set("Exposure", AttrValue::Float(1.5));
 
         let mut input = Cursor::new(&hdr);
@@ -168,7 +179,7 @@ mod tests {
         HdrWriter::write(&mut input, &mut output, &metadata).unwrap();
 
         let output_str = String::from_utf8_lossy(&output);
-        
+
         // Check header
         assert!(output_str.starts_with("#?RADIANCE\n"));
         assert!(output_str.contains("SOFTWARE=exiftool-rs"));
@@ -179,7 +190,9 @@ mod tests {
     #[test]
     fn write_header_only() {
         let mut metadata = Metadata::new("HDR");
-        metadata.exif.set("Software", AttrValue::Str("test-app".into()));
+        metadata
+            .exif
+            .set("Software", AttrValue::Str("test-app".into()));
 
         let mut output = Vec::new();
         HdrWriter::write_header_only(&mut output, &metadata, 100, 50).unwrap();

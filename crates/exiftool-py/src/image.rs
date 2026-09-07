@@ -7,7 +7,7 @@ use crate::rational::PyRational;
 use crate::value::{display_value, from_python, to_python};
 use exiftool_attrs::AttrValue;
 use exiftool_formats::{
-    add_composite_tags, build_xmp_string, Cr2Writer, ExrWriter, FlacWriter, FormatRegistry,
+    add_composite_tags, build_xmp_string, Cr2Writer, Cr3Writer, ExrWriter, FlacWriter, FormatRegistry,
     GifWriter, HdrWriter, HeicWriter, Id3Writer, JpegWriter, JxlWriter, Metadata, Mp4Writer,
     NefWriter, OrfWriter, PageInfo, PngWriter, PnmWriter, RafWriter, TiffWriter, WavWriter,
     WebpWriter,
@@ -700,6 +700,10 @@ impl PyImage {
             "MP4" | "MOV" | "M4V" | "M4A" | "M4B" | "M4P" | "3GP" | "3G2" | "F4V" => {
                 Mp4Writer::write(&mut reader, &mut output_data, &meta)
                     .map_err(|e| crate::error::WriteError::new_err(format!("MP4 write failed: {}", e)))?;
+            }
+            "CR3" => {
+                Cr3Writer::write(&mut reader, &mut output_data, &meta)
+                    .map_err(|e| crate::error::WriteError::new_err(format!("CR3 write failed: {}", e)))?;
             }
             "EXR" => {
                 ExrWriter::write(&mut reader, &mut output_data, &meta)
