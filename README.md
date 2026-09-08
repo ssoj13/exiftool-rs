@@ -439,7 +439,7 @@ cp testdata/*.jpg fuzz/corpus/fuzz_jpeg/
 Current version (0.1.0) has some documented limitations:
 
 - **BigTIFF rewrite**: IFD overlay uses the same preserve path as classic TIFF (16-byte header, 20-byte entries, LONG8 pointers). Files >4GB are still not loaded (max 100MB).
-- **NEF/RAF/CR3 write**: standard EXIF plus MakerNotes field overlay where `rewrite_blob` knows the layout (FujiFilm rebuild; Panasonic/Sony/Olympus/Nikon/Canon/Pentax in-place). Encrypted Nikon ShotInfo and unknown magics stay blobs. CR3 rewrites CMT1/2/4 and XMP UUID (`Cr3Writer`), then patches CTBO and stco/co64. Other TIFF-RAW uses the same preserve rewrite (`TiffWriter::write`). Sony A100 ARW uses ExifTool `FinishARW` (MRW pad + `A100DataOffset`).
+- **NEF/RAF/CR3 write**: standard EXIF plus MakerNotes field overlay where `rewrite_blob` knows the layout (FujiFilm rebuild; IFD vendors in-place). Encrypted Nikon ShotInfo and unknown magics stay blobs. CR3 rewrites CMT1/2/4 and XMP UUID (`Cr3Writer`), then patches CTBO and stco/co64. Other TIFF-RAW uses the same preserve rewrite (`TiffWriter::write`). Sony A100 ARW uses ExifTool `FinishARW` (MRW pad + `A100DataOffset`).
 - **7z**: encoded header (id 23) LZMA via `lzma-rs`. AES-encrypted headers warn. LZMA2-encoded headers are not decoded (ExifTool `7Z.pm` is LZMA1-only).
 - **Value interpretation**: many enums still returned as numbers unless `get_interpreted` is used.
 
