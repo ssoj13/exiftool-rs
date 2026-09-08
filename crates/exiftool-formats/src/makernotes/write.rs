@@ -6,7 +6,9 @@
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
 use exiftool_core::{ByteOrder, ExifFormat, IfdEntry, RawValue, SRational, URational};
-use exiftool_tags::generated::{canon, fujifilm, nikon, olympus, panasonic, pentax, sony};
+use exiftool_tags::generated::{
+    apple, canon, fujifilm, nikon, olympus, panasonic, pentax, samsung, sony,
+};
 
 const FUJI_MAGIC: &[u8] = b"FUJIFILM";
 const NIKON_HEADER: &[u8] = b"Nikon\x00";
@@ -47,6 +49,43 @@ fn lookup_canon(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'stat
 fn lookup_pentax(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     pentax::PENTAX_MAIN.get(&tag).map(|d| (d.name, d.values))
 }
+fn lookup_apple(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    apple::APPLE_MAIN.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_samsung(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    samsung::SAMSUNG_MAIN.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_minolta(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    sony::MINOLTA_MAIN.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_casio_type2(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0008 => Some(("QualityMode", None)),
+        0x0009 => Some(("CasioImageSize", None)),
+        _ => None,
+    }
+}
+fn lookup_casio_type1(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0002 => Some(("Quality", None)),
+        0x0001 => Some(("RecordingMode", None)),
+        _ => None,
+    }
+}
+fn lookup_sigma(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0002 => Some(("SerialNumber", None)),
+        0x0016 => Some(("Quality", None)),
+        _ => None,
+    }
+}
+fn lookup_ricoh(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0005 => Some(("SerialNumber", None)),
+        0x0002 => Some(("FirmwareVersion", None)),
+        _ => None,
+    }
+}
 
 fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(b"Panasonic") && data.len() >= 14 {
@@ -86,6 +125,45 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(b"AOC\0") && data.len() >= 8 {
         let order = order_from_marker(&data[4..6]).or_else(|| detect_order(data, 6))?;
         return patch_ifd(data, 6, order, lookup_pentax, metadata, true);
+    }
+    if data.starts_with(b"Apple iOS\0") && data.len() >= 16 {
+        let order = detect_order(data, 14)?;
+        return patch_ifd(data, 14, order, lookup_apple, metadata, false);
+    }
+    if data.starts_with(b"QVC\0") || data.starts_with(b"DCI\0") {
+        let order = detect_order(data, 6)?;
+        return patch_ifd(data, 6, order, lookup_casio_type2, metadata, true);
+    }
+    if data.len() >= 10 && (data.starts_with(b"RICOH\0II") || data.starts_with(b"RICOH\0MM")) {
+        let order = order_from_marker(&data[6..8])?;
+        return patch_ifd(data, 8, order, lookup_pentax, metadata, false);
+    }
+    if data.starts_with(b"RICOH\0") && data.len() >= 10 {
+        let order = detect_order(data, 8).or_else(|| detect_order(data, 6))?;
+        let off = if ifd_plausible(data, 8, order) { 8 } else { 6 };
+        return patch_ifd(data, off, order, lookup_ricoh, metadata, true);
+    }
+    if (data.starts_with(b"SIGMA\0\0\0") || data.starts_with(b"FOVEON\0\0")) && data.len() >= 12 {
+        return patch_ifd(
+            data,
+            10,
+            ByteOrder::LittleEndian,
+            lookup_sigma,
+            metadata,
+            true,
+        );
+    }
+    if (data.starts_with(b"MINOL\0") || data.starts_with(b"CAMER\0")) && data.len() >= 10 {
+        let order = detect_order(data, 8)?;
+        return patch_ifd(data, 8, order, lookup_olympus, metadata, true);
+    }
+    if data.starts_with(b"SONY PI\0") && data.len() >= 14 {
+        let order = detect_order(data, 12)?;
+        return patch_ifd(data, 12, order, lookup_olympus, metadata, true);
+    }
+    if data.starts_with(b"PREMI\0") && data.len() >= 10 {
+        let order = detect_order(data, 8)?;
+        return patch_ifd(data, 8, order, lookup_olympus, metadata, true);
     }
     if data.starts_with(NIKON_HEADER) && data.len() >= 18 {
         match data[6] {
@@ -131,6 +209,18 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if make.contains("sony") || make.contains("hasselblad") {
         let order = detect_order(data, 0)?;
         return patch_ifd(data, 0, order, lookup_sony, metadata, true);
+    }
+    if make.contains("casio") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_casio_type1, metadata, true);
+    }
+    if make.contains("samsung") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_samsung, metadata, true);
+    }
+    if make.contains("minolta") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_minolta, metadata, true);
     }
     None
 }
@@ -721,5 +811,85 @@ mod tests {
             .parse(&out, ByteOrder::LittleEndian)
             .unwrap();
         assert_eq!(parsed.get_str("Quality").map(str::trim), Some("FINE"));
+    }
+
+    #[test]
+    fn apple_hdr_inplace() {
+        let mut prefix = b"Apple iOS\0".to_vec();
+        prefix.extend_from_slice(&[0, 0, 0, 0]);
+        let src = prefix_ifd(&prefix, 10, ExifFormat::UInt32, RawValue::UInt32(vec![3]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif
+            .set("HDRImageType", AttrValue::Str("Original Image".into()));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::AppleParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("HDRImageType"), Some("Original Image"));
+    }
+
+    #[test]
+    fn casio_qvc_qualitymode_inplace() {
+        let mut prefix = b"QVC\0".to_vec();
+        prefix.extend_from_slice(&[0, 0]);
+        let src = prefix_ifd(&prefix, 8, ExifFormat::UInt16, RawValue::UInt16(vec![1]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("QualityMode", AttrValue::UInt(2));
+        let out = rewrite_blob(&src, &meta);
+        let entries =
+            crate::makernotes::parse_ifd_entries(&out[6..], ByteOrder::LittleEndian, 0).unwrap();
+        match &entries[0].value {
+            RawValue::UInt16(v) => assert_eq!(v[0], 2),
+            _ => panic!("expected uint16"),
+        }
+    }
+
+    #[test]
+    fn sigma_serial_inplace() {
+        let mut prefix = b"SIGMA\0\0\0".to_vec();
+        prefix.extend_from_slice(&[0, 0]);
+        let src = prefix_ifd(
+            &prefix,
+            2,
+            ExifFormat::String,
+            RawValue::String("OLD SERIAL".into()),
+        );
+        let mut meta = Metadata::new("JPG");
+        meta.exif
+            .set("SerialNumber", AttrValue::Str("NEW SERIAL".into()));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::SigmaParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("SerialNumber"), Some("NEW SERIAL"));
+    }
+
+    #[test]
+    fn minolta_scenemode_inplace() {
+        let src = prefix_ifd(b"", 256, ExifFormat::UInt16, RawValue::UInt16(vec![0]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Minolta".into()));
+        meta.exif
+            .set("SceneMode", AttrValue::Str("Portrait".into()));
+        let out = rewrite_blob(&src, &meta);
+        let entries =
+            crate::makernotes::parse_ifd_entries(&out, ByteOrder::LittleEndian, 0).unwrap();
+        match &entries[0].value {
+            RawValue::UInt16(v) => assert_eq!(v[0], 1),
+            _ => panic!("expected uint16 SceneMode"),
+        }
+    }
+
+    #[test]
+    fn samsung_preview_length_inplace() {
+        let src = prefix_ifd(b"", 3, ExifFormat::UInt32, RawValue::UInt32(vec![100]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Samsung".into()));
+        meta.exif.set("PreviewImageLength", AttrValue::UInt(200));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::SamsungParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("PreviewImageLength"), Some(200));
     }
 }

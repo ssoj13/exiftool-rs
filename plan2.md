@@ -29,7 +29,7 @@ No `path = "C:/projects/..."` for sibling git repos.
 
 ## Still open
 
-1. MakerNotes field write: FujiFilm rebuild + IFD overlay for Panasonic/Sony/Olympus/Nikon/Canon/Pentax. Encrypted Nikon ShotInfo / remaining vendor tables still blob-copy.
+1. MakerNotes field write: IFD overlay for major vendors. Encrypted Nikon ShotInfo / Kodak layouts / remaining tables still blob-copy.
 2. ~~CR3 write.~~ Done: `Cr3Writer` (CMT1/2/4, XMP UUID, CTBO, stco/co64; CMT3 blob).
 3. 1:1 remaining MakerNotes vendors (NikonCustom ShotInfo subdirs, other brands).
 

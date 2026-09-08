@@ -72,15 +72,14 @@ impl VendorParser for AppleParser {
         }
 
         // Check header
-        let (ifd_data, byte_order) = if data.starts_with(APPLE_HEADER) {
-            // Skip "Apple iOS\0" (10 bytes) + version (4 bytes)
-            (&data[14..], parent_byte_order)
+        let (ifd_data, byte_order, ifd_off) = if data.starts_with(APPLE_HEADER) {
+            // ExifTool MakerNoteApple: Start +14, Base = start-14.
+            (data, parent_byte_order, 14u32)
         } else {
-            // No header, try as direct IFD
-            (data, parent_byte_order)
+            (data, parent_byte_order, 0u32)
         };
 
-        let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
+        let entries = super::parse_ifd_entries(ifd_data, byte_order, ifd_off)?;
 
         let mut attrs = Attrs::new();
 
