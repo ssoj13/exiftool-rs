@@ -29,7 +29,7 @@ No `path = "C:/projects/..."` for sibling git repos.
 
 ## Still open
 
-1. MakerNotes field write: IFD overlay including headerless Kodak and Motorola. Nikon encrypted overlay: ShotInfo Full-crypt and `NIKON_OFFSETS`, ColorBalance levels, LensData `LensIDNumber`. Still blob-copy: remaining brands, NikonCustom ShotInfo subdirs.
+1. MakerNotes field write: IFD overlay for cameras plus headerless phone IFDs (Xiaomi/Oppo/OnePlus/Vivo/Realme/Huawei/Google), Phase One/Leaf, Leica (incl. `LEICA CAMERA AG`). Nikon encrypted overlay as before. Still blob-copy: DJI floats, NikonCustom ShotInfo bitfields, GoPro GPMF, `KDK*`.
 2. ~~CR3 write.~~ Done: `Cr3Writer` (CMT1/2/4, XMP UUID, CTBO, stco/co64; CMT3 blob).
 3. 1:1 remaining MakerNotes vendors (NikonCustom ShotInfo subdirs, other brands).
 

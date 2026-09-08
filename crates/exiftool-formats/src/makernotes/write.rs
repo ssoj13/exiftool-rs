@@ -102,6 +102,39 @@ fn lookup_motorola(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'s
         _ => None,
     }
 }
+fn lookup_phone_serial(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0100 => Some(("SerialNumber", None)),
+        _ => None,
+    }
+}
+fn lookup_huawei(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0100 => Some(("CaptureMode", None)),
+        _ => None,
+    }
+}
+fn lookup_google(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0002 => Some(("HDRPlusUsed", None)),
+        0x0003 => Some(("NightModeUsed", None)),
+        _ => None,
+    }
+}
+fn lookup_phaseone(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0105 => Some(("SerialNumber", None)),
+        0x0106 => Some(("ISO", None)),
+        _ => None,
+    }
+}
+fn lookup_leica(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0001 => Some(("SerialNumber", None)),
+        0x0010 => Some(("ISO", None)),
+        _ => None,
+    }
+}
 
 fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(b"Panasonic") && data.len() >= 14 {
@@ -117,6 +150,10 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(b"LEICA\0\0\0") && data.len() >= 10 {
         let order = detect_order(data, 8)?;
         return patch_ifd(data, 8, order, lookup_panasonic, metadata, true);
+    }
+    if data.starts_with(b"LEICA CAMERA AG") && data.len() >= 18 {
+        let order = detect_order(data, 16)?;
+        return patch_ifd(data, 16, order, lookup_leica, metadata, true);
     }
     if (data.starts_with(b"SONY DSC ") || data.starts_with(b"SONY CAM ")) && data.len() >= 14 {
         let order = detect_order(data, 12)?;
@@ -238,6 +275,38 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if make.contains("motorola") {
         let order = detect_order(data, 0)?;
         return patch_ifd(data, 0, order, lookup_motorola, metadata, true);
+    }
+    if make.contains("xiaomi") || make.contains("redmi") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_phone_serial, metadata, true);
+    }
+    if make.contains("oneplus")
+        || make.contains("oppo")
+        || make.contains("vivo")
+        || make.contains("realme")
+    {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_phone_serial, metadata, true);
+    }
+    if make.contains("huawei") || make.contains("honor") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_huawei, metadata, true);
+    }
+    if make.contains("google") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_google, metadata, true);
+    }
+    if make.contains("phase one")
+        || make.contains("phaseone")
+        || make.contains("leaf")
+        || make.contains("mamiya")
+    {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_phaseone, metadata, true);
+    }
+    if make.contains("leica") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_leica, metadata, true);
     }
     None
 }
@@ -1120,5 +1189,77 @@ mod tests {
             .parse(&out, ByteOrder::LittleEndian)
             .unwrap();
         assert_eq!(parsed.get_u32("ISO"), Some(200));
+    }
+
+    #[test]
+    fn xiaomi_serial_inplace() {
+        let src = prefix_ifd(
+            b"",
+            0x0100,
+            ExifFormat::String,
+            RawValue::String("OLDXIAOMI".into()),
+        );
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Xiaomi".into()));
+        meta.exif
+            .set("SerialNumber", AttrValue::Str("NEWXIAOMI".into()));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::XiaomiParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("SerialNumber"), Some("NEWXIAOMI"));
+    }
+
+    #[test]
+    fn google_hdrplus_inplace() {
+        let src = prefix_ifd(b"", 0x0002, ExifFormat::UInt16, RawValue::UInt16(vec![0]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Google".into()));
+        meta.exif.set("HDRPlusUsed", AttrValue::UInt(1));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::GoogleParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("HDRPlusUsed"), Some(1));
+    }
+
+    #[test]
+    fn phaseone_iso_inplace() {
+        let src = prefix_ifd(b"", 0x0106, ExifFormat::UInt16, RawValue::UInt16(vec![100]));
+        let mut meta = Metadata::new("IIQ");
+        meta.exif.set("Make", AttrValue::Str("Phase One".into()));
+        meta.exif.set("ISO", AttrValue::UInt(200));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::PhaseOneParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("ISO"), Some(200));
+    }
+
+    #[test]
+    fn leica_headerless_iso_inplace() {
+        let src = prefix_ifd(b"", 0x0010, ExifFormat::UInt16, RawValue::UInt16(vec![100]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif
+            .set("Make", AttrValue::Str("Leica Camera AG".into()));
+        meta.exif.set("ISO", AttrValue::UInt(400));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::LeicaParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("Leica:ISO"), Some(400));
+    }
+
+    #[test]
+    fn huawei_capturemode_inplace() {
+        let src = prefix_ifd(b"", 0x0100, ExifFormat::UInt16, RawValue::UInt16(vec![1]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("HUAWEI".into()));
+        meta.exif.set("CaptureMode", AttrValue::UInt(2));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::HuaweiParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("CaptureMode"), Some(2));
     }
 }
