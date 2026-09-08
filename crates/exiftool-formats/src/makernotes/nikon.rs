@@ -96,6 +96,12 @@ use exiftool_tags::generated::nikon;
 #[path = "nikon_decrypt.rs"]
 mod nikon_decrypt;
 
+#[path = "shot_info_write.rs"]
+mod shot_info_write;
+pub(crate) use shot_info_write::{
+    crypt_shot_info, decrypt_keys_from_ifd, rewrite_shot_info_full, ShotInfoWrite,
+};
+
 /// Nikon MakerNotes parser.
 pub struct NikonParser;
 

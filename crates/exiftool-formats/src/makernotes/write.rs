@@ -2,6 +2,7 @@
 //!
 //! FujiFilm rebuilds the IFD (offsets from MakerNotes start). Other IFD vendors
 //! patch existing directory values in place so sub-IFD / preview offsets stay valid.
+//! Nikon ShotInfo (`0x0091`) Full-crypt blobs are decrypted, patched, and re-encrypted.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -83,6 +84,13 @@ fn lookup_ricoh(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'stat
     match tag {
         0x0005 => Some(("SerialNumber", None)),
         0x0002 => Some(("FirmwareVersion", None)),
+        _ => None,
+    }
+}
+fn lookup_kodak(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x001c => Some(("SerialNumber", None)),
+        0x0104 => Some(("Quality", None)),
         _ => None,
     }
 }
@@ -168,14 +176,7 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(NIKON_HEADER) && data.len() >= 18 {
         match data[6] {
             0x01 => {
-                return patch_ifd(
-                    data,
-                    8,
-                    ByteOrder::LittleEndian,
-                    lookup_nikon,
-                    metadata,
-                    true,
-                );
+                return patch_nikon(data, 8, ByteOrder::LittleEndian, metadata, true);
             }
             0x02 => {
                 let tiff = &data[10..];
@@ -184,7 +185,7 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
                     ByteOrder::LittleEndian => u32::from_le_bytes(tiff[4..8].try_into().ok()?),
                     ByteOrder::BigEndian => u32::from_be_bytes(tiff[4..8].try_into().ok()?),
                 };
-                let patched = patch_ifd(tiff, ifd_rel, order, lookup_nikon, metadata, false)?;
+                let patched = patch_nikon(tiff, ifd_rel, order, metadata, false)?;
                 let mut out = Vec::with_capacity(10 + patched.len());
                 out.extend_from_slice(&data[..10]);
                 out.extend_from_slice(&patched);
@@ -204,7 +205,11 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if make.contains("nikon") && !data.starts_with(NIKON_HEADER) {
         let order = detect_order(data, 0)?;
-        return patch_ifd(data, 0, order, lookup_nikon, metadata, true);
+        return patch_nikon(data, 0, order, metadata, true);
+    }
+    if make.contains("kodak") && !data.starts_with(b"KDK") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_kodak, metadata, true);
     }
     if make.contains("sony") || make.contains("hasselblad") {
         let order = detect_order(data, 0)?;
@@ -417,6 +422,95 @@ fn patch_ifd(
         }
     }
     Some(out)
+}
+
+fn patch_nikon(
+    data: &[u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    metadata: &Metadata,
+    offsets_from_ifd: bool,
+) -> Option<Vec<u8>> {
+    let mut out = patch_ifd(
+        data,
+        ifd_off,
+        order,
+        lookup_nikon,
+        metadata,
+        offsets_from_ifd,
+    )?;
+    overlay_shot_info(&mut out, data, ifd_off, order, offsets_from_ifd, metadata);
+    Some(out)
+}
+
+fn overlay_shot_info(
+    out: &mut [u8],
+    keys_src: &[u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    offsets_from_ifd: bool,
+    metadata: &Metadata,
+) {
+    let write = super::nikon::ShotInfoWrite {
+        firmware_version: metadata.exif.get_str("FirmwareVersion").map(str::to_string),
+        vibration_reduction: metadata
+            .exif
+            .get_str("VibrationReduction")
+            .map(str::to_string),
+        shutter_count: metadata.exif.get_u32("ShutterCount"),
+    };
+    if write.is_empty() {
+        return;
+    }
+    let start = ifd_off as usize;
+    let (keys_parse, parse_off, extra_add) = if offsets_from_ifd {
+        if start >= keys_src.len() {
+            return;
+        }
+        (&keys_src[start..], 0u32, start)
+    } else {
+        (keys_src, ifd_off, 0usize)
+    };
+    let Some(key_entries) = super::parse_ifd_entries(keys_parse, order, parse_off) else {
+        return;
+    };
+    let (serial_key, shutter_key) =
+        super::nikon::decrypt_keys_from_ifd(&key_entries, metadata.exif.get_str("Model"));
+    let out_parse: &[u8] = if offsets_from_ifd {
+        if start >= out.len() {
+            return;
+        }
+        &out[start..]
+    } else {
+        out
+    };
+    let Some(entries) = super::parse_ifd_entries(out_parse, order, parse_off) else {
+        return;
+    };
+    for e in entries {
+        if e.tag != 0x0091 {
+            continue;
+        }
+        let Some(off) = e.value_offset else {
+            continue;
+        };
+        let abs = extra_add + off as usize;
+        let RawValue::Undefined(v) = &e.value else {
+            continue;
+        };
+        let len = v.len();
+        if abs + len > out.len() {
+            continue;
+        }
+        let extra = out[abs..abs + len].to_vec();
+        if let Some(new) =
+            super::nikon::rewrite_shot_info_full(&extra, serial_key, shutter_key, &write)
+        {
+            if new.len() == len {
+                out[abs..abs + len].copy_from_slice(&new);
+            }
+        }
+    }
 }
 
 fn attr_to_entry_fixed(
@@ -891,5 +985,85 @@ mod tests {
             .parse(&out, ByteOrder::LittleEndian)
             .unwrap();
         assert_eq!(parsed.get_u32("PreviewImageLength"), Some(200));
+    }
+
+    #[test]
+    fn nikon_type2_shotinfo_full_overlay() {
+        let serial = 7u32;
+        let shutter = 99u32;
+        let mut plain = vec![0u8; 140];
+        plain[0..4].copy_from_slice(b"0204");
+        plain[4..9].copy_from_slice(b"1.00\0");
+        plain[0x6a..0x6e].copy_from_slice(&100u32.to_be_bytes());
+        plain[0x82] = 1;
+        let extra = super::super::nikon::crypt_shot_info(&plain, serial, shutter);
+        let entries = [
+            IfdEntry {
+                tag: 0x00A0,
+                format: ExifFormat::String,
+                count: 2,
+                value: RawValue::String("7".into()),
+                value_offset: None,
+            },
+            IfdEntry {
+                tag: 0x00A7,
+                format: ExifFormat::UInt32,
+                count: 1,
+                value: RawValue::UInt32(vec![shutter]),
+                value_offset: None,
+            },
+            IfdEntry {
+                tag: 0x0091,
+                format: ExifFormat::Undefined,
+                count: extra.len() as u32,
+                value: RawValue::Undefined(extra),
+                value_offset: None,
+            },
+        ];
+        let ifd = emit_ifd(&entries, ByteOrder::LittleEndian, 0).unwrap();
+        let mut src = Vec::from(b"Nikon\x00\x01\x00".as_slice());
+        src.extend_from_slice(&ifd);
+        let mut meta = Metadata::new("NEF");
+        meta.exif
+            .set("FirmwareVersion", AttrValue::Str("2.10".into()));
+        meta.exif
+            .set("VibrationReduction", AttrValue::Str("Off".into()));
+        let out = rewrite_blob(&src, &meta);
+        assert_eq!(out.len(), src.len());
+        let parsed = crate::makernotes::NikonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("FirmwareVersion"), Some("2.10"));
+        assert_eq!(parsed.get_str("VibrationReduction"), Some("Off"));
+    }
+
+    #[test]
+    fn kodak_type1_serial_inplace() {
+        let src = prefix_ifd(
+            b"",
+            0x001c,
+            ExifFormat::String,
+            RawValue::String("OLDKODAK".into()),
+        );
+        let mut meta = Metadata::new("JPG");
+        meta.exif
+            .set("Make", AttrValue::Str("EASTMAN KODAK COMPANY".into()));
+        meta.exif
+            .set("SerialNumber", AttrValue::Str("NEWKODAK".into()));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::KodakParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("SerialNumber"), Some("NEWKODAK"));
+    }
+
+    #[test]
+    fn kodak_kdk_info_not_overlaid_as_ifd() {
+        let mut src = Vec::from(b"KDK INFO".as_slice());
+        src.extend_from_slice(&[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Kodak".into()));
+        meta.exif.set("SerialNumber", AttrValue::Str("NOPE".into()));
+        assert_eq!(rewrite_blob(&src, &meta), src);
     }
 }
