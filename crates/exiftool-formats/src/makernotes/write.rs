@@ -6,6 +6,8 @@
 //! ColorBalance (`0x0097`) levels and LensData (`0x0098`) `LensIDNumber` use the same keys.
 //! DJI overlay includes FLOAT tags. GoPro GPMF patches same-size KLV leaves in place.
 //! IFD overlay tag names follow each vendor parser table (Hasselblad is not Sony).
+//! Olympus Equipment/CameraSettings/ImageProcessing/FocusInfo sub-IFDs overlay in place.
+//! Canon CameraSettings and ShotInfo overlay existing int16 slots.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -49,6 +51,18 @@ fn lookup_nikon(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'stat
 }
 fn lookup_canon(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     canon::CANON_MAIN.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_canon_camerasettings(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    canon::CANON_CAMERASETTINGS
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_canon_shotinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    canon::CANON_SHOTINFO.get(&tag).map(|d| (d.name, d.values))
 }
 fn lookup_pentax(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     pentax::PENTAX_MAIN.get(&tag).map(|d| (d.name, d.values))
@@ -148,15 +162,15 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if data.starts_with(b"OLYMPUS\0") && data.len() >= 14 {
         let order = order_from_marker(&data[8..10])?;
-        return patch_ifd(data, 12, order, lookup_olympus, metadata, false);
+        return patch_olympus(data, 12, order, metadata, false);
     }
     if data.starts_with(b"OM SYSTEM\0") && data.len() >= 18 {
         let order = order_from_marker(&data[10..12])?;
-        return patch_ifd(data, 16, order, lookup_olympus, metadata, false);
+        return patch_olympus(data, 16, order, metadata, false);
     }
     if (data.starts_with(b"OLYMP\0") || data.starts_with(b"EPSON\0")) && data.len() >= 10 {
         let order = detect_order(data, 8)?;
-        return patch_ifd(data, 8, order, lookup_olympus, metadata, true);
+        return patch_olympus(data, 8, order, metadata, true);
     }
     if data.starts_with(b"PENTAX \0") && data.len() >= 12 {
         let order = order_from_marker(&data[8..10])?;
@@ -195,15 +209,15 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if (data.starts_with(b"MINOL\0") || data.starts_with(b"CAMER\0")) && data.len() >= 10 {
         let order = detect_order(data, 8)?;
-        return patch_ifd(data, 8, order, lookup_olympus, metadata, true);
+        return patch_olympus(data, 8, order, metadata, true);
     }
     if data.starts_with(b"SONY PI\0") && data.len() >= 14 {
         let order = detect_order(data, 12)?;
-        return patch_ifd(data, 12, order, lookup_olympus, metadata, true);
+        return patch_olympus(data, 12, order, metadata, true);
     }
     if data.starts_with(b"PREMI\0") && data.len() >= 10 {
         let order = detect_order(data, 8)?;
-        return patch_ifd(data, 8, order, lookup_olympus, metadata, true);
+        return patch_olympus(data, 8, order, metadata, true);
     }
     if data.starts_with(b"GoPro\0") {
         return patch_gpmf(data, metadata);
@@ -236,7 +250,7 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
         .to_ascii_lowercase();
     if make.contains("canon") {
         let order = detect_order(data, 0)?;
-        return patch_ifd(data, 0, order, lookup_canon, metadata, true);
+        return patch_canon(data, 0, order, metadata, true);
     }
     if make.contains("nikon") && !data.starts_with(NIKON_HEADER) {
         let order = detect_order(data, 0)?;
@@ -773,6 +787,220 @@ fn patch_ifd(
     Some(out)
 }
 
+fn patch_olympus(
+    data: &[u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    metadata: &Metadata,
+    offsets_from_ifd: bool,
+) -> Option<Vec<u8>> {
+    let mut out = patch_ifd(
+        data,
+        ifd_off,
+        order,
+        lookup_olympus,
+        metadata,
+        offsets_from_ifd,
+    )?;
+    overlay_olympus_subifds(&mut out, ifd_off, order, offsets_from_ifd, metadata);
+    Some(out)
+}
+
+fn lookup_olympus_equipment(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    olympus::OLYMPUS_EQUIPMENT
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_olympus_camerasettings(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    olympus::OLYMPUS_CAMERASETTINGS
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_olympus_imageprocessing(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    olympus::OLYMPUS_IMAGEPROCESSING
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_olympus_focusinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    olympus::OLYMPUS_FOCUSINFO
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+
+fn overlay_olympus_subifds(
+    out: &mut Vec<u8>,
+    ifd_off: u32,
+    order: ByteOrder,
+    offsets_from_ifd: bool,
+    metadata: &Metadata,
+) {
+    let start = ifd_off as usize;
+    if start > out.len() {
+        return;
+    }
+    let (parse_data, parse_off, extra_add) = if offsets_from_ifd {
+        (&out[start..], 0u32, start)
+    } else {
+        (out.as_slice(), ifd_off, 0usize)
+    };
+    let Some(entries) = super::parse_ifd_entries(parse_data, order, parse_off) else {
+        return;
+    };
+    for e in entries {
+        let (group, lookup): (&str, TagLookup) = match e.tag {
+            0x2010 => ("Equipment", lookup_olympus_equipment),
+            0x2020 => ("CameraSettings", lookup_olympus_camerasettings),
+            0x2040 => ("ImageProcessing", lookup_olympus_imageprocessing),
+            0x2050 => ("FocusInfo", lookup_olympus_focusinfo),
+            _ => continue,
+        };
+        let Some(rel) = e.value.as_u32() else {
+            continue;
+        };
+        let Some(gmeta) = metadata_from_group(metadata, group) else {
+            continue;
+        };
+        let abs = if offsets_from_ifd {
+            extra_add as u32 + rel
+        } else {
+            rel
+        };
+        if let Some(patched) = patch_ifd(out, abs, order, lookup, &gmeta, offsets_from_ifd) {
+            *out = patched;
+        }
+    }
+}
+
+fn patch_canon(
+    data: &[u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    metadata: &Metadata,
+    offsets_from_ifd: bool,
+) -> Option<Vec<u8>> {
+    let mut out = patch_ifd(
+        data,
+        ifd_off,
+        order,
+        lookup_canon,
+        metadata,
+        offsets_from_ifd,
+    )?;
+    overlay_canon_i16_groups(&mut out, ifd_off, order, offsets_from_ifd, metadata);
+    Some(out)
+}
+
+fn overlay_canon_i16_groups(
+    out: &mut [u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    offsets_from_ifd: bool,
+    metadata: &Metadata,
+) {
+    let start = ifd_off as usize;
+    if start > out.len() {
+        return;
+    }
+    let parse_buf = out.to_vec();
+    let (parse_data, parse_off, extra_add) = if offsets_from_ifd {
+        (&parse_buf[start..], 0u32, start)
+    } else {
+        (parse_buf.as_slice(), ifd_off, 0usize)
+    };
+    let Some(entries) = super::parse_ifd_entries(parse_data, order, parse_off) else {
+        return;
+    };
+    for (i, e) in entries.iter().enumerate() {
+        let (group, lookup): (&str, TagLookup) = match e.tag {
+            0x0001 => ("CameraSettings", lookup_canon_camerasettings),
+            0x0004 => ("ShotInfo", lookup_canon_shotinfo),
+            _ => continue,
+        };
+        let Some(gmeta) = metadata.exif.get(group) else {
+            continue;
+        };
+        let AttrValue::Group(g) = gmeta else {
+            continue;
+        };
+        let Some(orig) = encode_value(&e.value, order) else {
+            continue;
+        };
+        if orig.len() < 2 {
+            continue;
+        }
+        let entry_pos = start + 2 + i * 12;
+        let dest = if orig.len() <= 4 {
+            let end = entry_pos + 8 + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[entry_pos + 8..end]
+        } else if let Some(off) = e.value_offset {
+            let off = extra_add + off as usize;
+            let end = off + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[off..end]
+        } else {
+            continue;
+        };
+        let count = dest.len() / 2;
+        for idx in 0..count {
+            let Some((name, print_map)) = lookup(idx as u16) else {
+                continue;
+            };
+            let Some(val) = g.get(name) else {
+                continue;
+            };
+            let Some(n) = i16_from_attr(val, print_map) else {
+                continue;
+            };
+            let b = i16_bytes(n, order);
+            dest[idx * 2..idx * 2 + 2].copy_from_slice(&b);
+        }
+    }
+}
+
+fn metadata_from_group(metadata: &Metadata, name: &str) -> Option<Metadata> {
+    let AttrValue::Group(g) = metadata.exif.get(name)? else {
+        return None;
+    };
+    let mut m = Metadata::new(metadata.format);
+    for (k, v) in g.iter() {
+        m.exif.set(k.clone(), v.clone());
+    }
+    Some(m)
+}
+
+fn i16_from_attr(
+    val: &AttrValue,
+    print_map: Option<&'static [(i64, &'static str)]>,
+) -> Option<i16> {
+    if let (Some(map), AttrValue::Str(s)) = (print_map, val) {
+        for &(key, label) in map {
+            if label == s {
+                return Some(key as i16);
+            }
+        }
+    }
+    match val {
+        AttrValue::Int(v) => Some(*v as i16),
+        AttrValue::UInt(v) => Some(*v as i16),
+        AttrValue::Int8(v) => Some(i16::from(*v)),
+        AttrValue::Str(s) => s.parse().ok(),
+        _ => None,
+    }
+}
+
 fn patch_nikon(
     data: &[u8],
     ifd_off: u32,
@@ -1094,6 +1322,7 @@ fn i32_bytes(v: i32, order: ByteOrder) -> [u8; 4] {
 mod tests {
     use super::*;
     use crate::makernotes::{FujifilmParser, VendorParser};
+    use exiftool_attrs::Attrs;
 
     fn fuji_quality(q: &str) -> Vec<u8> {
         let entry = IfdEntry {
@@ -1159,6 +1388,10 @@ mod tests {
         let count = match &value {
             RawValue::String(s) => (s.len() + 1) as u32,
             RawValue::UInt16(v) => v.len() as u32,
+            RawValue::Int16(v) => v.len() as u32,
+            RawValue::UInt32(v) => v.len() as u32,
+            RawValue::Int32(v) => v.len() as u32,
+            RawValue::Undefined(v) => v.len() as u32,
             _ => 1,
         };
         let entry = IfdEntry {
@@ -1649,5 +1882,70 @@ mod tests {
             .parse(&out, ByteOrder::LittleEndian)
             .unwrap();
         assert_eq!(parsed.get_u32("Leica:ISO"), Some(800));
+    }
+
+    #[test]
+    fn canon_camerasettings_macromode_inplace() {
+        let src = prefix_ifd(
+            b"",
+            1,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0, 0, 1, 0, 0, 0, 0, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("MacroMode", AttrValue::Str("Normal".into()));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Canon".into()));
+        meta.exif
+            .set("CameraSettings", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::CanonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("CameraSettings").unwrap() else {
+            panic!("expected CameraSettings group");
+        };
+        assert_eq!(g.get_str("MacroMode"), Some("Normal"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn olympus_equipment_serial_inplace() {
+        let mut hdr = b"OLYMPUS\0II".to_vec();
+        hdr.extend_from_slice(&[0x2a, 0]);
+        let sub_off = 12u32 + 18;
+        let main = IfdEntry {
+            tag: 0x2010,
+            format: ExifFormat::UInt32,
+            count: 1,
+            value: RawValue::UInt32(vec![sub_off]),
+            value_offset: None,
+        };
+        let main_ifd = emit_ifd(&[main], ByteOrder::LittleEndian, 12).unwrap();
+        let eq = IfdEntry {
+            tag: 0x0101,
+            format: ExifFormat::String,
+            count: 8,
+            value: RawValue::String("OLDNAME".into()),
+            value_offset: None,
+        };
+        let eq_ifd = emit_ifd(&[eq], ByteOrder::LittleEndian, sub_off).unwrap();
+        let mut src = hdr;
+        src.extend_from_slice(&main_ifd);
+        src.extend_from_slice(&eq_ifd);
+        let mut group = Attrs::new();
+        group.set("SerialNumber", AttrValue::Str("NEWNAME".into()));
+        let mut meta = Metadata::new("ORF");
+        meta.exif
+            .set("Equipment", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::OlympusParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("Equipment").unwrap() else {
+            panic!("expected Equipment group");
+        };
+        assert_eq!(g.get_str("SerialNumber"), Some("NEWNAME"));
+        assert_eq!(out.len(), src.len());
     }
 }
