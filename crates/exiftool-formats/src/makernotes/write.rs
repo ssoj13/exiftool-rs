@@ -9,7 +9,8 @@
 //! Olympus Equipment/CameraSettings/ImageProcessing/FocusInfo sub-IFDs overlay in place.
 //! Canon CameraSettings, ShotInfo, FileInfo, ProcessingInfo int16 arrays and AFInfo uint16 overlay in place.
 //! Pentax LensInfo/AFInfo nested IFDs overlay in place. Panasonic FaceDetect FaceCount overlays the first u16.
-//! Sony CameraSettings/FocusInfo and Nikon ISOInfo/DistortInfo/HDRInfo/LocationInfo/AFInfo/AFTune/FlashInfo uint16 arrays overlay in place.
+//! Sony CameraSettings/FocusInfo and Nikon ISOInfo/DistortInfo/HDRInfo/LocationInfo/AFInfo/AFInfo2/AFTune/FlashInfo uint16 arrays overlay in place.
+//! Nikon BarometerInfo overlays existing uint32 slots.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -92,6 +93,20 @@ fn lookup_nikon_afinfo(tag: u16) -> Option<(&'static str, Option<&'static [(i64,
 }
 fn lookup_nikon_aftune(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     nikon::NIKON_AFTUNE.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_nikon_afinfo2(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_AFINFO2V0100
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_nikon_barometer(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_BAROMETERINFO
+        .get(&tag)
+        .map(|d| (d.name, d.values))
 }
 fn lookup_nikon_flashinfo(
     tag: u16,
@@ -1108,6 +1123,77 @@ fn overlay_index16_groups(
     }
 }
 
+fn overlay_index32_groups(
+    out: &mut [u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    offsets_from_ifd: bool,
+    metadata: &Metadata,
+    groups: &[(u16, &str, TagLookup)],
+) {
+    let start = ifd_off as usize;
+    if start > out.len() {
+        return;
+    }
+    let parse_buf = out.to_vec();
+    let (parse_data, parse_off, extra_add) = if offsets_from_ifd {
+        (&parse_buf[start..], 0u32, start)
+    } else {
+        (parse_buf.as_slice(), ifd_off, 0usize)
+    };
+    let Some(entries) = super::parse_ifd_entries(parse_data, order, parse_off) else {
+        return;
+    };
+    for (i, e) in entries.iter().enumerate() {
+        let Some((_, group, lookup)) = groups.iter().copied().find(|(tag, _, _)| *tag == e.tag)
+        else {
+            continue;
+        };
+        let Some(gmeta) = metadata.exif.get(group) else {
+            continue;
+        };
+        let AttrValue::Group(g) = gmeta else {
+            continue;
+        };
+        let Some(orig) = encode_value(&e.value, order) else {
+            continue;
+        };
+        if orig.len() < 4 {
+            continue;
+        }
+        let entry_pos = start + 2 + i * 12;
+        let dest = if orig.len() <= 4 {
+            let end = entry_pos + 8 + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[entry_pos + 8..end]
+        } else if let Some(off) = e.value_offset {
+            let off = extra_add + off as usize;
+            let end = off + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[off..end]
+        } else {
+            continue;
+        };
+        let count = dest.len() / 4;
+        for idx in 0..count {
+            let Some((name, print_map)) = lookup(idx as u16) else {
+                continue;
+            };
+            let Some(val) = g.get(name) else {
+                continue;
+            };
+            let Some(n) = u32_from_attr(val, print_map) else {
+                continue;
+            };
+            dest[idx * 4..idx * 4 + 4].copy_from_slice(&u32_bytes(n, order));
+        }
+    }
+}
+
 fn patch_sony(
     data: &[u8],
     ifd_off: u32,
@@ -1163,6 +1249,25 @@ fn i16_from_attr(
         AttrValue::Int(v) => Some(*v as i16),
         AttrValue::UInt(v) => Some(*v as i16),
         AttrValue::Int8(v) => Some(i16::from(*v)),
+        AttrValue::Str(s) => s.parse().ok(),
+        _ => None,
+    }
+}
+
+fn u32_from_attr(
+    val: &AttrValue,
+    print_map: Option<&'static [(i64, &'static str)]>,
+) -> Option<u32> {
+    if let (Some(map), AttrValue::Str(s)) = (print_map, val) {
+        for &(key, label) in map {
+            if label == s {
+                return Some(key as u32);
+            }
+        }
+    }
+    match val {
+        AttrValue::Int(v) => Some(*v as u32),
+        AttrValue::UInt(v) => Some(*v),
         AttrValue::Str(s) => s.parse().ok(),
         _ => None,
     }
@@ -1277,10 +1382,20 @@ fn patch_nikon(
             (0x002B, "DistortInfo", lookup_nikon_distortinfo, false),
             (0x002C, "HDRInfo", lookup_nikon_hdrinfo, false),
             (0x0035, "LocationInfo", lookup_nikon_locationinfo, false),
+            (0x0039, "AFInfo2", lookup_nikon_afinfo2, false),
             (0x0088, "AFInfo", lookup_nikon_afinfo, false),
             (0x00A8, "FlashInfo", lookup_nikon_flashinfo, false),
+            (0x00B7, "AFInfo2", lookup_nikon_afinfo2, false),
             (0x00B9, "AFTune", lookup_nikon_aftune, false),
         ],
+    );
+    overlay_index32_groups(
+        &mut out,
+        ifd_off,
+        order,
+        offsets_from_ifd,
+        metadata,
+        &[(0x0037, "BarometerInfo", lookup_nikon_barometer)],
     );
     Some(out)
 }
@@ -1813,6 +1928,65 @@ mod tests {
             panic!("expected HDRInfo group");
         };
         assert_eq!(g.get_str("HDR"), Some("On (normal)"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn nikon_type3_afinfo2_areamode_inplace() {
+        let entry = IfdEntry {
+            tag: 0x0039,
+            format: ExifFormat::Undefined,
+            count: 16,
+            value: RawValue::Undefined(vec![0u8; 16]),
+            value_offset: None,
+        };
+        let ifd = emit_ifd(&[entry], ByteOrder::LittleEndian, 8).unwrap();
+        let mut tiff = Vec::from(b"II\x2a\x00\x08\x00\x00\x00".as_slice());
+        tiff.extend_from_slice(&ifd);
+        let mut src = Vec::from(b"Nikon\x00\x02\x10\x00\x00".as_slice());
+        src.extend_from_slice(&tiff);
+        let mut group = Attrs::new();
+        group.set("AFAreaMode", AttrValue::Str("Dynamic Area".into()));
+        let mut meta = Metadata::new("NEF");
+        meta.exif.set("AFInfo2", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::NikonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("AFInfo2").unwrap() else {
+            panic!("expected AFInfo2 group");
+        };
+        assert_eq!(g.get_str("AFAreaMode"), Some("Dynamic Area"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn nikon_type3_barometer_version_inplace() {
+        let entry = IfdEntry {
+            tag: 0x0037,
+            format: ExifFormat::Undefined,
+            count: 8,
+            value: RawValue::Undefined(vec![1, 0, 0, 0, 0, 0, 0, 0]),
+            value_offset: None,
+        };
+        let ifd = emit_ifd(&[entry], ByteOrder::LittleEndian, 8).unwrap();
+        let mut tiff = Vec::from(b"II\x2a\x00\x08\x00\x00\x00".as_slice());
+        tiff.extend_from_slice(&ifd);
+        let mut src = Vec::from(b"Nikon\x00\x02\x10\x00\x00".as_slice());
+        src.extend_from_slice(&tiff);
+        let mut group = Attrs::new();
+        group.set("BarometerInfoVersion", AttrValue::UInt(2));
+        let mut meta = Metadata::new("NEF");
+        meta.exif
+            .set("BarometerInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::NikonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("BarometerInfo").unwrap() else {
+            panic!("expected BarometerInfo group");
+        };
+        assert_eq!(g.get_u32("BarometerInfoVersion"), Some(2));
         assert_eq!(out.len(), src.len());
     }
 
