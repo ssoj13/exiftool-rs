@@ -728,7 +728,63 @@ fn rewrite_fujifilm(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
         metadata,
         &[(0x102E, "AFCSettings", lookup_fuji_afc)],
     );
+    overlay_fuji_afc_masks(&mut out, metadata);
     Some(out)
+}
+
+fn overlay_fuji_afc_masks(out: &mut [u8], metadata: &Metadata) {
+    let Some(gmeta) = metadata.exif.get("AFCSettings") else {
+        return;
+    };
+    let AttrValue::Group(g) = gmeta else {
+        return;
+    };
+    let order = ByteOrder::LittleEndian;
+    let ifd_off = 12u32;
+    let Some(entries) = super::parse_ifd_entries(out, order, ifd_off) else {
+        return;
+    };
+    for (i, e) in entries.iter().enumerate() {
+        if e.tag != 0x102E {
+            continue;
+        }
+        let Some(orig) = encode_value(&e.value, order) else {
+            continue;
+        };
+        let entry_pos = 12 + 2 + i * 12;
+        let dest = if orig.len() <= 4 {
+            let end = entry_pos + 8 + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[entry_pos + 8..end]
+        } else if let Some(off) = e.value_offset {
+            let off = off as usize;
+            let end = off + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[off..end]
+        } else {
+            continue;
+        };
+        for m in fujifilm::FUJIFILM_AFCSETTINGS_MASKS {
+            let off = m.index as usize * 4;
+            if off + 4 > dest.len() {
+                continue;
+            }
+            let Some(val) = g.get(m.name) else {
+                continue;
+            };
+            let Some(n) = u32_from_attr(val, m.values) else {
+                continue;
+            };
+            let mut word = u32::from_le_bytes(dest[off..off + 4].try_into().unwrap());
+            let shift = m.mask.trailing_zeros();
+            word = (word & !m.mask) | ((n << shift) & m.mask);
+            dest[off..off + 4].copy_from_slice(&word.to_le_bytes());
+        }
+    }
 }
 
 fn overlay_fuji_entry(entry: &mut IfdEntry, metadata: &Metadata) {
@@ -1418,6 +1474,82 @@ fn patch_kodak_kdk(
             _ => {}
         }
     }
+    if dest_len >= 0x20 {
+        if let Some(val) = metadata.exif.get("FNumber") {
+            let n = match val {
+                AttrValue::Double(v) => (*v * 100.0).round() as u16,
+                AttrValue::Float(v) => (f64::from(*v) * 100.0).round() as u16,
+                AttrValue::UInt(v) => (*v as f64 * 100.0).round() as u16,
+                AttrValue::Int(v) => (*v as f64 * 100.0).round() as u16,
+                AttrValue::Str(s) => s
+                    .parse::<f64>()
+                    .ok()
+                    .map(|v| (v * 100.0).round() as u16)
+                    .unwrap_or(0),
+                _ => 0,
+            };
+            if n > 0 {
+                out[skip + 0x1e..skip + 0x20].copy_from_slice(&u16_bytes(n, order));
+            }
+        }
+    }
+    if dest_len >= 0x24 {
+        if let Some(val) = metadata.exif.get("ExposureTime") {
+            let n = match val {
+                AttrValue::Double(v) => (*v * 100_000.0).round() as u32,
+                AttrValue::Float(v) => (f64::from(*v) * 100_000.0).round() as u32,
+                AttrValue::UInt(v) => *v,
+                AttrValue::Str(s) => s
+                    .parse::<f64>()
+                    .ok()
+                    .map(|v| (v * 100_000.0).round() as u32)
+                    .unwrap_or(0),
+                _ => 0,
+            };
+            if n > 0 {
+                let dest = &mut out[skip + 0x20..skip + 0x24];
+                dest.copy_from_slice(&u32_bytes(n, order));
+            }
+        }
+    }
+    if dest_len >= 0x12 {
+        if let Some(val) = metadata.exif.get("YearCreated") {
+            if let Some(n) = u32_from_attr(val, None) {
+                out[skip + 0x10..skip + 0x12].copy_from_slice(&u16_bytes(n as u16, order));
+            }
+        }
+    }
+    if dest_len >= 0x14 {
+        if let Some(AttrValue::Str(s)) = metadata.exif.get("MonthDayCreated") {
+            if let Some(b) = kdk_colon_bytes(s, 2) {
+                out[skip + 0x12] = b[0];
+                out[skip + 0x13] = b[1];
+            }
+        }
+    }
+    if dest_len >= 0x18 {
+        if let Some(AttrValue::Str(s)) = metadata.exif.get("TimeCreated") {
+            if let Some(b) = kdk_colon_bytes(s, 4) {
+                out[skip + 0x14..skip + 0x18].copy_from_slice(&b);
+            }
+        }
+    }
+    if dest_len >= 0x26 {
+        if let Some(val) = metadata.exif.get("ExposureCompensation") {
+            let n = match val {
+                AttrValue::Double(v) => (*v * 1000.0).round() as i16,
+                AttrValue::Float(v) => (f64::from(*v) * 1000.0).round() as i16,
+                AttrValue::Int(v) => (*v as f64 * 1000.0).round() as i16,
+                AttrValue::Str(s) => s
+                    .parse::<f64>()
+                    .ok()
+                    .map(|v| (v * 1000.0).round() as i16)
+                    .unwrap_or(0),
+                _ => 0,
+            };
+            out[skip + 0x24..skip + 0x26].copy_from_slice(&i16_bytes(n, order));
+        }
+    }
     Some(out)
 }
 
@@ -1613,6 +1745,18 @@ fn overlay_shot_info(
             .get_str("VibrationReduction")
             .map(str::to_string),
         shutter_count: metadata.exif.get_u32("ShutterCount"),
+        custom_settings: nikon::NIKON_SHOTINFO_CUSTOM_DIRS
+            .iter()
+            .filter_map(|dir| {
+                metadata.exif.get(dir.group).and_then(|v| {
+                    if let AttrValue::Group(g) = v {
+                        Some((dir.group.to_string(), (**g).clone()))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect(),
     };
     let lens_id = metadata.exif.get_u32("LensIDNumber").map(|n| n as u8);
     let start = ifd_off as usize;
@@ -1868,6 +2012,19 @@ fn put_u32(buf: &mut [u8], at: usize, v: u32, order: ByteOrder) {
     buf[at..at + 4].copy_from_slice(&u32_bytes(v, order));
 }
 
+fn kdk_colon_bytes(s: &str, n: usize) -> Option<Vec<u8>> {
+    let parts: Vec<u8> = s
+        .split(|c| c == ':' || c == '.' || c == ' ')
+        .filter(|p| !p.is_empty())
+        .filter_map(|p| p.parse().ok())
+        .collect();
+    if parts.len() >= n {
+        Some(parts[..n].to_vec())
+    } else {
+        None
+    }
+}
+
 fn u16_bytes(v: u16, order: ByteOrder) -> [u8; 2] {
     match order {
         ByteOrder::LittleEndian => v.to_le_bytes(),
@@ -1956,6 +2113,32 @@ mod tests {
         };
         assert_eq!(g.get_str("AF-CSetting"), Some("Set 1 (multi-purpose)"));
         assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn fujifilm_afcsettings_zone_mask_overlay() {
+        let entry = IfdEntry {
+            tag: 0x102E,
+            format: ExifFormat::Undefined,
+            count: 4,
+            value: RawValue::Undefined(vec![0, 0, 0, 0]),
+            value_offset: None,
+        };
+        let ifd = emit_ifd(&[entry], ByteOrder::LittleEndian, 12).unwrap();
+        let mut src = Vec::from(FUJI_MAGIC);
+        src.extend_from_slice(&12u32.to_le_bytes());
+        src.extend_from_slice(&ifd);
+        let mut group = Attrs::new();
+        group.set("AF-CZoneAreaSwitching", AttrValue::Str("Auto".into()));
+        let mut meta = Metadata::new("RAF");
+        meta.exif
+            .set("AFCSettings", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = FujifilmParser.parse(&out, ByteOrder::LittleEndian).unwrap();
+        let AttrValue::Group(g) = parsed.get("AFCSettings").unwrap() else {
+            panic!("expected AFCSettings group");
+        };
+        assert_eq!(g.get_str("AF-CZoneAreaSwitching"), Some("Auto"));
     }
 
     #[test]
@@ -2488,6 +2671,103 @@ mod tests {
     }
 
     #[test]
+    fn nikon_type2_shotinfo_d40_custom_settings_beep() {
+        let serial = 7u32;
+        let shutter = 99u32;
+        let mut plain = vec![0u8; 741];
+        plain[0..4].copy_from_slice(b"0209");
+        let extra = super::super::nikon::crypt_shot_info(&plain, serial, shutter);
+        let entries = [
+            IfdEntry {
+                tag: 0x00A0,
+                format: ExifFormat::String,
+                count: 2,
+                value: RawValue::String("7".into()),
+                value_offset: None,
+            },
+            IfdEntry {
+                tag: 0x00A7,
+                format: ExifFormat::UInt32,
+                count: 1,
+                value: RawValue::UInt32(vec![shutter]),
+                value_offset: None,
+            },
+            IfdEntry {
+                tag: 0x0091,
+                format: ExifFormat::Undefined,
+                count: extra.len() as u32,
+                value: RawValue::Undefined(extra),
+                value_offset: None,
+            },
+        ];
+        let ifd = emit_ifd(&entries, ByteOrder::LittleEndian, 0).unwrap();
+        let mut src = Vec::from(b"Nikon\x00\x01\x00".as_slice());
+        src.extend_from_slice(&ifd);
+        let mut group = Attrs::new();
+        group.set("Beep", AttrValue::Str("Off".into()));
+        let mut meta = Metadata::new("NEF");
+        meta.exif
+            .set("CustomSettingsD40", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        assert_eq!(out.len(), src.len());
+        let parsed = crate::makernotes::NikonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("CustomSettingsD40").unwrap() else {
+            panic!("expected CustomSettingsD40 group");
+        };
+        assert_eq!(g.get_str("Beep"), Some("Off"));
+    }
+
+    #[test]
+    fn nikon_type2_shotinfo_d80_custom_settings_beep() {
+        let serial = 7u32;
+        let shutter = 99u32;
+        let mut plain = vec![0u8; 765];
+        plain[0..4].copy_from_slice(b"0208");
+        let extra = super::super::nikon::crypt_shot_info(&plain, serial, shutter);
+        let entries = [
+            IfdEntry {
+                tag: 0x00A0,
+                format: ExifFormat::String,
+                count: 2,
+                value: RawValue::String("7".into()),
+                value_offset: None,
+            },
+            IfdEntry {
+                tag: 0x00A7,
+                format: ExifFormat::UInt32,
+                count: 1,
+                value: RawValue::UInt32(vec![shutter]),
+                value_offset: None,
+            },
+            IfdEntry {
+                tag: 0x0091,
+                format: ExifFormat::Undefined,
+                count: extra.len() as u32,
+                value: RawValue::Undefined(extra),
+                value_offset: None,
+            },
+        ];
+        let ifd = emit_ifd(&entries, ByteOrder::LittleEndian, 0).unwrap();
+        let mut src = Vec::from(b"Nikon\x00\x01\x00".as_slice());
+        src.extend_from_slice(&ifd);
+        let mut group = Attrs::new();
+        group.set("Beep", AttrValue::Str("Off".into()));
+        let mut meta = Metadata::new("NEF");
+        meta.exif
+            .set("CustomSettingsD80", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::NikonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("CustomSettingsD80").unwrap() else {
+            panic!("expected CustomSettingsD80 group");
+        };
+        assert_eq!(g.get_str("Beep"), Some("Off"));
+    }
+
+    #[test]
     fn kodak_type1_serial_inplace() {
         let src = prefix_ifd(
             b"",
@@ -2548,6 +2828,39 @@ mod tests {
         assert_eq!(parsed.get_u32("KodakImageWidth"), Some(3200));
         assert_eq!(&out[8 + 12..8 + 14], &3200u16.to_be_bytes());
         assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn kodak_kdk_fnumber_valueconv() {
+        let mut src = Vec::from(b"KDK INFO".as_slice());
+        src.extend_from_slice(&[0u8; 40]);
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Kodak".into()));
+        meta.exif.set("FNumber", AttrValue::Double(5.6));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::KodakParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let n = parsed.get_f64("FNumber").unwrap();
+        assert!((n - 5.6).abs() < 0.01);
+        assert_eq!(&out[8 + 0x1e..8 + 0x20], &560u16.to_be_bytes());
+    }
+
+    #[test]
+    fn kodak_kdk_monthday_valueconv() {
+        let mut src = Vec::from(b"KDK INFO".as_slice());
+        src.extend_from_slice(&[0u8; 40]);
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Kodak".into()));
+        meta.exif
+            .set("MonthDayCreated", AttrValue::Str("05:06".into()));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::KodakParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("MonthDayCreated"), Some("05:06"));
+        assert_eq!(out[8 + 0x12], 5);
+        assert_eq!(out[8 + 0x13], 6);
     }
 
     #[test]

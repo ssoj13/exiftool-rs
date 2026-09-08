@@ -8,6 +8,7 @@ pub mod exif;
 pub mod fujifilm;
 pub mod gopro;
 pub mod gps;
+pub mod kodak;
 pub mod nikon;
 pub mod olympus;
 pub mod panasonic;

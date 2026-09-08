@@ -10,6 +10,15 @@ pub struct TagDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// Bit-sliced ProcessBinaryData tag (ExifTool `0.1` index + Mask).
+#[derive(Debug, Clone)]
+pub struct MaskDef {
+    pub index: u16,
+    pub mask: u32,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// GPS::Main tags
 pub static GPS_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "GPSVersionID", values: None },

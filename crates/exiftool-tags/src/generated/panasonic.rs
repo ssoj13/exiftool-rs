@@ -10,6 +10,15 @@ pub struct TagDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// Bit-sliced ProcessBinaryData tag (ExifTool `0.1` index + Mask).
+#[derive(Debug, Clone)]
+pub struct MaskDef {
+    pub index: u16,
+    pub mask: u32,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Panasonic::FaceDetInfo tags
 pub static PANASONIC_FACEDETINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "NumFacePositions", values: None },
@@ -90,6 +99,7 @@ pub static PANASONIC_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     202u16 => TagDef { name: "SensorType", values: Some(PANASONIC_MAIN_SENSORTYPE_VALUES) },
     209u16 => TagDef { name: "ISO", values: None },
     210u16 => TagDef { name: "MonochromeGrainEffect", values: Some(PANASONIC_MAIN_MONOCHROMEGRAINEFFECT_VALUES) },
+    212u16 => TagDef { name: "HybridLogGamma", values: Some(PANASONIC_MAIN_HYBRIDLOGGAMMA_VALUES) },
     214u16 => TagDef { name: "NoiseReductionStrength", values: None },
     222u16 => TagDef { name: "AFAreaSize", values: None },
     228u16 => TagDef { name: "LensTypeModel", values: None },
@@ -333,6 +343,11 @@ pub static PANASONIC_MAIN_MONOCHROMEGRAINEFFECT_VALUES: &[(i64, &str)] = &[
     (1, "Low"),
     (2, "Standard"),
     (3, "High"),
+];
+
+pub static PANASONIC_MAIN_HYBRIDLOGGAMMA_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "On"),
 ];
 
 pub static PANASONIC_MAIN_AFSUBJECTDETECTION_VALUES: &[(i64, &str)] = &[

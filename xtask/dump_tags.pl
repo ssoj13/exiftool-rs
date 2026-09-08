@@ -8,9 +8,14 @@ use JSON::PP;
 use File::Basename;
 use File::Spec;
 
-# Add ExifTool lib to path
+# Add ExifTool lib to path (plan2: vfx.ref 13.59; fallback repo _ref)
 my $script_dir = dirname(__FILE__);
-my $exiftool_lib = File::Spec->catdir($script_dir, '..', '_ref', 'exiftool', 'lib');
+my $exiftool_lib = $ENV{EXIFTOOL_LIB};
+unless ($exiftool_lib) {
+    my $vfx = 'C:/projects/projects.rust.cg/vfx.ref/exiftool/lib';
+    my $local = File::Spec->catdir($script_dir, '..', '_ref', 'exiftool', 'lib');
+    $exiftool_lib = (-d $vfx) ? $vfx : $local;
+}
 unshift @INC, $exiftool_lib;
 
 # Load ExifTool modules
@@ -24,7 +29,7 @@ my %visited_tables;
 my %all_tables;
 
 # Vendors to extract
-my @vendors = qw(Canon Nikon FujiFilm Sony Olympus Panasonic Pentax Samsung Apple);
+my @vendors = qw(Canon Nikon FujiFilm Sony Olympus Panasonic Pentax Samsung Apple Kodak);
 
 my %output;
 
@@ -86,12 +91,33 @@ sub collect_all_tables {
     
     # Extract tags
     my %tags;
+    my @blobs;
     for my $id (keys %$table) {
-        next unless $id =~ /^-?\d+$/;  # Only numeric IDs
+        next unless $id =~ /^-?\d+(?:\.\d+)?$/;  # integer or 0.1-style Mask indices
         
         my $entry = $table->{$id};
         next unless ref $entry;
-        
+
+        # Conditional tags are ARRAY refs; the first variant is dumped as this
+        # id, but every SubDirectory must be walked (Nikon 0x0091 ShotInfo*).
+        if (ref $entry eq 'ARRAY') {
+            for my $alt (@$entry) {
+                next unless ref $alt eq 'HASH';
+                if ($alt->{SubDirectory} && $alt->{SubDirectory}{TagTable}) {
+                    collect_all_tables($alt->{SubDirectory}{TagTable});
+                }
+                my $alt_info = extract_tag_info($alt);
+                if ($alt_info && defined $alt_info->{format} && $alt_info->{format} =~ /^undef\[/) {
+                    push @blobs, {
+                        index => 0 + $id,
+                        name => $alt_info->{name},
+                        format => $alt_info->{format},
+                        sub_table => $alt_info->{sub_table},
+                    };
+                }
+            }
+        }
+
         my $tag_info = extract_tag_info($entry);
         if ($tag_info) {
             $tags{$id} = $tag_info;
@@ -104,6 +130,7 @@ sub collect_all_tables {
     }
     
     $table_info{tags} = \%tags if %tags;
+    $table_info{blobs} = \@blobs if @blobs;
     
     # Store with short name
     my $short_name = $table_name;
@@ -127,9 +154,9 @@ sub extract_tag_info {
     $info{name} = $entry->{Name} if $entry->{Name};
     return undef unless $info{name};
     
-    # Data type
-    $info{format} = $entry->{Writable} if $entry->{Writable};
-    $info{format} //= $entry->{Format} if $entry->{Format};
+    # Data type / bit Mask (ExifTool ProcessBinaryData)
+    $info{format} = $entry->{Format} if $entry->{Format};
+    $info{mask} = $entry->{Mask} if defined $entry->{Mask};
     
     # Value mappings from PrintConv (all values as strings)
     if ($entry->{PrintConv} && ref $entry->{PrintConv} eq 'HASH') {

@@ -10,6 +10,15 @@ pub struct TagDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// Bit-sliced ProcessBinaryData tag (ExifTool `0.1` index + Mask).
+#[derive(Debug, Clone)]
+pub struct MaskDef {
+    pub index: u16,
+    pub mask: u32,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Apple::Main tags
 pub static APPLE_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "MakerNoteVersion", values: None },

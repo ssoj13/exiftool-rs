@@ -111,7 +111,7 @@ impl VendorParser for KodakParser {
 }
 
 /// ExifTool Kodak::Main ProcessBinaryData after the 8-byte KDK header.
-/// Scalar tags only (no ValueConv / multi-byte PrintConv strings).
+/// Scalars plus ValueConv (FNumber / 100, ExposureTime / 1e5, dates, EV / 1000).
 pub(crate) struct KdkMainField {
     pub offset: usize,
     pub name: &'static str,
@@ -221,6 +221,56 @@ pub(crate) fn parse_kdk_main(data: &[u8], byte_order: ByteOrder) -> Option<Attrs
             _ => continue,
         };
         attrs.set(field.name, kdk_print(value, field.values));
+    }
+    if data.len() >= 0x20 {
+        let raw = match byte_order {
+            ByteOrder::LittleEndian => u16::from_le_bytes([data[0x1e], data[0x1f]]),
+            ByteOrder::BigEndian => u16::from_be_bytes([data[0x1e], data[0x1f]]),
+        };
+        attrs.set("FNumber", AttrValue::Double(f64::from(raw) / 100.0));
+    }
+    if data.len() >= 0x24 {
+        let b = [data[0x20], data[0x21], data[0x22], data[0x23]];
+        let raw = match byte_order {
+            ByteOrder::LittleEndian => u32::from_le_bytes(b),
+            ByteOrder::BigEndian => u32::from_be_bytes(b),
+        };
+        attrs.set(
+            "ExposureTime",
+            AttrValue::Double(f64::from(raw) / 100_000.0),
+        );
+    }
+    if data.len() >= 0x12 {
+        let raw = match byte_order {
+            ByteOrder::LittleEndian => u16::from_le_bytes([data[0x10], data[0x11]]),
+            ByteOrder::BigEndian => u16::from_be_bytes([data[0x10], data[0x11]]),
+        };
+        attrs.set("YearCreated", AttrValue::UInt(u32::from(raw)));
+    }
+    if data.len() >= 0x14 {
+        attrs.set(
+            "MonthDayCreated",
+            AttrValue::Str(format!("{:02}:{:02}", data[0x12], data[0x13])),
+        );
+    }
+    if data.len() >= 0x18 {
+        attrs.set(
+            "TimeCreated",
+            AttrValue::Str(format!(
+                "{:02}:{:02}:{:02}.{:02}",
+                data[0x14], data[0x15], data[0x16], data[0x17]
+            )),
+        );
+    }
+    if data.len() >= 0x26 {
+        let raw = match byte_order {
+            ByteOrder::LittleEndian => i16::from_le_bytes([data[0x24], data[0x25]]),
+            ByteOrder::BigEndian => i16::from_be_bytes([data[0x24], data[0x25]]),
+        };
+        attrs.set(
+            "ExposureCompensation",
+            AttrValue::Double(f64::from(raw) / 1000.0),
+        );
     }
     Some(attrs)
 }

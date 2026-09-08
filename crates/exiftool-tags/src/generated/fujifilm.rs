@@ -10,10 +10,26 @@ pub struct TagDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// Bit-sliced ProcessBinaryData tag (ExifTool `0.1` index + Mask).
+#[derive(Debug, Clone)]
+pub struct MaskDef {
+    pub index: u16,
+    pub mask: u32,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// FujiFilm::AFCSettings tags
 pub static FUJIFILM_AFCSETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AF-CSetting", values: Some(FUJIFILM_AFCSETTINGS_AF_CSETTING_VALUES) },
 };
+
+/// FujiFilm::AFCSettings Mask bitfields (ExifTool 0.1-style indices)
+pub static FUJIFILM_AFCSETTINGS_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0xf, name: "AF-CTrackingSensitivity", values: None },
+    MaskDef { index: 0, mask: 0xf0, name: "AF-CSpeedTrackingSensitivity", values: None },
+    MaskDef { index: 0, mask: 0xf00, name: "AF-CZoneAreaSwitching", values: Some(FUJIFILM_AFCSETTINGS_AF_CZONEAREASWITCHING_VALUES) },
+];
 
 pub static FUJIFILM_AFCSETTINGS_AF_CSETTING_VALUES: &[(i64, &str)] = &[
     (16, "Set 4 (suddenly appearing subject)"),
@@ -21,6 +37,70 @@ pub static FUJIFILM_AFCSETTINGS_AF_CSETTING_VALUES: &[(i64, &str)] = &[
     (290, "Set 3 (accelerating subject)"),
     (291, "Set 5 (erratic motion)"),
     (515, "Set 2 (ignore obstacles)"),
+];
+
+pub static FUJIFILM_AFCSETTINGS_AF_CZONEAREASWITCHING_VALUES: &[(i64, &str)] = &[
+    (0, "Front"),
+    (1, "Auto"),
+    (2, "Center"),
+];
+
+/// FujiFilm::DriveSettings tags
+pub static FUJIFILM_DRIVESETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
+};
+
+/// FujiFilm::DriveSettings Mask bitfields (ExifTool 0.1-style indices)
+pub static FUJIFILM_DRIVESETTINGS_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0xff, name: "DriveMode", values: Some(FUJIFILM_DRIVESETTINGS_DRIVEMODE_VALUES) },
+    MaskDef { index: 0, mask: 0xff000000, name: "DriveSpeed", values: Some(FUJIFILM_DRIVESETTINGS_DRIVESPEED_VALUES) },
+];
+
+pub static FUJIFILM_DRIVESETTINGS_DRIVEMODE_VALUES: &[(i64, &str)] = &[
+    (0, "Single"),
+    (1, "Continuous Low"),
+    (2, "Continuous High"),
+];
+
+pub static FUJIFILM_DRIVESETTINGS_DRIVESPEED_VALUES: &[(i64, &str)] = &[
+    (0, "n/a"),
+];
+
+/// FujiFilm::FocusSettings tags
+pub static FUJIFILM_FOCUSSETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
+};
+
+/// FujiFilm::FocusSettings Mask bitfields (ExifTool 0.1-style indices)
+pub static FUJIFILM_FOCUSSETTINGS_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0xf, name: "FocusMode2", values: Some(FUJIFILM_FOCUSSETTINGS_FOCUSMODE2_VALUES) },
+    MaskDef { index: 0, mask: 0xf0, name: "PreAF", values: Some(FUJIFILM_FOCUSSETTINGS_PREAF_VALUES) },
+    MaskDef { index: 0, mask: 0xf00, name: "AFAreaMode", values: Some(FUJIFILM_FOCUSSETTINGS_AFAREAMODE_VALUES) },
+    MaskDef { index: 0, mask: 0xf000, name: "AFAreaPointSize", values: Some(FUJIFILM_FOCUSSETTINGS_AFAREAPOINTSIZE_VALUES) },
+    MaskDef { index: 0, mask: 0xff0000, name: "AFAreaZoneSize", values: Some(FUJIFILM_FOCUSSETTINGS_AFAREAZONESIZE_VALUES) },
+];
+
+pub static FUJIFILM_FOCUSSETTINGS_FOCUSMODE2_VALUES: &[(i64, &str)] = &[
+    (0, "AF-M"),
+    (1, "AF-S"),
+    (2, "AF-C"),
+];
+
+pub static FUJIFILM_FOCUSSETTINGS_PREAF_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "On"),
+];
+
+pub static FUJIFILM_FOCUSSETTINGS_AFAREAMODE_VALUES: &[(i64, &str)] = &[
+    (0, "Single Point"),
+    (1, "Zone"),
+    (2, "Wide/Tracking"),
+];
+
+pub static FUJIFILM_FOCUSSETTINGS_AFAREAPOINTSIZE_VALUES: &[(i64, &str)] = &[
+    (0, "n/a"),
+];
+
+pub static FUJIFILM_FOCUSSETTINGS_AFAREAZONESIZE_VALUES: &[(i64, &str)] = &[
+    (0, "n/a"),
 ];
 
 /// FujiFilm::Main tags
@@ -539,6 +619,26 @@ pub static FUJIFILM_MAIN_DRANGEPRIORITYAUTO_VALUES: &[(i64, &str)] = &[
 pub static FUJIFILM_MAIN_DRANGEPRIORITYFIXED_VALUES: &[(i64, &str)] = &[
     (1, "Weak"),
     (2, "Strong"),
+];
+
+/// FujiFilm::PrioritySettings tags
+pub static FUJIFILM_PRIORITYSETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
+};
+
+/// FujiFilm::PrioritySettings Mask bitfields (ExifTool 0.1-style indices)
+pub static FUJIFILM_PRIORITYSETTINGS_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0xf, name: "AF-SPriority", values: Some(FUJIFILM_PRIORITYSETTINGS_AF_SPRIORITY_VALUES) },
+    MaskDef { index: 0, mask: 0xf0, name: "AF-CPriority", values: Some(FUJIFILM_PRIORITYSETTINGS_AF_CPRIORITY_VALUES) },
+];
+
+pub static FUJIFILM_PRIORITYSETTINGS_AF_SPRIORITY_VALUES: &[(i64, &str)] = &[
+    (1, "Release"),
+    (2, "Focus"),
+];
+
+pub static FUJIFILM_PRIORITYSETTINGS_AF_CPRIORITY_VALUES: &[(i64, &str)] = &[
+    (1, "Release"),
+    (2, "Focus"),
 ];
 
 

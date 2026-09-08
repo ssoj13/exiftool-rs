@@ -10,6 +10,15 @@ pub struct TagDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// Bit-sliced ProcessBinaryData tag (ExifTool `0.1` index + Mask).
+#[derive(Debug, Clone)]
+pub struct MaskDef {
+    pub index: u16,
+    pub mask: u32,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Minolta::CameraSettings tags
 pub static MINOLTA_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES) },

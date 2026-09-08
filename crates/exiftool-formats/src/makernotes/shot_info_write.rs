@@ -2,6 +2,7 @@
 //! Cipher keys stay the original IFD serial / shutter (not the new payload values).
 
 use super::*;
+use exiftool_attrs::{AttrValue, Attrs};
 use exiftool_core::IfdEntry;
 
 /// Fields to overlay inside decrypted ShotInfo. Cipher keys stay original.
@@ -9,6 +10,7 @@ pub(crate) struct ShotInfoWrite {
     pub firmware_version: Option<String>,
     pub vibration_reduction: Option<String>,
     pub shutter_count: Option<u32>,
+    pub custom_settings: Vec<(String, Attrs)>,
 }
 
 impl ShotInfoWrite {
@@ -16,6 +18,7 @@ impl ShotInfoWrite {
         self.firmware_version.is_none()
             && self.vibration_reduction.is_none()
             && self.shutter_count.is_none()
+            && self.custom_settings.is_empty()
     }
 }
 
@@ -132,6 +135,18 @@ fn patch_shot_fields(
     if let Some(vr) = &write.vibration_reduction {
         if overlay_vr(payload, ver, vr) {
             changed = true;
+        }
+    }
+    if !write.custom_settings.is_empty() {
+        if let Some(table) = super::shot_info_table_name(&ver, count) {
+            let order = if big_endian {
+                ByteOrder::BigEndian
+            } else {
+                ByteOrder::LittleEndian
+            };
+            if overlay_custom_settings_tree(payload, table, order, &write.custom_settings) {
+                changed = true;
+            }
         }
     }
     changed
@@ -299,6 +314,7 @@ mod tests {
             firmware_version: Some("2.10".into()),
             vibration_reduction: Some("Off".into()),
             shutter_count: Some(200),
+            custom_settings: Vec::new(),
         };
         let out = rewrite_shot_info_full(&extra, serial, shutter, &write).unwrap();
         let back = nikon_decrypt::decrypt(&out, 4, serial, shutter);
@@ -327,6 +343,7 @@ mod tests {
             firmware_version: Some("2.10".into()),
             vibration_reduction: None,
             shutter_count: None,
+            custom_settings: Vec::new(),
         };
         let out = rewrite_shot_info_full(&extra, serial, shutter, &write).unwrap();
         let mut back = out;
@@ -334,6 +351,32 @@ mod tests {
         assert_eq!(&back[0..4], b"0245");
         assert_eq!(&back[4..8], b"2.10");
         assert_eq!(&back[120..124], b"ABCD");
+    }
+
+    #[test]
+    fn rewrite_d500_custom_settings_offset() {
+        let serial = 7u32;
+        let shutter = 99u32;
+        let mut plain = vec![0u8; 320];
+        plain[0..4].copy_from_slice(b"0238");
+        plain[0x0c..0x10].copy_from_slice(&1u32.to_le_bytes());
+        plain[0x10..0x14].copy_from_slice(&200u32.to_le_bytes());
+        plain[88..92].copy_from_slice(&200u32.to_le_bytes());
+        let ranges = nikon_decrypt::nikon_offset_ranges_plain(&plain, 4, 0x0c, false).unwrap();
+        let mut extra = plain.clone();
+        nikon_decrypt::apply_offset_ranges(&mut extra, serial, shutter, &ranges);
+        let mut g = Attrs::new();
+        g.set("CustomSettingsBank", AttrValue::Str("B".into()));
+        let write = ShotInfoWrite {
+            firmware_version: None,
+            vibration_reduction: None,
+            shutter_count: None,
+            custom_settings: vec![("CustomSettingsD500".into(), g)],
+        };
+        let out = rewrite_shot_info_full(&extra, serial, shutter, &write).unwrap();
+        let mut back = out;
+        nikon_decrypt::prepare_nikon_offsets(&mut back, 4, 0x0c, false, serial, shutter).unwrap();
+        assert_eq!(back[200] & 0x3, 1);
     }
 
     #[test]

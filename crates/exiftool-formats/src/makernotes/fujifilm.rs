@@ -155,6 +155,23 @@ fn parse_afc_settings(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
             AttrValue::UInt(value)
         };
         attrs.set(tag_def.name, attr_value);
+        for m in fujifilm::FUJIFILM_AFCSETTINGS_MASKS {
+            if m.index != i as u16 {
+                continue;
+            }
+            let shift = m.mask.trailing_zeros();
+            let bits = (value & m.mask) >> shift;
+            let attr_value = if let Some(values) = m.values {
+                values
+                    .iter()
+                    .find(|(k, _)| *k == i64::from(bits))
+                    .map(|(_, v)| AttrValue::Str((*v).to_string()))
+                    .unwrap_or(AttrValue::UInt(bits))
+            } else {
+                AttrValue::UInt(bits)
+            };
+            attrs.set(m.name, attr_value);
+        }
     }
     Some(attrs)
 }

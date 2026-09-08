@@ -703,6 +703,190 @@ fn color_balance_layout(ver: &str) -> (Option<usize>, usize, &'static str) {
     (None, 0, "WB_RGGBLevels")
 }
 
+fn parse_custom_settings_masks(blob: &[u8], masks: &[nikon::MaskDef], g: &mut Attrs) {
+    for m in masks {
+        let i = m.index as usize;
+        if i >= blob.len() {
+            continue;
+        }
+        let shift = m.mask.trailing_zeros();
+        let bits = (u32::from(blob[i]) & m.mask) >> shift;
+        let attr_value = if let Some(values) = m.values {
+            values
+                .iter()
+                .find(|(k, _)| *k == i64::from(bits))
+                .map(|(_, v)| AttrValue::Str((*v).to_string()))
+                .unwrap_or(AttrValue::UInt(bits))
+        } else {
+            AttrValue::UInt(bits)
+        };
+        g.set(m.name, attr_value);
+    }
+}
+
+pub(crate) fn overlay_custom_settings_masks(
+    blob: &mut [u8],
+    masks: &[nikon::MaskDef],
+    g: &Attrs,
+) -> bool {
+    let mut changed = false;
+    for m in masks {
+        let i = m.index as usize;
+        if i >= blob.len() {
+            continue;
+        }
+        let Some(val) = g.get(m.name) else {
+            continue;
+        };
+        let Some(n) = mask_num(val, m.values) else {
+            continue;
+        };
+        let shift = m.mask.trailing_zeros();
+        let mask = m.mask as u8;
+        blob[i] = (blob[i] & !mask) | (((n as u8) << shift) & mask);
+        changed = true;
+    }
+    changed
+}
+
+pub(crate) fn overlay_d40_flash_level(blob: &mut [u8], g: &Attrs) -> bool {
+    if blob.len() <= 9 {
+        return false;
+    }
+    let Some(val) = g.get("FlashLevel") else {
+        return false;
+    };
+    let Some(n) = mask_num(val, None) else {
+        return false;
+    };
+    blob[9] = n as u8;
+    true
+}
+
+fn custom_dir_end(dir: &nikon::ShotInfoCustomDir, start: usize, len: usize) -> Option<usize> {
+    if start >= len {
+        return None;
+    }
+    let end = if dir.size == 0 {
+        let max = dir
+            .masks
+            .iter()
+            .map(|m| m.index as usize)
+            .max()
+            .unwrap_or(0);
+        start.saturating_add(max + 1)
+    } else {
+        start.saturating_add(dir.size as usize)
+    };
+    if end > len {
+        None
+    } else {
+        Some(end)
+    }
+}
+
+fn for_each_custom_dir(
+    payload: &[u8],
+    table: &str,
+    base: usize,
+    order: ByteOrder,
+    depth: u8,
+    visit: &mut impl FnMut(&nikon::ShotInfoCustomDir, usize, usize),
+) {
+    if depth > 6 {
+        return;
+    }
+    for dir in nikon::NIKON_SHOTINFO_CUSTOM_DIRS {
+        if dir.shot_info_table != table || dir.masks.is_empty() {
+            continue;
+        }
+        let start = base.saturating_add(dir.offset as usize);
+        let Some(end) = custom_dir_end(dir, start, payload.len()) else {
+            continue;
+        };
+        visit(dir, start, end);
+    }
+    for p in nikon::NIKON_SHOTINFO_CUSTOM_PTRS {
+        if p.shot_info_table != table {
+            continue;
+        }
+        let at = base.saturating_add(p.pointer_index as usize);
+        if at + 4 > payload.len() {
+            continue;
+        }
+        let nested_base = read_u32(payload, at, order) as usize;
+        if nested_base >= payload.len() {
+            continue;
+        }
+        for_each_custom_dir(
+            payload,
+            p.nested_table,
+            nested_base,
+            order,
+            depth + 1,
+            visit,
+        );
+    }
+}
+
+fn parse_custom_settings_tree(payload: &[u8], table: &str, order: ByteOrder, attrs: &mut Attrs) {
+    let mut visit = |dir: &nikon::ShotInfoCustomDir, start: usize, end: usize| {
+        let blob = &payload[start..end];
+        let mut g = Attrs::new();
+        parse_custom_settings_masks(blob, dir.masks, &mut g);
+        if dir.group == "CustomSettingsD40" && blob.len() > 9 {
+            if let Some(def) = nikon::NIKONCUSTOM_SETTINGSD40.get(&9) {
+                g.set(def.name, AttrValue::Int(i32::from(blob[9] as i8)));
+            }
+        }
+        attrs.set(dir.group, AttrValue::Group(Box::new(g)));
+    };
+    for_each_custom_dir(payload, table, 0, order, 0, &mut visit);
+}
+
+pub(crate) fn overlay_custom_settings_tree(
+    payload: &mut [u8],
+    table: &str,
+    order: ByteOrder,
+    groups: &[(String, Attrs)],
+) -> bool {
+    let mut ranges = Vec::new();
+    for_each_custom_dir(payload, table, 0, order, 0, &mut |dir, start, end| {
+        ranges.push((*dir, start, end));
+    });
+    let mut changed = false;
+    for (dir, start, end) in ranges {
+        let Some((_, g)) = groups.iter().find(|(name, _)| name == dir.group) else {
+            continue;
+        };
+        if overlay_custom_settings_masks(&mut payload[start..end], dir.masks, g) {
+            changed = true;
+        }
+        if dir.group == "CustomSettingsD40" && overlay_d40_flash_level(&mut payload[start..end], g)
+        {
+            changed = true;
+        }
+    }
+    changed
+}
+
+fn mask_num(val: &AttrValue, print_map: Option<&'static [(i64, &'static str)]>) -> Option<u32> {
+    if let (Some(map), AttrValue::Str(s)) = (print_map, val) {
+        for &(key, label) in map {
+            if label == s {
+                return Some(key as u32);
+            }
+        }
+    }
+    match val {
+        AttrValue::Int(v) => Some(*v as u32),
+        AttrValue::UInt(v) => Some(*v),
+        AttrValue::Int8(v) => Some(*v as u32),
+        AttrValue::Str(s) => s.parse().ok(),
+        _ => None,
+    }
+}
+
 /// ShotInfo (`Nikon.pm` 0x0091): version dispatch, `DecryptStart => 4`,
 /// per-model offsets, and `NIKON_OFFSETS` piecewise decrypt.
 fn parse_shot_info(data: &[u8], serial: u32, shutter: u32, attrs: &mut Attrs) {
@@ -765,6 +949,9 @@ fn parse_shot_info(data: &[u8], serial: u32, shutter: u32, attrs: &mut Attrs) {
             "VibrationReduction",
             AttrValue::Str(if on { "On".into() } else { "Off".into() }),
         );
+    }
+    if let Some(table) = shot_info_table_name(&ver, count) {
+        parse_custom_settings_tree(payload, table, order, attrs);
     }
     if ver.starts_with("0204") {
         if payload.len() > 0x82 {
@@ -927,6 +1114,92 @@ fn shot_crypt(ver: &str, count: usize) -> ShotCrypt {
         return ShotCrypt::Full { big_endian: true };
     }
     ShotCrypt::None
+}
+
+/// `Nikon.pm` 0x0091 Condition order → ShotInfo table name.
+pub(crate) fn shot_info_table_name(ver: &str, count: usize) -> Option<&'static str> {
+    if ver.starts_with("0209") {
+        return Some("Nikon::ShotInfoD40");
+    }
+    if ver.starts_with("0208") {
+        return Some("Nikon::ShotInfoD80");
+    }
+    if ver.starts_with("0213") {
+        return Some("Nikon::ShotInfoD90");
+    }
+    if ver.starts_with("0210") && count == 5399 {
+        return Some("Nikon::ShotInfoD3a");
+    }
+    if ver.starts_with("0210") && (count == 5408 || count == 5412) {
+        return Some("Nikon::ShotInfoD3b");
+    }
+    if ver.starts_with("0214") && count == 5409 {
+        return Some("Nikon::ShotInfoD3X");
+    }
+    if ver.starts_with("0218") && (count == 5356 || count == 5388) {
+        return Some("Nikon::ShotInfoD3S");
+    }
+    if ver.starts_with("0210") && count == 5291 {
+        return Some("Nikon::ShotInfoD300a");
+    }
+    if ver.starts_with("0210") && count == 5303 {
+        return Some("Nikon::ShotInfoD300b");
+    }
+    if ver.starts_with("0216") && count == 5311 {
+        return Some("Nikon::ShotInfoD300S");
+    }
+    if ver.starts_with("0212") && count == 5312 {
+        return Some("Nikon::ShotInfoD700");
+    }
+    if ver.starts_with("0222") {
+        return Some("Nikon::ShotInfoD800");
+    }
+    if ver.starts_with("0215") && count == 6745 {
+        return Some("Nikon::ShotInfoD5000");
+    }
+    if ver.starts_with("0221") && count == 8902 {
+        return Some("Nikon::ShotInfoD5100");
+    }
+    if ver.starts_with("0226") && count == 11587 {
+        return Some("Nikon::ShotInfoD5200");
+    }
+    if ver.starts_with("0220") {
+        return Some("Nikon::ShotInfoD7000");
+    }
+    if ver.starts_with("0223") {
+        return Some("Nikon::ShotInfoD4");
+    }
+    if ver.starts_with("0231") {
+        return Some("Nikon::ShotInfoD4S");
+    }
+    if ver.starts_with("0232") {
+        return Some("Nikon::ShotInfoD610");
+    }
+    if ver.starts_with("0233") {
+        return Some("Nikon::ShotInfoD810");
+    }
+    if ver.starts_with("0238") || ver.starts_with("0239") {
+        return Some("Nikon::ShotInfoD500");
+    }
+    if ver.starts_with("0243") {
+        return Some("Nikon::ShotInfoD850");
+    }
+    if ver.starts_with("0809") || ver.starts_with("0810") || ver.starts_with("0811") {
+        return Some("Nikon::ShotInfoZ6III");
+    }
+    if ver.starts_with("0806") {
+        return Some("Nikon::ShotInfoZ8");
+    }
+    if ver.starts_with("0805") {
+        return Some("Nikon::ShotInfoZ9");
+    }
+    if matches!(
+        &ver[..4.min(ver.len())],
+        "0800" | "0801" | "0802" | "0803" | "0804" | "0807" | "0808"
+    ) {
+        return Some("Nikon::ShotInfoZ7II");
+    }
+    None
 }
 
 fn shutter_count_offset(ver: &str, count: usize) -> Option<usize> {

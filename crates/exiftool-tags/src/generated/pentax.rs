@@ -10,6 +10,15 @@ pub struct TagDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// Bit-sliced ProcessBinaryData tag (ExifTool `0.1` index + Mask).
+#[derive(Debug, Clone)]
+pub struct MaskDef {
+    pub index: u16,
+    pub mask: u32,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Pentax::AEInfo tags
 pub static PENTAX_AEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AEExposureTime", values: None },
@@ -30,6 +39,12 @@ pub static PENTAX_AEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "AEMaxAperture", values: None },
 };
 
+/// Pentax::AEInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_AEINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 13, mask: 0xf0, name: "AEWhiteBalance", values: Some(PENTAX_AEINFO_AEWHITEBALANCE_VALUES) },
+    MaskDef { index: 13, mask: 0xf, name: "AEMeteringMode2", values: Some(PENTAX_AEINFO_AEMETERINGMODE2_VALUES) },
+];
+
 pub static PENTAX_AEINFO_AEMETERINGMODE_VALUES: &[(i64, &str)] = &[
     (0, "Multi-segment"),
 ];
@@ -44,6 +59,10 @@ pub static PENTAX_AEINFO_AEWHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (6, "White Fluorescent"),
     (7, "Tungsten"),
     (8, "Unknown"),
+];
+
+pub static PENTAX_AEINFO_AEMETERINGMODE2_VALUES: &[(i64, &str)] = &[
+    (0, "Multi-segment"),
 ];
 
 pub static PENTAX_AEINFO_AEPROGRAMMODE_VALUES: &[(i64, &str)] = &[
@@ -79,6 +98,59 @@ pub static PENTAX_AEINFO_AEPROGRAMMODE_VALUES: &[(i64, &str)] = &[
     (99, "Surf & Snow"),
 ];
 
+/// Pentax::AEInfo2 tags
+pub static PENTAX_AEINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
+    11u16 => TagDef { name: "AEApertureSteps", values: None },
+    15u16 => TagDef { name: "SceneMode", values: Some(PENTAX_AEINFO2_SCENEMODE_VALUES) },
+    16u16 => TagDef { name: "AEMaxAperture", values: None },
+    17u16 => TagDef { name: "AEMaxAperture2", values: None },
+    18u16 => TagDef { name: "AEMinAperture", values: None },
+    19u16 => TagDef { name: "AEMinExposureTime", values: None },
+    2u16 => TagDef { name: "AEExposureTime", values: None },
+    3u16 => TagDef { name: "AEAperture", values: None },
+    4u16 => TagDef { name: "AE_ISO", values: None },
+    5u16 => TagDef { name: "AEXv", values: None },
+    6u16 => TagDef { name: "AEBXv", values: None },
+    8u16 => TagDef { name: "AEError", values: None },
+};
+
+pub static PENTAX_AEINFO2_SCENEMODE_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "HDR"),
+    (10, "No Flash"),
+    (11, "Night Scene"),
+    (12, "Surf & Snow"),
+    (14, "Sunset"),
+    (15, "Kids"),
+    (16, "Pet"),
+    (17, "Candlelight"),
+    (18, "Museum"),
+    (20, "Food"),
+    (21, "Stage Lighting"),
+    (22, "Night Snap"),
+    (25, "Night Scene HDR"),
+    (26, "Blue Sky"),
+    (27, "Forest"),
+    (29, "Backlight Silhouette"),
+    (4, "Auto PICT"),
+    (5, "Portrait"),
+    (6, "Landscape"),
+    (7, "Macro"),
+    (8, "Sport"),
+    (9, "Night Scene Portrait"),
+];
+
+/// Pentax::AEInfo3 tags
+pub static PENTAX_AEINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
+    16u16 => TagDef { name: "AEExposureTime", values: None },
+    17u16 => TagDef { name: "AEAperture", values: None },
+    18u16 => TagDef { name: "AE_ISO", values: None },
+    28u16 => TagDef { name: "AEMaxAperture", values: None },
+    29u16 => TagDef { name: "AEMaxAperture2", values: None },
+    30u16 => TagDef { name: "AEMinAperture", values: None },
+    31u16 => TagDef { name: "AEMinExposureTime", values: None },
+};
+
 /// Pentax::AFInfo tags
 pub static PENTAX_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AFPointsUnknown1", values: Some(PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES) },
@@ -96,6 +168,13 @@ pub static PENTAX_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     545u16 => TagDef { name: "AFCHold", values: Some(PENTAX_AFINFO_AFCHOLD_VALUES) },
     7u16 => TagDef { name: "AFIntegrationTime", values: None },
 };
+
+/// Pentax::AFInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_AFINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 545, mask: 0x3, name: "AFCHold", values: Some(PENTAX_AFINFO_AFCHOLD_VALUES) },
+    MaskDef { index: 545, mask: 0xc, name: "AFCPointTracking", values: Some(PENTAX_AFINFO_AFCPOINTTRACKING_VALUES) },
+    MaskDef { index: 545, mask: 0x70, name: "AFCSensitivity", values: None },
+];
 
 pub static PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES: &[(i64, &str)] = &[
     (0, "(none)"),
@@ -167,15 +246,33 @@ pub static PENTAX_AFINFO_AFCHOLD_VALUES: &[(i64, &str)] = &[
     (3, "Off"),
 ];
 
+pub static PENTAX_AFINFO_AFCPOINTTRACKING_VALUES: &[(i64, &str)] = &[
+    (0, "Type 1"),
+    (1, "Type 2"),
+    (2, "Type 3"),
+];
+
 /// Pentax::AFInfoK3III tags
 pub static PENTAX_AFINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
-    0u16 => TagDef { name: "AFInfo", values: None },
+    0u16 => TagDef { name: "AFInfoK3III", values: None },
     1u16 => TagDef { name: "AFSelectionMode", values: Some(PENTAX_AFINFOK3III_AFSELECTIONMODE_VALUES) },
     11u16 => TagDef { name: "AFAreaSize", values: None },
     2u16 => TagDef { name: "MaxNumAFPoints", values: None },
     3u16 => TagDef { name: "NumAFPoints", values: None },
     7u16 => TagDef { name: "AFFrameSize", values: None },
 };
+
+/// Pentax::AFInfoK3III Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_AFINFOK3III_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0x0, name: "AFMode", values: Some(PENTAX_AFINFOK3III_AFMODE_VALUES) },
+    MaskDef { index: 7, mask: 0x0, name: "AFAreas", values: None },
+];
+
+pub static PENTAX_AFINFOK3III_AFMODE_VALUES: &[(i64, &str)] = &[
+    (0, "Phase Detect"),
+    (2, "Contrast Detect"),
+    (255, "Manual Focus"),
+];
 
 pub static PENTAX_AFINFOK3III_AFSELECTIONMODE_VALUES: &[(i64, &str)] = &[
     (0, "Manual Focus"),
@@ -207,6 +304,12 @@ pub static PENTAX_AFPOINTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "AFPointsInFocus", values: None },
 };
 
+/// Pentax::AFPointInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_AFPOINTINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 4, mask: 0x0, name: "AFPointsSelected", values: None },
+    MaskDef { index: 4, mask: 0x0, name: "AFPointsSpecial", values: None },
+];
+
 /// Pentax::AWBInfo tags
 pub static PENTAX_AWBINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "WhiteBalanceAutoAdjustment", values: Some(PENTAX_AWBINFO_WHITEBALANCEAUTOADJUSTMENT_VALUES) },
@@ -236,13 +339,33 @@ pub static PENTAX_BATTERYINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "BodyBatteryVoltage4", values: None },
 };
 
+/// Pentax::BatteryInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_BATTERYINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0xf, name: "PowerSource", values: Some(PENTAX_BATTERYINFO_POWERSOURCE_VALUES) },
+    MaskDef { index: 0, mask: 0xf0, name: "PowerAvailable", values: None },
+    MaskDef { index: 1, mask: 0xf0, name: "BodyBatteryState", values: Some(PENTAX_BATTERYINFO_BODYBATTERYSTATE_VALUES) },
+    MaskDef { index: 1, mask: 0xf, name: "GripBatteryState", values: Some(PENTAX_BATTERYINFO_GRIPBATTERYSTATE_VALUES) },
+];
+
+pub static PENTAX_BATTERYINFO_POWERSOURCE_VALUES: &[(i64, &str)] = &[
+    (1, "Camera Battery"),
+    (2, "Body Battery"),
+    (3, "Grip Battery"),
+    (4, "External Power Supply"),
+];
+
+pub static PENTAX_BATTERYINFO_BODYBATTERYSTATE_VALUES: &[(i64, &str)] = &[
+    (1, "Empty or Missing"),
+    (2, "Almost Empty"),
+    (3, "Running Low"),
+    (4, "Full"),
+];
+
 pub static PENTAX_BATTERYINFO_GRIPBATTERYSTATE_VALUES: &[(i64, &str)] = &[
-    (0, "Empty or Missing"),
-    (1, "Almost Empty"),
-    (2, "Running Low"),
-    (3, "Half Full"),
-    (4, "Close to Full"),
-    (5, "Full"),
+    (1, "Empty or Missing"),
+    (2, "Almost Empty"),
+    (3, "Running Low"),
+    (4, "Full"),
 ];
 
 /// Pentax::CAFPointInfo tags
@@ -250,6 +373,12 @@ pub static PENTAX_CAFPOINTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "NumCAFPoints", values: None },
     2u16 => TagDef { name: "CAFPointsInFocus", values: None },
 };
+
+/// Pentax::CAFPointInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_CAFPOINTINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 1, mask: 0x0, name: "CAFGridSize", values: None },
+    MaskDef { index: 2, mask: 0x0, name: "CAFPointsSelected", values: None },
+];
 
 /// Pentax::CameraInfo tags
 pub static PENTAX_CAMERAINFO: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -404,6 +533,7 @@ pub static PENTAX_CAMERAINFO_PENTAXMODELID_VALUES: &[(i64, &str)] = &[
     (78520, "KF"),
     (78550, "K-3 Mark III Monochrome"),
     (78560, "GR IV"),
+    (78640, "GR IV Monochrome"),
 ];
 
 /// Pentax::CameraSettings tags
@@ -425,6 +555,30 @@ pub static PENTAX_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "BracketShotNumber", values: Some(PENTAX_CAMERASETTINGS_BRACKETSHOTNUMBER_VALUES) },
 };
 
+/// Pentax::CameraSettings Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_CAMERASETTINGS_MASKS: &[MaskDef] = &[
+    MaskDef { index: 1, mask: 0x3, name: "ProgramLine", values: Some(PENTAX_CAMERASETTINGS_PROGRAMLINE_VALUES) },
+    MaskDef { index: 1, mask: 0x20, name: "EVSteps", values: Some(PENTAX_CAMERASETTINGS_EVSTEPS_VALUES) },
+    MaskDef { index: 1, mask: 0x40, name: "E-DialInProgram", values: Some(PENTAX_CAMERASETTINGS_E_DIALINPROGRAM_VALUES) },
+    MaskDef { index: 1, mask: 0x80, name: "ApertureRingUse", values: Some(PENTAX_CAMERASETTINGS_APERTURERINGUSE_VALUES) },
+    MaskDef { index: 10, mask: 0xf0, name: "WhiteBalanceSet", values: Some(PENTAX_CAMERASETTINGS_WHITEBALANCESET_VALUES) },
+    MaskDef { index: 10, mask: 0xf, name: "MultipleExposureSet", values: Some(PENTAX_CAMERASETTINGS_MULTIPLEEXPOSURESET_VALUES) },
+    MaskDef { index: 14, mask: 0x3, name: "JpgRecordedPixels", values: Some(PENTAX_CAMERASETTINGS_JPGRECORDEDPIXELS_VALUES) },
+    MaskDef { index: 14, mask: 0x1, name: "LinkAEToAFPoint", values: Some(PENTAX_CAMERASETTINGS_LINKAETOAFPOINT_VALUES) },
+    MaskDef { index: 14, mask: 0x2, name: "SensitivitySteps", values: Some(PENTAX_CAMERASETTINGS_SENSITIVITYSTEPS_VALUES) },
+    MaskDef { index: 14, mask: 0x4, name: "ISOAuto", values: Some(PENTAX_CAMERASETTINGS_ISOAUTO_VALUES) },
+    MaskDef { index: 16, mask: 0xf0, name: "FlashOptions2", values: Some(PENTAX_CAMERASETTINGS_FLASHOPTIONS2_VALUES) },
+    MaskDef { index: 16, mask: 0xf, name: "MeteringMode3", values: Some(PENTAX_CAMERASETTINGS_METERINGMODE3_VALUES) },
+    MaskDef { index: 17, mask: 0x80, name: "SRActive", values: Some(PENTAX_CAMERASETTINGS_SRACTIVE_VALUES) },
+    MaskDef { index: 17, mask: 0x60, name: "Rotation", values: Some(PENTAX_CAMERASETTINGS_ROTATION_VALUES) },
+    MaskDef { index: 17, mask: 0x4, name: "ISOSetting", values: Some(PENTAX_CAMERASETTINGS_ISOSETTING_VALUES) },
+    MaskDef { index: 17, mask: 0x2, name: "SensitivitySteps", values: Some(PENTAX_CAMERASETTINGS_SENSITIVITYSTEPS_VALUES) },
+    MaskDef { index: 2, mask: 0xf0, name: "FlashOptions", values: Some(PENTAX_CAMERASETTINGS_FLASHOPTIONS_VALUES) },
+    MaskDef { index: 2, mask: 0xf, name: "MeteringMode2", values: Some(PENTAX_CAMERASETTINGS_METERINGMODE2_VALUES) },
+    MaskDef { index: 3, mask: 0xf0, name: "AFPointMode", values: Some(PENTAX_CAMERASETTINGS_AFPOINTMODE_VALUES) },
+    MaskDef { index: 3, mask: 0xf, name: "FocusMode2", values: Some(PENTAX_CAMERASETTINGS_FOCUSMODE2_VALUES) },
+];
+
 pub static PENTAX_CAMERASETTINGS_PICTUREMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Scene Mode"),
     (1, "Auto PICT"),
@@ -444,6 +598,28 @@ pub static PENTAX_CAMERASETTINGS_PICTUREMODE2_VALUES: &[(i64, &str)] = &[
     (9, "Bulb"),
 ];
 
+pub static PENTAX_CAMERASETTINGS_PROGRAMLINE_VALUES: &[(i64, &str)] = &[
+    (0, "Normal"),
+    (1, "Hi Speed"),
+    (2, "Depth"),
+    (3, "MTF"),
+];
+
+pub static PENTAX_CAMERASETTINGS_EVSTEPS_VALUES: &[(i64, &str)] = &[
+    (0, "1/2 EV Steps"),
+    (1, "1/3 EV Steps"),
+];
+
+pub static PENTAX_CAMERASETTINGS_E_DIALINPROGRAM_VALUES: &[(i64, &str)] = &[
+    (0, "Tv or Av"),
+    (1, "P Shift"),
+];
+
+pub static PENTAX_CAMERASETTINGS_APERTURERINGUSE_VALUES: &[(i64, &str)] = &[
+    (0, "Prohibited"),
+    (1, "Permitted"),
+];
+
 pub static PENTAX_CAMERASETTINGS_WHITEBALANCESET_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -458,6 +634,11 @@ pub static PENTAX_CAMERASETTINGS_WHITEBALANCESET_VALUES: &[(i64, &str)] = &[
     (7, "Tungsten"),
     (8, "Flash"),
     (9, "Manual"),
+];
+
+pub static PENTAX_CAMERASETTINGS_MULTIPLEEXPOSURESET_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "On"),
 ];
 
 pub static PENTAX_CAMERASETTINGS_RAWANDJPGRECORDING_VALUES: &[(i64, &str)] = &[
@@ -478,6 +659,27 @@ pub static PENTAX_CAMERASETTINGS_RAWANDJPGRECORDING_VALUES: &[(i64, &str)] = &[
     (9, "RAW+JPEG (DNG, Best)"),
 ];
 
+pub static PENTAX_CAMERASETTINGS_JPGRECORDEDPIXELS_VALUES: &[(i64, &str)] = &[
+    (0, "10 MP"),
+    (1, "6 MP"),
+    (2, "2 MP"),
+];
+
+pub static PENTAX_CAMERASETTINGS_LINKAETOAFPOINT_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "On"),
+];
+
+pub static PENTAX_CAMERASETTINGS_SENSITIVITYSTEPS_VALUES: &[(i64, &str)] = &[
+    (0, "1 EV Steps"),
+    (1, "As EV Steps"),
+];
+
+pub static PENTAX_CAMERASETTINGS_ISOAUTO_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "On"),
+];
+
 pub static PENTAX_CAMERASETTINGS_FLASHOPTIONS2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Red-eye reduction"),
@@ -488,6 +690,27 @@ pub static PENTAX_CAMERASETTINGS_FLASHOPTIONS2_VALUES: &[(i64, &str)] = &[
     (6, "Wireless (Control)"),
     (8, "Slow-sync"),
     (9, "Slow-sync, Red-eye reduction"),
+];
+
+pub static PENTAX_CAMERASETTINGS_METERINGMODE3_VALUES: &[(i64, &str)] = &[
+    (0, "Multi-segment"),
+];
+
+pub static PENTAX_CAMERASETTINGS_SRACTIVE_VALUES: &[(i64, &str)] = &[
+    (0, "No"),
+    (1, "Yes"),
+];
+
+pub static PENTAX_CAMERASETTINGS_ROTATION_VALUES: &[(i64, &str)] = &[
+    (0, "Horizontal (normal)"),
+    (1, "Rotate 180"),
+    (2, "Rotate 90 CW"),
+    (3, "Rotate 270 CW"),
+];
+
+pub static PENTAX_CAMERASETTINGS_ISOSETTING_VALUES: &[(i64, &str)] = &[
+    (0, "Manual"),
+    (1, "Auto"),
 ];
 
 pub static PENTAX_CAMERASETTINGS_FLASHOPTIONS_VALUES: &[(i64, &str)] = &[
@@ -502,8 +725,19 @@ pub static PENTAX_CAMERASETTINGS_FLASHOPTIONS_VALUES: &[(i64, &str)] = &[
     (9, "Slow-sync, Red-eye reduction"),
 ];
 
+pub static PENTAX_CAMERASETTINGS_METERINGMODE2_VALUES: &[(i64, &str)] = &[
+    (0, "Multi-segment"),
+];
+
 pub static PENTAX_CAMERASETTINGS_AFPOINTMODE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
+];
+
+pub static PENTAX_CAMERASETTINGS_FOCUSMODE2_VALUES: &[(i64, &str)] = &[
+    (0, "Manual"),
+    (1, "AF-S"),
+    (2, "AF-C"),
+    (3, "AF-A"),
 ];
 
 pub static PENTAX_CAMERASETTINGS_AFPOINTSELECTED2_VALUES: &[(i64, &str)] = &[
@@ -640,6 +874,11 @@ pub static PENTAX_FACEINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
     94u16 => TagDef { name: "Face5AEye1", values: None },
     98u16 => TagDef { name: "Face5AEye2", values: None },
 };
+
+/// Pentax::FaceInfoK3III Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_FACEINFOK3III_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0x0, name: "FaceInfoK3III", values: None },
+];
 
 /// Pentax::FacePos tags
 pub static PENTAX_FACEPOS: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -1309,6 +1548,11 @@ pub static PENTAX_FLASHINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "InternalFlashStrength", values: None },
 };
 
+/// Pentax::FlashInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_FLASHINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 24, mask: 0x1f, name: "ExternalFlashGuideNumber", values: None },
+];
+
 pub static PENTAX_FLASHINFO_FLASHSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "Off (1)"),
@@ -1445,6 +1689,31 @@ pub static PENTAX_LENSDATA: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "LensFocalLength", values: None },
 };
 
+/// Pentax::LensData Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_LENSDATA_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0x1, name: "AutoAperture", values: Some(PENTAX_LENSDATA_AUTOAPERTURE_VALUES) },
+    MaskDef { index: 0, mask: 0x6, name: "MinAperture", values: Some(PENTAX_LENSDATA_MINAPERTURE_VALUES) },
+    MaskDef { index: 0, mask: 0x70, name: "LensFStops", values: None },
+    MaskDef { index: 10, mask: 0xf0, name: "NominalMaxAperture", values: None },
+    MaskDef { index: 10, mask: 0xf, name: "NominalMinAperture", values: None },
+    MaskDef { index: 12, mask: 0x0, name: "NewLensDataHook", values: None },
+    MaskDef { index: 14, mask: 0x7f, name: "MaxAperture", values: None },
+    MaskDef { index: 3, mask: 0xf8, name: "MinFocusDistance", values: Some(PENTAX_LENSDATA_MINFOCUSDISTANCE_VALUES) },
+    MaskDef { index: 3, mask: 0x7, name: "FocusRangeIndex", values: Some(PENTAX_LENSDATA_FOCUSRANGEINDEX_VALUES) },
+];
+
+pub static PENTAX_LENSDATA_AUTOAPERTURE_VALUES: &[(i64, &str)] = &[
+    (0, "On"),
+    (1, "Off"),
+];
+
+pub static PENTAX_LENSDATA_MINAPERTURE_VALUES: &[(i64, &str)] = &[
+    (0, "22"),
+    (1, "32"),
+    (2, "45"),
+    (3, "16"),
+];
+
 pub static PENTAX_LENSDATA_MINFOCUSDISTANCE_VALUES: &[(i64, &str)] = &[
     (0, "0.13-0.19 m"),
     (1, "0.20-0.24 m"),
@@ -1469,10 +1738,45 @@ pub static PENTAX_LENSDATA_MINFOCUSDISTANCE_VALUES: &[(i64, &str)] = &[
     (9, "0.8-0.9 m"),
 ];
 
+pub static PENTAX_LENSDATA_FOCUSRANGEINDEX_VALUES: &[(i64, &str)] = &[
+    (0, "5"),
+    (1, "4"),
+    (2, "6 (far)"),
+    (3, "7 (very far)"),
+    (4, "2"),
+    (5, "3"),
+    (6, "1 (close)"),
+    (7, "0 (very close)"),
+];
+
 /// Pentax::LensInfo tags
 pub static PENTAX_LENSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "LensType", values: None },
     3u16 => TagDef { name: "LensData", values: None },
+};
+
+/// Pentax::LensInfo2 tags
+pub static PENTAX_LENSINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
+    0u16 => TagDef { name: "LensType", values: None },
+    4u16 => TagDef { name: "LensData", values: None },
+};
+
+/// Pentax::LensInfo3 tags
+pub static PENTAX_LENSINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
+    1u16 => TagDef { name: "LensType", values: None },
+    13u16 => TagDef { name: "LensData", values: None },
+};
+
+/// Pentax::LensInfo4 tags
+pub static PENTAX_LENSINFO4: phf::Map<u16, TagDef> = phf::phf_map! {
+    1u16 => TagDef { name: "LensType", values: None },
+    12u16 => TagDef { name: "LensData", values: None },
+};
+
+/// Pentax::LensInfo5 tags
+pub static PENTAX_LENSINFO5: phf::Map<u16, TagDef> = phf::phf_map! {
+    1u16 => TagDef { name: "LensType", values: None },
+    15u16 => TagDef { name: "LensData", values: None },
 };
 
 /// Pentax::LensInfoQ tags
@@ -1490,6 +1794,43 @@ pub static PENTAX_LENSREC: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static PENTAX_LENSREC_EXTENDERSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "Not attached"),
     (1, "Attached"),
+];
+
+/// Pentax::LevelInfo tags
+pub static PENTAX_LEVELINFO: phf::Map<u16, TagDef> = phf::phf_map! {
+    0u16 => TagDef { name: "LevelOrientation", values: Some(PENTAX_LEVELINFO_LEVELORIENTATION_VALUES) },
+    1u16 => TagDef { name: "RollAngle", values: None },
+    2u16 => TagDef { name: "PitchAngle", values: None },
+    5u16 => TagDef { name: "CompositionAdjustX", values: None },
+    6u16 => TagDef { name: "CompositionAdjustY", values: None },
+    7u16 => TagDef { name: "CompositionAdjustRotation", values: None },
+};
+
+/// Pentax::LevelInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_LEVELINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0xf, name: "LevelOrientation", values: Some(PENTAX_LEVELINFO_LEVELORIENTATION_VALUES) },
+    MaskDef { index: 0, mask: 0xf0, name: "CompositionAdjust", values: Some(PENTAX_LEVELINFO_COMPOSITIONADJUST_VALUES) },
+];
+
+pub static PENTAX_LEVELINFO_LEVELORIENTATION_VALUES: &[(i64, &str)] = &[
+    (0, "n/a"),
+    (1, "Horizontal (normal)"),
+    (10, "Rotate 180; Off Level"),
+    (11, "Rotate 90 CW; Off Level"),
+    (12, "Rotate 270 CW; Off Level"),
+    (13, "Upwards"),
+    (14, "Downwards"),
+    (2, "Rotate 180"),
+    (3, "Rotate 90 CW"),
+    (4, "Rotate 270 CW"),
+    (9, "Horizontal; Off Level"),
+];
+
+pub static PENTAX_LEVELINFO_COMPOSITIONADJUST_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (10, "Composition Adjust + Horizon Correction"),
+    (12, "Horizon Correction"),
+    (2, "Composition Adjust"),
 ];
 
 /// Pentax::LevelInfoK3III tags
@@ -1554,6 +1895,7 @@ pub static PENTAX_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     149u16 => TagDef { name: "SkinToneCorrection", values: None },
     15u16 => TagDef { name: "AFPointsInFocus", values: Some(PENTAX_MAIN_AFPOINTSINFOCUS_VALUES) },
     150u16 => TagDef { name: "ClarityControl", values: None },
+    158u16 => TagDef { name: "HDF", values: Some(PENTAX_MAIN_HDF_VALUES) },
     16u16 => TagDef { name: "FocusPosition", values: None },
     18u16 => TagDef { name: "ExposureTime", values: None },
     19u16 => TagDef { name: "FNumber", values: None },
@@ -1792,6 +2134,11 @@ pub static PENTAX_MAIN_NEUTRALDENSITYFILTER_VALUES: &[(i64, &str)] = &[
 
 pub static PENTAX_MAIN_AFPOINTSINFOCUS_VALUES: &[(i64, &str)] = &[
     (0, "(none)"),
+];
+
+pub static PENTAX_MAIN_HDF_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "On"),
 ];
 
 pub static PENTAX_MAIN_ISO_VALUES: &[(i64, &str)] = &[
@@ -2235,6 +2582,7 @@ pub static PENTAX_MAIN_PENTAXMODELID_VALUES: &[(i64, &str)] = &[
     (78520, "KF"),
     (78550, "K-3 Mark III Monochrome"),
     (78560, "GR IV"),
+    (78640, "GR IV Monochrome"),
 ];
 
 pub static PENTAX_MAIN_COLORSPACE_VALUES: &[(i64, &str)] = &[
@@ -2274,6 +2622,7 @@ pub static PENTAX_MAIN_IMAGETONE_VALUES: &[(i64, &str)] = &[
     (32768, "Standard"),
     (32769, "Hard"),
     (32770, "Soft"),
+    (33024, "Monochrome"),
     (4, "Vibrant"),
     (5, "Monochrome"),
     (6, "Muted"),
@@ -2378,6 +2727,27 @@ pub static PENTAX_SRINFO_SHAKEREDUCTION_VALUES: &[(i64, &str)] = &[
     (7, "On (7)"),
 ];
 
+/// Pentax::SRInfo2 tags
+pub static PENTAX_SRINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
+    0u16 => TagDef { name: "SRResult", values: None },
+    1u16 => TagDef { name: "ShakeReduction", values: Some(PENTAX_SRINFO2_SHAKEREDUCTION_VALUES) },
+};
+
+pub static PENTAX_SRINFO2_SHAKEREDUCTION_VALUES: &[(i64, &str)] = &[
+    (0, "Off"),
+    (1, "On"),
+    (12, "Off (AA simulation type 1)"),
+    (15, "On (AA simulation type 1)"),
+    (16, "Off (AA simulation type 2) (16)"),
+    (20, "Off (AA simulation type 2)"),
+    (23, "On (AA simulation type 2)"),
+    (4, "Off (AA simulation off)"),
+    (5, "On but Disabled"),
+    (6, "On (Video)"),
+    (7, "On (AA simulation off)"),
+    (8, "Off (AA simulation type 1) (8)"),
+];
+
 /// Pentax::ShotInfo tags
 pub static PENTAX_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "CameraOrientation", values: Some(PENTAX_SHOTINFO_CAMERAORIENTATION_VALUES) },
@@ -2407,6 +2777,28 @@ pub static PENTAX_TIMEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "HometownCity", values: Some(PENTAX_TIMEINFO_HOMETOWNCITY_VALUES) },
     3u16 => TagDef { name: "DestinationCity", values: Some(PENTAX_TIMEINFO_DESTINATIONCITY_VALUES) },
 };
+
+/// Pentax::TimeInfo Mask bitfields (ExifTool 0.1-style indices)
+pub static PENTAX_TIMEINFO_MASKS: &[MaskDef] = &[
+    MaskDef { index: 0, mask: 0x1, name: "WorldTimeLocation", values: Some(PENTAX_TIMEINFO_WORLDTIMELOCATION_VALUES) },
+    MaskDef { index: 0, mask: 0x2, name: "HometownDST", values: Some(PENTAX_TIMEINFO_HOMETOWNDST_VALUES) },
+    MaskDef { index: 0, mask: 0x4, name: "DestinationDST", values: Some(PENTAX_TIMEINFO_DESTINATIONDST_VALUES) },
+];
+
+pub static PENTAX_TIMEINFO_WORLDTIMELOCATION_VALUES: &[(i64, &str)] = &[
+    (0, "Hometown"),
+    (1, "Destination"),
+];
+
+pub static PENTAX_TIMEINFO_HOMETOWNDST_VALUES: &[(i64, &str)] = &[
+    (0, "No"),
+    (1, "Yes"),
+];
+
+pub static PENTAX_TIMEINFO_DESTINATIONDST_VALUES: &[(i64, &str)] = &[
+    (0, "No"),
+    (1, "Yes"),
+];
 
 pub static PENTAX_TIMEINFO_HOMETOWNCITY_VALUES: &[(i64, &str)] = &[
     (0, "Pago Pago"),
