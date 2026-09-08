@@ -9,6 +9,7 @@
 //! Olympus Equipment/CameraSettings/ImageProcessing/FocusInfo sub-IFDs overlay in place.
 //! Canon CameraSettings, ShotInfo, FileInfo, ProcessingInfo int16 arrays and AFInfo uint16 overlay in place.
 //! Pentax LensInfo/AFInfo nested IFDs overlay in place. Panasonic FaceDetect FaceCount overlays the first u16.
+//! Sony CameraSettings/FocusInfo and Nikon ISOInfo/DistortInfo/HDRInfo/LocationInfo/AFInfo/AFTune/FlashInfo uint16 arrays overlay in place.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -44,11 +45,60 @@ fn lookup_panasonic(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'
 fn lookup_sony(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     sony::SONY_MAIN.get(&tag).map(|d| (d.name, d.values))
 }
+fn lookup_sony_camerasettings(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    sony::SONY_CAMERASETTINGS
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_sony_focusinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    sony::SONY_FOCUSINFO.get(&tag).map(|d| (d.name, d.values))
+}
 fn lookup_olympus(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     olympus::OLYMPUS_MAIN.get(&tag).map(|d| (d.name, d.values))
 }
 fn lookup_nikon(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     nikon::NIKON_MAIN.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_nikon_isoinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_ISOINFO.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_nikon_distortinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_DISTORTINFO
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_nikon_hdrinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_HDRINFO.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_nikon_locationinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_LOCATIONINFO
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_nikon_afinfo(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_AFINFO.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_nikon_aftune(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_AFTUNE.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_nikon_flashinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    nikon::NIKON_FLASHINFO0100
+        .get(&tag)
+        .map(|d| (d.name, d.values))
 }
 fn lookup_canon(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     canon::CANON_MAIN.get(&tag).map(|d| (d.name, d.values))
@@ -179,7 +229,7 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if (data.starts_with(b"SONY DSC ") || data.starts_with(b"SONY CAM ")) && data.len() >= 14 {
         let order = detect_order(data, 12)?;
-        return patch_ifd(data, 12, order, lookup_sony, metadata, true);
+        return patch_sony(data, 12, order, metadata, true);
     }
     if data.starts_with(b"OLYMPUS\0") && data.len() >= 14 {
         let order = order_from_marker(&data[8..10])?;
@@ -283,7 +333,7 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if make.contains("sony") {
         let order = detect_order(data, 0)?;
-        return patch_ifd(data, 0, order, lookup_sony, metadata, true);
+        return patch_sony(data, 0, order, metadata, true);
     }
     if make.contains("hasselblad") {
         let order = detect_order(data, 0)?;
@@ -964,16 +1014,30 @@ fn patch_canon(
         metadata,
         offsets_from_ifd,
     )?;
-    overlay_canon_i16_groups(&mut out, ifd_off, order, offsets_from_ifd, metadata);
+    overlay_index16_groups(
+        &mut out,
+        ifd_off,
+        order,
+        offsets_from_ifd,
+        metadata,
+        &[
+            (0x0001, "CameraSettings", lookup_canon_camerasettings, true),
+            (0x0004, "ShotInfo", lookup_canon_shotinfo, true),
+            (0x0012, "AFInfo", lookup_canon_afinfo, false),
+            (0x0093, "FileInfo", lookup_canon_fileinfo, true),
+            (0x00A0, "ProcessingInfo", lookup_canon_processing, true),
+        ],
+    );
     Some(out)
 }
 
-fn overlay_canon_i16_groups(
+fn overlay_index16_groups(
     out: &mut [u8],
     ifd_off: u32,
     order: ByteOrder,
     offsets_from_ifd: bool,
     metadata: &Metadata,
+    groups: &[(u16, &str, TagLookup, bool)],
 ) {
     let start = ifd_off as usize;
     if start > out.len() {
@@ -989,13 +1053,10 @@ fn overlay_canon_i16_groups(
         return;
     };
     for (i, e) in entries.iter().enumerate() {
-        let (group, lookup, signed): (&str, TagLookup, bool) = match e.tag {
-            0x0001 => ("CameraSettings", lookup_canon_camerasettings, true),
-            0x0004 => ("ShotInfo", lookup_canon_shotinfo, true),
-            0x0012 => ("AFInfo", lookup_canon_afinfo, false),
-            0x0093 => ("FileInfo", lookup_canon_fileinfo, true),
-            0x00A0 => ("ProcessingInfo", lookup_canon_processing, true),
-            _ => continue,
+        let Some((_, group, lookup, signed)) =
+            groups.iter().copied().find(|(tag, _, _, _)| *tag == e.tag)
+        else {
+            continue;
         };
         let Some(gmeta) = metadata.exif.get(group) else {
             continue;
@@ -1045,6 +1106,35 @@ fn overlay_canon_i16_groups(
             dest[idx * 2..idx * 2 + 2].copy_from_slice(&b);
         }
     }
+}
+
+fn patch_sony(
+    data: &[u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    metadata: &Metadata,
+    offsets_from_ifd: bool,
+) -> Option<Vec<u8>> {
+    let mut out = patch_ifd(
+        data,
+        ifd_off,
+        order,
+        lookup_sony,
+        metadata,
+        offsets_from_ifd,
+    )?;
+    overlay_index16_groups(
+        &mut out,
+        ifd_off,
+        order,
+        offsets_from_ifd,
+        metadata,
+        &[
+            (0x0010, "CameraSettings", lookup_sony_camerasettings, false),
+            (0x0020, "FocusInfo", lookup_sony_focusinfo, false),
+        ],
+    );
+    Some(out)
 }
 
 fn metadata_from_group(metadata: &Metadata, name: &str) -> Option<Metadata> {
@@ -1176,6 +1266,22 @@ fn patch_nikon(
         offsets_from_ifd,
     )?;
     overlay_shot_info(&mut out, data, ifd_off, order, offsets_from_ifd, metadata);
+    overlay_index16_groups(
+        &mut out,
+        ifd_off,
+        order,
+        offsets_from_ifd,
+        metadata,
+        &[
+            (0x0025, "ISOInfo", lookup_nikon_isoinfo, false),
+            (0x002B, "DistortInfo", lookup_nikon_distortinfo, false),
+            (0x002C, "HDRInfo", lookup_nikon_hdrinfo, false),
+            (0x0035, "LocationInfo", lookup_nikon_locationinfo, false),
+            (0x0088, "AFInfo", lookup_nikon_afinfo, false),
+            (0x00A8, "FlashInfo", lookup_nikon_flashinfo, false),
+            (0x00B9, "AFTune", lookup_nikon_aftune, false),
+        ],
+    );
     Some(out)
 }
 
@@ -1598,6 +1704,116 @@ mod tests {
             .parse(&out, ByteOrder::LittleEndian)
             .unwrap();
         assert_eq!(parsed.get_str("Quality"), Some("Fine"));
+    }
+
+    #[test]
+    fn sony_camerasettings_highspeedsync_inplace() {
+        let mut prefix = b"SONY DSC ".to_vec();
+        prefix.extend_from_slice(&[0, 0, 0]);
+        let src = prefix_ifd(
+            &prefix,
+            0x0010,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0, 0, 0, 0, 0, 0, 0, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("HighSpeedSync", AttrValue::Str("On".into()));
+        let mut meta = Metadata::new("ARW");
+        meta.exif
+            .set("CameraSettings", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::SonyParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("CameraSettings").unwrap() else {
+            panic!("expected CameraSettings group");
+        };
+        assert_eq!(g.get_str("HighSpeedSync"), Some("On"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn sony_focusinfo_drivemode2_inplace() {
+        let mut prefix = b"SONY DSC ".to_vec();
+        prefix.extend_from_slice(&[0, 0, 0]);
+        let src = prefix_ifd(
+            &prefix,
+            0x0020,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0u8; 32]),
+        );
+        let mut group = Attrs::new();
+        group.set("DriveMode2", AttrValue::Str("Single Frame".into()));
+        let mut meta = Metadata::new("ARW");
+        meta.exif
+            .set("FocusInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::SonyParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("FocusInfo").unwrap() else {
+            panic!("expected FocusInfo group");
+        };
+        assert_eq!(g.get_str("DriveMode2"), Some("Single Frame"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn nikon_type3_isoinfo_inplace() {
+        let entry = IfdEntry {
+            tag: 0x0025,
+            format: ExifFormat::Undefined,
+            count: 8,
+            value: RawValue::Undefined(vec![100, 0, 0, 0, 0, 0, 0, 0]),
+            value_offset: None,
+        };
+        let ifd = emit_ifd(&[entry], ByteOrder::LittleEndian, 8).unwrap();
+        let mut tiff = Vec::from(b"II\x2a\x00\x08\x00\x00\x00".as_slice());
+        tiff.extend_from_slice(&ifd);
+        let mut src = Vec::from(b"Nikon\x00\x02\x10\x00\x00".as_slice());
+        src.extend_from_slice(&tiff);
+        let mut group = Attrs::new();
+        group.set("ISO", AttrValue::UInt(200));
+        let mut meta = Metadata::new("NEF");
+        meta.exif.set("ISOInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::NikonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("ISOInfo").unwrap() else {
+            panic!("expected ISOInfo group");
+        };
+        assert_eq!(g.get_u32("ISO"), Some(200));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn nikon_type3_hdrinfo_inplace() {
+        let entry = IfdEntry {
+            tag: 0x002C,
+            format: ExifFormat::Undefined,
+            count: 16,
+            value: RawValue::Undefined(vec![0u8; 16]),
+            value_offset: None,
+        };
+        let ifd = emit_ifd(&[entry], ByteOrder::LittleEndian, 8).unwrap();
+        let mut tiff = Vec::from(b"II\x2a\x00\x08\x00\x00\x00".as_slice());
+        tiff.extend_from_slice(&ifd);
+        let mut src = Vec::from(b"Nikon\x00\x02\x10\x00\x00".as_slice());
+        src.extend_from_slice(&tiff);
+        let mut group = Attrs::new();
+        group.set("HDR", AttrValue::Str("On (normal)".into()));
+        let mut meta = Metadata::new("NEF");
+        meta.exif.set("HDRInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::NikonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("HDRInfo").unwrap() else {
+            panic!("expected HDRInfo group");
+        };
+        assert_eq!(g.get_str("HDR"), Some("On (normal)"));
+        assert_eq!(out.len(), src.len());
     }
 
     #[test]

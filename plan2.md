@@ -29,7 +29,7 @@ No `path = "C:/projects/..."` for sibling git repos.
 
 ## Still open
 
-1. MakerNotes field write: IFD overlay uses vendor parser tag tables; Olympus and Pentax nested IFDs, Canon CameraSettings/ShotInfo/FileInfo/ProcessingInfo/AFInfo arrays, and Panasonic FaceDetect FaceCount overlay in place. DJI FLOAT, GoPro GPMF same-size leaves, Nikon encrypted overlay as before. Still blob-copy: NikonCustom ShotInfo bitfields, `KDK*`, Canon AFInfo2 invented labels.
+1. MakerNotes field write: IFD overlay uses vendor parser tag tables; Olympus and Pentax nested IFDs, Canon/Sony/Nikon uint16 index blobs, and Panasonic FaceDetect FaceCount overlay in place. DJI FLOAT, GoPro GPMF same-size leaves, Nikon encrypted overlay as before. Still blob-copy: NikonCustom ShotInfo bitfields, `KDK*`, Canon AFInfo2 invented labels, Nikon AFInfo2/BarometerInfo.
 2. ~~CR3 write.~~ Done: `Cr3Writer` (CMT1/2/4, XMP UUID, CTBO, stco/co64; CMT3 blob).
 3. 1:1 remaining MakerNotes vendors (NikonCustom ShotInfo subdirs, other brands).
 
