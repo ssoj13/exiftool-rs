@@ -112,12 +112,35 @@ pub fn prepare_nikon_offsets(
     serial: u32,
     shutter_count: u32,
 ) -> Option<u32> {
+    prepare_nikon_offsets_ex(
+        data,
+        decrypt_start,
+        offset_table,
+        big_endian,
+        serial,
+        shutter_count,
+    )
+    .map(|(n, _)| n)
+}
+
+/// Same as [`prepare_nikon_offsets`], also returning XOR ranges for a matching re-encrypt.
+pub fn prepare_nikon_offsets_ex(
+    data: &mut [u8],
+    decrypt_start: usize,
+    offset_table: usize,
+    big_endian: bool,
+    serial: u32,
+    shutter_count: u32,
+) -> Option<(u32, Vec<(usize, usize)>)> {
     if offset_table + 4 > data.len() || offset_table < decrypt_start {
         return None;
     }
+    let mut ranges = Vec::new();
     let mut dec = Decryptor::new(serial, shutter_count);
     let dpos = offset_table + 4;
-    dec.apply(data, decrypt_start, dpos - decrypt_start);
+    let head = dpos - decrypt_start;
+    dec.apply(data, decrypt_start, head);
+    ranges.push((decrypt_start, head));
     let num = read_u32(data, offset_table, big_endian)?;
     if num > 256 {
         return None;
@@ -127,6 +150,7 @@ pub fn prepare_nikon_offsets(
         return None;
     }
     dec.apply(data, dpos, more);
+    ranges.push((dpos, more));
     let mut offs: Vec<u32> = Vec::new();
     for i in 0..num as usize {
         let pos = offset_table + 4 + 4 * i;
@@ -143,9 +167,67 @@ pub fn prepare_nikon_offsets(
         if start >= data.len() || end <= start {
             continue;
         }
-        dec.apply(data, start, end - start);
+        let len = end - start;
+        dec.apply(data, start, len);
+        ranges.push((start, len));
     }
-    Some(num)
+    Some((num, ranges))
+}
+
+/// Re-apply the same XOR ranges with a fresh decryptor (encrypt after patch).
+pub fn apply_offset_ranges(
+    data: &mut [u8],
+    serial: u32,
+    shutter_count: u32,
+    ranges: &[(usize, usize)],
+) {
+    let mut d = Decryptor::new(serial, shutter_count);
+    for &(start, len) in ranges {
+        d.apply(data, start, len);
+    }
+}
+
+/// XOR ranges for a plaintext `NIKON_OFFSETS` block (table already decrypted).
+pub fn nikon_offset_ranges_plain(
+    data: &[u8],
+    decrypt_start: usize,
+    offset_table: usize,
+    big_endian: bool,
+) -> Option<Vec<(usize, usize)>> {
+    if offset_table + 4 > data.len() || offset_table < decrypt_start {
+        return None;
+    }
+    let mut ranges = Vec::new();
+    let dpos = offset_table + 4;
+    ranges.push((decrypt_start, dpos - decrypt_start));
+    let num = read_u32(data, offset_table, big_endian)?;
+    if num > 256 {
+        return None;
+    }
+    let more = num as usize * 4;
+    if offset_table + 4 + more > data.len() {
+        return None;
+    }
+    ranges.push((dpos, more));
+    let mut offs: Vec<u32> = Vec::new();
+    for i in 0..num as usize {
+        let pos = offset_table + 4 + 4 * i;
+        let off = read_u32(data, pos, big_endian)?;
+        if off != 0 {
+            offs.push(off);
+        }
+    }
+    offs.sort_unstable();
+    offs.push(data.len() as u32);
+    for w in offs.windows(2) {
+        let start = w[0] as usize;
+        let end = w[1] as usize;
+        if start >= data.len() || end <= start {
+            continue;
+        }
+        ranges.push((start, end - start));
+    }
+    Some(ranges)
 }
 
 fn read_u32(data: &[u8], off: usize, big_endian: bool) -> Option<u32> {

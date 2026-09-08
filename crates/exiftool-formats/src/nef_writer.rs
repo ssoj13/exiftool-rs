@@ -2,7 +2,7 @@
 //!
 //! `write` uses `tiff_rewrite` (ExifTool WriteTIFF / ProcessTIFF style):
 //! overlay IFD0 / ExifIFD / GPS tags, copy SubIFD trees, strips/tiles, MakerNotes blobs.
-//! MakerNotes IFD fields overlay via `rewrite_blob` (including Nikon ShotInfo Full-crypt).
+//! MakerNotes IFD fields overlay via `rewrite_blob` (including Nikon ShotInfo / ColorBalance / LensData).
 
 use crate::{Error, Metadata, ReadSeek, Result};
 use std::io::Write;

@@ -24,7 +24,7 @@ Writing is supported for:
 | MP4 / MOV | .mp4, .mov, … | XMP UUID box |
 | WAV / FLAC / MP3 | | Existing tag writers |
 
-Do not rebuild camera RAW with a short IFD0-only writer. MakerNotes field write overlays existing IFD tags (FujiFilm rebuild; other IFD vendors in-place, including headerless Kodak IFD). Encrypted Nikon ShotInfo `0x0091` Full-crypt fields (FirmwareVersion / VibrationReduction / ShutterCount) overlay after decrypt; `NIKON_OFFSETS` and `KDK*` binary magics stay blob-copied.
+Do not rebuild camera RAW with a short IFD0-only writer. MakerNotes field write overlays existing IFD tags (FujiFilm rebuild; other IFD vendors in-place, including headerless Kodak and Motorola). Nikon ShotInfo (`0x0091`) Full-crypt and `NIKON_OFFSETS` fields, ColorBalance levels, and LensData `LensIDNumber` overlay after decrypt; `KDK*` binary magics stay blob-copied.
 
 ## Basic Writing
 

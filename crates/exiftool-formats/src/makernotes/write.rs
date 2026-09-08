@@ -2,7 +2,8 @@
 //!
 //! FujiFilm rebuilds the IFD (offsets from MakerNotes start). Other IFD vendors
 //! patch existing directory values in place so sub-IFD / preview offsets stay valid.
-//! Nikon ShotInfo (`0x0091`) Full-crypt blobs are decrypted, patched, and re-encrypted.
+//! Nikon ShotInfo (`0x0091`) Full-crypt and `NIKON_OFFSETS` blobs are decrypted, patched, and re-encrypted.
+//! ColorBalance (`0x0097`) levels and LensData (`0x0098`) `LensIDNumber` use the same keys.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -91,6 +92,13 @@ fn lookup_kodak(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'stat
     match tag {
         0x001c => Some(("SerialNumber", None)),
         0x0104 => Some(("Quality", None)),
+        _ => None,
+    }
+}
+fn lookup_motorola(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    match tag {
+        0x0100 => Some(("SerialNumber", None)),
+        0x0205 => Some(("ISO", None)),
         _ => None,
     }
 }
@@ -226,6 +234,10 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if make.contains("minolta") {
         let order = detect_order(data, 0)?;
         return patch_ifd(data, 0, order, lookup_minolta, metadata, true);
+    }
+    if make.contains("motorola") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_motorola, metadata, true);
     }
     None
 }
@@ -459,9 +471,7 @@ fn overlay_shot_info(
             .map(str::to_string),
         shutter_count: metadata.exif.get_u32("ShutterCount"),
     };
-    if write.is_empty() {
-        return;
-    }
+    let lens_id = metadata.exif.get_u32("LensIDNumber").map(|n| n as u8);
     let start = ifd_off as usize;
     let (keys_parse, parse_off, extra_add) = if offsets_from_ifd {
         if start >= keys_src.len() {
@@ -488,28 +498,60 @@ fn overlay_shot_info(
         return;
     };
     for e in entries {
-        if e.tag != 0x0091 {
-            continue;
-        }
         let Some(off) = e.value_offset else {
             continue;
         };
         let abs = extra_add + off as usize;
-        let RawValue::Undefined(v) = &e.value else {
-            continue;
+        let len = match &e.value {
+            RawValue::Undefined(v) => v.len(),
+            RawValue::UInt8(v) => v.len(),
+            _ => continue,
         };
-        let len = v.len();
         if abs + len > out.len() {
             continue;
         }
         let extra = out[abs..abs + len].to_vec();
-        if let Some(new) =
-            super::nikon::rewrite_shot_info_full(&extra, serial_key, shutter_key, &write)
-        {
+        let new = match e.tag {
+            0x0091 => {
+                if write.is_empty() {
+                    None
+                } else {
+                    super::nikon::rewrite_shot_info_full(&extra, serial_key, shutter_key, &write)
+                }
+            }
+            0x0097 => (|| {
+                let name = super::nikon::color_balance_tag_name(&extra)?;
+                let s = metadata.exif.get_str(name)?;
+                let levels = parse_u16x4(s)?;
+                super::nikon::rewrite_color_balance(&extra, serial_key, shutter_key, order, &levels)
+            })(),
+            0x0098 => lens_id.and_then(|id| {
+                super::nikon::rewrite_lens_data(&extra, serial_key, shutter_key, id)
+            }),
+            _ => None,
+        };
+        if let Some(new) = new {
             if new.len() == len {
                 out[abs..abs + len].copy_from_slice(&new);
             }
         }
+    }
+}
+
+fn parse_u16x4(s: &str) -> Option<[u16; 4]> {
+    let mut out = [0u16; 4];
+    let mut n = 0;
+    for p in s.split_whitespace() {
+        if n >= 4 {
+            return None;
+        }
+        out[n] = p.parse().ok()?;
+        n += 1;
+    }
+    if n == 4 {
+        Some(out)
+    } else {
+        None
     }
 }
 
@@ -1065,5 +1107,18 @@ mod tests {
         meta.exif.set("Make", AttrValue::Str("Kodak".into()));
         meta.exif.set("SerialNumber", AttrValue::Str("NOPE".into()));
         assert_eq!(rewrite_blob(&src, &meta), src);
+    }
+
+    #[test]
+    fn motorola_iso_inplace() {
+        let src = prefix_ifd(b"", 0x0205, ExifFormat::UInt16, RawValue::UInt16(vec![100]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Motorola".into()));
+        meta.exif.set("ISO", AttrValue::UInt(200));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::MotorolaParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("ISO"), Some(200));
     }
 }
