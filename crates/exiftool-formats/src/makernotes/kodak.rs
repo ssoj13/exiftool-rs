@@ -39,7 +39,7 @@ use exiftool_core::ByteOrder;
 pub struct KodakParser;
 
 /// Known Kodak MakerNote tags.
-static KODAK_TAGS: &[(u16, &str)] = &[
+pub(crate) static KODAK_TAGS: &[(u16, &str)] = &[
     (0x0001, "KodakModel"),
     (0x0003, "YearCreated"),
     (0x0005, "BurstMode"),

@@ -36,7 +36,7 @@ use exiftool_core::ByteOrder;
 pub struct VivoParser;
 
 /// Known Vivo MakerNote tags.
-static VIVO_TAGS: &[(u16, &str)] = &[
+pub(crate) static VIVO_TAGS: &[(u16, &str)] = &[
     (0x0001, "MakerNoteVersion"),
     (0x0002, "DeviceModel"),
     (0x0003, "FirmwareVersion"),

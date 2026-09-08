@@ -33,7 +33,7 @@ use exiftool_core::ByteOrder;
 pub struct HasselbladParser;
 
 /// Known Hasselblad MakerNote tags.
-static HASSELBLAD_TAGS: &[(u16, &str)] = &[
+pub(crate) static HASSELBLAD_TAGS: &[(u16, &str)] = &[
     (0x0002, "SerialNumber"),
     (0x0003, "Model"),
     (0x0004, "RawMode"),

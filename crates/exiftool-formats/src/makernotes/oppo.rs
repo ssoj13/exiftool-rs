@@ -37,7 +37,7 @@ use exiftool_core::ByteOrder;
 pub struct OppoParser;
 
 /// Known Oppo MakerNote tags.
-static OPPO_TAGS: &[(u16, &str)] = &[
+pub(crate) static OPPO_TAGS: &[(u16, &str)] = &[
     (0x0001, "MakerNoteVersion"),
     (0x0002, "DeviceModel"),
     (0x0003, "FirmwareVersion"),

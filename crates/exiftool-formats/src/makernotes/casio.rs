@@ -56,7 +56,7 @@ use exiftool_core::ByteOrder;
 pub struct CasioParser;
 
 /// Known Casio Type1 tags.
-static CASIO_TYPE1_TAGS: &[(u16, &str)] = &[
+pub(crate) static CASIO_TYPE1_TAGS: &[(u16, &str)] = &[
     (0x0001, "RecordingMode"),
     (0x0002, "Quality"),
     (0x0003, "FocusingMode"),
@@ -72,7 +72,7 @@ static CASIO_TYPE1_TAGS: &[(u16, &str)] = &[
 ];
 
 /// Known Casio Type2 tags.
-static CASIO_TYPE2_TAGS: &[(u16, &str)] = &[
+pub(crate) static CASIO_TYPE2_TAGS: &[(u16, &str)] = &[
     (0x0002, "PreviewImageSize"),
     (0x0003, "PreviewImageLength"),
     (0x0004, "PreviewImageStart"),

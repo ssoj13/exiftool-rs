@@ -95,6 +95,13 @@ impl LeicaParser {
     ];
 
     /// Find tag name by ID.
+    pub(crate) fn lookup_write(
+        tag: u16,
+    ) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+        Self::tag_name(tag).map(|n| (n, None))
+    }
+
+    /// Find tag name by ID.
     fn tag_name(tag: u16) -> Option<&'static str> {
         Self::TAGS.iter().find(|(t, _)| *t == tag).map(|(_, n)| *n)
     }

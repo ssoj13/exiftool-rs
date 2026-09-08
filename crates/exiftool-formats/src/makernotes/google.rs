@@ -31,7 +31,7 @@ use exiftool_core::ByteOrder;
 pub struct GoogleParser;
 
 /// Known Google Pixel MakerNote tags.
-static GOOGLE_TAGS: &[(u16, &str)] = &[
+pub(crate) static GOOGLE_TAGS: &[(u16, &str)] = &[
     (0x0001, "MakerNoteVersion"),
     (0x0002, "HDRPlusUsed"),
     (0x0003, "NightModeUsed"),

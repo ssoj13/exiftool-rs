@@ -29,7 +29,7 @@ No `path = "C:/projects/..."` for sibling git repos.
 
 ## Still open
 
-1. MakerNotes field write: IFD overlay for cameras plus headerless phone IFDs (Xiaomi/Oppo/OnePlus/Vivo/Realme/Huawei/Google), Phase One/Leaf, Leica (incl. `LEICA CAMERA AG`), DJI FLOAT tags, GoPro GPMF same-size leaves. Nikon encrypted overlay as before. Still blob-copy: NikonCustom ShotInfo bitfields, `KDK*`.
+1. MakerNotes field write: IFD overlay uses vendor parser tag tables (phones, Hasselblad vs Sony, Kodak IFD, Casio/Sigma/Ricoh/Leica). DJI FLOAT, GoPro GPMF same-size leaves, Nikon encrypted overlay as before. Still blob-copy: NikonCustom ShotInfo bitfields, `KDK*`.
 2. ~~CR3 write.~~ Done: `Cr3Writer` (CMT1/2/4, XMP UUID, CTBO, stco/co64; CMT3 blob).
 3. 1:1 remaining MakerNotes vendors (NikonCustom ShotInfo subdirs, other brands).
 

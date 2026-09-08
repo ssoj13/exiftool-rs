@@ -42,7 +42,7 @@ use exiftool_core::ByteOrder;
 pub struct PhaseOneParser;
 
 /// Known Phase One MakerNote tags.
-static PHASEONE_TAGS: &[(u16, &str)] = &[
+pub(crate) static PHASEONE_TAGS: &[(u16, &str)] = &[
     (0x0100, "CameraOrientation"),
     (0x0102, "Software"),
     (0x0105, "SerialNumber"),

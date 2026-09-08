@@ -31,7 +31,7 @@ use exiftool_core::ByteOrder;
 pub struct OnePlusParser;
 
 /// Known OnePlus MakerNote tags.
-static ONEPLUS_TAGS: &[(u16, &str)] = &[
+pub(crate) static ONEPLUS_TAGS: &[(u16, &str)] = &[
     (0x0001, "MakerNoteVersion"),
     (0x0002, "DeviceModel"),
     (0x0100, "SerialNumber"),

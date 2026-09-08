@@ -5,6 +5,7 @@
 //! Nikon ShotInfo (`0x0091`) Full-crypt and `NIKON_OFFSETS` blobs are decrypted, patched, and re-encrypted.
 //! ColorBalance (`0x0097`) levels and LensData (`0x0098`) `LensIDNumber` use the same keys.
 //! DJI overlay includes FLOAT tags. GoPro GPMF patches same-size KLV leaves in place.
+//! IFD overlay tag names follow each vendor parser table (Hasselblad is not Sony).
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -62,79 +63,61 @@ fn lookup_minolta(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'st
     sony::MINOLTA_MAIN.get(&tag).map(|d| (d.name, d.values))
 }
 fn lookup_casio_type2(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0008 => Some(("QualityMode", None)),
-        0x0009 => Some(("CasioImageSize", None)),
-        _ => None,
-    }
+    lookup_pairs(super::casio::CASIO_TYPE2_TAGS, tag)
 }
 fn lookup_casio_type1(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0002 => Some(("Quality", None)),
-        0x0001 => Some(("RecordingMode", None)),
-        _ => None,
-    }
+    lookup_pairs(super::casio::CASIO_TYPE1_TAGS, tag)
 }
 fn lookup_sigma(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0002 => Some(("SerialNumber", None)),
-        0x0016 => Some(("Quality", None)),
-        _ => None,
-    }
+    lookup_pairs(super::sigma::SIGMA_TAGS, tag)
 }
 fn lookup_ricoh(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0005 => Some(("SerialNumber", None)),
-        0x0002 => Some(("FirmwareVersion", None)),
-        _ => None,
-    }
+    lookup_pairs(super::ricoh::RICOH_TAGS, tag)
 }
 fn lookup_kodak(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x001c => Some(("SerialNumber", None)),
-        0x0104 => Some(("Quality", None)),
-        _ => None,
-    }
+    lookup_pairs(super::kodak::KODAK_TAGS, tag)
 }
 fn lookup_motorola(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0100 => Some(("SerialNumber", None)),
-        0x0205 => Some(("ISO", None)),
-        _ => None,
-    }
+    lookup_pairs(super::motorola::MOTOROLA_TAGS, tag)
 }
-fn lookup_phone_serial(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0100 => Some(("SerialNumber", None)),
-        _ => None,
-    }
+fn lookup_xiaomi(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    lookup_pairs(super::xiaomi::XIAOMI_TAGS, tag)
+}
+fn lookup_oppo(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    lookup_pairs(super::oppo::OPPO_TAGS, tag)
+}
+fn lookup_oneplus(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    lookup_pairs(super::oneplus::ONEPLUS_TAGS, tag)
+}
+fn lookup_vivo(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    lookup_pairs(super::vivo::VIVO_TAGS, tag)
+}
+fn lookup_realme(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    lookup_pairs(super::realme::REALME_TAGS, tag)
 }
 fn lookup_huawei(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0100 => Some(("CaptureMode", None)),
-        _ => None,
-    }
+    lookup_pairs(super::huawei::HUAWEI_TAGS, tag)
 }
 fn lookup_google(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0002 => Some(("HDRPlusUsed", None)),
-        0x0003 => Some(("NightModeUsed", None)),
-        _ => None,
-    }
+    lookup_pairs(super::google::GOOGLE_TAGS, tag)
 }
 fn lookup_phaseone(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0105 => Some(("SerialNumber", None)),
-        0x0106 => Some(("ISO", None)),
-        _ => None,
-    }
+    lookup_pairs(super::phaseone::PHASEONE_TAGS, tag)
 }
 fn lookup_leica(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
-    match tag {
-        0x0001 => Some(("SerialNumber", None)),
-        0x0010 => Some(("ISO", None)),
-        _ => None,
-    }
+    super::leica::LeicaParser::lookup_write(tag)
+}
+fn lookup_hasselblad(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    lookup_pairs(super::hasselblad::HASSELBLAD_TAGS, tag)
+}
+fn lookup_pairs(
+    table: &'static [(u16, &'static str)],
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    table
+        .iter()
+        .find(|(t, _)| *t == tag)
+        .map(|(_, n)| (*n, None))
 }
 fn lookup_dji(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     dji::DJI_MAIN.get(&tag).map(|d| (d.name, d.values))
@@ -263,9 +246,13 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
         let order = detect_order(data, 0)?;
         return patch_ifd(data, 0, order, lookup_kodak, metadata, true);
     }
-    if make.contains("sony") || make.contains("hasselblad") {
+    if make.contains("sony") {
         let order = detect_order(data, 0)?;
         return patch_ifd(data, 0, order, lookup_sony, metadata, true);
+    }
+    if make.contains("hasselblad") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_hasselblad, metadata, true);
     }
     if make.contains("casio") {
         let order = detect_order(data, 0)?;
@@ -285,15 +272,23 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if make.contains("xiaomi") || make.contains("redmi") {
         let order = detect_order(data, 0)?;
-        return patch_ifd(data, 0, order, lookup_phone_serial, metadata, true);
+        return patch_ifd(data, 0, order, lookup_xiaomi, metadata, true);
     }
-    if make.contains("oneplus")
-        || make.contains("oppo")
-        || make.contains("vivo")
-        || make.contains("realme")
-    {
+    if make.contains("oneplus") {
         let order = detect_order(data, 0)?;
-        return patch_ifd(data, 0, order, lookup_phone_serial, metadata, true);
+        return patch_ifd(data, 0, order, lookup_oneplus, metadata, true);
+    }
+    if make.contains("oppo") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_oppo, metadata, true);
+    }
+    if make.contains("vivo") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_vivo, metadata, true);
+    }
+    if make.contains("realme") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_realme, metadata, true);
     }
     if make.contains("huawei") || make.contains("honor") {
         let order = detect_order(data, 0)?;
@@ -742,7 +737,12 @@ fn patch_ifd(
         let Some((name, print_map)) = lookup(e.tag) else {
             continue;
         };
-        let Some(val) = metadata.exif.get(name) else {
+        let keyed = format!("Leica:{name}");
+        let Some(val) = metadata
+            .exif
+            .get(name)
+            .or_else(|| metadata.exif.get(&keyed))
+        else {
             continue;
         };
         if matches!(val, AttrValue::Group(_)) {
@@ -1583,5 +1583,71 @@ mod tests {
         let v = parsed.get_f32("Temperature").unwrap();
         assert!((v - 18.0).abs() < 0.01);
         assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn hasselblad_iso_inplace() {
+        let src = prefix_ifd(b"", 0x0028, ExifFormat::UInt16, RawValue::UInt16(vec![100]));
+        let mut meta = Metadata::new("3FR");
+        meta.exif.set("Make", AttrValue::Str("Hasselblad".into()));
+        meta.exif.set("ISO", AttrValue::UInt(200));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::HasselbladParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("ISO"), Some(200));
+    }
+
+    #[test]
+    fn kodak_iso_inplace() {
+        let src = prefix_ifd(b"", 0x0027, ExifFormat::UInt16, RawValue::UInt16(vec![80]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Kodak".into()));
+        meta.exif.set("ISO", AttrValue::UInt(200));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::KodakParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("ISO"), Some(200));
+    }
+
+    #[test]
+    fn casio_type1_whitebalance_inplace() {
+        let src = prefix_ifd(b"", 0x0007, ExifFormat::UInt16, RawValue::UInt16(vec![1]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("CASIO".into()));
+        meta.exif.set("WhiteBalance", AttrValue::UInt(2));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::CasioParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("WhiteBalance"), Some(2));
+    }
+
+    #[test]
+    fn xiaomi_nightmode_inplace() {
+        let src = prefix_ifd(b"", 0x0213, ExifFormat::UInt16, RawValue::UInt16(vec![0]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Xiaomi".into()));
+        meta.exif.set("NightMode", AttrValue::UInt(1));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::XiaomiParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("NightMode"), Some(1));
+    }
+
+    #[test]
+    fn leica_prefixed_iso_inplace() {
+        let src = prefix_ifd(b"", 0x0010, ExifFormat::UInt16, RawValue::UInt16(vec![100]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif
+            .set("Make", AttrValue::Str("Leica Camera AG".into()));
+        meta.exif.set("Leica:ISO", AttrValue::UInt(800));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::LeicaParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_u32("Leica:ISO"), Some(800));
     }
 }

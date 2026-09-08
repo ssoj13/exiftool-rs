@@ -32,7 +32,7 @@ use exiftool_core::ByteOrder;
 pub struct HuaweiParser;
 
 /// Known Huawei MakerNote tags.
-static HUAWEI_TAGS: &[(u16, &str)] = &[
+pub(crate) static HUAWEI_TAGS: &[(u16, &str)] = &[
     (0x0001, "MakerNoteVersion"),
     (0x0100, "CaptureMode"),
     (0x0101, "BurstNumber"),

@@ -38,7 +38,7 @@ use exiftool_core::ByteOrder;
 pub struct SigmaParser;
 
 /// Known Sigma MakerNote tags.
-static SIGMA_TAGS: &[(u16, &str)] = &[
+pub(crate) static SIGMA_TAGS: &[(u16, &str)] = &[
     (0x0002, "SerialNumber"),
     (0x0003, "DriveMode"),
     (0x0004, "ResolutionMode"),

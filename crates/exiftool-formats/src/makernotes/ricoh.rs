@@ -32,7 +32,7 @@ use exiftool_core::ByteOrder;
 pub struct RicohParser;
 
 /// Known Ricoh MakerNote tags.
-static RICOH_TAGS: &[(u16, &str)] = &[
+pub(crate) static RICOH_TAGS: &[(u16, &str)] = &[
     (0x0001, "MakerNoteType"),
     (0x0002, "FirmwareVersion"),
     (0x0005, "SerialNumber"),

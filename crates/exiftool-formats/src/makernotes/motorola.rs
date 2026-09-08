@@ -29,7 +29,7 @@ use exiftool_core::ByteOrder;
 pub struct MotorolaParser;
 
 /// Known Motorola MakerNote tags.
-static MOTOROLA_TAGS: &[(u16, &str)] = &[
+pub(crate) static MOTOROLA_TAGS: &[(u16, &str)] = &[
     (0x0001, "MakerNoteVersion"),
     (0x0100, "SerialNumber"),
     (0x0200, "SceneMode"),
