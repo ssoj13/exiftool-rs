@@ -7,7 +7,8 @@
 //! DJI overlay includes FLOAT tags. GoPro GPMF patches same-size KLV leaves in place.
 //! IFD overlay tag names follow each vendor parser table (Hasselblad is not Sony).
 //! Olympus Equipment/CameraSettings/ImageProcessing/FocusInfo sub-IFDs overlay in place.
-//! Canon CameraSettings and ShotInfo overlay existing int16 slots.
+//! Canon CameraSettings, ShotInfo, FileInfo, ProcessingInfo int16 arrays and AFInfo uint16 overlay in place.
+//! Pentax LensInfo/AFInfo nested IFDs overlay in place. Panasonic FaceDetect FaceCount overlays the first u16.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -63,6 +64,33 @@ fn lookup_canon_shotinfo(
     tag: u16,
 ) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     canon::CANON_SHOTINFO.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_canon_fileinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    canon::CANON_FILEINFO.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_canon_processing(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    canon::CANON_PROCESSING
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_canon_afinfo(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    canon::CANON_AFINFO.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_pentax_lensinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    pentax::PENTAX_LENSINFO
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_pentax_afinfo(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    pentax::PENTAX_AFINFO.get(&tag).map(|d| (d.name, d.values))
 }
 fn lookup_pentax(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     pentax::PENTAX_MAIN.get(&tag).map(|d| (d.name, d.values))
@@ -139,18 +167,11 @@ fn lookup_dji(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static
 
 fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(b"Panasonic") && data.len() >= 14 {
-        return patch_ifd(
-            data,
-            12,
-            ByteOrder::LittleEndian,
-            lookup_panasonic,
-            metadata,
-            true,
-        );
+        return patch_panasonic(data, 12, ByteOrder::LittleEndian, metadata, true);
     }
     if data.starts_with(b"LEICA\0\0\0") && data.len() >= 10 {
         let order = detect_order(data, 8)?;
-        return patch_ifd(data, 8, order, lookup_panasonic, metadata, true);
+        return patch_panasonic(data, 8, order, metadata, true);
     }
     if data.starts_with(b"LEICA CAMERA AG") && data.len() >= 18 {
         let order = detect_order(data, 16)?;
@@ -174,11 +195,11 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if data.starts_with(b"PENTAX \0") && data.len() >= 12 {
         let order = order_from_marker(&data[8..10])?;
-        return patch_ifd(data, 10, order, lookup_pentax, metadata, false);
+        return patch_pentax(data, 10, order, metadata, false);
     }
     if data.starts_with(b"AOC\0") && data.len() >= 8 {
         let order = order_from_marker(&data[4..6]).or_else(|| detect_order(data, 6))?;
-        return patch_ifd(data, 6, order, lookup_pentax, metadata, true);
+        return patch_pentax(data, 6, order, metadata, true);
     }
     if data.starts_with(b"Apple iOS\0") && data.len() >= 16 {
         let order = detect_order(data, 14)?;
@@ -190,7 +211,7 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     }
     if data.len() >= 10 && (data.starts_with(b"RICOH\0II") || data.starts_with(b"RICOH\0MM")) {
         let order = order_from_marker(&data[6..8])?;
-        return patch_ifd(data, 8, order, lookup_pentax, metadata, false);
+        return patch_pentax(data, 8, order, metadata, false);
     }
     if data.starts_with(b"RICOH\0") && data.len() >= 10 {
         let order = detect_order(data, 8).or_else(|| detect_order(data, 6))?;
@@ -835,12 +856,13 @@ fn lookup_olympus_focusinfo(
         .map(|d| (d.name, d.values))
 }
 
-fn overlay_olympus_subifds(
+fn overlay_named_subifds(
     out: &mut Vec<u8>,
     ifd_off: u32,
     order: ByteOrder,
     offsets_from_ifd: bool,
     metadata: &Metadata,
+    groups: &[(u16, &str, TagLookup)],
 ) {
     let start = ifd_off as usize;
     if start > out.len() {
@@ -855,12 +877,9 @@ fn overlay_olympus_subifds(
         return;
     };
     for e in entries {
-        let (group, lookup): (&str, TagLookup) = match e.tag {
-            0x2010 => ("Equipment", lookup_olympus_equipment),
-            0x2020 => ("CameraSettings", lookup_olympus_camerasettings),
-            0x2040 => ("ImageProcessing", lookup_olympus_imageprocessing),
-            0x2050 => ("FocusInfo", lookup_olympus_focusinfo),
-            _ => continue,
+        let Some((_, group, lookup)) = groups.iter().copied().find(|(tag, _, _)| *tag == e.tag)
+        else {
+            continue;
         };
         let Some(rel) = e.value.as_u32() else {
             continue;
@@ -877,6 +896,57 @@ fn overlay_olympus_subifds(
             *out = patched;
         }
     }
+}
+
+fn overlay_olympus_subifds(
+    out: &mut Vec<u8>,
+    ifd_off: u32,
+    order: ByteOrder,
+    offsets_from_ifd: bool,
+    metadata: &Metadata,
+) {
+    overlay_named_subifds(
+        out,
+        ifd_off,
+        order,
+        offsets_from_ifd,
+        metadata,
+        &[
+            (0x2010, "Equipment", lookup_olympus_equipment),
+            (0x2020, "CameraSettings", lookup_olympus_camerasettings),
+            (0x2040, "ImageProcessing", lookup_olympus_imageprocessing),
+            (0x2050, "FocusInfo", lookup_olympus_focusinfo),
+        ],
+    );
+}
+
+fn patch_pentax(
+    data: &[u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    metadata: &Metadata,
+    offsets_from_ifd: bool,
+) -> Option<Vec<u8>> {
+    let mut out = patch_ifd(
+        data,
+        ifd_off,
+        order,
+        lookup_pentax,
+        metadata,
+        offsets_from_ifd,
+    )?;
+    overlay_named_subifds(
+        &mut out,
+        ifd_off,
+        order,
+        offsets_from_ifd,
+        metadata,
+        &[
+            (0x0207, "LensInfo", lookup_pentax_lensinfo),
+            (0x0215, "AFInfo", lookup_pentax_afinfo),
+        ],
+    );
+    Some(out)
 }
 
 fn patch_canon(
@@ -919,9 +989,12 @@ fn overlay_canon_i16_groups(
         return;
     };
     for (i, e) in entries.iter().enumerate() {
-        let (group, lookup): (&str, TagLookup) = match e.tag {
-            0x0001 => ("CameraSettings", lookup_canon_camerasettings),
-            0x0004 => ("ShotInfo", lookup_canon_shotinfo),
+        let (group, lookup, signed): (&str, TagLookup, bool) = match e.tag {
+            0x0001 => ("CameraSettings", lookup_canon_camerasettings, true),
+            0x0004 => ("ShotInfo", lookup_canon_shotinfo, true),
+            0x0012 => ("AFInfo", lookup_canon_afinfo, false),
+            0x0093 => ("FileInfo", lookup_canon_fileinfo, true),
+            0x00A0 => ("ProcessingInfo", lookup_canon_processing, true),
             _ => continue,
         };
         let Some(gmeta) = metadata.exif.get(group) else {
@@ -964,7 +1037,11 @@ fn overlay_canon_i16_groups(
             let Some(n) = i16_from_attr(val, print_map) else {
                 continue;
             };
-            let b = i16_bytes(n, order);
+            let b = if signed {
+                i16_bytes(n, order)
+            } else {
+                u16_bytes(n as u16, order)
+            };
             dest[idx * 2..idx * 2 + 2].copy_from_slice(&b);
         }
     }
@@ -998,6 +1075,88 @@ fn i16_from_attr(
         AttrValue::Int8(v) => Some(i16::from(*v)),
         AttrValue::Str(s) => s.parse().ok(),
         _ => None,
+    }
+}
+
+fn patch_panasonic(
+    data: &[u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    metadata: &Metadata,
+    offsets_from_ifd: bool,
+) -> Option<Vec<u8>> {
+    let mut out = patch_ifd(
+        data,
+        ifd_off,
+        order,
+        lookup_panasonic,
+        metadata,
+        offsets_from_ifd,
+    )?;
+    overlay_panasonic_facedetect(&mut out, ifd_off, order, offsets_from_ifd, metadata);
+    Some(out)
+}
+
+fn overlay_panasonic_facedetect(
+    out: &mut [u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    offsets_from_ifd: bool,
+    metadata: &Metadata,
+) {
+    let Some(gmeta) = metadata.exif.get("FaceDetect") else {
+        return;
+    };
+    let AttrValue::Group(g) = gmeta else {
+        return;
+    };
+    let Some(val) = g.get("FaceCount") else {
+        return;
+    };
+    let Some(n) = i16_from_attr(val, None) else {
+        return;
+    };
+    let start = ifd_off as usize;
+    if start > out.len() {
+        return;
+    }
+    let parse_buf = out.to_vec();
+    let (parse_data, parse_off, extra_add) = if offsets_from_ifd {
+        (&parse_buf[start..], 0u32, start)
+    } else {
+        (parse_buf.as_slice(), ifd_off, 0usize)
+    };
+    let Some(entries) = super::parse_ifd_entries(parse_data, order, parse_off) else {
+        return;
+    };
+    for (i, e) in entries.iter().enumerate() {
+        if e.tag != 0x004E {
+            continue;
+        }
+        let Some(orig) = encode_value(&e.value, order) else {
+            continue;
+        };
+        if orig.len() < 2 {
+            continue;
+        }
+        let entry_pos = start + 2 + i * 12;
+        let dest = if orig.len() <= 4 {
+            let end = entry_pos + 8 + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[entry_pos + 8..end]
+        } else if let Some(off) = e.value_offset {
+            let off = extra_add + off as usize;
+            let end = off + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[off..end]
+        } else {
+            continue;
+        };
+        dest[..2].copy_from_slice(&u16_bytes(n as u16, order));
     }
 }
 
@@ -1906,6 +2065,143 @@ mod tests {
             panic!("expected CameraSettings group");
         };
         assert_eq!(g.get_str("MacroMode"), Some("Normal"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn canon_fileinfo_filenumber_inplace() {
+        let src = prefix_ifd(
+            b"",
+            0x0093,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0, 0, 10, 0, 0, 0, 0, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("FileNumber", AttrValue::Int(42));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Canon".into()));
+        meta.exif.set("FileInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::CanonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("FileInfo").unwrap() else {
+            panic!("expected FileInfo group");
+        };
+        assert_eq!(g.get_i32("FileNumber"), Some(42));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn canon_processing_tonecurve_inplace() {
+        let src = prefix_ifd(
+            b"",
+            0x00A0,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0, 0, 0, 0, 0, 0, 0, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("ToneCurve", AttrValue::Str("Manual".into()));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Canon".into()));
+        meta.exif
+            .set("ProcessingInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::CanonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("ProcessingInfo").unwrap() else {
+            panic!("expected ProcessingInfo group");
+        };
+        assert_eq!(g.get_str("ToneCurve"), Some("Manual"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn canon_afinfo_numafpoints_inplace() {
+        let src = prefix_ifd(
+            b"",
+            0x0012,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![1, 0, 1, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("NumAFPoints", AttrValue::UInt(5));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Canon".into()));
+        meta.exif.set("AFInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::CanonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("AFInfo").unwrap() else {
+            panic!("expected AFInfo group");
+        };
+        assert_eq!(g.get_u32("NumAFPoints"), Some(5));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn panasonic_facedetect_facecount_inplace() {
+        let mut prefix = b"Panasonic".to_vec();
+        prefix.extend_from_slice(&[0, 0, 0]);
+        let src = prefix_ifd(
+            &prefix,
+            0x004E,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![1, 0, 0, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("FaceCount", AttrValue::UInt(3));
+        let mut meta = Metadata::new("JPG");
+        meta.exif
+            .set("FaceDetect", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::PanasonicParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("FaceDetect").unwrap() else {
+            panic!("expected FaceDetect group");
+        };
+        assert_eq!(g.get_u32("FaceCount"), Some(3));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn pentax5_lensinfo_lenstype_inplace() {
+        let hdr = b"PENTAX \0II".to_vec();
+        let sub_off = 10u32 + 18;
+        let main = IfdEntry {
+            tag: 0x0207,
+            format: ExifFormat::UInt32,
+            count: 1,
+            value: RawValue::UInt32(vec![sub_off]),
+            value_offset: None,
+        };
+        let main_ifd = emit_ifd(&[main], ByteOrder::LittleEndian, 10).unwrap();
+        let lens = IfdEntry {
+            tag: 0,
+            format: ExifFormat::UInt16,
+            count: 1,
+            value: RawValue::UInt16(vec![1]),
+            value_offset: None,
+        };
+        let lens_ifd = emit_ifd(&[lens], ByteOrder::LittleEndian, sub_off).unwrap();
+        let mut src = hdr;
+        src.extend_from_slice(&main_ifd);
+        src.extend_from_slice(&lens_ifd);
+        let mut group = Attrs::new();
+        group.set("LensType", AttrValue::UInt(7));
+        let mut meta = Metadata::new("PEF");
+        meta.exif.set("LensInfo", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::PentaxParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("LensInfo").unwrap() else {
+            panic!("expected LensInfo group");
+        };
+        assert_eq!(g.get_u32("LensType"), Some(7));
         assert_eq!(out.len(), src.len());
     }
 
