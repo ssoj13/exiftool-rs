@@ -139,6 +139,18 @@ impl VendorParser for CanonParser {
                         attrs.set("ProcessingInfo", AttrValue::Group(Box::new(sub_attrs)));
                     }
                 }
+                0x4016 => {
+                    if let Some(sub_attrs) =
+                        parse_vignetting_corr2(entry.value.as_bytes()?, byte_order)
+                    {
+                        attrs.set("VignettingCorr2", AttrValue::Group(Box::new(sub_attrs)));
+                    }
+                }
+                0x4025 => {
+                    if let Some(sub_attrs) = parse_hdr_info(entry.value.as_bytes()?, byte_order) {
+                        attrs.set("HDRInfo", AttrValue::Group(Box::new(sub_attrs)));
+                    }
+                }
                 _ => {
                     // Main tag - lookup in CANON_MAIN
                     if let Some(tag_def) = canon::CANON_MAIN.get(&entry.tag) {
@@ -279,6 +291,14 @@ fn parse_af_info2(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
     parse_u16_index_table(data, byte_order, |i| canon::CANON_AFINFO2.get(&i))
 }
 
+fn parse_hdr_info(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
+    parse_i32_index_table(data, byte_order, |i| canon::CANON_HDRINFO.get(&i))
+}
+
+fn parse_vignetting_corr2(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
+    parse_i32_index_table(data, byte_order, |i| canon::CANON_VIGNETTINGCORR2.get(&i))
+}
+
 /// Parse Canon FileInfo sub-IFD (tag 0x0093).
 fn parse_file_info(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
     if data.len() < 4 {
@@ -389,6 +409,39 @@ fn parse_u16_index_table(
                 .unwrap_or(AttrValue::UInt(value as u32))
         } else {
             AttrValue::UInt(value as u32)
+        };
+        attrs.set(tag_def.name, attr_value);
+    }
+    Some(attrs)
+}
+
+fn parse_i32_index_table(
+    data: &[u8],
+    byte_order: ByteOrder,
+    lookup: impl Fn(u16) -> Option<&'static canon::TagDef>,
+) -> Option<Attrs> {
+    if data.len() < 4 {
+        return None;
+    }
+    let mut attrs = Attrs::new();
+    let count = data.len() / 4;
+    for i in 0..count {
+        let Some(tag_def) = lookup(i as u16) else {
+            continue;
+        };
+        let off = i * 4;
+        let value = match byte_order {
+            ByteOrder::LittleEndian => i32::from_le_bytes(data[off..off + 4].try_into().ok()?),
+            ByteOrder::BigEndian => i32::from_be_bytes(data[off..off + 4].try_into().ok()?),
+        };
+        let attr_value = if let Some(values) = tag_def.values {
+            values
+                .iter()
+                .find(|(k, _)| *k == i64::from(value))
+                .map(|(_, v)| AttrValue::Str(v.to_string()))
+                .unwrap_or(AttrValue::Int(value))
+        } else {
+            AttrValue::Int(value)
         };
         attrs.set(tag_def.name, attr_value);
     }

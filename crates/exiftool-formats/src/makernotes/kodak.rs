@@ -111,7 +111,88 @@ impl VendorParser for KodakParser {
 }
 
 /// ExifTool Kodak::Main ProcessBinaryData after the 8-byte KDK header.
-pub(crate) fn parse_kdk_main(data: &[u8], _byte_order: ByteOrder) -> Option<Attrs> {
+/// Scalar tags only (no ValueConv / multi-byte PrintConv strings).
+pub(crate) struct KdkMainField {
+    pub offset: usize,
+    pub name: &'static str,
+    pub width: u8,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
+pub(crate) static KDK_MAIN_FIELDS: &[KdkMainField] = &[
+    KdkMainField {
+        offset: 9,
+        name: "Quality",
+        width: 1,
+        values: Some(&[(1, "Fine"), (2, "Normal")]),
+    },
+    KdkMainField {
+        offset: 10,
+        name: "BurstMode",
+        width: 1,
+        values: Some(&[(0, "Off"), (1, "On")]),
+    },
+    KdkMainField {
+        offset: 12,
+        name: "KodakImageWidth",
+        width: 2,
+        values: None,
+    },
+    KdkMainField {
+        offset: 14,
+        name: "KodakImageHeight",
+        width: 2,
+        values: None,
+    },
+    KdkMainField {
+        offset: 16,
+        name: "YearCreated",
+        width: 2,
+        values: None,
+    },
+    KdkMainField {
+        offset: 24,
+        name: "BurstMode2",
+        width: 2,
+        values: None,
+    },
+    KdkMainField {
+        offset: 27,
+        name: "ShutterMode",
+        width: 1,
+        values: Some(&[(0, "Auto"), (8, "Aperture Priority"), (32, "Manual?")]),
+    },
+    KdkMainField {
+        offset: 28,
+        name: "MeteringMode",
+        width: 1,
+        values: Some(&[
+            (0, "Multi-segment"),
+            (1, "Center-weighted average"),
+            (2, "Spot"),
+        ]),
+    },
+    KdkMainField {
+        offset: 29,
+        name: "SequenceNumber",
+        width: 1,
+        values: None,
+    },
+];
+
+fn kdk_print(value: u32, map: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+    if let Some(values) = map {
+        values
+            .iter()
+            .find(|(k, _)| *k == i64::from(value))
+            .map(|(_, v)| AttrValue::Str((*v).to_string()))
+            .unwrap_or(AttrValue::UInt(value))
+    } else {
+        AttrValue::UInt(value)
+    }
+}
+
+pub(crate) fn parse_kdk_main(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
     if data.len() < 10 {
         return None;
     }
@@ -123,19 +204,23 @@ pub(crate) fn parse_kdk_main(data: &[u8], _byte_order: ByteOrder) -> Option<Attr
             attrs.set("KodakModel", AttrValue::Str(model.to_string()));
         }
     }
-    let quality = match data[9] {
-        1 => AttrValue::Str("Fine".into()),
-        2 => AttrValue::Str("Normal".into()),
-        q => AttrValue::UInt(u32::from(q)),
-    };
-    attrs.set("Quality", quality);
-    if data.len() > 10 {
-        let burst = match data[10] {
-            0 => AttrValue::Str("Off".into()),
-            1 => AttrValue::Str("On".into()),
-            b => AttrValue::UInt(u32::from(b)),
+    for field in KDK_MAIN_FIELDS {
+        let end = field.offset + field.width as usize;
+        if data.len() < end {
+            continue;
+        }
+        let value = match field.width {
+            1 => u32::from(data[field.offset]),
+            2 => {
+                let b = [data[field.offset], data[field.offset + 1]];
+                u32::from(match byte_order {
+                    ByteOrder::LittleEndian => u16::from_le_bytes(b),
+                    ByteOrder::BigEndian => u16::from_be_bytes(b),
+                })
+            }
+            _ => continue,
         };
-        attrs.set("BurstMode", burst);
+        attrs.set(field.name, kdk_print(value, field.values));
     }
     Some(attrs)
 }

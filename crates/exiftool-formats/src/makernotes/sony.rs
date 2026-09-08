@@ -40,6 +40,13 @@ pub struct SonyParser;
 const SONY_DSC_HEADER: &[u8] = b"SONY DSC ";
 const SONY_CAM_HEADER: &[u8] = b"SONY CAM ";
 
+/// ExifTool Sony::Tag9405a `Format => int16s[N]` (count is not on generated TagDef).
+pub(crate) static TAG9405A_I16_ARRAYS: &[(&str, usize, usize)] = &[
+    ("VignettingCorrParams", 0x064a, 16),
+    ("ChromaticAberrationCorrParams", 0x066a, 32),
+    ("DistortionCorrParams", 0x06ca, 16),
+];
+
 impl VendorParser for SonyParser {
     fn vendor(&self) -> Vendor {
         Vendor::Sony
@@ -208,6 +215,18 @@ fn parse_tag9405(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
         };
         attrs.set(tag_def.name, attr_value);
     }
+    for &(name, off, count) in TAG9405A_I16_ARRAYS {
+        let end = off + count * 2;
+        if end > data.len() {
+            continue;
+        }
+        let mut items = Vec::with_capacity(count);
+        for i in 0..count {
+            let v = read_i16(data, off + i * 2, byte_order);
+            items.push(AttrValue::Int(i32::from(v)));
+        }
+        attrs.set(name, AttrValue::List(items));
+    }
     Some(attrs)
 }
 
@@ -238,6 +257,10 @@ fn read_u16(data: &[u8], offset: usize, byte_order: ByteOrder) -> u16 {
         ByteOrder::LittleEndian => u16::from_le_bytes([data[offset], data[offset + 1]]),
         ByteOrder::BigEndian => u16::from_be_bytes([data[offset], data[offset + 1]]),
     }
+}
+
+fn read_i16(data: &[u8], offset: usize, byte_order: ByteOrder) -> i16 {
+    read_u16(data, offset, byte_order) as i16
 }
 
 #[cfg(test)]
