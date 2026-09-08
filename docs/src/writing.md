@@ -24,7 +24,7 @@ Writing is supported for:
 | MP4 / MOV | .mp4, .mov, … | XMP UUID box |
 | WAV / FLAC / MP3 | | Existing tag writers |
 
-Do not rebuild camera RAW with a short IFD0-only writer. MakerNotes field write overlays existing IFD tags (FujiFilm rebuild; other IFD vendors in-place, including phone IFDs, Phase One, and Leica). Nikon ShotInfo / ColorBalance / LensData overlay after decrypt; `KDK*` and GoPro GPMF stay blob-copied.
+Do not rebuild camera RAW with a short IFD0-only writer. MakerNotes field write overlays existing IFD tags (FujiFilm rebuild; other IFD vendors in-place, including phone IFDs, Phase One, Leica, and DJI floats). Nikon ShotInfo / ColorBalance / LensData overlay after decrypt; GoPro GPMF same-size KLV leaves; `KDK*` stays blob-copied.
 
 ## Basic Writing
 

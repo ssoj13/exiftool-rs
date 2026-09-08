@@ -4,12 +4,13 @@
 //! patch existing directory values in place so sub-IFD / preview offsets stay valid.
 //! Nikon ShotInfo (`0x0091`) Full-crypt and `NIKON_OFFSETS` blobs are decrypted, patched, and re-encrypted.
 //! ColorBalance (`0x0097`) levels and LensData (`0x0098`) `LensIDNumber` use the same keys.
+//! DJI overlay includes FLOAT tags. GoPro GPMF patches same-size KLV leaves in place.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
 use exiftool_core::{ByteOrder, ExifFormat, IfdEntry, RawValue, SRational, URational};
 use exiftool_tags::generated::{
-    apple, canon, fujifilm, nikon, olympus, panasonic, pentax, samsung, sony,
+    apple, canon, dji, fujifilm, gopro, nikon, olympus, panasonic, pentax, samsung, sony,
 };
 
 const FUJI_MAGIC: &[u8] = b"FUJIFILM";
@@ -135,6 +136,9 @@ fn lookup_leica(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'stat
         _ => None,
     }
 }
+fn lookup_dji(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    dji::DJI_MAIN.get(&tag).map(|d| (d.name, d.values))
+}
 
 fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(b"Panasonic") && data.len() >= 14 {
@@ -217,6 +221,9 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     if data.starts_with(b"PREMI\0") && data.len() >= 10 {
         let order = detect_order(data, 8)?;
         return patch_ifd(data, 8, order, lookup_olympus, metadata, true);
+    }
+    if data.starts_with(b"GoPro\0") {
+        return patch_gpmf(data, metadata);
     }
     if data.starts_with(NIKON_HEADER) && data.len() >= 18 {
         match data[6] {
@@ -308,7 +315,240 @@ fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
         let order = detect_order(data, 0)?;
         return patch_ifd(data, 0, order, lookup_leica, metadata, true);
     }
+    if make.contains("dji") {
+        let order = detect_order(data, 0)?;
+        return patch_ifd(data, 0, order, lookup_dji, metadata, true);
+    }
+    if make.contains("gopro") && looks_like_gpmf(data) {
+        return patch_gpmf(data, metadata);
+    }
     None
+}
+
+fn looks_like_gpmf(data: &[u8]) -> bool {
+    if data.len() < 8 {
+        return false;
+    }
+    if !data[..4].iter().all(|b| b.is_ascii_graphic()) {
+        return false;
+    }
+    matches!(
+        data[4] as char,
+        '\0' | '?' | 'c' | 'U' | 'F' | 'b' | 'B' | 's' | 'S' | 'l' | 'L' | 'f' | 'd' | 'J' | 'G'
+    )
+}
+
+fn patch_gpmf(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
+    let mut out = data.to_vec();
+    let start = if data.len() >= 6 && data.starts_with(b"GoPro\0") {
+        6
+    } else {
+        0
+    };
+    let end = out.len();
+    overlay_gpmf(&mut out, start, end, metadata, "")?;
+    Some(out)
+}
+
+fn overlay_gpmf(
+    buf: &mut [u8],
+    start: usize,
+    end: usize,
+    metadata: &Metadata,
+    prefix: &str,
+) -> Option<()> {
+    let mut offset = start;
+    while offset + 8 <= end {
+        let fourcc_str = String::from_utf8_lossy(&buf[offset..offset + 4]).into_owned();
+        let type_char = buf[offset + 4] as char;
+        let struct_size = buf[offset + 5] as usize;
+        let repeat = u16::from_be_bytes([buf[offset + 6], buf[offset + 7]]) as usize;
+        let data_size = struct_size.checked_mul(repeat)?;
+        let padded_size = (data_size + 3) & !3;
+        offset += 8;
+        if offset + padded_size > end {
+            break;
+        }
+        let value_start = offset;
+        let value_end = offset + data_size;
+        if type_char == '\0' || type_char == '?' {
+            let new_prefix = if prefix.is_empty() {
+                fourcc_str.clone()
+            } else {
+                format!("{}:{}", prefix, fourcc_str)
+            };
+            overlay_gpmf(buf, value_start, value_end, metadata, &new_prefix)?;
+        } else {
+            let tag_name = gopro::lookup(&fourcc_str)
+                .map(|d| d.name.to_string())
+                .unwrap_or_else(|| fourcc_str.clone());
+            let full_name = if prefix.is_empty() {
+                tag_name
+            } else {
+                format!("{}:{}", prefix, tag_name)
+            };
+            if let Some(val) = metadata.exif.get(&full_name) {
+                if let Some(bytes) =
+                    encode_gpmf_leaf(type_char, struct_size, repeat, data_size, val)
+                {
+                    buf[value_start..value_end].copy_from_slice(&bytes);
+                }
+            }
+        }
+        offset += padded_size;
+    }
+    Some(())
+}
+
+fn encode_gpmf_leaf(
+    type_char: char,
+    struct_size: usize,
+    repeat: usize,
+    data_size: usize,
+    val: &AttrValue,
+) -> Option<Vec<u8>> {
+    if data_size == 0 {
+        return None;
+    }
+    let mut out = match type_char {
+        'c' | 'U' => {
+            let s = match val {
+                AttrValue::Str(s) => s.as_bytes(),
+                _ => return None,
+            };
+            let mut b = s.to_vec();
+            if b.len() > data_size {
+                b.truncate(data_size);
+            }
+            b.resize(data_size, 0);
+            b
+        }
+        'F' => {
+            let s = match val {
+                AttrValue::Str(s) => s.as_bytes(),
+                _ => return None,
+            };
+            let mut b = vec![0u8; data_size];
+            let n = s.len().min(4).min(data_size);
+            b[..n].copy_from_slice(&s[..n]);
+            b
+        }
+        'b' | 'B' => encode_gpmf_ints(val, repeat, 1, type_char == 'b')?,
+        's' | 'S' if struct_size == 2 => encode_gpmf_ints(val, repeat, 2, type_char == 's')?,
+        'l' | 'L' if struct_size == 4 => encode_gpmf_ints(val, repeat, 4, type_char == 'l')?,
+        'f' if struct_size == 4 => encode_gpmf_floats(val, repeat)?,
+        'd' if struct_size == 8 => encode_gpmf_doubles(val, repeat)?,
+        'J' if struct_size == 8 && data_size >= 8 => {
+            let n = match val {
+                AttrValue::UInt64(v) => *v,
+                AttrValue::Int64(v) => *v as u64,
+                AttrValue::UInt(v) => u64::from(*v),
+                AttrValue::Int(v) => *v as u64,
+                AttrValue::Str(s) => s.parse().ok()?,
+                _ => return None,
+            };
+            n.to_be_bytes().to_vec()
+        }
+        _ => return None,
+    };
+    if out.len() != data_size {
+        if out.len() > data_size {
+            return None;
+        }
+        out.resize(data_size, 0);
+    }
+    Some(out)
+}
+
+fn gpmf_i64_list(val: &AttrValue, repeat: usize) -> Option<Vec<i64>> {
+    match val {
+        AttrValue::Int(v) if repeat == 1 => Some(vec![i64::from(*v)]),
+        AttrValue::UInt(v) if repeat == 1 => Some(vec![i64::from(*v)]),
+        AttrValue::Int64(v) if repeat == 1 => Some(vec![*v]),
+        AttrValue::UInt64(v) if repeat == 1 => Some(vec![*v as i64]),
+        AttrValue::Str(s) => {
+            let parts: Vec<i64> = s
+                .split_whitespace()
+                .map(|p| p.parse::<i64>())
+                .collect::<Result<Vec<_>, _>>()
+                .ok()?;
+            if parts.len() == repeat {
+                Some(parts)
+            } else if parts.len() == 1 && repeat == 1 {
+                Some(parts)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+fn encode_gpmf_ints(val: &AttrValue, repeat: usize, width: usize, signed: bool) -> Option<Vec<u8>> {
+    let nums = gpmf_i64_list(val, repeat)?;
+    let mut out = Vec::with_capacity(repeat * width);
+    for n in nums {
+        match (width, signed) {
+            (1, true) => out.push(n as i8 as u8),
+            (1, false) => out.push(n as u8),
+            (2, true) => out.extend_from_slice(&(n as i16).to_be_bytes()),
+            (2, false) => out.extend_from_slice(&(n as u16).to_be_bytes()),
+            (4, true) => out.extend_from_slice(&(n as i32).to_be_bytes()),
+            (4, false) => out.extend_from_slice(&(n as u32).to_be_bytes()),
+            _ => return None,
+        }
+    }
+    Some(out)
+}
+
+fn encode_gpmf_floats(val: &AttrValue, repeat: usize) -> Option<Vec<u8>> {
+    let nums = match val {
+        AttrValue::Float(v) if repeat == 1 => vec![*v],
+        AttrValue::Double(v) if repeat == 1 => vec![*v as f32],
+        AttrValue::Int(v) if repeat == 1 => vec![*v as f32],
+        AttrValue::UInt(v) if repeat == 1 => vec![*v as f32],
+        AttrValue::Str(s) => {
+            let parts: Vec<f32> = s
+                .split_whitespace()
+                .map(|p| p.parse::<f32>())
+                .collect::<Result<Vec<_>, _>>()
+                .ok()?;
+            if parts.len() != repeat {
+                return None;
+            }
+            parts
+        }
+        _ => return None,
+    };
+    let mut out = Vec::with_capacity(repeat * 4);
+    for n in nums {
+        out.extend_from_slice(&n.to_be_bytes());
+    }
+    Some(out)
+}
+
+fn encode_gpmf_doubles(val: &AttrValue, repeat: usize) -> Option<Vec<u8>> {
+    let nums = match val {
+        AttrValue::Double(v) if repeat == 1 => vec![*v],
+        AttrValue::Float(v) if repeat == 1 => vec![f64::from(*v)],
+        AttrValue::Str(s) => {
+            let parts: Vec<f64> = s
+                .split_whitespace()
+                .map(|p| p.parse::<f64>())
+                .collect::<Result<Vec<_>, _>>()
+                .ok()?;
+            if parts.len() != repeat {
+                return None;
+            }
+            parts
+        }
+        _ => return None,
+    };
+    let mut out = Vec::with_capacity(repeat * 8);
+    for n in nums {
+        out.extend_from_slice(&n.to_be_bytes());
+    }
+    Some(out)
 }
 
 fn rewrite_fujifilm(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
@@ -390,6 +630,34 @@ fn attr_to_entry(
             .parse::<u16>()
             .ok()
             .and_then(|n| int_entry(orig, n as i64)),
+        (ExifFormat::Float, AttrValue::Float(v)) => Some(IfdEntry {
+            tag: orig.tag,
+            format: ExifFormat::Float,
+            count: 1,
+            value: RawValue::Float(vec![*v]),
+            value_offset: None,
+        }),
+        (ExifFormat::Float, AttrValue::Double(v)) => Some(IfdEntry {
+            tag: orig.tag,
+            format: ExifFormat::Float,
+            count: 1,
+            value: RawValue::Float(vec![*v as f32]),
+            value_offset: None,
+        }),
+        (ExifFormat::Float, AttrValue::Str(s)) => s.parse::<f32>().ok().map(|v| IfdEntry {
+            tag: orig.tag,
+            format: ExifFormat::Float,
+            count: 1,
+            value: RawValue::Float(vec![v]),
+            value_offset: None,
+        }),
+        (ExifFormat::Double, AttrValue::Double(v)) => Some(IfdEntry {
+            tag: orig.tag,
+            format: ExifFormat::Double,
+            count: 1,
+            value: RawValue::Double(vec![*v]),
+            value_offset: None,
+        }),
         _ => None,
     }
 }
@@ -1261,5 +1529,59 @@ mod tests {
             .parse(&out, ByteOrder::LittleEndian)
             .unwrap();
         assert_eq!(parsed.get_u32("CaptureMode"), Some(2));
+    }
+
+    #[test]
+    fn dji_speedx_float_inplace() {
+        let src = prefix_ifd(b"", 0x0003, ExifFormat::Float, RawValue::Float(vec![1.5]));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("DJI".into()));
+        meta.exif.set("SpeedX", AttrValue::Float(2.25));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::DjiParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let v = parsed.get_f32("SpeedX").unwrap();
+        assert!((v - 2.25).abs() < 1e-6);
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn gopro_devicename_gpmf_inplace() {
+        let mut src = b"GoPro\0".to_vec();
+        src.extend_from_slice(b"DVNM");
+        src.push(b'c');
+        src.push(1);
+        src.extend_from_slice(&8u16.to_be_bytes());
+        src.extend_from_slice(b"Hero 12\0");
+        let mut meta = Metadata::new("JPG");
+        meta.exif
+            .set("DeviceName", AttrValue::Str("Hero 13".into()));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::GoProParser
+            .parse(&out, ByteOrder::BigEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("DeviceName"), Some("Hero 13"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn gopro_temperature_gpmf_inplace() {
+        let mut src = Vec::new();
+        src.extend_from_slice(b"TMPC");
+        src.push(b'f');
+        src.push(4);
+        src.extend_from_slice(&1u16.to_be_bytes());
+        src.extend_from_slice(&25.5f32.to_be_bytes());
+        let mut meta = Metadata::new("MP4");
+        meta.exif.set("Make", AttrValue::Str("GoPro".into()));
+        meta.exif.set("Temperature", AttrValue::Float(18.0));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::GoProParser
+            .parse(&out, ByteOrder::BigEndian)
+            .unwrap();
+        let v = parsed.get_f32("Temperature").unwrap();
+        assert!((v - 18.0).abs() < 0.01);
+        assert_eq!(out.len(), src.len());
     }
 }
