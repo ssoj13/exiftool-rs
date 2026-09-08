@@ -29,7 +29,7 @@ No `path = "C:/projects/..."` for sibling git repos.
 
 ## Still open
 
-1. MakerNotes field write: parser-table overlay for IFD vendors, nested Olympus/Pentax IFDs, Canon/Sony/Nikon index blobs (including Nikon AFInfo2 V0100 and BarometerInfo). Still blob-copy: NikonCustom ShotInfo bitfields, `KDK*`, Canon AFInfo2 invented `AFAreaMode` labels, Canon FocalLength `N mm` strings, FujiFilm AFCSettings (not a generated table), Sony Tag9405A indices beyond the parser's 20-slot walk.
+1. MakerNotes field write: parser-table overlay for IFD vendors, nested Olympus/Pentax IFDs, Canon/Sony/Nikon index blobs (including Nikon AFInfo2 V0100 and BarometerInfo), Canon AFInfo2/FocalLength from generated tables, FujiFilm AFCSettings int32u, Sony Tag9405a byte offsets, Kodak KDK Quality/BurstMode. Still blob-copy: NikonCustom ShotInfo bitfields (generated table has no Mask), Sony `*CorrParams` arrays, Fuji AF-C bit slices not in the generated map.
 2. ~~CR3 write.~~ Done: `Cr3Writer` (CMT1/2/4, XMP UUID, CTBO, stco/co64; CMT3 blob).
 3. 1:1 remaining MakerNotes vendors (NikonCustom ShotInfo subdirs, other brands).
 

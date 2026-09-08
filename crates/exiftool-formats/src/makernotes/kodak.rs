@@ -1,10 +1,10 @@
 //! Kodak MakerNotes parser.
 //!
 //! Kodak MakerNotes have various formats depending on model:
-//! - Type1: Standard IFD (older cameras)
-//! - Type2: Header "KDK INFO" + IFD
-//! - Type3: Header "KDK" + version + IFD
-//! - Type4-11: Various other formats
+//! - Type1: Standard IFD (older cameras / headerless)
+//! - Kodak1a: Header "KDK INFO" + Kodak::Main ProcessBinaryData (BE, skip 8)
+//! - Kodak1b: Header "KDK" + Kodak::Main ProcessBinaryData (LE, skip 8)
+//! - Type2–11: other ExifTool Kodak tables (not all implemented)
 //!
 //! Known tags (Type1/common):
 //! - 0x0001: KodakModel
@@ -32,7 +32,7 @@
 
 use super::{Vendor, VendorParser};
 use crate::utils::entry_to_attr;
-use exiftool_attrs::Attrs;
+use exiftool_attrs::{AttrValue, Attrs};
 use exiftool_core::ByteOrder;
 
 /// Kodak MakerNotes parser.
@@ -80,20 +80,15 @@ impl VendorParser for KodakParser {
             return None;
         }
 
-        // Check for Kodak headers
-        let (ifd_data, byte_order) = if data.starts_with(b"KDK INFO") {
-            // Type2: Skip 8-byte header
-            (&data[8..], ByteOrder::BigEndian)
-        } else if data.starts_with(b"KDK") && data.len() > 10 {
-            // Type3: Skip header (varies by model)
-            let skip = if data[3] == 0 { 4 } else { 8 };
-            (&data[skip..], ByteOrder::BigEndian)
-        } else {
-            // Type1 or unknown: Direct IFD
-            (data, parent_byte_order)
-        };
+        // ExifTool MakerNoteKodak1a/1b: KDK* is ProcessBinaryData, not IFD.
+        if data.starts_with(b"KDK INFO") && data.len() > 8 {
+            return parse_kdk_main(&data[8..], ByteOrder::BigEndian);
+        }
+        if data.starts_with(b"KDK") && data.len() > 8 {
+            return parse_kdk_main(&data[8..], ByteOrder::LittleEndian);
+        }
 
-        let entries = super::parse_ifd_entries(ifd_data, byte_order, 0)?;
+        let entries = super::parse_ifd_entries(data, parent_byte_order, 0)?;
 
         let mut attrs = Attrs::new();
 
@@ -113,6 +108,36 @@ impl VendorParser for KodakParser {
 
         Some(attrs)
     }
+}
+
+/// ExifTool Kodak::Main ProcessBinaryData after the 8-byte KDK header.
+pub(crate) fn parse_kdk_main(data: &[u8], _byte_order: ByteOrder) -> Option<Attrs> {
+    if data.len() < 10 {
+        return None;
+    }
+    let mut attrs = Attrs::new();
+    if data.len() >= 8 {
+        let model = String::from_utf8_lossy(&data[..8]);
+        let model = model.trim_end_matches('\0').trim();
+        if !model.is_empty() {
+            attrs.set("KodakModel", AttrValue::Str(model.to_string()));
+        }
+    }
+    let quality = match data[9] {
+        1 => AttrValue::Str("Fine".into()),
+        2 => AttrValue::Str("Normal".into()),
+        q => AttrValue::UInt(u32::from(q)),
+    };
+    attrs.set("Quality", quality);
+    if data.len() > 10 {
+        let burst = match data[10] {
+            0 => AttrValue::Str("Off".into()),
+            1 => AttrValue::Str("On".into()),
+            b => AttrValue::UInt(u32::from(b)),
+        };
+        attrs.set("BurstMode", burst);
+    }
+    Some(attrs)
 }
 
 #[cfg(test)]

@@ -11,6 +11,7 @@
 //! Pentax LensInfo/AFInfo nested IFDs overlay in place. Panasonic FaceDetect FaceCount overlays the first u16.
 //! Sony CameraSettings/FocusInfo and Nikon ISOInfo/DistortInfo/HDRInfo/LocationInfo/AFInfo/AFInfo2/AFTune/FlashInfo uint16 arrays overlay in place.
 //! Nikon BarometerInfo overlays existing uint32 slots.
+//! Canon FocalLength/AFInfo2 uint16, FujiFilm AFCSettings int32u, Sony Tag9405a byte offsets, and Kodak KDK Quality/BurstMode overlay in place.
 
 use crate::Metadata;
 use exiftool_attrs::AttrValue;
@@ -145,6 +146,23 @@ fn lookup_canon_processing(
 fn lookup_canon_afinfo(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
     canon::CANON_AFINFO.get(&tag).map(|d| (d.name, d.values))
 }
+fn lookup_canon_afinfo2(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    canon::CANON_AFINFO2.get(&tag).map(|d| (d.name, d.values))
+}
+fn lookup_canon_focallength(
+    tag: u16,
+) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    canon::CANON_FOCALLENGTH
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
+fn lookup_fuji_afc(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
+    fujifilm::FUJIFILM_AFCSETTINGS
+        .get(&tag)
+        .map(|d| (d.name, d.values))
+}
 fn lookup_pentax_lensinfo(
     tag: u16,
 ) -> Option<(&'static str, Option<&'static [(i64, &'static str)]>)> {
@@ -231,6 +249,12 @@ fn lookup_dji(tag: u16) -> Option<(&'static str, Option<&'static [(i64, &'static
 }
 
 fn rewrite_known(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
+    if data.starts_with(b"KDK INFO") && data.len() > 18 {
+        return patch_kodak_kdk(data, 8, ByteOrder::BigEndian, metadata);
+    }
+    if data.starts_with(b"KDK") && data.len() > 18 {
+        return patch_kodak_kdk(data, 8, ByteOrder::LittleEndian, metadata);
+    }
     if data.starts_with(b"Panasonic") && data.len() >= 14 {
         return patch_panasonic(data, 12, ByteOrder::LittleEndian, metadata, true);
     }
@@ -664,6 +688,14 @@ fn rewrite_fujifilm(data: &[u8], metadata: &Metadata) -> Option<Vec<u8>> {
     out.extend_from_slice(FUJI_MAGIC);
     out.extend_from_slice(&12u32.to_le_bytes());
     out.extend_from_slice(&ifd);
+    overlay_index32_groups(
+        &mut out,
+        12,
+        order,
+        false,
+        metadata,
+        &[(0x102E, "AFCSettings", lookup_fuji_afc)],
+    );
     Some(out)
 }
 
@@ -1037,8 +1069,10 @@ fn patch_canon(
         metadata,
         &[
             (0x0001, "CameraSettings", lookup_canon_camerasettings, true),
+            (0x0002, "FocalLength", lookup_canon_focallength, false),
             (0x0004, "ShotInfo", lookup_canon_shotinfo, true),
             (0x0012, "AFInfo", lookup_canon_afinfo, false),
+            (0x0026, "AFInfo2", lookup_canon_afinfo2, false),
             (0x0093, "FileInfo", lookup_canon_fileinfo, true),
             (0x00A0, "ProcessingInfo", lookup_canon_processing, true),
         ],
@@ -1220,6 +1254,108 @@ fn patch_sony(
             (0x0020, "FocusInfo", lookup_sony_focusinfo, false),
         ],
     );
+    overlay_sony_tag9405(&mut out, ifd_off, order, offsets_from_ifd, metadata);
+    Some(out)
+}
+
+fn overlay_sony_tag9405(
+    out: &mut [u8],
+    ifd_off: u32,
+    order: ByteOrder,
+    offsets_from_ifd: bool,
+    metadata: &Metadata,
+) {
+    let Some(gmeta) = metadata.exif.get("Tag9405") else {
+        return;
+    };
+    let AttrValue::Group(g) = gmeta else {
+        return;
+    };
+    let start = ifd_off as usize;
+    if start > out.len() {
+        return;
+    }
+    let parse_buf = out.to_vec();
+    let (parse_data, parse_off, extra_add) = if offsets_from_ifd {
+        (&parse_buf[start..], 0u32, start)
+    } else {
+        (parse_buf.as_slice(), ifd_off, 0usize)
+    };
+    let Some(entries) = super::parse_ifd_entries(parse_data, order, parse_off) else {
+        return;
+    };
+    for (i, e) in entries.iter().enumerate() {
+        if e.tag != 0x9405 {
+            continue;
+        }
+        let Some(orig) = encode_value(&e.value, order) else {
+            continue;
+        };
+        let entry_pos = start + 2 + i * 12;
+        let dest = if orig.len() <= 4 {
+            let end = entry_pos + 8 + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[entry_pos + 8..end]
+        } else if let Some(off) = e.value_offset {
+            let off = extra_add + off as usize;
+            let end = off + orig.len();
+            if end > out.len() {
+                continue;
+            }
+            &mut out[off..end]
+        } else {
+            continue;
+        };
+        for (byte_off, tag_def) in sony::SONY_TAG9405A.entries() {
+            let byte_off = *byte_off as usize;
+            if tag_def.name.ends_with("Params") {
+                continue;
+            }
+            let Some(val) = g.get(tag_def.name) else {
+                continue;
+            };
+            let Some(n) = i16_from_attr(val, tag_def.values) else {
+                continue;
+            };
+            if tag_def.name == "LensType" || tag_def.name == "LensType2" {
+                if byte_off + 2 > dest.len() {
+                    continue;
+                }
+                dest[byte_off..byte_off + 2].copy_from_slice(&u16_bytes(n as u16, order));
+            } else if byte_off < dest.len() {
+                dest[byte_off] = n as u8;
+            }
+        }
+    }
+}
+
+fn patch_kodak_kdk(
+    data: &[u8],
+    skip: usize,
+    _order: ByteOrder,
+    metadata: &Metadata,
+) -> Option<Vec<u8>> {
+    let mut out = data.to_vec();
+    if skip >= out.len() {
+        return Some(out);
+    }
+    let dest = &mut out[skip..];
+    if dest.len() > 9 {
+        if let Some(val) = metadata.exif.get("Quality") {
+            if let Some(n) = i16_from_attr(val, Some(&[(1, "Fine"), (2, "Normal")])) {
+                dest[9] = n as u8;
+            }
+        }
+    }
+    if dest.len() > 10 {
+        if let Some(val) = metadata.exif.get("BurstMode") {
+            if let Some(n) = i16_from_attr(val, Some(&[(0, "Off"), (1, "On")])) {
+                dest[10] = n as u8;
+            }
+        }
+    }
     Some(out)
 }
 
@@ -1731,6 +1867,36 @@ mod tests {
     }
 
     #[test]
+    fn fujifilm_afcsettings_overlay() {
+        let entry = IfdEntry {
+            tag: 0x102E,
+            format: ExifFormat::Undefined,
+            count: 4,
+            value: RawValue::Undefined(vec![0, 0, 0, 0]),
+            value_offset: None,
+        };
+        let ifd = emit_ifd(&[entry], ByteOrder::LittleEndian, 12).unwrap();
+        let mut src = Vec::from(FUJI_MAGIC);
+        src.extend_from_slice(&12u32.to_le_bytes());
+        src.extend_from_slice(&ifd);
+        let mut group = Attrs::new();
+        group.set(
+            "AF-CSetting",
+            AttrValue::Str("Set 1 (multi-purpose)".into()),
+        );
+        let mut meta = Metadata::new("RAF");
+        meta.exif
+            .set("AFCSettings", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = FujifilmParser.parse(&out, ByteOrder::LittleEndian).unwrap();
+        let AttrValue::Group(g) = parsed.get("AFCSettings").unwrap() else {
+            panic!("expected AFCSettings group");
+        };
+        assert_eq!(g.get_str("AF-CSetting"), Some("Set 1 (multi-purpose)"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
     fn fujifilm_raf_mn_blob_quality() {
         let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("tests/testdata/FujiFilm.raf");
@@ -1870,6 +2036,31 @@ mod tests {
             panic!("expected FocusInfo group");
         };
         assert_eq!(g.get_str("DriveMode2"), Some("Single Frame"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn sony_tag9405_distortion_correction_inplace() {
+        let mut prefix = b"SONY DSC ".to_vec();
+        prefix.extend_from_slice(&[0, 0, 0]);
+        let src = prefix_ifd(
+            &prefix,
+            0x9405,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0u8; 1542]),
+        );
+        let mut group = Attrs::new();
+        group.set("DistortionCorrection", AttrValue::Str("Applied".into()));
+        let mut meta = Metadata::new("ARW");
+        meta.exif.set("Tag9405", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::SonyParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("Tag9405").unwrap() else {
+            panic!("expected Tag9405 group");
+        };
+        assert_eq!(g.get_str("DistortionCorrection"), Some("Applied"));
         assert_eq!(out.len(), src.len());
     }
 
@@ -2229,6 +2420,23 @@ mod tests {
     }
 
     #[test]
+    fn kodak_kdk_quality_inplace() {
+        let mut src = Vec::from(b"KDK INFO".as_slice());
+        src.extend_from_slice(&[0u8; 16]);
+        src[8 + 9] = 2;
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Kodak".into()));
+        meta.exif.set("Quality", AttrValue::Str("Fine".into()));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::KodakParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        assert_eq!(parsed.get_str("Quality"), Some("Fine"));
+        assert_eq!(out.len(), src.len());
+        assert_eq!(out[8 + 9], 1);
+    }
+
+    #[test]
     fn motorola_iso_inplace() {
         let src = prefix_ifd(b"", 0x0205, ExifFormat::UInt16, RawValue::UInt16(vec![100]));
         let mut meta = Metadata::new("JPG");
@@ -2528,6 +2736,55 @@ mod tests {
             panic!("expected AFInfo group");
         };
         assert_eq!(g.get_u32("NumAFPoints"), Some(5));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn canon_focallength_focaltype_inplace() {
+        let src = prefix_ifd(
+            b"",
+            0x0002,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0, 0, 0, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("FocalType", AttrValue::Str("Zoom".into()));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Canon".into()));
+        meta.exif
+            .set("FocalLength", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::CanonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("FocalLength").unwrap() else {
+            panic!("expected FocalLength group");
+        };
+        assert_eq!(g.get_str("FocalType"), Some("Zoom"));
+        assert_eq!(out.len(), src.len());
+    }
+
+    #[test]
+    fn canon_afinfo2_afareamode_inplace() {
+        let src = prefix_ifd(
+            b"",
+            0x0026,
+            ExifFormat::Undefined,
+            RawValue::Undefined(vec![0, 0, 0, 0]),
+        );
+        let mut group = Attrs::new();
+        group.set("AFAreaMode", AttrValue::Str("Single-point AF".into()));
+        let mut meta = Metadata::new("JPG");
+        meta.exif.set("Make", AttrValue::Str("Canon".into()));
+        meta.exif.set("AFInfo2", AttrValue::Group(Box::new(group)));
+        let out = rewrite_blob(&src, &meta);
+        let parsed = crate::makernotes::CanonParser
+            .parse(&out, ByteOrder::LittleEndian)
+            .unwrap();
+        let AttrValue::Group(g) = parsed.get("AFInfo2").unwrap() else {
+            panic!("expected AFInfo2 group");
+        };
+        assert_eq!(g.get_str("AFAreaMode"), Some("Single-point AF"));
         assert_eq!(out.len(), src.len());
     }
 

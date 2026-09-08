@@ -180,26 +180,34 @@ fn parse_tag9405(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
     if data.len() < 4 {
         return None;
     }
-
     let mut attrs = Attrs::new();
-    let count = data.len() / 2;
-
-    for i in 0..count.min(20) {
-        if let Some(tag_def) = sony::SONY_TAG9405A.get(&(i as u16)) {
-            let value = read_u16(data, i * 2, byte_order);
-            let attr_value = if let Some(values) = tag_def.values {
-                values
-                    .iter()
-                    .find(|(k, _)| *k == value as i64)
-                    .map(|(_, v)| AttrValue::Str(v.to_string()))
-                    .unwrap_or(AttrValue::UInt(value as u32))
-            } else {
-                AttrValue::UInt(value as u32)
-            };
-            attrs.set(tag_def.name, attr_value);
+    for (off, tag_def) in sony::SONY_TAG9405A.entries() {
+        let off = *off as usize;
+        if tag_def.name.ends_with("Params") {
+            continue;
         }
+        let value = if tag_def.name == "LensType" || tag_def.name == "LensType2" {
+            if off + 2 > data.len() {
+                continue;
+            }
+            read_u16(data, off, byte_order) as u32
+        } else {
+            if off >= data.len() {
+                continue;
+            }
+            u32::from(data[off])
+        };
+        let attr_value = if let Some(values) = tag_def.values {
+            values
+                .iter()
+                .find(|(k, _)| *k == value as i64)
+                .map(|(_, v)| AttrValue::Str(v.to_string()))
+                .unwrap_or(AttrValue::UInt(value))
+        } else {
+            AttrValue::UInt(value)
+        };
+        attrs.set(tag_def.name, attr_value);
     }
-
     Some(attrs)
 }
 

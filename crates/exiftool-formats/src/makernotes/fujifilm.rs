@@ -134,16 +134,28 @@ fn parse_afc_settings(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
     if data.len() < 4 {
         return None;
     }
-
     let mut attrs = Attrs::new();
-
-    // AFCSettings is a structured binary blob
-    // Specific parsing depends on firmware version
-    if data.len() >= 2 {
-        let value = read_u16(data, 0, byte_order);
-        attrs.set("AFCSetting", AttrValue::UInt(value as u32));
+    let count = data.len() / 4;
+    for i in 0..count {
+        let Some(tag_def) = fujifilm::FUJIFILM_AFCSETTINGS.get(&(i as u16)) else {
+            continue;
+        };
+        let off = i * 4;
+        let value = match byte_order {
+            ByteOrder::LittleEndian => u32::from_le_bytes(data[off..off + 4].try_into().ok()?),
+            ByteOrder::BigEndian => u32::from_be_bytes(data[off..off + 4].try_into().ok()?),
+        };
+        let attr_value = if let Some(values) = tag_def.values {
+            values
+                .iter()
+                .find(|(k, _)| *k == value as i64)
+                .map(|(_, v)| AttrValue::Str(v.to_string()))
+                .unwrap_or(AttrValue::UInt(value))
+        } else {
+            AttrValue::UInt(value)
+        };
+        attrs.set(tag_def.name, attr_value);
     }
-
     Some(attrs)
 }
 

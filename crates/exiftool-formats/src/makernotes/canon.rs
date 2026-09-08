@@ -195,36 +195,7 @@ fn parse_camera_settings(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
 
 /// Parse Canon FocalLength sub-IFD (tag 0x0002).
 fn parse_focal_length(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
-    if data.len() < 8 {
-        return None;
-    }
-
-    let mut attrs = Attrs::new();
-
-    // FocalType at index 0
-    let focal_type = read_u16(data, 0, byte_order);
-    attrs.set("FocalType", AttrValue::UInt(focal_type as u32));
-
-    // FocalLength at index 1 (in units of focal length / 32)
-    let focal_length = read_u16(data, 2, byte_order);
-    attrs.set(
-        "FocalLength",
-        AttrValue::Str(format!("{} mm", focal_length as f32 / 32.0)),
-    );
-
-    // FocalPlaneXSize at index 2
-    if data.len() >= 6 {
-        let fp_x = read_u16(data, 4, byte_order);
-        attrs.set("FocalPlaneXSize", AttrValue::UInt(fp_x as u32));
-    }
-
-    // FocalPlaneYSize at index 3
-    if data.len() >= 8 {
-        let fp_y = read_u16(data, 6, byte_order);
-        attrs.set("FocalPlaneYSize", AttrValue::UInt(fp_y as u32));
-    }
-
-    Some(attrs)
+    parse_u16_index_table(data, byte_order, |i| canon::CANON_FOCALLENGTH.get(&i))
 }
 
 /// Parse Canon ShotInfo sub-IFD (tag 0x0004).
@@ -305,46 +276,7 @@ fn parse_af_info(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
 
 /// Parse Canon AFInfo2 sub-IFD (tag 0x0026).
 fn parse_af_info2(data: &[u8], byte_order: ByteOrder) -> Option<Attrs> {
-    if data.len() < 4 {
-        return None;
-    }
-
-    let mut attrs = Attrs::new();
-
-    // AFInfoSize
-    let af_info_size = read_u16(data, 0, byte_order);
-    attrs.set("AFInfoSize", AttrValue::UInt(af_info_size as u32));
-
-    // AFAreaMode
-    if data.len() >= 4 {
-        let af_area_mode = read_u16(data, 2, byte_order);
-        let mode_str = match af_area_mode {
-            0 => "Off (Manual Focus)",
-            1 => "AF Point Expansion (surround)",
-            2 => "Single-point AF",
-            4 => "Auto",
-            5 => "Face Detect AF",
-            6 => "Face + Tracking",
-            7 => "Zone AF",
-            8 => "AF Point Expansion (4 point)",
-            9 => "Spot AF",
-            10 => "AF Point Expansion (8 point)",
-            11 => "Flexizone Multi (49 point)",
-            12 => "Flexizone Multi (9 point)",
-            13 => "Flexizone Single",
-            14 => "Large Zone AF",
-            _ => "Unknown",
-        };
-        attrs.set("AFAreaMode", AttrValue::Str(mode_str.to_string()));
-    }
-
-    // NumAFPoints
-    if data.len() >= 6 {
-        let num_af = read_u16(data, 4, byte_order);
-        attrs.set("NumAFPoints", AttrValue::UInt(num_af as u32));
-    }
-
-    Some(attrs)
+    parse_u16_index_table(data, byte_order, |i| canon::CANON_AFINFO2.get(&i))
 }
 
 /// Parse Canon FileInfo sub-IFD (tag 0x0093).
@@ -432,6 +364,35 @@ fn format_value(
         }
     }
     entry_to_attr(entry)
+}
+
+fn parse_u16_index_table(
+    data: &[u8],
+    byte_order: ByteOrder,
+    lookup: impl Fn(u16) -> Option<&'static canon::TagDef>,
+) -> Option<Attrs> {
+    if data.len() < 2 {
+        return None;
+    }
+    let mut attrs = Attrs::new();
+    let count = data.len() / 2;
+    for i in 0..count {
+        let Some(tag_def) = lookup(i as u16) else {
+            continue;
+        };
+        let value = read_u16(data, i * 2, byte_order);
+        let attr_value = if let Some(values) = tag_def.values {
+            values
+                .iter()
+                .find(|(k, _)| *k == value as i64)
+                .map(|(_, v)| AttrValue::Str(v.to_string()))
+                .unwrap_or(AttrValue::UInt(value as u32))
+        } else {
+            AttrValue::UInt(value as u32)
+        };
+        attrs.set(tag_def.name, attr_value);
+    }
+    Some(attrs)
 }
 
 /// Read u16 from byte slice with byte order.
