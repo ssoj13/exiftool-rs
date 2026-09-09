@@ -188,7 +188,8 @@ pub fn apply_offset_ranges(
 }
 
 /// XOR ranges for a plaintext `NIKON_OFFSETS` block (table already decrypted).
-pub fn nikon_offset_ranges_plain(
+#[cfg(test)]
+pub(crate) fn nikon_offset_ranges_plain(
     data: &[u8],
     decrypt_start: usize,
     offset_table: usize,

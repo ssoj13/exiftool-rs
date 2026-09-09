@@ -66,7 +66,3 @@ IFD0 + ExifIFD + GPS + Interop. Shared `utils::apply_subifd_xmp_iptc`: SubIFD `0
 - MakerNotes write: FujiFilm IFD fields overlay existing tags only (ExifTool Permanent), then AFCSettings int32u and generated AF-C Masks. Other IFD vendors patch in place. Nested Olympus/Pentax IFDs, Canon/Sony/Nikon index blobs, Sony Tag9405a (including int16s CorrParams), Canon HDRInfo/VignettingCorr2, Kodak KDK Main scalars and ValueConv overlay when the parser table has the field. NikonCustom ShotInfo `undef[N]` Mask bitfields and ProcessBinaryData integer indices overlay from `cargo xtask dump`/`codegen` (`CustomSettingsOffset` / Z `MenuOffset`). Unknown magics stay blobs. Dump walks every conditional SubDirectory (Nikon 0x0091 ShotInfo*).
 - MP4/MOV: XMP UUID box. WAV/FLAC/MP3: existing writers; `is_writable` true.
 - 7z read: unencoded header or LZMA encoded header (id 23). AES headers warn.
-
-## Language
-
-Chat with the owner in Russian when they write Russian. Code, identifiers, and repo `.md` (this file, README, `plan1.md`) stay **English**.

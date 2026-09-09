@@ -193,18 +193,6 @@ fn format_value(
     entry_to_attr(entry)
 }
 
-/// Read u16 from byte slice with byte order.
-#[inline]
-fn read_u16(data: &[u8], offset: usize, byte_order: ByteOrder) -> u16 {
-    if offset + 2 > data.len() {
-        return 0;
-    }
-    match byte_order {
-        ByteOrder::LittleEndian => u16::from_le_bytes([data[offset], data[offset + 1]]),
-        ByteOrder::BigEndian => u16::from_be_bytes([data[offset], data[offset + 1]]),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

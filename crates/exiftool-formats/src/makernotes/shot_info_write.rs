@@ -2,7 +2,7 @@
 //! Cipher keys stay the original IFD serial / shutter (not the new payload values).
 
 use super::*;
-use exiftool_attrs::{AttrValue, Attrs};
+use exiftool_attrs::Attrs;
 use exiftool_core::IfdEntry;
 
 /// Fields to overlay inside decrypted ShotInfo. Cipher keys stay original.
@@ -241,6 +241,7 @@ fn write_u16(data: &mut [u8], offset: usize, value: u16, byte_order: ByteOrder) 
     data[offset..offset + 2].copy_from_slice(&b);
 }
 
+#[cfg(test)]
 pub(crate) fn crypt_shot_info(data: &[u8], serial: u32, shutter: u32) -> Vec<u8> {
     nikon_decrypt::decrypt(data, 4, serial, shutter)
 }
@@ -299,6 +300,7 @@ fn vr_on(label: &str) -> Option<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use exiftool_attrs::AttrValue;
 
     #[test]
     fn rewrite_0204_firmware_and_vr_roundtrip() {

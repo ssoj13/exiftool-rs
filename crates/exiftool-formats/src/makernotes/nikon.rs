@@ -99,9 +99,12 @@ mod nikon_decrypt;
 #[path = "shot_info_write.rs"]
 mod shot_info_write;
 pub(crate) use shot_info_write::{
-    color_balance_tag_name, crypt_shot_info, decrypt_keys_from_ifd, rewrite_color_balance,
-    rewrite_lens_data, rewrite_shot_info_full, ShotInfoWrite,
+    color_balance_tag_name, decrypt_keys_from_ifd, rewrite_color_balance, rewrite_lens_data,
+    rewrite_shot_info_full, ShotInfoWrite,
 };
+
+#[cfg(test)]
+pub(crate) use shot_info_write::crypt_shot_info;
 
 /// Nikon MakerNotes parser.
 pub struct NikonParser;
