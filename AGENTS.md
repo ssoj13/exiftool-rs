@@ -4,7 +4,7 @@ Pure-Rust metadata stack. Reference: ExifTool **13.59** at `C:/projects/projects
 
 ## Dependencies
 
-- **Our repos** (`ssoj13/*`, private forks): Cargo `git` over **SSH**, e.g. `{ git = "ssh://git@github.com/ssoj13/exr-rs.git" }`. Same for submodules: `git@github.com:ssoj13/...`. Do not pin sibling crates with a local `path = "C:/projects/..."` except inside a single workspace.
+- **Our repos** (`ssoj13/*`, private forks): Cargo `git` over **SSH**, e.g. `{ git = "ssh://git@github.com/ssoj13/exr-rs.git" }`. Do not pin sibling crates with a local `path = "C:/projects/..."` except inside a single workspace. Do not vendor ExifTool/`exif-rs` as git submodules; URLs are in `_ref/README.md`.
 - **Public crates**: crates.io versions, or `https://github.com/...` git when we need a public fork/rev.
 - OpenEXR: **`exr-core`** from `ssh://git@github.com/ssoj13/exr-rs.git`.
 - JPEG 2000 Part-1: **`jpg-rs`** from `ssh://git@github.com/ssoj13/jpg-rs.git` (not baseline JPEG).
@@ -69,4 +69,4 @@ IFD0 + ExifIFD + GPS + Interop. Shared `utils::apply_subifd_xmp_iptc`: SubIFD `0
 
 ## Language
 
-Chat with the owner in Russian when they write Russian. Code, identifiers, and repo `.md` (this file, README, plans) stay **English**.
+Chat with the owner in Russian when they write Russian. Code, identifiers, and repo `.md` (this file, README, `plan1.md`) stay **English**.

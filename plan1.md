@@ -99,7 +99,7 @@ Do not start new formats until TIFF-family detect + CMT3 + SubIFD walker are hon
 
 ## Phases after approval
 
-- [x] **0.** Fixtures + tests proving ERF-steal; stop golden empty-pass. (see plan2.md B)
+- [x] **0.** Fixtures + tests proving ERF-steal; stop golden empty-pass.
 - [x] **1.** TIFF-family SSOT: classify after parse; optional path hint; collapse wrappers.
 - [x] **2.** Shared IFD walker SubIFD/XMP/IPTC; CR3 CMT3 -> makernotes::parse.
 - [x] **3.** JPEG MPF + Extended XMP; PNG real iTXt; MP4 keys/mdta.

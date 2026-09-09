@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - Golden fixtures from ExifTool `t/images` + `xtask/parity.py` vs Perl FileType.
 
 ### Changed
+- Dropped `_ref/exiftool` and `_ref/exif-rs` git submodules. Clone URLs live in `_ref/README.md`. Removed `plan2.md` (work is in the tree + CHANGELOG).
 - TIFF-family FileType: unique magics first; generic TIFF classified by `DNGVersion`, extension, Make (`tiff_family`). Wrappers no longer steal TIFF magic.
 - `Metadata::is_writable`: TIFF-family RAW, RAF, CR3, MP4/MOV, WAV/FLAC/MP3.
 - Bootstrap build defaults to release; use `--debug` for debug builds.
@@ -30,7 +31,7 @@ All notable changes to this project will be documented in this file.
 - **MP4/MOV, WAV, FLAC, MP3**: `is_writable` matches existing writers (XMP UUID / tags).
 
 ### Docs
-- Docs: `writing.md`, `formats.md`, `formats/raw.md`, `reading.md`, `python.md`, `AGENTS.md`, `plan2.md`, README.
+- Docs: `writing.md`, `formats.md`, `formats/raw.md`, `reading.md`, `python.md`, `AGENTS.md`, README.
 
 ### Added
 - **5 New RAW Formats**: Sony ARW, Olympus ORF, Panasonic RW2, Pentax PEF, WebP

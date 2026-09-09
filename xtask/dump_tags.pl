@@ -5,16 +5,11 @@
 use strict;
 use warnings;
 use JSON::PP;
-use File::Basename;
-use File::Spec;
 
-# Add ExifTool lib to path (plan2: vfx.ref 13.59; fallback repo _ref)
-my $script_dir = dirname(__FILE__);
+# Add ExifTool lib to path (ExifTool 13.59 under vfx.ref, or EXIFTOOL_LIB)
 my $exiftool_lib = $ENV{EXIFTOOL_LIB};
 unless ($exiftool_lib) {
-    my $vfx = 'C:/projects/projects.rust.cg/vfx.ref/exiftool/lib';
-    my $local = File::Spec->catdir($script_dir, '..', '_ref', 'exiftool', 'lib');
-    $exiftool_lib = (-d $vfx) ? $vfx : $local;
+    $exiftool_lib = 'C:/projects/projects.rust.cg/vfx.ref/exiftool/lib';
 }
 unshift @INC, $exiftool_lib;
 

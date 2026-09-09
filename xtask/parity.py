@@ -19,9 +19,6 @@ def perl_exiftool() -> Path:
         return Path(env)
     if DEFAULT_PERL.exists():
         return DEFAULT_PERL
-    alt = ROOT / "_ref" / "exiftool" / "exiftool"
-    if alt.exists():
-        return alt
     sys.exit("Perl ExifTool not found; set EXIFTOOL_PERL")
 
 

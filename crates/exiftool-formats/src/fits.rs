@@ -427,8 +427,7 @@ mod tests {
 
     #[test]
     fn sample_fits_from_exiftool_t() {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../_ref/exiftool/t/images/FITS.fits");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/testdata/FITS.fits");
         if !path.exists() {
             return;
         }
