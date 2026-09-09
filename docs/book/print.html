@@ -1,0 +1,2357 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>exiftool-rs</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Fast image metadata library for Rust with Python bindings">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-cdf9459a.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-66d7322b.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">exiftool-rs</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/user/exiftool-rs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="exiftool-rs"><a class="header" href="#exiftool-rs">exiftool-rs</a></h1>
+<p>A fast, dependency-light image metadata library written in Rust.</p>
+<h2 id="why-another-exif-library"><a class="header" href="#why-another-exif-library">Why Another EXIF Library?</a></h2>
+<p>The Perl-based ExifTool is the gold standard for metadata extraction. It handles
+every obscure format and camera quirk accumulated over 20+ years. But sometimes
+you need something different:</p>
+<ul>
+<li><strong>Embeddable</strong> - A library you can link into your app without spawning processes</li>
+<li><strong>Fast</strong> - Native code that doesn’t spin up an interpreter</li>
+<li><strong>Portable</strong> - Rust compiles to pretty much anything: WASM, mobile, embedded</li>
+<li><strong>Polyglot</strong> - Rust’s FFI means free bindings to Python, Ruby, Node, etc.</li>
+</ul>
+<p>This library doesn’t aim to replace ExifTool. It covers the common cases - the
+formats and tags you’ll actually encounter - with clean, maintainable code.</p>
+<h2 id="what-you-get"><a class="header" href="#what-you-get">What You Get</a></h2>
+<ul>
+<li><strong>90+ formats</strong> - JPEG, PNG, TIFF, HEIC, RAW (CR2, NEF, ARW, etc.), MP4, MP3, and more</li>
+<li><strong>Read &amp; write</strong> - Extract metadata, modify tags, save changes</li>
+<li><strong>Python bindings</strong> - <code>pip install exiftool-rs</code> and you’re done</li>
+<li><strong>CLI tool</strong> - Drop-in for basic ExifTool usage</li>
+<li><strong>Zero unsafe</strong> - Pure Rust, no C dependencies (except optional Python bindings)</li>
+</ul>
+<h2 id="quick-example"><a class="header" href="#quick-example">Quick Example</a></h2>
+<p><strong>Rust:</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_formats::{FormatRegistry, FormatParser};
+use std::fs::File;
+use std::io::BufReader;
+
+let file = File::open("photo.jpg")?;
+let mut reader = BufReader::new(file);
+
+let registry = FormatRegistry::new();
+let metadata = registry.parse(&amp;mut reader)?;
+
+println!("Camera: {:?}", metadata.exif.get("Make"));
+println!("Date: {:?}", metadata.exif.get("DateTimeOriginal"));
+<span class="boring">}</span></code></pre>
+<p><strong>Python:</strong></p>
+<pre><code class="language-python">import exiftool_rs as exif
+
+img = exif.open("photo.jpg")
+print(f"Camera: {img.make}")
+print(f"Date: {img.date_time_original}")
+
+# Modify and save
+img.artist = "John Doe"
+img.save()
+</code></pre>
+<h2 id="project-status"><a class="header" href="#project-status">Project Status</a></h2>
+<p>Production-ready for common use cases. The library handles the formats and tags
+you’ll encounter in real-world applications. Edge cases and exotic formats may
+need work - contributions welcome.</p>
+<h2 id="license"><a class="header" href="#license">License</a></h2>
+<p>MIT</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
+<p>This chapter covers installation and basic usage of exiftool-rs.</p>
+<p>Choose your path:</p>
+<ul>
+<li><strong>Rust developers</strong> - Add the crate to your project</li>
+<li><strong>Python developers</strong> - Install via pip</li>
+<li><strong>CLI users</strong> - Build or download the binary</li>
+</ul>
+<p>The library is designed to be straightforward. Most operations are one or two
+lines of code. No complex configuration, no runtime dependencies.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<h2 id="rust"><a class="header" href="#rust">Rust</a></h2>
+<p>Add to your <code>Cargo.toml</code>:</p>
+<pre><code class="language-toml">[dependencies]
+exiftool-formats = "0.1"
+</code></pre>
+<p>For just the core EXIF parsing (smaller dependency footprint):</p>
+<pre><code class="language-toml">[dependencies]
+exiftool-core = "0.1"
+</code></pre>
+<h2 id="python"><a class="header" href="#python">Python</a></h2>
+<pre><code class="language-bash">pip install exiftool-rs
+</code></pre>
+<p>Requires Python 3.8+. Wheels are provided for:</p>
+<ul>
+<li>Linux (x86_64, aarch64)</li>
+<li>macOS (x86_64, arm64)</li>
+<li>Windows (x86_64)</li>
+</ul>
+<h2 id="cli"><a class="header" href="#cli">CLI</a></h2>
+<p>Build from source:</p>
+<pre><code class="language-bash">cargo install --path crates/exiftool-cli
+</code></pre>
+<p>Or download pre-built binaries from the releases page.</p>
+<h2 id="building-from-source"><a class="header" href="#building-from-source">Building from Source</a></h2>
+<p>Requirements:</p>
+<ul>
+<li>Rust 1.70+</li>
+<li>For Python bindings: Python 3.8+ with maturin</li>
+</ul>
+<pre><code class="language-bash">git clone https://github.com/user/exiftool-rs
+cd exiftool-rs
+
+# Build everything
+cargo build --release
+
+# Run tests
+cargo test --workspace
+
+# Build Python wheel
+cd crates/exiftool-py
+maturin build --release
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="quick-start"><a class="header" href="#quick-start">Quick Start</a></h1>
+<h2 id="reading-metadata"><a class="header" href="#reading-metadata">Reading Metadata</a></h2>
+<p>The simplest way to read metadata:</p>
+<pre class="playground"><code class="language-rust">use exiftool_formats::{FormatRegistry, FormatParser};
+use std::fs::File;
+use std::io::BufReader;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let file = File::open("photo.jpg")?;
+    let mut reader = BufReader::new(file);
+    
+    let registry = FormatRegistry::new();
+    let metadata = registry.parse(&amp;mut reader)?;
+    
+    // Basic info
+    println!("Format: {}", metadata.format);
+    
+    // Access tags
+    if let Some(make) = metadata.exif.get_str("Make") {
+        println!("Camera: {}", make);
+    }
+    
+    // Iterate all tags
+    for (tag, value) in metadata.exif.iter() {
+        println!("{}: {}", tag, value);
+    }
+    
+    Ok(())
+}</code></pre>
+<h2 id="common-tags"><a class="header" href="#common-tags">Common Tags</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Camera info
+metadata.exif.get_str("Make")           // "Canon"
+metadata.exif.get_str("Model")          // "EOS R5"
+
+// Capture settings
+metadata.exif.get_u32("ISO")            // 400
+metadata.exif.get_f64("ExposureTime")   // 0.008 (1/125)
+metadata.exif.get_f64("FNumber")        // 2.8
+
+// Image dimensions
+metadata.exif.get_u32("ImageWidth")     // 8192
+metadata.exif.get_u32("ImageHeight")    // 5464
+
+// Date/time
+metadata.exif.get_str("DateTimeOriginal")  // "2024:01:15 14:30:00"
+<span class="boring">}</span></code></pre>
+<h2 id="format-detection"><a class="header" href="#format-detection">Format Detection</a></h2>
+<p>The registry auto-detects format from file headers:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let registry = FormatRegistry::new();
+
+// From file
+let metadata = registry.parse(&amp;mut reader)?;
+println!("Detected: {}", metadata.format);  // "JPEG", "PNG", "CR3", etc.
+
+// Check specific format
+if let Some(parser) = registry.detect(&amp;header_bytes) {
+    println!("Format: {}", parser.format_name());
+}
+<span class="boring">}</span></code></pre>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_formats::{FormatRegistry, Error};
+
+match registry.parse(&amp;mut reader) {
+    Ok(metadata) =&gt; println!("Success: {}", metadata.format),
+    Err(Error::UnsupportedFormat) =&gt; println!("Unknown format"),
+    Err(Error::InvalidStructure(msg)) =&gt; println!("Corrupt file: {}", msg),
+    Err(e) =&gt; println!("Error: {}", e),
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="reading-metadata-1"><a class="header" href="#reading-metadata-1">Reading Metadata</a></h1>
+<h2 id="basic-reading"><a class="header" href="#basic-reading">Basic Reading</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_formats::{FormatRegistry, Metadata};
+use std::fs::File;
+use std::io::BufReader;
+
+let file = File::open("image.jpg")?;
+let mut reader = BufReader::new(file);
+
+let registry = FormatRegistry::new();
+let metadata = registry.parse(&amp;mut reader)?;
+<span class="boring">}</span></code></pre>
+<h2 id="accessing-values"><a class="header" href="#accessing-values">Accessing Values</a></h2>
+<p>The <code>Attrs</code> struct provides typed accessors:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// String values
+let make: Option&lt;&amp;str&gt; = metadata.exif.get_str("Make");
+
+// Integer values
+let iso: Option&lt;u32&gt; = metadata.exif.get_u32("ISO");
+let width: Option&lt;i32&gt; = metadata.exif.get_i32("ImageWidth");
+
+// Float values  
+let fnumber: Option&lt;f64&gt; = metadata.exif.get_f64("FNumber");
+
+// Rational values (numerator, denominator)
+let exposure: Option&lt;(u32, u32)&gt; = metadata.exif.get_urational("ExposureTime");
+// Returns (1, 125) for 1/125 sec
+
+// Raw value with full type info
+let value: Option&lt;&amp;AttrValue&gt; = metadata.exif.get("CustomTag");
+<span class="boring">}</span></code></pre>
+<h2 id="human-readable-values"><a class="header" href="#human-readable-values">Human-Readable Values</a></h2>
+<p>Some tags store numeric codes. Get interpreted values:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Raw value
+metadata.exif.get_u32("Orientation")  // 6
+
+// Human-readable
+metadata.get_interpreted("Orientation")  // "Rotate 90 CW"
+
+// With units
+metadata.get_display("FocalLength")  // "50 mm"
+metadata.get_display("ExposureTime")  // "1/125 sec"
+metadata.get_display("FNumber")  // "f/2.8"
+<span class="boring">}</span></code></pre>
+<h2 id="xmp-data"><a class="header" href="#xmp-data">XMP Data</a></h2>
+<p>XMP is returned as raw XML string:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if let Some(xmp) = &amp;metadata.xmp {
+    println!("XMP length: {} bytes", xmp.len());
+    // Parse with your preferred XML library
+}
+<span class="boring">}</span></code></pre>
+<h2 id="thumbnails-and-previews"><a class="header" href="#thumbnails-and-previews">Thumbnails and Previews</a></h2>
+<p>Many formats embed preview images:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Small thumbnail (typically 160x120, JPEG)
+if let Some(thumb) = &amp;metadata.thumbnail {
+    std::fs::write("thumb.jpg", thumb)?;
+}
+
+// Larger preview (RAW files often have full-size JPEG)
+if let Some(preview) = &amp;metadata.preview {
+    std::fs::write("preview.jpg", preview)?;
+}
+<span class="boring">}</span></code></pre>
+<h2 id="multi-page-files"><a class="header" href="#multi-page-files">Multi-Page Files</a></h2>
+<p>TIFF files can have multiple pages:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if metadata.is_multi_page() {
+    println!("Pages: {}", metadata.page_count());
+    
+    for page in &amp;metadata.pages {
+        println!("Page {}: {}x{}", page.index, page.width, page.height);
+        if page.is_thumbnail() {
+            println!("  (thumbnail)");
+        }
+    }
+}
+<span class="boring">}</span></code></pre>
+<h2 id="raw-file-detection"><a class="header" href="#raw-file-detection">RAW File Detection</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if metadata.is_camera_raw() {
+    println!("This is a RAW file, read-only");
+} else if metadata.is_writable() {
+    println!("Can modify this file");
+}
+<span class="boring">}</span></code></pre>
+<h2 id="iterating-tags"><a class="header" href="#iterating-tags">Iterating Tags</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// All tags
+for (name, value) in metadata.exif.iter() {
+    println!("{}: {}", name, value);
+}
+
+// Check existence
+if metadata.exif.contains("GPSLatitude") {
+    println!("Has GPS data");
+}
+
+// Count
+println!("Total tags: {}", metadata.exif.len());
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="writing-metadata"><a class="header" href="#writing-metadata">Writing Metadata</a></h1>
+<h2 id="supported-formats"><a class="header" href="#supported-formats">Supported Formats</a></h2>
+<p>Writing is supported for:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>JPEG</td><td>.jpg, .jpeg</td><td>Full EXIF + XMP</td></tr>
+<tr><td>PNG</td><td>.png</td><td>tEXt/iTXt chunks</td></tr>
+<tr><td>TIFF</td><td>.tif, .tiff</td><td>Full EXIF</td></tr>
+<tr><td>DNG</td><td>.dng</td><td>Full EXIF</td></tr>
+<tr><td>WebP</td><td>.webp</td><td>EXIF + XMP chunks</td></tr>
+<tr><td>HEIC/HEIF</td><td>.heic, .heif</td><td>EXIF in meta box</td></tr>
+<tr><td>EXR</td><td>.exr</td><td>Header attributes</td></tr>
+<tr><td>HDR</td><td>.hdr</td><td>Header comments</td></tr>
+</tbody>
+</table>
+</div>
+<p>RAW formats (CR2, NEF, ARW, etc.) are read-only.</p>
+<h2 id="basic-writing"><a class="header" href="#basic-writing">Basic Writing</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_formats::{JpegWriter, build_exif_bytes};
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
+
+// Read original
+let mut reader = BufReader::new(File::open("input.jpg")?);
+let registry = FormatRegistry::new();
+let mut metadata = registry.parse(&amp;mut reader)?;
+
+// Modify tags
+metadata.exif.set("Artist", AttrValue::Str("John Doe".into()));
+metadata.exif.set("Copyright", AttrValue::Str("2024 John Doe".into()));
+
+// Build EXIF bytes
+let exif_bytes = build_exif_bytes(&amp;metadata)?;
+
+// Write to new file
+reader.seek(SeekFrom::Start(0))?;
+let mut output = Vec::new();
+JpegWriter::write(&amp;mut reader, &amp;mut output, Some(&amp;exif_bytes), None)?;
+
+std::fs::write("output.jpg", output)?;
+<span class="boring">}</span></code></pre>
+<h2 id="modifying-tags"><a class="header" href="#modifying-tags">Modifying Tags</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_attrs::AttrValue;
+
+// Set string
+metadata.exif.set("Artist", AttrValue::Str("Name".into()));
+
+// Set integer
+metadata.exif.set("Orientation", AttrValue::UInt(1));
+
+// Set rational (numerator, denominator)
+metadata.exif.set("ExposureTime", AttrValue::URational(1, 125));
+
+// Set list
+metadata.exif.set("Keywords", AttrValue::List(vec![
+    "landscape".into(),
+    "mountains".into(),
+]));
+
+// Remove tag
+metadata.exif.remove("GPSLatitude");
+
+// Clear all
+metadata.exif.clear();
+<span class="boring">}</span></code></pre>
+<h2 id="format-specific-writers"><a class="header" href="#format-specific-writers">Format-Specific Writers</a></h2>
+<p>Each writable format has its own writer:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// JPEG
+JpegWriter::write(&amp;mut reader, &amp;mut output, Some(&amp;exif), Some(&amp;xmp))?;
+
+// PNG  
+PngWriter::write(&amp;mut reader, &amp;mut output, &amp;metadata)?;
+
+// TIFF
+TiffWriter::write(&amp;mut reader, &amp;mut output, &amp;metadata)?;
+
+// WebP
+WebpWriter::write(&amp;mut reader, &amp;mut output, &amp;metadata)?;
+
+// HEIC
+HeicWriter::write(&amp;mut reader, &amp;mut output, &amp;metadata)?;
+<span class="boring">}</span></code></pre>
+<h2 id="xmp-writing"><a class="header" href="#xmp-writing">XMP Writing</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Set raw XMP
+metadata.xmp = Some(r#"&lt;?xpacket begin="..." ?&gt;
+&lt;x:xmpmeta xmlns:x="adobe:ns:meta/"&gt;
+  ...
+&lt;/x:xmpmeta&gt;
+&lt;?xpacket end="w"?&gt;"#.to_string());
+<span class="boring">}</span></code></pre>
+<h2 id="preserving-original-data"><a class="header" href="#preserving-original-data">Preserving Original Data</a></h2>
+<p>Writers preserve image data and non-EXIF chunks. Only metadata sections
+are modified. The image pixels remain untouched.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Original file structure is preserved
+// Only EXIF/XMP segments are replaced
+JpegWriter::write(&amp;mut reader, &amp;mut output, Some(&amp;new_exif), None)?;
+<span class="boring">}</span></code></pre>
+<h2 id="error-handling-1"><a class="header" href="#error-handling-1">Error Handling</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>match TiffWriter::write(&amp;mut reader, &amp;mut output, &amp;metadata) {
+    Ok(()) =&gt; println!("Success"),
+    Err(Error::UnsupportedFormat) =&gt; println!("Format doesn't support writing"),
+    Err(Error::InvalidStructure(msg)) =&gt; println!("Corrupt file: {}", msg),
+    Err(e) =&gt; println!("Write error: {}", e),
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="python-bindings"><a class="header" href="#python-bindings">Python Bindings</a></h1>
+<p>The <code>exiftool-rs</code> Python package provides a Pythonic interface to the Rust library.</p>
+<h2 id="why-python-bindings"><a class="header" href="#why-python-bindings">Why Python Bindings?</a></h2>
+<p>Rust gives us:</p>
+<ul>
+<li><strong>Speed</strong> - Native code, no interpreter overhead</li>
+<li><strong>Free bindings</strong> - PyO3 makes Python integration trivial</li>
+<li><strong>No dependencies</strong> - Single wheel, no runtime requirements</li>
+</ul>
+<p>Compared to calling ExifTool via subprocess:</p>
+<ul>
+<li>10-100x faster for batch operations</li>
+<li>No process spawn overhead</li>
+<li>Direct memory access to thumbnails/previews</li>
+</ul>
+<h2 id="features"><a class="header" href="#features">Features</a></h2>
+<ul>
+<li>Dict-like access to EXIF tags</li>
+<li>Properties for common fields (make, model, gps, etc.)</li>
+<li>Read/write support for JPEG, PNG, TIFF, WebP, HEIC</li>
+<li>Thumbnail and preview extraction</li>
+<li>Multi-page TIFF support</li>
+<li>Context manager protocol</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="python-installation"><a class="header" href="#python-installation">Python Installation</a></h1>
+<h2 id="from-pypi"><a class="header" href="#from-pypi">From PyPI</a></h2>
+<pre><code class="language-bash">pip install exiftool-rs
+</code></pre>
+<h2 id="requirements"><a class="header" href="#requirements">Requirements</a></h2>
+<ul>
+<li>Python 3.8 or later</li>
+<li>No runtime dependencies</li>
+</ul>
+<h2 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h2>
+<p>Pre-built wheels are available for:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Platform</th><th>Architecture</th></tr>
+</thead>
+<tbody>
+<tr><td>Linux</td><td>x86_64, aarch64</td></tr>
+<tr><td>macOS</td><td>x86_64 (Intel), arm64 (Apple Silicon)</td></tr>
+<tr><td>Windows</td><td>x86_64</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="building-from-source-1"><a class="header" href="#building-from-source-1">Building from Source</a></h2>
+<p>If no wheel is available for your platform:</p>
+<pre><code class="language-bash"># Install build tool
+pip install maturin
+
+# Clone and build
+git clone https://github.com/user/exiftool-rs
+cd exiftool-rs/crates/exiftool-py
+maturin build --release
+
+# Install the wheel
+pip install target/wheels/exiftool_rs-*.whl
+</code></pre>
+<h2 id="verify-installation"><a class="header" href="#verify-installation">Verify Installation</a></h2>
+<pre><code class="language-python">import exiftool_rs as exif
+
+print(exif.__version__)
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="python-usage"><a class="header" href="#python-usage">Python Usage</a></h1>
+<h2 id="opening-files"><a class="header" href="#opening-files">Opening Files</a></h2>
+<pre><code class="language-python">import exiftool_rs as exif
+
+# From file path
+img = exif.open("photo.jpg")
+
+# From bytes
+with open("photo.jpg", "rb") as f:
+    data = f.read()
+img = exif.Image.from_bytes(data)
+</code></pre>
+<h2 id="reading-tags"><a class="header" href="#reading-tags">Reading Tags</a></h2>
+<pre><code class="language-python">img = exif.open("photo.jpg")
+
+# Common properties
+print(img.format)           # "JPEG"
+print(img.make)             # "Canon"
+print(img.model)            # "EOS R5"
+print(img.width, img.height)  # 8192 5464
+
+# Date/time
+print(img.date_time_original)  # "2024:01:15 14:30:00"
+
+# Exposure settings
+print(img.iso)              # 400
+print(img.exposure_time)    # Rational(1, 125)
+print(img.fnumber)          # Rational(28, 10)
+print(img.focal_length)     # Rational(50, 1)
+
+# GPS
+if img.gps:
+    print(img.gps.latitude)   # 37.7749
+    print(img.gps.longitude)  # -122.4194
+    print(img.gps.altitude)   # 10.5
+</code></pre>
+<h2 id="dict-like-access"><a class="header" href="#dict-like-access">Dict-Like Access</a></h2>
+<pre><code class="language-python"># Get any tag
+print(img["Make"])          # "Canon"
+print(img["ISO"])           # 400
+
+# With default
+print(img.get("Rating", 0))  # 0
+
+# Check existence
+if "GPSLatitude" in img:
+    print("Has GPS")
+
+# Iterate
+for tag in img:
+    print(f"{tag}: {img[tag]}")
+
+# All keys/values
+print(img.keys())
+print(img.values())
+print(img.items())
+
+# Count
+print(len(img))  # number of tags
+</code></pre>
+<h2 id="human-readable-values-1"><a class="header" href="#human-readable-values-1">Human-Readable Values</a></h2>
+<pre><code class="language-python"># Raw value
+print(img["Orientation"])  # 6
+
+# Interpreted
+print(img.get_interpreted("Orientation"))  # "Rotate 90 CW"
+
+# With units
+print(img.get_display("FocalLength"))   # "50 mm"
+print(img.get_display("ExposureTime"))  # "1/125 sec"
+print(img.get_display("FNumber"))       # "f/2.8"
+</code></pre>
+<h2 id="thumbnails-and-previews-1"><a class="header" href="#thumbnails-and-previews-1">Thumbnails and Previews</a></h2>
+<pre><code class="language-python"># Small thumbnail
+if img.thumbnail:
+    with open("thumb.jpg", "wb") as f:
+        f.write(img.thumbnail)
+
+# Larger preview (RAW files)
+if img.preview:
+    with open("preview.jpg", "wb") as f:
+        f.write(img.preview)
+</code></pre>
+<h2 id="modifying-tags-1"><a class="header" href="#modifying-tags-1">Modifying Tags</a></h2>
+<pre><code class="language-python">img = exif.open("photo.jpg")
+
+# Set via property
+img.artist = "John Doe"
+img.copyright = "2024 John Doe"
+
+# Set via dict
+img["Software"] = "My App 1.0"
+img["Rating"] = 5
+
+# Delete
+del img["GPS:GPSLatitude"]
+
+# Clear all
+img.clear()
+</code></pre>
+<h2 id="saving-changes"><a class="header" href="#saving-changes">Saving Changes</a></h2>
+<pre><code class="language-python"># Overwrite original
+img.save()
+
+# Save to new file
+img.save("modified.jpg")
+</code></pre>
+<h2 id="context-manager"><a class="header" href="#context-manager">Context Manager</a></h2>
+<pre><code class="language-python">with exif.open("photo.jpg") as img:
+    print(img.make)
+    img.artist = "John Doe"
+    img.save()
+</code></pre>
+<h2 id="batch-processing"><a class="header" href="#batch-processing">Batch Processing</a></h2>
+<pre><code class="language-python">from pathlib import Path
+
+for path in Path("photos").glob("*.jpg"):
+    img = exif.open(str(path))
+    print(f"{path.name}: {img.make} {img.model}")
+</code></pre>
+<h2 id="multi-page-files-1"><a class="header" href="#multi-page-files-1">Multi-Page Files</a></h2>
+<pre><code class="language-python">img = exif.open("multipage.tiff")
+
+print(img.page_count)      # 3
+print(img.is_multi_page)   # True
+
+for page in img.pages:
+    print(f"Page {page.index}: {page.width}x{page.height}")
+    print(f"  Thumbnail: {page.is_thumbnail}")
+</code></pre>
+<h2 id="error-handling-2"><a class="header" href="#error-handling-2">Error Handling</a></h2>
+<pre><code class="language-python">from exiftool_rs import FormatError, WriteError
+
+try:
+    img = exif.open("unknown.xyz")
+except FormatError as e:
+    print(f"Cannot parse: {e}")
+
+try:
+    img.save()
+except WriteError as e:
+    print(f"Cannot save: {e}")
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="python-api-reference"><a class="header" href="#python-api-reference">Python API Reference</a></h1>
+<h2 id="module-functions"><a class="header" href="#module-functions">Module Functions</a></h2>
+<h3 id="openpath-str---image"><a class="header" href="#openpath-str---image"><code>open(path: str) -&gt; Image</code></a></h3>
+<p>Open an image file and parse metadata.</p>
+<pre><code class="language-python">img = exif.open("photo.jpg")
+</code></pre>
+<p><strong>Raises:</strong> <code>FormatError</code> if file cannot be parsed.</p>
+<h3 id="scanpath-str---scanresult"><a class="header" href="#scanpath-str---scanresult"><code>scan(path: str) -&gt; ScanResult</code></a></h3>
+<p>Quick scan of a file without full parsing.</p>
+<h3 id="scan_dirpath-str---listscanresult"><a class="header" href="#scan_dirpath-str---listscanresult"><code>scan_dir(path: str) -&gt; List[ScanResult]</code></a></h3>
+<p>Scan all supported files in a directory.</p>
+<hr>
+<h2 id="image-class"><a class="header" href="#image-class">Image Class</a></h2>
+<p>Main class for image metadata.</p>
+<h3 id="constructor"><a class="header" href="#constructor">Constructor</a></h3>
+<h4 id="imagefrom_bytesdata-bytes---image"><a class="header" href="#imagefrom_bytesdata-bytes---image"><code>Image.from_bytes(data: bytes) -&gt; Image</code></a></h4>
+<p>Create Image from raw bytes.</p>
+<pre><code class="language-python">img = exif.Image.from_bytes(jpeg_bytes)
+</code></pre>
+<h3 id="properties-read-only"><a class="header" href="#properties-read-only">Properties (Read-Only)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>format</code></td><td><code>str</code></td><td>File format (“JPEG”, “PNG”, etc.)</td></tr>
+<tr><td><code>path</code></td><td><code>str | None</code></td><td>File path if opened from file</td></tr>
+<tr><td><code>xmp</code></td><td><code>str | None</code></td><td>Raw XMP data</td></tr>
+<tr><td><code>thumbnail</code></td><td><code>bytes | None</code></td><td>Embedded thumbnail</td></tr>
+<tr><td><code>preview</code></td><td><code>bytes | None</code></td><td>Larger preview image</td></tr>
+<tr><td><code>page_count</code></td><td><code>int</code></td><td>Number of pages</td></tr>
+<tr><td><code>is_multi_page</code></td><td><code>bool</code></td><td>True if multiple pages</td></tr>
+<tr><td><code>is_camera_raw</code></td><td><code>bool</code></td><td>True if RAW format</td></tr>
+<tr><td><code>is_writable</code></td><td><code>bool</code></td><td>True if format supports writing</td></tr>
+<tr><td><code>pages</code></td><td><code>List[PageInfo]</code></td><td>Page info for multi-page files</td></tr>
+<tr><td><code>exif_offset</code></td><td><code>int | None</code></td><td>EXIF data offset in file</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="properties-read-write"><a class="header" href="#properties-read-write">Properties (Read-Write)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>make</code></td><td><code>str | None</code></td><td>Camera make</td></tr>
+<tr><td><code>model</code></td><td><code>str | None</code></td><td>Camera model</td></tr>
+<tr><td><code>software</code></td><td><code>str | None</code></td><td>Software used</td></tr>
+<tr><td><code>artist</code></td><td><code>str | None</code></td><td>Artist/author</td></tr>
+<tr><td><code>copyright</code></td><td><code>str | None</code></td><td>Copyright notice</td></tr>
+<tr><td><code>description</code></td><td><code>str | None</code></td><td>Image description</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="properties-read-only-capture-info"><a class="header" href="#properties-read-only-capture-info">Properties (Read-Only, Capture Info)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>iso</code></td><td><code>int | None</code></td><td>ISO sensitivity</td></tr>
+<tr><td><code>exposure_time</code></td><td><code>Rational | None</code></td><td>Exposure time</td></tr>
+<tr><td><code>fnumber</code></td><td><code>Rational | None</code></td><td>F-number</td></tr>
+<tr><td><code>focal_length</code></td><td><code>Rational | None</code></td><td>Focal length</td></tr>
+<tr><td><code>focal_length_35mm</code></td><td><code>int | None</code></td><td>35mm equivalent</td></tr>
+<tr><td><code>date_time_original</code></td><td><code>str | None</code></td><td>Capture date/time</td></tr>
+<tr><td><code>orientation</code></td><td><code>int | None</code></td><td>Orientation (1-8)</td></tr>
+<tr><td><code>width</code></td><td><code>int | None</code></td><td>Image width</td></tr>
+<tr><td><code>height</code></td><td><code>int | None</code></td><td>Image height</td></tr>
+<tr><td><code>gps</code></td><td><code>GPS | None</code></td><td>GPS coordinates</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="methods"><a class="header" href="#methods">Methods</a></h3>
+<h4 id="getkey-str-defaultnone---any"><a class="header" href="#getkey-str-defaultnone---any"><code>get(key: str, default=None) -&gt; Any</code></a></h4>
+<p>Get tag value with optional default.</p>
+<h4 id="get_interpretedkey-str---str--none"><a class="header" href="#get_interpretedkey-str---str--none"><code>get_interpreted(key: str) -&gt; str | None</code></a></h4>
+<p>Get human-readable interpretation of tag value.</p>
+<h4 id="get_displaykey-str---str--none"><a class="header" href="#get_displaykey-str---str--none"><code>get_display(key: str) -&gt; str | None</code></a></h4>
+<p>Get formatted display value with units.</p>
+<h4 id="keys---liststr"><a class="header" href="#keys---liststr"><code>keys() -&gt; List[str]</code></a></h4>
+<p>Get all tag names.</p>
+<h4 id="values---listany"><a class="header" href="#values---listany"><code>values() -&gt; List[Any]</code></a></h4>
+<p>Get all tag values.</p>
+<h4 id="items---listtuplestr-any"><a class="header" href="#items---listtuplestr-any"><code>items() -&gt; List[Tuple[str, Any]]</code></a></h4>
+<p>Get all (key, value) pairs.</p>
+<h4 id="clear"><a class="header" href="#clear"><code>clear()</code></a></h4>
+<p>Remove all EXIF tags.</p>
+<h4 id="to_dict---dict"><a class="header" href="#to_dict---dict"><code>to_dict() -&gt; dict</code></a></h4>
+<p>Convert metadata to dictionary.</p>
+<h4 id="savepath-str--none"><a class="header" href="#savepath-str--none"><code>save(path: str = None)</code></a></h4>
+<p>Save metadata to file.</p>
+<ul>
+<li>If <code>path</code> is None, overwrites original file</li>
+<li>Raises <code>WriteError</code> on failure</li>
+</ul>
+<h3 id="dict-like-operations"><a class="header" href="#dict-like-operations">Dict-Like Operations</a></h3>
+<pre><code class="language-python">img["Tag"]           # Get tag
+img["Tag"] = value   # Set tag
+del img["Tag"]       # Delete tag
+"Tag" in img         # Check existence
+len(img)             # Tag count
+for tag in img:      # Iterate tags
+</code></pre>
+<hr>
+<h2 id="pageinfo-class"><a class="header" href="#pageinfo-class">PageInfo Class</a></h2>
+<p>Information about a page in multi-page files.</p>
+<h3 id="properties"><a class="header" href="#properties">Properties</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>index</code></td><td><code>int</code></td><td>Page index (0-based)</td></tr>
+<tr><td><code>width</code></td><td><code>int</code></td><td>Width in pixels</td></tr>
+<tr><td><code>height</code></td><td><code>int</code></td><td>Height in pixels</td></tr>
+<tr><td><code>bits_per_sample</code></td><td><code>int</code></td><td>Bits per sample</td></tr>
+<tr><td><code>compression</code></td><td><code>int</code></td><td>Compression type</td></tr>
+<tr><td><code>subfile_type</code></td><td><code>int</code></td><td>Subfile type flags</td></tr>
+<tr><td><code>is_thumbnail</code></td><td><code>bool</code></td><td>True if reduced resolution</td></tr>
+<tr><td><code>is_page</code></td><td><code>bool</code></td><td>True if document page</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="rational-class"><a class="header" href="#rational-class">Rational Class</a></h2>
+<p>Represents a rational number (fraction).</p>
+<h3 id="properties-1"><a class="header" href="#properties-1">Properties</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>numerator</code></td><td><code>int</code></td><td>Numerator</td></tr>
+<tr><td><code>denominator</code></td><td><code>int</code></td><td>Denominator</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="methods-1"><a class="header" href="#methods-1">Methods</a></h3>
+<h4 id="to_float---float"><a class="header" href="#to_float---float"><code>to_float() -&gt; float</code></a></h4>
+<p>Convert to floating point.</p>
+<hr>
+<h2 id="gps-class"><a class="header" href="#gps-class">GPS Class</a></h2>
+<p>GPS coordinates.</p>
+<h3 id="properties-2"><a class="header" href="#properties-2">Properties</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>latitude</code></td><td><code>float</code></td><td>Latitude in degrees</td></tr>
+<tr><td><code>longitude</code></td><td><code>float</code></td><td>Longitude in degrees</td></tr>
+<tr><td><code>altitude</code></td><td><code>float | None</code></td><td>Altitude in meters</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="exceptions"><a class="header" href="#exceptions">Exceptions</a></h2>
+<h3 id="exiferror"><a class="header" href="#exiferror"><code>ExifError</code></a></h3>
+<p>Base exception for all errors.</p>
+<h3 id="formaterror"><a class="header" href="#formaterror"><code>FormatError</code></a></h3>
+<p>Raised when file format cannot be parsed.</p>
+<h3 id="writeerror"><a class="header" href="#writeerror"><code>WriteError</code></a></h3>
+<p>Raised when writing fails.</p>
+<h3 id="tagerror"><a class="header" href="#tagerror"><code>TagError</code></a></h3>
+<p>Raised for tag-related errors.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="cli-tool"><a class="header" href="#cli-tool">CLI Tool</a></h1>
+<p>The <code>exif</code> command-line tool provides quick access to image metadata.</p>
+<h2 id="installation-1"><a class="header" href="#installation-1">Installation</a></h2>
+<pre><code class="language-bash">cargo install --path crates/exiftool-cli
+</code></pre>
+<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
+<pre><code class="language-bash"># Show all metadata
+exif photo.jpg
+
+# Show specific tags
+exif -t Make,Model,ISO photo.jpg
+
+# JSON output
+exif -j photo.jpg
+
+# XML output
+exif -x photo.jpg
+
+# Process multiple files
+exif *.jpg
+
+# Recursive directory scan
+exif -r photos/
+</code></pre>
+<h2 id="output-formats"><a class="header" href="#output-formats">Output Formats</a></h2>
+<h3 id="default-human-readable"><a class="header" href="#default-human-readable">Default (Human-Readable)</a></h3>
+<pre><code>$ exif photo.jpg
+File: photo.jpg
+Format: JPEG
+Make: Canon
+Model: EOS R5
+DateTimeOriginal: 2024:01:15 14:30:00
+ISO: 400
+ExposureTime: 1/125
+FNumber: 2.8
+FocalLength: 50 mm
+ImageWidth: 8192
+ImageHeight: 5464
+</code></pre>
+<h3 id="json"><a class="header" href="#json">JSON</a></h3>
+<pre><code class="language-bash">$ exif -j photo.jpg
+{
+  "File": "photo.jpg",
+  "Format": "JPEG",
+  "Make": "Canon",
+  "Model": "EOS R5",
+  ...
+}
+</code></pre>
+<h3 id="xml"><a class="header" href="#xml">XML</a></h3>
+<pre><code class="language-bash">$ exif -x photo.jpg
+&lt;?xml version="1.0"?&gt;
+&lt;image file="photo.jpg"&gt;
+  &lt;Format&gt;JPEG&lt;/Format&gt;
+  &lt;Make&gt;Canon&lt;/Make&gt;
+  ...
+&lt;/image&gt;
+</code></pre>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Option</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-t, --tags &lt;TAGS&gt;</code></td><td>Show only specified tags (comma-separated)</td></tr>
+<tr><td><code>-j, --json</code></td><td>Output as JSON</td></tr>
+<tr><td><code>-x, --xml</code></td><td>Output as XML</td></tr>
+<tr><td><code>-r, --recursive</code></td><td>Process directories recursively</td></tr>
+<tr><td><code>-q, --quiet</code></td><td>Suppress errors for unreadable files</td></tr>
+<tr><td><code>-v, --verbose</code></td><td>Show additional debug info</td></tr>
+<tr><td><code>-h, --help</code></td><td>Show help</td></tr>
+<tr><td><code>-V, --version</code></td><td>Show version</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<pre><code class="language-bash"># Camera info only
+exif -t Make,Model,LensModel photo.jpg
+
+# GPS coordinates
+exif -t GPSLatitude,GPSLongitude photo.jpg
+
+# All files in directory as JSON
+exif -j -r photos/ &gt; metadata.json
+
+# Find photos by camera
+exif -r photos/ | grep "Model: EOS R5"
+</code></pre>
+<h2 id="exit-codes"><a class="header" href="#exit-codes">Exit Codes</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success</td></tr>
+<tr><td>1</td><td>Some files failed to parse</td></tr>
+<tr><td>2</td><td>Invalid arguments</td></tr>
+</tbody>
+</table>
+</div>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="supported-formats-1"><a class="header" href="#supported-formats-1">Supported Formats</a></h1>
+<p>exiftool-rs supports 90+ file formats across images, RAW, audio, and video.</p>
+<h2 id="format-support-matrix"><a class="header" href="#format-support-matrix">Format Support Matrix</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Category</th><th>Formats</th><th>Count</th></tr>
+</thead>
+<tbody>
+<tr><td>Images</td><td>JPEG, PNG, TIFF, WebP, HEIC, GIF, BMP, etc.</td><td>25+</td></tr>
+<tr><td>RAW</td><td>CR2, CR3, NEF, ARW, ORF, RW2, RAF, DNG, etc.</td><td>30+</td></tr>
+<tr><td>Audio</td><td>MP3, FLAC, WAV, AAC, OGG, AIFF, etc.</td><td>20+</td></tr>
+<tr><td>Video</td><td>MP4, MOV, AVI, MKV, etc.</td><td>15+</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="read-vs-write"><a class="header" href="#read-vs-write">Read vs Write</a></h2>
+<p>Most formats support reading. Writing is available for:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th style="text-align: center">Read</th><th style="text-align: center">Write</th></tr>
+</thead>
+<tbody>
+<tr><td>JPEG</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>PNG</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>TIFF</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>DNG</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>WebP</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>HEIC/HEIF</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>EXR</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>HDR</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+<tr><td>RAW formats</td><td style="text-align: center">✓</td><td style="text-align: center">✗</td></tr>
+<tr><td>Audio</td><td style="text-align: center">✓</td><td style="text-align: center">✗</td></tr>
+<tr><td>Video</td><td style="text-align: center">✓</td><td style="text-align: center">✗</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="auto-detection"><a class="header" href="#auto-detection">Auto-Detection</a></h2>
+<p>Format is detected from file headers, not extensions:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let registry = FormatRegistry::new();
+let metadata = registry.parse(&amp;mut reader)?;
+println!("Detected: {}", metadata.format);
+<span class="boring">}</span></code></pre>
+<p>This means:</p>
+<ul>
+<li>Renamed files are handled correctly</li>
+<li>Corrupt/truncated files are detected</li>
+<li>No file extension required</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="image-formats"><a class="header" href="#image-formats">Image Formats</a></h1>
+<h2 id="jpeg"><a class="header" href="#jpeg">JPEG</a></h2>
+<p>The most common image format. Full EXIF and XMP support.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>✓</td></tr>
+<tr><td>Write</td><td>✓</td></tr>
+<tr><td>EXIF</td><td>Full</td></tr>
+<tr><td>XMP</td><td>Full</td></tr>
+<tr><td>IPTC</td><td>Full</td></tr>
+<tr><td>Thumbnail</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.jpg</code>, <code>.jpeg</code></p>
+<h2 id="png"><a class="header" href="#png">PNG</a></h2>
+<p>Portable Network Graphics with text chunks.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>✓</td></tr>
+<tr><td>Write</td><td>✓</td></tr>
+<tr><td>EXIF</td><td>Via eXIf chunk</td></tr>
+<tr><td>XMP</td><td>Via iTXt chunk</td></tr>
+<tr><td>Text</td><td>tEXt/iTXt chunks</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.png</code></p>
+<h2 id="tiff"><a class="header" href="#tiff">TIFF</a></h2>
+<p>Tagged Image File Format. Basis for many RAW formats.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>✓</td></tr>
+<tr><td>Write</td><td>✓</td></tr>
+<tr><td>EXIF</td><td>Native</td></tr>
+<tr><td>XMP</td><td>Full</td></tr>
+<tr><td>Multi-page</td><td>✓</td></tr>
+<tr><td>BigTIFF</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.tif</code>, <code>.tiff</code></p>
+<h2 id="webp"><a class="header" href="#webp">WebP</a></h2>
+<p>Google’s modern image format.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>✓</td></tr>
+<tr><td>Write</td><td>✓</td></tr>
+<tr><td>EXIF</td><td>Via EXIF chunk</td></tr>
+<tr><td>XMP</td><td>Via XMP chunk</td></tr>
+<tr><td>ICC</td><td>Via ICCP chunk</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.webp</code></p>
+<h2 id="heicheifavif"><a class="header" href="#heicheifavif">HEIC/HEIF/AVIF</a></h2>
+<p>Modern container formats using ISOBMFF structure.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>✓</td></tr>
+<tr><td>Write</td><td>✓ (existing EXIF)</td></tr>
+<tr><td>EXIF</td><td>Via meta box</td></tr>
+<tr><td>XMP</td><td>Via meta box</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.heic</code>, <code>.heif</code>, <code>.avif</code></p>
+<h2 id="gif"><a class="header" href="#gif">GIF</a></h2>
+<p>Graphics Interchange Format.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>✓</td></tr>
+<tr><td>Write</td><td>✗</td></tr>
+<tr><td>Comments</td><td>✓</td></tr>
+<tr><td>Animation</td><td>Frame count</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.gif</code></p>
+<h2 id="bmp"><a class="header" href="#bmp">BMP</a></h2>
+<p>Windows Bitmap.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Read</td><td>✓</td></tr>
+<tr><td>Write</td><td>✗</td></tr>
+<tr><td>Dimensions</td><td>✓</td></tr>
+<tr><td>Bit depth</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.bmp</code></p>
+<h2 id="other-image-formats"><a class="header" href="#other-image-formats">Other Image Formats</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extensions</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>ICO</td><td>.ico</td><td>Windows icon</td></tr>
+<tr><td>TGA</td><td>.tga</td><td>Truevision</td></tr>
+<tr><td>PCX</td><td>.pcx</td><td>PC Paintbrush</td></tr>
+<tr><td>PNM</td><td>.ppm, .pgm, .pbm</td><td>Netpbm</td></tr>
+<tr><td>SGI</td><td>.sgi, .rgb</td><td>Silicon Graphics</td></tr>
+<tr><td>DPX</td><td>.dpx</td><td>Digital Picture Exchange</td></tr>
+<tr><td>EXR</td><td>.exr</td><td>OpenEXR (HDR)</td></tr>
+<tr><td>HDR</td><td>.hdr</td><td>Radiance RGBE</td></tr>
+<tr><td>JPEG XL</td><td>.jxl</td><td>Modern JPEG replacement</td></tr>
+<tr><td>JPEG 2000</td><td>.jp2, .j2k</td><td>Wavelet compression</td></tr>
+<tr><td>SVG</td><td>.svg</td><td>Vector (XML metadata)</td></tr>
+</tbody>
+</table>
+</div>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="raw-formats"><a class="header" href="#raw-formats">RAW Formats</a></h1>
+<p>Camera RAW formats are read-only. They contain full sensor data and extensive
+manufacturer-specific metadata.</p>
+<h2 id="canon"><a class="header" href="#canon">Canon</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>CR2</td><td>.cr2</td><td>TIFF-based, older DSLRs</td></tr>
+<tr><td>CR3</td><td>.cr3</td><td>ISOBMFF-based, modern cameras</td></tr>
+<tr><td>CRW</td><td>.crw</td><td>Legacy CIFF format</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="nikon"><a class="header" href="#nikon">Nikon</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>NEF</td><td>.nef</td><td>TIFF-based</td></tr>
+<tr><td>NRW</td><td>.nrw</td><td>Coolpix RAW</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="sony"><a class="header" href="#sony">Sony</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>ARW</td><td>.arw</td><td>Alpha RAW</td></tr>
+<tr><td>SRF</td><td>.srf</td><td>Legacy format</td></tr>
+<tr><td>SR2</td><td>.sr2</td><td>Legacy format</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="fujifilm"><a class="header" href="#fujifilm">Fujifilm</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>RAF</td><td>.raf</td><td>Fuji RAW</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="olympus"><a class="header" href="#olympus">Olympus</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>ORF</td><td>.orf</td><td>OM-D/PEN series</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="panasonic"><a class="header" href="#panasonic">Panasonic</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>RW2</td><td>.rw2</td><td>Lumix RAW</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="pentax"><a class="header" href="#pentax">Pentax</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>PEF</td><td>.pef</td><td>Pentax Electronic File</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="other-raw-formats"><a class="header" href="#other-raw-formats">Other RAW Formats</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Manufacturer</th></tr>
+</thead>
+<tbody>
+<tr><td>DNG</td><td>.dng</td><td>Adobe (open standard)</td></tr>
+<tr><td>DCS</td><td>.dcr</td><td>Kodak</td></tr>
+<tr><td>KDC</td><td>.kdc</td><td>Kodak</td></tr>
+<tr><td>ERF</td><td>.erf</td><td>Epson</td></tr>
+<tr><td>MEF</td><td>.mef</td><td>Mamiya</td></tr>
+<tr><td>MOS</td><td>.mos</td><td>Leaf</td></tr>
+<tr><td>MRW</td><td>.mrw</td><td>Minolta</td></tr>
+<tr><td>RWL</td><td>.rwl</td><td>Leica</td></tr>
+<tr><td>SRW</td><td>.srw</td><td>Samsung</td></tr>
+<tr><td>X3F</td><td>.x3f</td><td>Sigma/Foveon</td></tr>
+<tr><td>3FR</td><td>.3fr</td><td>Hasselblad</td></tr>
+<tr><td>FFF</td><td>.fff</td><td>Hasselblad</td></tr>
+<tr><td>IIQ</td><td>.iiq</td><td>Phase One</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="cinema-raw"><a class="header" href="#cinema-raw">Cinema RAW</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>BRAW</td><td>.braw</td><td>Blackmagic RAW</td></tr>
+<tr><td>R3D</td><td>.r3d</td><td>RED Digital Cinema</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="raw-detection"><a class="header" href="#raw-detection">RAW Detection</a></h2>
+<p>RAW files are detected by format signature and/or Make tag:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if metadata.is_camera_raw() {
+    // Read-only, cannot write
+    println!("RAW file from: {}", metadata.exif.get_str("Make").unwrap_or("Unknown"));
+}
+<span class="boring">}</span></code></pre>
+<h2 id="embedded-previews"><a class="header" href="#embedded-previews">Embedded Previews</a></h2>
+<p>Most RAW files contain embedded JPEG previews:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Small thumbnail (usually 160x120)
+if let Some(thumb) = &amp;metadata.thumbnail {
+    // JPEG data
+}
+
+// Full-size preview (many RAW files)
+if let Some(preview) = &amp;metadata.preview {
+    // Often full resolution JPEG
+}
+<span class="boring">}</span></code></pre>
+<h2 id="makernotes"><a class="header" href="#makernotes">MakerNotes</a></h2>
+<p>RAW files contain manufacturer-specific data in MakerNotes IFD. Supported vendors:</p>
+<ul>
+<li>Canon</li>
+<li>Nikon</li>
+<li>Sony</li>
+<li>Fujifilm</li>
+<li>Olympus</li>
+<li>Panasonic</li>
+<li>Pentax</li>
+<li>Leica</li>
+<li>Hasselblad</li>
+<li>Phase One</li>
+<li>Apple</li>
+<li>Google</li>
+<li>GoPro</li>
+<li>DJI</li>
+<li>Samsung</li>
+<li>Ricoh</li>
+<li>Sigma</li>
+<li>Kodak</li>
+<li>Minolta</li>
+<li>Casio</li>
+<li>Huawei</li>
+<li>Xiaomi</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="audio-formats"><a class="header" href="#audio-formats">Audio Formats</a></h1>
+<p>Audio files contain metadata in various tag formats: ID3, Vorbis Comments,
+APE tags, etc.</p>
+<h2 id="mp3"><a class="header" href="#mp3">MP3</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>ID3v1</td><td>✓</td></tr>
+<tr><td>ID3v2</td><td>✓</td></tr>
+<tr><td>APE tags</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Tags:</strong> Title, Artist, Album, Year, Genre, Track, etc.</p>
+<p><strong>Extensions:</strong> <code>.mp3</code></p>
+<h2 id="flac"><a class="header" href="#flac">FLAC</a></h2>
+<p>Free Lossless Audio Codec with Vorbis Comments.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Vorbis Comments</td><td>✓</td></tr>
+<tr><td>STREAMINFO</td><td>✓</td></tr>
+<tr><td>Pictures</td><td>Detected</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.flac</code></p>
+<h2 id="wav"><a class="header" href="#wav">WAV</a></h2>
+<p>Microsoft WAVE audio.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>INFO chunk</td><td>✓</td></tr>
+<tr><td>Format info</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.wav</code></p>
+<h2 id="aac"><a class="header" href="#aac">AAC</a></h2>
+<p>Advanced Audio Coding.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>ADTS header</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.aac</code></p>
+<h2 id="ogg"><a class="header" href="#ogg">OGG</a></h2>
+<p>Ogg container with Vorbis/Opus.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Vorbis Comments</td><td>✓</td></tr>
+<tr><td>Opus tags</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.ogg</code>, <code>.opus</code></p>
+<h2 id="aiff"><a class="header" href="#aiff">AIFF</a></h2>
+<p>Apple audio format.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>COMM chunk</td><td>✓</td></tr>
+<tr><td>NAME/AUTH</td><td>✓</td></tr>
+<tr><td>Annotations</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.aiff</code>, <code>.aif</code></p>
+<h2 id="other-audio-formats"><a class="header" href="#other-audio-formats">Other Audio Formats</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Extension</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>CAF</td><td>.caf</td><td>Apple Core Audio</td></tr>
+<tr><td>AU</td><td>.au</td><td>Sun/NeXT audio</td></tr>
+<tr><td>APE</td><td>.ape</td><td>Monkey’s Audio</td></tr>
+<tr><td>WavPack</td><td>.wv</td><td>Hybrid lossy/lossless</td></tr>
+<tr><td>TAK</td><td>.tak</td><td>Tom’s Audio Kompressor</td></tr>
+<tr><td>DSF/DFF</td><td>.dsf, .dff</td><td>DSD audio</td></tr>
+<tr><td>MIDI</td><td>.mid</td><td>Sequence info</td></tr>
+<tr><td>ASF/WMA</td><td>.wma, .asf</td><td>Windows Media</td></tr>
+<tr><td>RealMedia</td><td>.rm, .ra</td><td>RealAudio</td></tr>
+<tr><td>Audible</td><td>.aa, .aax</td><td>Audiobook format</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="common-audio-metadata"><a class="header" href="#common-audio-metadata">Common Audio Metadata</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Duration
+metadata.exif.get_str("Duration")  // "3:45" or "225.5"
+
+// Sample rate
+metadata.exif.get_u32("AudioSampleRate")  // 44100
+
+// Channels
+metadata.exif.get_u32("AudioChannels")  // 2
+
+// Bit rate
+metadata.exif.get_str("AudioBitrate")  // "320 kbps"
+
+// ID3 tags
+metadata.exif.get_str("Title")
+metadata.exif.get_str("Artist")
+metadata.exif.get_str("Album")
+metadata.exif.get_str("Year")
+metadata.exif.get_str("Genre")
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="video-formats"><a class="header" href="#video-formats">Video Formats</a></h1>
+<p>Video containers store metadata in various structures depending on the format.</p>
+<h2 id="mp4mov"><a class="header" href="#mp4mov">MP4/MOV</a></h2>
+<p>ISOBMFF-based containers used by most modern cameras and phones.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>moov/mvhd</td><td>✓</td></tr>
+<tr><td>udta atoms</td><td>✓</td></tr>
+<tr><td>XMP</td><td>✓</td></tr>
+<tr><td>GPS</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.mp4</code>, <code>.m4v</code>, <code>.mov</code>, <code>.3gp</code></p>
+<p><strong>Common metadata:</strong></p>
+<ul>
+<li>Duration, creation date</li>
+<li>Video/audio codec info</li>
+<li>GPS track (action cameras)</li>
+<li>Camera make/model</li>
+</ul>
+<h2 id="avi"><a class="header" href="#avi">AVI</a></h2>
+<p>Microsoft Audio Video Interleave.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>INFO chunk</td><td>✓</td></tr>
+<tr><td>Stream info</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.avi</code></p>
+<h2 id="mkvwebm"><a class="header" href="#mkvwebm">MKV/WebM</a></h2>
+<p>Matroska container format.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>EBML header</td><td>✓</td></tr>
+<tr><td>Segment info</td><td>✓</td></tr>
+<tr><td>Tags</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.mkv</code>, <code>.webm</code></p>
+<h2 id="flv"><a class="header" href="#flv">FLV</a></h2>
+<p>Adobe Flash Video.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>onMetaData</td><td>✓</td></tr>
+<tr><td>Script tags</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.flv</code></p>
+<h2 id="mxf"><a class="header" href="#mxf">MXF</a></h2>
+<p>Material Exchange Format (broadcast).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>Header metadata</td><td>✓</td></tr>
+<tr><td>Descriptors</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.mxf</code></p>
+<h2 id="mpeg-ts"><a class="header" href="#mpeg-ts">MPEG-TS</a></h2>
+<p>Transport stream for broadcast.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Support</th></tr>
+</thead>
+<tbody>
+<tr><td>PAT/PMT</td><td>✓</td></tr>
+<tr><td>Stream info</td><td>✓</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Extensions:</strong> <code>.ts</code>, <code>.m2ts</code>, <code>.mts</code></p>
+<h2 id="common-video-metadata"><a class="header" href="#common-video-metadata">Common Video Metadata</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Duration
+metadata.exif.get_str("Duration")  // "1:30:45"
+
+// Dimensions
+metadata.exif.get_u32("ImageWidth")   // 1920
+metadata.exif.get_u32("ImageHeight")  // 1080
+
+// Frame rate
+metadata.exif.get_f64("VideoFrameRate")  // 29.97
+
+// Codec
+metadata.exif.get_str("CompressorID")  // "avc1"
+
+// Creation date
+metadata.exif.get_str("CreateDate")
+
+// GPS (action cameras)
+metadata.exif.get_f64("GPSLatitude")
+metadata.exif.get_f64("GPSLongitude")
+<span class="boring">}</span></code></pre>
+<h2 id="action-camera-support"><a class="header" href="#action-camera-support">Action Camera Support</a></h2>
+<p>GoPro, DJI, and similar cameras embed extensive metadata:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// GoPro GPMF data
+metadata.exif.get_str("DeviceName")  // "HERO12 Black"
+
+// DJI drone data  
+metadata.exif.get_str("Make")  // "DJI"
+metadata.exif.get_f64("AbsoluteAltitude")
+metadata.exif.get_f64("FlightYawDegree")
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="architecture"><a class="header" href="#architecture">Architecture</a></h1>
+<p>exiftool-rs is organized as a Rust workspace with multiple crates, each with
+a focused responsibility.</p>
+<h2 id="design-principles"><a class="header" href="#design-principles">Design Principles</a></h2>
+<ol>
+<li><strong>Separation of concerns</strong> - Core parsing logic separate from format-specific code</li>
+<li><strong>Zero unsafe</strong> - Pure safe Rust (except PyO3 bindings)</li>
+<li><strong>Minimal dependencies</strong> - Only what’s necessary</li>
+<li><strong>Streaming</strong> - Parse from any <code>Read + Seek</code> source</li>
+<li><strong>Lazy loading</strong> - Don’t read what you don’t need</li>
+</ol>
+<h2 id="why-a-workspace"><a class="header" href="#why-a-workspace">Why a Workspace?</a></h2>
+<p>Multiple crates allow:</p>
+<ul>
+<li><strong>Cherry-picking</strong> - Use only what you need</li>
+<li><strong>Parallel compilation</strong> - Faster builds</li>
+<li><strong>Clear boundaries</strong> - Enforced API contracts</li>
+<li><strong>Independent versioning</strong> - Update parts separately</li>
+</ul>
+<pre><code>exiftool-rs/
+├── crates/
+│   ├── exiftool-core/      # TIFF/IFD parsing primitives
+│   ├── exiftool-attrs/     # Attribute storage and types
+│   ├── exiftool-tags/      # Tag definitions and interpretation
+│   ├── exiftool-formats/   # All format parsers
+│   ├── exiftool-xmp/       # XMP parsing/writing
+│   ├── exiftool-iptc/      # IPTC parsing/writing
+│   ├── exiftool-icc/       # ICC profile parsing
+│   ├── exiftool-py/        # Python bindings
+│   └── exiftool-cli/       # Command-line tool
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="crate-structure"><a class="header" href="#crate-structure">Crate Structure</a></h1>
+<h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
+<pre><code>exiftool-cli ─────┐
+                  ▼
+exiftool-py ──► exiftool-formats
+                  │
+        ┌─────────┼─────────┬─────────┐
+        ▼         ▼         ▼         ▼
+   exiftool-  exiftool-  exiftool-  exiftool-
+     xmp       iptc       icc       tags
+        │         │                   │
+        └─────────┴─────────┬─────────┘
+                            ▼
+                      exiftool-core
+                            │
+                            ▼
+                      exiftool-attrs
+</code></pre>
+<h2 id="exiftool-attrs"><a class="header" href="#exiftool-attrs">exiftool-attrs</a></h2>
+<p>Foundation crate. Defines <code>Attrs</code> (attribute map) and <code>AttrValue</code> (typed values).</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_attrs::{Attrs, AttrValue};
+
+let mut attrs = Attrs::new();
+attrs.set("Make", AttrValue::Str("Canon".into()));
+attrs.set("ISO", AttrValue::UInt(400));
+<span class="boring">}</span></code></pre>
+<p><strong>Key types:</strong></p>
+<ul>
+<li><code>Attrs</code> - HashMap-like container with typed accessors</li>
+<li><code>AttrValue</code> - Enum of possible value types (Str, Int, UInt, Float, Rational, List, Bytes)</li>
+</ul>
+<h2 id="exiftool-core"><a class="header" href="#exiftool-core">exiftool-core</a></h2>
+<p>Low-level TIFF/EXIF primitives.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_core::{ByteOrder, IfdReader};
+
+let reader = IfdReader::new(data, ByteOrder::LittleEndian);
+let ifd_offset = reader.parse_header()?;
+let (entries, next_ifd) = reader.read_ifd(ifd_offset)?;
+<span class="boring">}</span></code></pre>
+<p><strong>Key types:</strong></p>
+<ul>
+<li><code>IfdReader</code> - Parse IFD structures from bytes</li>
+<li><code>ExifWriter</code> - Build EXIF byte streams</li>
+<li><code>ByteOrder</code> - Big/Little endian handling</li>
+<li><code>IfdEntry</code>, <code>RawValue</code> - Parsed IFD data</li>
+</ul>
+<h2 id="exiftool-tags"><a class="header" href="#exiftool-tags">exiftool-tags</a></h2>
+<p>Tag definitions and value interpretation.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_tags::interp;
+
+// Interpret numeric values
+interp::interpret_value("Orientation", 6)  // "Rotate 90 CW"
+
+// Format with units
+interp::format_focal_length(50.0)  // "50 mm"
+interp::format_fnumber(2.8)        // "f/2.8"
+<span class="boring">}</span></code></pre>
+<p><strong>Features:</strong></p>
+<ul>
+<li>Tag ID to name mapping</li>
+<li>Value interpretation (enums, bitfields)</li>
+<li>Display formatting</li>
+</ul>
+<h2 id="exiftool-formats"><a class="header" href="#exiftool-formats">exiftool-formats</a></h2>
+<p>All format parsers and writers. This is the main crate most users need.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_formats::{FormatRegistry, FormatParser, JpegWriter};
+
+let registry = FormatRegistry::new();
+let metadata = registry.parse(&amp;mut reader)?;
+<span class="boring">}</span></code></pre>
+<p><strong>Key types:</strong></p>
+<ul>
+<li><code>FormatRegistry</code> - Auto-detect and parse any format</li>
+<li><code>FormatParser</code> trait - Common interface for all parsers</li>
+<li><code>Metadata</code> - Parsed result with EXIF, XMP, thumbnails</li>
+<li><code>*Parser</code> - Format-specific parsers (JpegParser, etc.)</li>
+<li><code>*Writer</code> - Format-specific writers</li>
+</ul>
+<h2 id="exiftool-xmp"><a class="header" href="#exiftool-xmp">exiftool-xmp</a></h2>
+<p>XMP (XML) metadata parsing and writing.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_xmp::{parse_xmp, XmpWriter};
+
+let attrs = parse_xmp(xml_string)?;
+let xml = XmpWriter::build(&amp;attrs)?;
+<span class="boring">}</span></code></pre>
+<h2 id="exiftool-iptc"><a class="header" href="#exiftool-iptc">exiftool-iptc</a></h2>
+<p>IPTC-IIM metadata for JPEG APP13 segments.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_iptc::{IptcParser, IptcWriter};
+
+let attrs = IptcParser::parse(data)?;
+let bytes = IptcWriter::build(&amp;attrs);
+<span class="boring">}</span></code></pre>
+<h2 id="exiftool-icc"><a class="header" href="#exiftool-icc">exiftool-icc</a></h2>
+<p>ICC color profile parsing.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use exiftool_icc::parse_icc_profile;
+
+let attrs = parse_icc_profile(data)?;
+// ProfileDescription, ColorSpace, etc.
+<span class="boring">}</span></code></pre>
+<h2 id="exiftool-py"><a class="header" href="#exiftool-py">exiftool-py</a></h2>
+<p>Python bindings via PyO3.</p>
+<pre><code class="language-python">import exiftool_rs as exif
+img = exif.open("photo.jpg")
+</code></pre>
+<h2 id="exiftool-cli"><a class="header" href="#exiftool-cli">exiftool-cli</a></h2>
+<p>Command-line tool.</p>
+<pre><code class="language-bash">exif photo.jpg
+exif -j *.jpg
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="parser-design"><a class="header" href="#parser-design">Parser Design</a></h1>
+<h2 id="formatparser-trait"><a class="header" href="#formatparser-trait">FormatParser Trait</a></h2>
+<p>All parsers implement a common trait:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait FormatParser {
+    /// Check if this parser can handle the data (from header bytes).
+    fn can_parse(&amp;self, header: &amp;[u8]) -&gt; bool;
+    
+    /// Human-readable format name.
+    fn format_name(&amp;self) -&gt; &amp;'static str;
+    
+    /// Supported file extensions.
+    fn extensions(&amp;self) -&gt; &amp;'static [&amp;'static str];
+    
+    /// Parse metadata from reader.
+    fn parse(&amp;self, reader: &amp;mut dyn ReadSeek) -&gt; Result&lt;Metadata&gt;;
+}
+<span class="boring">}</span></code></pre>
+<h2 id="format-detection-1"><a class="header" href="#format-detection-1">Format Detection</a></h2>
+<p>The registry tests each parser’s <code>can_parse()</code> against file headers:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl FormatRegistry {
+    pub fn detect(&amp;self, header: &amp;[u8]) -&gt; Option&lt;&amp;dyn FormatParser&gt; {
+        self.parsers.iter()
+            .find(|p| p.can_parse(header))
+            .map(|p| p.as_ref())
+    }
+}
+<span class="boring">}</span></code></pre>
+<p>Detection is based on magic bytes, not file extensions:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Magic Bytes</th></tr>
+</thead>
+<tbody>
+<tr><td>JPEG</td><td><code>FF D8 FF</code></td></tr>
+<tr><td>PNG</td><td><code>89 50 4E 47 0D 0A 1A 0A</code></td></tr>
+<tr><td>TIFF LE</td><td><code>49 49 2A 00</code></td></tr>
+<tr><td>TIFF BE</td><td><code>4D 4D 00 2A</code></td></tr>
+<tr><td>HEIC</td><td><code>....ftyp</code> + brand check</td></tr>
+<tr><td>MP4</td><td><code>....ftyp</code> + brand check</td></tr>
+<tr><td>GIF</td><td><code>GIF87a</code> or <code>GIF89a</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="parser-implementation-pattern"><a class="header" href="#parser-implementation-pattern">Parser Implementation Pattern</a></h2>
+<p>Typical parser structure:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct JpegParser;
+
+impl FormatParser for JpegParser {
+    fn can_parse(&amp;self, header: &amp;[u8]) -&gt; bool {
+        header.len() &gt;= 3 &amp;&amp; header[0..2] == [0xFF, 0xD8]
+    }
+    
+    fn format_name(&amp;self) -&gt; &amp;'static str { "JPEG" }
+    
+    fn extensions(&amp;self) -&gt; &amp;'static [&amp;'static str] {
+        &amp;["jpg", "jpeg"]
+    }
+    
+    fn parse(&amp;self, reader: &amp;mut dyn ReadSeek) -&gt; Result&lt;Metadata&gt; {
+        let mut metadata = Metadata::new("JPEG");
+        
+        // Parse APP1 (EXIF)
+        if let Some(exif_data) = self.find_app1(reader)? {
+            self.parse_exif(&amp;exif_data, &amp;mut metadata)?;
+        }
+        
+        // Parse APP13 (IPTC)
+        // Parse XMP
+        // Extract thumbnail
+        
+        Ok(metadata)
+    }
+}
+<span class="boring">}</span></code></pre>
+<h2 id="tiff-based-formats"><a class="header" href="#tiff-based-formats">TIFF-Based Formats</a></h2>
+<p>Many formats are TIFF variants (CR2, NEF, DNG, etc.):</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Cr2Parser;
+
+impl FormatParser for Cr2Parser {
+    fn can_parse(&amp;self, header: &amp;[u8]) -&gt; bool {
+        // TIFF + CR2 magic at offset 8
+        TiffParser::is_tiff(header) &amp;&amp; 
+        header.len() &gt;= 10 &amp;&amp; 
+        &amp;header[8..10] == b"CR"
+    }
+    
+    fn parse(&amp;self, reader: &amp;mut dyn ReadSeek) -&gt; Result&lt;Metadata&gt; {
+        // Use TiffParser for structure, add CR2-specific handling
+        let mut metadata = TiffParser::parse_internal(reader)?;
+        metadata.format = "CR2";
+        
+        // Parse Canon MakerNotes
+        self.parse_makernotes(&amp;mut metadata)?;
+        
+        Ok(metadata)
+    }
+}
+<span class="boring">}</span></code></pre>
+<h2 id="streaming-design"><a class="header" href="#streaming-design">Streaming Design</a></h2>
+<p>Parsers accept <code>&amp;mut dyn ReadSeek</code>, allowing:</p>
+<ul>
+<li>Files via <code>BufReader&lt;File&gt;</code></li>
+<li>Memory via <code>Cursor&lt;&amp;[u8]&gt;</code></li>
+<li>Network streams (with buffering)</li>
+<li>Memory-mapped files</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// From file
+let file = File::open("photo.jpg")?;
+let mut reader = BufReader::new(file);
+let metadata = parser.parse(&amp;mut reader)?;
+
+// From bytes
+let mut cursor = Cursor::new(&amp;data);
+let metadata = parser.parse(&amp;mut cursor)?;
+<span class="boring">}</span></code></pre>
+<h2 id="error-handling-3"><a class="header" href="#error-handling-3">Error Handling</a></h2>
+<p>Parsers return <code>Result&lt;Metadata, Error&gt;</code>:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum Error {
+    Io(std::io::Error),
+    UnsupportedFormat,
+    InvalidStructure(String),
+    // ...
+}
+<span class="boring">}</span></code></pre>
+<p>Partial parsing is preferred - extract what’s possible, skip corrupt sections:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Don't fail on bad MakerNotes
+if let Ok(maker) = self.parse_makernotes(data) {
+    metadata.exif.merge(maker);
+}
+// Continue even if MakerNotes failed
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="performance"><a class="header" href="#performance">Performance</a></h1>
+<h2 id="why-its-fast"><a class="header" href="#why-its-fast">Why It’s Fast</a></h2>
+<ol>
+<li><strong>Native code</strong> - No interpreter overhead</li>
+<li><strong>Zero-copy parsing</strong> - Work directly with byte slices where possible</li>
+<li><strong>Lazy loading</strong> - Don’t read image data, just metadata</li>
+<li><strong>Streaming</strong> - Process files larger than RAM</li>
+</ol>
+<h2 id="typical-performance"><a class="header" href="#typical-performance">Typical Performance</a></h2>
+<p>On a modern machine (M1/Ryzen), expect:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Time</th></tr>
+</thead>
+<tbody>
+<tr><td>Parse JPEG EXIF</td><td>~50-200 µs</td></tr>
+<tr><td>Parse RAW file</td><td>~200-500 µs</td></tr>
+<tr><td>Parse MP4 metadata</td><td>~100-300 µs</td></tr>
+<tr><td>Write JPEG EXIF</td><td>~500 µs - 2 ms</td></tr>
+</tbody>
+</table>
+</div>
+<p>Batch processing thousands of files is typically I/O bound, not CPU bound.</p>
+<h2 id="comparison-with-exiftool-perl"><a class="header" href="#comparison-with-exiftool-perl">Comparison with ExifTool (Perl)</a></h2>
+<p>For single files, the difference is startup time:</p>
+<ul>
+<li>ExifTool: ~100-200ms (Perl startup + module loading)</li>
+<li>exiftool-rs: ~1ms</li>
+</ul>
+<p>For batch processing 1000 JPEGs:</p>
+<ul>
+<li>ExifTool: ~15-30 seconds</li>
+<li>exiftool-rs: ~1-3 seconds</li>
+</ul>
+<p>The gap widens with more files due to eliminated process spawn overhead.</p>
+<h2 id="memory-usage"><a class="header" href="#memory-usage">Memory Usage</a></h2>
+<p>Memory is proportional to metadata size, not image size:</p>
+<ul>
+<li>Typical JPEG: ~10-50 KB for metadata parsing</li>
+<li>RAW with large preview: ~1-5 MB (if extracting preview)</li>
+<li>Without preview extraction: ~50-100 KB</li>
+</ul>
+<h2 id="optimization-tips"><a class="header" href="#optimization-tips">Optimization Tips</a></h2>
+<h3 id="batch-processing-1"><a class="header" href="#batch-processing-1">Batch Processing</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Reuse registry across files
+let registry = FormatRegistry::new();
+
+for path in files {
+    let file = File::open(path)?;
+    let mut reader = BufReader::new(file);
+    let metadata = registry.parse(&amp;mut reader)?;
+    // process...
+}
+<span class="boring">}</span></code></pre>
+<h3 id="skip-unnecessary-data"><a class="header" href="#skip-unnecessary-data">Skip Unnecessary Data</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// If you don't need thumbnails, they're still parsed but 
+// you can ignore them - no extra cost
+let _ = metadata.thumbnail;  // Already parsed, just don't use it
+<span class="boring">}</span></code></pre>
+<h3 id="parallel-processing"><a class="header" href="#parallel-processing">Parallel Processing</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use rayon::prelude::*;
+
+let results: Vec&lt;_&gt; = files
+    .par_iter()
+    .map(|path| {
+        let registry = FormatRegistry::new();
+        let file = File::open(path)?;
+        let mut reader = BufReader::new(file);
+        registry.parse(&amp;mut reader)
+    })
+    .collect();
+<span class="boring">}</span></code></pre>
+<h2 id="benchmarking"><a class="header" href="#benchmarking">Benchmarking</a></h2>
+<p>Run benchmarks with:</p>
+<pre><code class="language-bash">cargo bench
+</code></pre>
+<p>Profile with:</p>
+<pre><code class="language-bash">cargo build --release
+samply record ./target/release/exif large_file.jpg
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="contributing"><a class="header" href="#contributing">Contributing</a></h1>
+<p>Contributions welcome! Here’s how to help.</p>
+<h2 id="ways-to-contribute"><a class="header" href="#ways-to-contribute">Ways to Contribute</a></h2>
+<ul>
+<li><strong>Bug reports</strong> - Found something broken? Open an issue</li>
+<li><strong>Format support</strong> - Add parsing for new formats</li>
+<li><strong>MakerNotes</strong> - Camera-specific metadata decoding</li>
+<li><strong>Documentation</strong> - Improve docs, add examples</li>
+<li><strong>Tests</strong> - More test coverage is always good</li>
+</ul>
+<h2 id="development-setup"><a class="header" href="#development-setup">Development Setup</a></h2>
+<pre><code class="language-bash">git clone https://github.com/user/exiftool-rs
+cd exiftool-rs
+
+# Build
+cargo build
+
+# Test
+cargo test --workspace
+
+# Lint
+cargo clippy --workspace
+</code></pre>
+<h2 id="code-style"><a class="header" href="#code-style">Code Style</a></h2>
+<ul>
+<li>Run <code>cargo fmt</code> before committing</li>
+<li>Run <code>cargo clippy</code> and fix warnings</li>
+<li>Add tests for new functionality</li>
+<li>Document public APIs</li>
+</ul>
+<h2 id="adding-a-new-format"><a class="header" href="#adding-a-new-format">Adding a New Format</a></h2>
+<ol>
+<li>Create parser in <code>crates/exiftool-formats/src/</code></li>
+<li>Implement <code>FormatParser</code> trait</li>
+<li>Register in <code>registry.rs</code></li>
+<li>Add tests</li>
+<li>Document in mdbook</li>
+</ol>
+<p>Example skeleton:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// newformat.rs
+pub struct NewFormatParser;
+
+impl FormatParser for NewFormatParser {
+    fn can_parse(&amp;self, header: &amp;[u8]) -&gt; bool {
+        // Check magic bytes
+        header.starts_with(b"MAGIC")
+    }
+    
+    fn format_name(&amp;self) -&gt; &amp;'static str { "NewFormat" }
+    
+    fn extensions(&amp;self) -&gt; &amp;'static [&amp;'static str] {
+        &amp;["new", "nf"]
+    }
+    
+    fn parse(&amp;self, reader: &amp;mut dyn ReadSeek) -&gt; Result&lt;Metadata&gt; {
+        let mut metadata = Metadata::new("NewFormat");
+        // Parse...
+        Ok(metadata)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn detect_format() {
+        let parser = NewFormatParser;
+        assert!(parser.can_parse(b"MAGIC..."));
+        assert!(!parser.can_parse(b"OTHER"));
+    }
+}
+<span class="boring">}</span></code></pre>
+<h2 id="testing"><a class="header" href="#testing">Testing</a></h2>
+<pre><code class="language-bash"># All tests
+cargo test --workspace
+
+# Specific crate
+cargo test -p exiftool-formats
+
+# Specific test
+cargo test -p exiftool-formats jpeg::tests
+
+# With output
+cargo test -- --nocapture
+</code></pre>
+<h2 id="pull-request-process"><a class="header" href="#pull-request-process">Pull Request Process</a></h2>
+<ol>
+<li>Fork the repository</li>
+<li>Create a feature branch</li>
+<li>Make changes with tests</li>
+<li>Run <code>cargo fmt</code> and <code>cargo clippy</code></li>
+<li>Submit PR with clear description</li>
+</ol>
+<h2 id="questions"><a class="header" href="#questions">Questions?</a></h2>
+<p>Open a discussion or issue on GitHub.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="building-from-source-2"><a class="header" href="#building-from-source-2">Building from Source</a></h1>
+<h2 id="requirements-1"><a class="header" href="#requirements-1">Requirements</a></h2>
+<ul>
+<li>Rust 1.70 or later</li>
+<li>For Python bindings: Python 3.8+ and maturin</li>
+</ul>
+<h2 id="clone-and-build"><a class="header" href="#clone-and-build">Clone and Build</a></h2>
+<pre><code class="language-bash">git clone https://github.com/user/exiftool-rs
+cd exiftool-rs
+
+# Debug build
+cargo build
+
+# Release build (optimized)
+cargo build --release
+</code></pre>
+<h2 id="build-specific-crates"><a class="header" href="#build-specific-crates">Build Specific Crates</a></h2>
+<pre><code class="language-bash"># Just the core library
+cargo build -p exiftool-formats
+
+# Just the CLI
+cargo build -p exiftool-cli --release
+
+# Just Python bindings
+cd crates/exiftool-py
+maturin build --release
+</code></pre>
+<h2 id="run-tests"><a class="header" href="#run-tests">Run Tests</a></h2>
+<pre><code class="language-bash"># All tests
+cargo test --workspace
+
+# With verbose output
+cargo test --workspace -- --nocapture
+
+# Specific test
+cargo test -p exiftool-formats jpeg
+</code></pre>
+<h2 id="python-bindings-1"><a class="header" href="#python-bindings-1">Python Bindings</a></h2>
+<pre><code class="language-bash"># Install maturin
+pip install maturin
+
+# Build wheel
+cd crates/exiftool-py
+maturin build --release
+
+# Install locally for development
+maturin develop
+
+# Build and install
+pip install .
+</code></pre>
+<h2 id="documentation"><a class="header" href="#documentation">Documentation</a></h2>
+<pre><code class="language-bash"># Rust API docs
+cargo doc --workspace --open
+
+# mdbook
+cd docs/book
+mdbook build
+mdbook serve  # Local server at localhost:3000
+</code></pre>
+<h2 id="cross-compilation"><a class="header" href="#cross-compilation">Cross-Compilation</a></h2>
+<p>Rust makes cross-compilation straightforward:</p>
+<pre><code class="language-bash"># Add target
+rustup target add aarch64-unknown-linux-gnu
+
+# Build
+cargo build --release --target aarch64-unknown-linux-gnu
+</code></pre>
+<h2 id="workspace-structure"><a class="header" href="#workspace-structure">Workspace Structure</a></h2>
+<pre><code>exiftool-rs/
+├── Cargo.toml           # Workspace root
+├── crates/
+│   ├── exiftool-attrs/  # Attribute types
+│   ├── exiftool-core/   # TIFF/IFD primitives
+│   ├── exiftool-tags/   # Tag definitions
+│   ├── exiftool-formats/# All format parsers
+│   ├── exiftool-xmp/    # XMP handling
+│   ├── exiftool-iptc/   # IPTC handling
+│   ├── exiftool-icc/    # ICC profiles
+│   ├── exiftool-py/     # Python bindings
+│   └── exiftool-cli/    # CLI tool
+├── docs/
+│   └── book/            # mdbook source
+└── tests/               # Integration tests
+</code></pre>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="compilation-errors"><a class="header" href="#compilation-errors">Compilation Errors</a></h3>
+<p>Make sure you have the latest Rust:</p>
+<pre><code class="language-bash">rustup update
+</code></pre>
+<h3 id="python-binding-issues"><a class="header" href="#python-binding-issues">Python Binding Issues</a></h3>
+<p>Ensure maturin matches your Python version:</p>
+<pre><code class="language-bash">pip install --upgrade maturin
+maturin build --release
+</code></pre>
+<h3 id="missing-features"><a class="header" href="#missing-features">Missing Features</a></h3>
+<p>Some features require specific dependencies. Check <code>Cargo.toml</code> for feature flags.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
