@@ -35,19 +35,17 @@ cargo +nightly install cargo-fuzz
 ### Basic Usage
 
 ```bash
-cd fuzz
+# From repository root (not `cd fuzz`)
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata
 
-# Run a single target (runs until Ctrl+C)
-cargo +nightly fuzz run fuzz_jpeg
+# Time limit (60 seconds)
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata -max_total_time=60
 
-# Run with time limit (60 seconds)
-cargo +nightly fuzz run fuzz_jpeg -- -max_total_time=60
+# Iteration limit
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata -runs=100000
 
-# Run with iteration limit
-cargo +nightly fuzz run fuzz_jpeg -- -runs=100000
-
-# Run with multiple parallel jobs
-cargo +nightly fuzz run fuzz_jpeg -- -jobs=4 -workers=4
+# Parallel jobs
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata -jobs=4 -workers=4
 ```
 
 ### Quick Smoke Test
@@ -55,13 +53,10 @@ cargo +nightly fuzz run fuzz_jpeg -- -jobs=4 -workers=4
 Run all targets for 30 seconds each:
 
 ```bash
-cd fuzz
-
-# Bash/PowerShell
 for target in fuzz_jpeg fuzz_png fuzz_tiff fuzz_webp fuzz_heic fuzz_cr3 fuzz_registry
 do
     echo "=== Running $target ==="
-    cargo +nightly fuzz run $target -- -max_total_time=30
+    cargo +nightly fuzz run $target -- tests crates/exiftool-formats/tests/testdata -max_total_time=30
 done
 ```
 
@@ -70,9 +65,8 @@ done
 For continuous integration, run with a fixed number of iterations:
 
 ```bash
-cargo +nightly fuzz run fuzz_jpeg -- -runs=10000
-cargo +nightly fuzz run fuzz_png -- -runs=10000
-# etc.
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata -runs=10000
+cargo +nightly fuzz run fuzz_png -- tests crates/exiftool-formats/tests/testdata -runs=10000
 ```
 
 ## Understanding Output
@@ -157,19 +151,13 @@ fuzz/corpus/<target>/
 
 ### Seeding with Real Files
 
-Improve fuzzing effectiveness by seeding with real image files:
+Improve coverage by passing existing samples (root `tests/` plus golden testdata). Do not copy into `fuzz/corpus/`:
 
 ```bash
-# Create corpus directory
-mkdir -p fuzz/corpus/fuzz_jpeg
-
-# Copy test files
-cp testdata/*.jpg fuzz/corpus/fuzz_jpeg/
-cp ~/photos/sample.jpg fuzz/corpus/fuzz_jpeg/
-
-# Fuzzer will mutate these as starting points
-cargo +nightly fuzz run fuzz_jpeg
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata
 ```
+
+libFuzzer still writes a generated corpus to `fuzz/corpus/<target>/` (gitignored).
 
 ### Corpus Minimization
 

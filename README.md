@@ -389,20 +389,18 @@ cargo +nightly install cargo-fuzz
 ### Running Fuzz Tests
 
 ```bash
-cd fuzz
+# From repository root (cargo-fuzz expects ./fuzz here)
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata
 
-# Run single target (runs indefinitely until Ctrl+C)
-cargo +nightly fuzz run fuzz_jpeg
+# Time limit (e.g. 60 seconds)
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata -max_total_time=60
 
-# Run with timeout (e.g., 60 seconds)
-cargo +nightly fuzz run fuzz_jpeg -- -max_total_time=60
+# Iteration cap
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata -runs=10000
 
-# Run with specific number of iterations
-cargo +nightly fuzz run fuzz_jpeg -- -runs=10000
-
-# Run all targets sequentially (quick smoke test)
+# Smoke all targets
 for target in fuzz_jpeg fuzz_png fuzz_tiff fuzz_webp fuzz_heic fuzz_cr3 fuzz_registry; do
-    cargo +nightly fuzz run $target -- -max_total_time=30
+    cargo +nightly fuzz run $target -- tests crates/exiftool-formats/tests/testdata -max_total_time=30
 done
 ```
 
@@ -427,11 +425,10 @@ cargo +nightly fuzz tmin fuzz_jpeg fuzz/artifacts/fuzz_jpeg/crash-xxxxx
 
 ### Corpus
 
-Fuzzer builds a corpus of interesting inputs in `fuzz/corpus/<target>/`. You can seed it with real files:
+Fuzzer mutates interesting inputs under `fuzz/corpus/<target>/` (gitignored). Seed from files already in the repo — do not copy:
 
 ```bash
-mkdir -p fuzz/corpus/fuzz_jpeg
-cp testdata/*.jpg fuzz/corpus/fuzz_jpeg/
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata
 ```
 
 ## Known Limitations

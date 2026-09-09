@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Dropped `_ref/exiftool` and `_ref/exif-rs` git submodules. Clone URLs live in `_ref/README.md`. Removed `plan2.md` (work is in the tree + CHANGELOG).
+- Fuzz seeds: pass `tests/` and `crates/exiftool-formats/tests/testdata` to `cargo fuzz run` (no `test_images` copy). Generated `fuzz/corpus` and `fuzz/artifacts` are gitignored.
 - TIFF-family FileType: unique magics first; generic TIFF classified by `DNGVersion`, extension, Make (`tiff_family`). Wrappers no longer steal TIFF magic.
 - `Metadata::is_writable`: TIFF-family RAW, RAF, CR3, MP4/MOV, WAV/FLAC/MP3.
 - Bootstrap build defaults to release; use `--debug` for debug builds.

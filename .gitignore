@@ -1,4 +1,10 @@
 /target
+docs/book/
+
+# cargo-fuzz (generated; seed from tests/ instead of copying)
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/
 
 # Python
 *.pyd

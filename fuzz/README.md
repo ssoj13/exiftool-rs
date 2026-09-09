@@ -1,36 +1,28 @@
 # Fuzz Testing
 
-This directory contains fuzz targets for testing exiftool-rs parsers with arbitrary input data.
+LibFuzzer targets for parser robustness. Keep this crate at repo-root `fuzz/` (`cargo fuzz` looks for that name). Do not copy seeds into `fuzz/corpus/` — pass existing sample dirs.
 
 ## Requirements
 
-- Rust nightly toolchain
-- `cargo-fuzz` (`cargo install cargo-fuzz`)
-- Linux or WSL (libFuzzer requires Unix-like environment)
+- Rust nightly
+- `cargo install cargo-fuzz`
+- Unix-like host for libFuzzer (Linux or WSL). Windows MSVC is not supported.
 
-## Running Fuzz Tests
+## Running (from repository root)
 
 ```bash
-# Install cargo-fuzz (one-time)
-cargo install cargo-fuzz
-
-# List available targets
 cargo +nightly fuzz list
 
-# Run a specific fuzz target
-cargo +nightly fuzz run fuzz_jpeg
+# JPEG seeds: root `tests/` samples + golden testdata
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata
 
-# Run with timeout per test case
-cargo +nightly fuzz run fuzz_jpeg -- -timeout=5
-
-# Run for a limited time (60 seconds)
-cargo +nightly fuzz run fuzz_jpeg -- -max_total_time=60
-
-# Run with initial corpus
-cargo +nightly fuzz run fuzz_jpeg corpus/jpeg/
+# Time-boxed smoke
+cargo +nightly fuzz run fuzz_jpeg -- tests crates/exiftool-formats/tests/testdata -max_total_time=60
 ```
 
-## Available Targets
+Generated coverage corpus and crashes stay in `fuzz/corpus/<target>/` and `fuzz/artifacts/` (gitignored).
+
+## Targets
 
 | Target | Description |
 |--------|-------------|
@@ -42,27 +34,10 @@ cargo +nightly fuzz run fuzz_jpeg corpus/jpeg/
 | `fuzz_cr3` | Canon CR3 parser |
 | `fuzz_registry` | Format auto-detection |
 
-## Creating Seed Corpus
+`fuzz_png` / `fuzz_tiff` / `fuzz_heic` / `fuzz_cr3` can use the same two dirs; libFuzzer ignores files the target does not exercise.
 
-For better fuzzing coverage, provide sample files:
-
-```bash
-mkdir -p fuzz/corpus/jpeg
-cp test_images/*.jpg fuzz/corpus/jpeg/
-cargo +nightly fuzz run fuzz_jpeg fuzz/corpus/jpeg/
-```
-
-## Reproducing Crashes
-
-When a crash is found, reproduce it:
+## Reproducing crashes
 
 ```bash
-cargo +nightly fuzz run fuzz_jpeg artifacts/fuzz_jpeg/crash-xxxxx
+cargo +nightly fuzz run fuzz_jpeg fuzz/artifacts/fuzz_jpeg/crash-xxxxx
 ```
-
-## Coverage-Guided Fuzzing Tips
-
-1. Start with valid sample files in corpus
-2. Run for extended periods (hours/days) for best coverage
-3. Use `-jobs=N` for parallel fuzzing
-4. Check `fuzz/artifacts/` for crash inputs
