@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// GPS::Main tags
 pub static GPS_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "GPSVersionID", values: None },

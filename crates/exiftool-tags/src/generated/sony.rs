@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Minolta::CameraInfoA100 tags
 pub static MINOLTA_CAMERAINFOA100: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "AFSensorActive", values: Some(MINOLTA_CAMERAINFOA100_AFSENSORACTIVE_VALUES) },
@@ -39,6 +49,27 @@ pub static MINOLTA_CAMERAINFOA100: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "AFStatusBottom-right", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_RIGHT_VALUES) },
     8u16 => TagDef { name: "AFStatusBottom", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_VALUES) },
 };
+
+/// Minolta::CameraInfoA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERAINFOA100_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "AFSensorActive", values: Some(MINOLTA_CAMERAINFOA100_AFSENSORACTIVE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatusMiddleHorizontal", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSMIDDLEHORIZONTAL_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatusTop", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSTOP_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatusTop-left", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSTOP_LEFT_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatusBottom-left", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_LEFT_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "FocusLocked", values: Some(MINOLTA_CAMERAINFOA100_FOCUSLOCKED_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "AFPoint", values: Some(MINOLTA_CAMERAINFOA100_AFPOINT_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "AFMode", values: Some(MINOLTA_CAMERAINFOA100_AFMODE_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusTop-right", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSTOP_RIGHT_VALUES) },
+    BinDef { index: 45, width: 2, signed: true, name: "AFStatusLeft", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 47, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 49, width: 2, signed: true, name: "AFStatusRight", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSRIGHT_VALUES) },
+    BinDef { index: 51, width: 1, signed: false, name: "AFAreaMode", values: Some(MINOLTA_CAMERAINFOA100_AFAREAMODE_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatusBottom-right", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_RIGHT_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatusBottom", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_VALUES) },
+];
 
 pub static MINOLTA_CAMERAINFOA100_AFSENSORACTIVE_VALUES: &[(i64, &str)] = &[
     (0, "Top-right"),
@@ -191,6 +222,54 @@ pub static MINOLTA_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ISO", values: None },
     9u16 => TagDef { name: "ExposureTime", values: None },
 };
+
+/// Minolta::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES) },
+    BinDef { index: 10, width: 4, signed: false, name: "FNumber", values: None },
+    BinDef { index: 11, width: 4, signed: false, name: "MacroMode", values: Some(MINOLTA_CAMERASETTINGS_MACROMODE_VALUES) },
+    BinDef { index: 12, width: 4, signed: false, name: "DigitalZoom", values: Some(MINOLTA_CAMERASETTINGS_DIGITALZOOM_VALUES) },
+    BinDef { index: 13, width: 4, signed: false, name: "ExposureCompensation", values: None },
+    BinDef { index: 14, width: 4, signed: false, name: "BracketStep", values: Some(MINOLTA_CAMERASETTINGS_BRACKETSTEP_VALUES) },
+    BinDef { index: 18, width: 4, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 19, width: 4, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 2, width: 4, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGS_FLASHMODE_VALUES) },
+    BinDef { index: 20, width: 4, signed: false, name: "FlashFired", values: Some(MINOLTA_CAMERASETTINGS_FLASHFIRED_VALUES) },
+    BinDef { index: 21, width: 4, signed: false, name: "MinoltaDate", values: None },
+    BinDef { index: 22, width: 4, signed: false, name: "MinoltaTime", values: None },
+    BinDef { index: 23, width: 4, signed: false, name: "MaxAperture", values: None },
+    BinDef { index: 26, width: 4, signed: false, name: "FileNumberMemory", values: Some(MINOLTA_CAMERASETTINGS_FILENUMBERMEMORY_VALUES) },
+    BinDef { index: 28, width: 4, signed: false, name: "ColorBalanceRed", values: None },
+    BinDef { index: 29, width: 4, signed: false, name: "ColorBalanceGreen", values: None },
+    BinDef { index: 3, width: 4, signed: false, name: "WhiteBalance", values: None },
+    BinDef { index: 30, width: 4, signed: false, name: "ColorBalanceBlue", values: None },
+    BinDef { index: 31, width: 4, signed: false, name: "Saturation", values: Some(MINOLTA_CAMERASETTINGS_SATURATION_VALUES) },
+    BinDef { index: 32, width: 4, signed: false, name: "Contrast", values: Some(MINOLTA_CAMERASETTINGS_CONTRAST_VALUES) },
+    BinDef { index: 33, width: 4, signed: false, name: "Sharpness", values: Some(MINOLTA_CAMERASETTINGS_SHARPNESS_VALUES) },
+    BinDef { index: 34, width: 4, signed: false, name: "SubjectProgram", values: Some(MINOLTA_CAMERASETTINGS_SUBJECTPROGRAM_VALUES) },
+    BinDef { index: 35, width: 4, signed: false, name: "FlashExposureComp", values: None },
+    BinDef { index: 36, width: 4, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGS_ISOSETTING_VALUES) },
+    BinDef { index: 37, width: 4, signed: false, name: "MinoltaModelID", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAMODELID_VALUES) },
+    BinDef { index: 38, width: 4, signed: false, name: "IntervalMode", values: Some(MINOLTA_CAMERASETTINGS_INTERVALMODE_VALUES) },
+    BinDef { index: 39, width: 4, signed: false, name: "FolderName", values: Some(MINOLTA_CAMERASETTINGS_FOLDERNAME_VALUES) },
+    BinDef { index: 4, width: 4, signed: false, name: "MinoltaImageSize", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAIMAGESIZE_VALUES) },
+    BinDef { index: 40, width: 4, signed: false, name: "ColorMode", values: Some(MINOLTA_CAMERASETTINGS_COLORMODE_VALUES) },
+    BinDef { index: 41, width: 4, signed: false, name: "ColorFilter", values: None },
+    BinDef { index: 43, width: 4, signed: false, name: "InternalFlash", values: Some(MINOLTA_CAMERASETTINGS_INTERNALFLASH_VALUES) },
+    BinDef { index: 44, width: 4, signed: false, name: "Brightness", values: None },
+    BinDef { index: 47, width: 4, signed: false, name: "WideFocusZone", values: Some(MINOLTA_CAMERASETTINGS_WIDEFOCUSZONE_VALUES) },
+    BinDef { index: 48, width: 4, signed: false, name: "FocusMode", values: Some(MINOLTA_CAMERASETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 49, width: 4, signed: false, name: "FocusArea", values: Some(MINOLTA_CAMERASETTINGS_FOCUSAREA_VALUES) },
+    BinDef { index: 5, width: 4, signed: false, name: "MinoltaQuality", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAQUALITY_VALUES) },
+    BinDef { index: 50, width: 4, signed: false, name: "DECPosition", values: Some(MINOLTA_CAMERASETTINGS_DECPOSITION_VALUES) },
+    BinDef { index: 51, width: 4, signed: false, name: "ColorProfile", values: Some(MINOLTA_CAMERASETTINGS_COLORPROFILE_VALUES) },
+    BinDef { index: 52, width: 4, signed: false, name: "DataImprint", values: Some(MINOLTA_CAMERASETTINGS_DATAIMPRINT_VALUES) },
+    BinDef { index: 6, width: 4, signed: false, name: "DriveMode", values: Some(MINOLTA_CAMERASETTINGS_DRIVEMODE_VALUES) },
+    BinDef { index: 63, width: 4, signed: false, name: "FlashMetering", values: Some(MINOLTA_CAMERASETTINGS_FLASHMETERING_VALUES) },
+    BinDef { index: 7, width: 4, signed: false, name: "MeteringMode", values: Some(MINOLTA_CAMERASETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "ISO", values: None },
+    BinDef { index: 9, width: 4, signed: false, name: "ExposureTime", values: None },
+];
 
 pub static MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
@@ -407,6 +486,34 @@ pub static MINOLTA_CAMERASETTINGS5D: phf::Map<u16, TagDef> = phf::phf_map! {
     83u16 => TagDef { name: "ExposureCompensation", values: None },
 };
 
+/// Minolta::CameraSettings5D ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGS5D_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS5D_EXPOSUREMODE_VALUES) },
+    BinDef { index: 101, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGS5D_ROTATION_VALUES) },
+    BinDef { index: 110, width: 2, signed: true, name: "ColorTemperature", values: None },
+    BinDef { index: 113, width: 2, signed: false, name: "PictureFinish", values: Some(MINOLTA_CAMERASETTINGS5D_PICTUREFINISH_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "MinoltaImageSize", values: Some(MINOLTA_CAMERASETTINGS5D_MINOLTAIMAGESIZE_VALUES) },
+    BinDef { index: 13, width: 2, signed: false, name: "MinoltaQuality", values: Some(MINOLTA_CAMERASETTINGS5D_MINOLTAQUALITY_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "WhiteBalance", values: Some(MINOLTA_CAMERASETTINGS5D_WHITEBALANCE_VALUES) },
+    BinDef { index: 174, width: 2, signed: false, name: "ImageNumber", values: None },
+    BinDef { index: 176, width: 2, signed: false, name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGS5D_NOISEREDUCTION_VALUES) },
+    BinDef { index: 189, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_CAMERASETTINGS5D_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 31, width: 2, signed: false, name: "Flash", values: Some(MINOLTA_CAMERASETTINGS5D_FLASH_VALUES) },
+    BinDef { index: 32, width: 2, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGS5D_FLASHMODE_VALUES) },
+    BinDef { index: 37, width: 2, signed: false, name: "MeteringMode", values: Some(MINOLTA_CAMERASETTINGS5D_METERINGMODE_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGS5D_ISOSETTING_VALUES) },
+    BinDef { index: 47, width: 2, signed: false, name: "ColorSpace", values: Some(MINOLTA_CAMERASETTINGS5D_COLORSPACE_VALUES) },
+    BinDef { index: 48, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 49, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 50, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 53, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 54, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 73, width: 2, signed: true, name: "ColorTemperature", values: None },
+    BinDef { index: 74, width: 2, signed: false, name: "HueAdjustment", values: None },
+    BinDef { index: 80, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGS5D_ROTATION_VALUES) },
+    BinDef { index: 83, width: 2, signed: false, name: "ExposureCompensation", values: None },
+];
+
 pub static MINOLTA_CAMERASETTINGS5D_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
     (1, "Aperture Priority"),
@@ -535,6 +642,34 @@ pub static MINOLTA_CAMERASETTINGS7D: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGS7D_NOISEREDUCTION_VALUES) },
     98u16 => TagDef { name: "ImageNumber2", values: None },
 };
+
+/// Minolta::CameraSettings7D ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGS7D_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS7D_EXPOSUREMODE_VALUES) },
+    BinDef { index: 113, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_CAMERASETTINGS7D_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 117, width: 2, signed: false, name: "ZoneMatchingOn", values: Some(MINOLTA_CAMERASETTINGS7D_ZONEMATCHINGON_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "FocusMode", values: Some(MINOLTA_CAMERASETTINGS7D_FOCUSMODE_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "AFPoints", values: Some(MINOLTA_CAMERASETTINGS7D_AFPOINTS_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "MinoltaImageSize", values: Some(MINOLTA_CAMERASETTINGS7D_MINOLTAIMAGESIZE_VALUES) },
+    BinDef { index: 21, width: 2, signed: false, name: "Flash", values: Some(MINOLTA_CAMERASETTINGS7D_FLASH_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGS7D_FLASHMODE_VALUES) },
+    BinDef { index: 28, width: 2, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGS7D_ISOSETTING_VALUES) },
+    BinDef { index: 3, width: 2, signed: false, name: "MinoltaQuality", values: Some(MINOLTA_CAMERASETTINGS7D_MINOLTAQUALITY_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 37, width: 2, signed: false, name: "ColorSpace", values: Some(MINOLTA_CAMERASETTINGS7D_COLORSPACE_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 39, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "WhiteBalance", values: Some(MINOLTA_CAMERASETTINGS7D_WHITEBALANCE_VALUES) },
+    BinDef { index: 40, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 63, width: 2, signed: true, name: "ColorTemperature", values: None },
+    BinDef { index: 64, width: 2, signed: false, name: "HueAdjustment", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGS7D_ROTATION_VALUES) },
+    BinDef { index: 71, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 94, width: 2, signed: false, name: "ImageNumber", values: None },
+    BinDef { index: 96, width: 2, signed: false, name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGS7D_NOISEREDUCTION_VALUES) },
+    BinDef { index: 98, width: 2, signed: false, name: "ImageNumber2", values: None },
+];
 
 pub static MINOLTA_CAMERASETTINGS7D_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
@@ -707,6 +842,84 @@ pub static MINOLTA_CAMERASETTINGSA100: phf::Map<u16, TagDef> = phf::phf_map! {
     95u16 => TagDef { name: "ColorCompensationFilter", values: None },
     96u16 => TagDef { name: "BatteryState", values: Some(MINOLTA_CAMERASETTINGSA100_BATTERYSTATE_VALUES) },
 };
+
+/// Minolta::CameraSettingsA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGSA100_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSUREMODE_VALUES) },
+    BinDef { index: 1, width: 2, signed: false, name: "ExposureCompensationSetting", values: None },
+    BinDef { index: 10, width: 2, signed: false, name: "DriveMode2", values: Some(MINOLTA_CAMERASETTINGSA100_DRIVEMODE2_VALUES) },
+    BinDef { index: 11, width: 2, signed: false, name: "WhiteBalance", values: Some(MINOLTA_CAMERASETTINGSA100_WHITEBALANCE_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "FocusMode", values: Some(MINOLTA_CAMERASETTINGSA100_FOCUSMODE_VALUES) },
+    BinDef { index: 13, width: 2, signed: false, name: "AFPointSelected", values: Some(MINOLTA_CAMERASETTINGSA100_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "AFAreaMode", values: Some(MINOLTA_CAMERASETTINGSA100_AFAREAMODE_VALUES) },
+    BinDef { index: 15, width: 2, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHMODE_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "MeteringMode", values: Some(MINOLTA_CAMERASETTINGSA100_METERINGMODE_VALUES) },
+    BinDef { index: 19, width: 2, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGSA100_ISOSETTING_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "ZoneMatchingMode", values: Some(MINOLTA_CAMERASETTINGSA100_ZONEMATCHINGMODE_VALUES) },
+    BinDef { index: 21, width: 2, signed: false, name: "DynamicRangeOptimizer", values: Some(MINOLTA_CAMERASETTINGSA100_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "ColorMode", values: Some(MINOLTA_CAMERASETTINGSA100_COLORMODE_VALUES) },
+    BinDef { index: 23, width: 2, signed: false, name: "ColorSpace", values: Some(MINOLTA_CAMERASETTINGSA100_COLORSPACE_VALUES) },
+    BinDef { index: 24, width: 2, signed: false, name: "Sharpness", values: Some(MINOLTA_CAMERASETTINGSA100_SHARPNESS_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "Contrast", values: Some(MINOLTA_CAMERASETTINGSA100_CONTRAST_VALUES) },
+    BinDef { index: 26, width: 2, signed: false, name: "Saturation", values: Some(MINOLTA_CAMERASETTINGSA100_SATURATION_VALUES) },
+    BinDef { index: 28, width: 2, signed: false, name: "FlashMetering", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHMETERING_VALUES) },
+    BinDef { index: 29, width: 2, signed: false, name: "PrioritySetupShutterRelease", values: Some(MINOLTA_CAMERASETTINGSA100_PRIORITYSETUPSHUTTERRELEASE_VALUES) },
+    BinDef { index: 30, width: 2, signed: false, name: "DriveMode", values: Some(MINOLTA_CAMERASETTINGSA100_DRIVEMODE_VALUES) },
+    BinDef { index: 31, width: 2, signed: false, name: "SelfTimerTime", values: Some(MINOLTA_CAMERASETTINGSA100_SELFTIMERTIME_VALUES) },
+    BinDef { index: 32, width: 2, signed: false, name: "ContinuousBracketing", values: Some(MINOLTA_CAMERASETTINGSA100_CONTINUOUSBRACKETING_VALUES) },
+    BinDef { index: 33, width: 2, signed: false, name: "SingleFrameBracketing", values: Some(MINOLTA_CAMERASETTINGSA100_SINGLEFRAMEBRACKETING_VALUES) },
+    BinDef { index: 34, width: 2, signed: false, name: "WhiteBalanceBracketing", values: Some(MINOLTA_CAMERASETTINGSA100_WHITEBALANCEBRACKETING_VALUES) },
+    BinDef { index: 35, width: 2, signed: false, name: "WhiteBalanceSetting", values: Some(MINOLTA_CAMERASETTINGSA100_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 36, width: 2, signed: false, name: "PresetWhiteBalance", values: Some(MINOLTA_CAMERASETTINGSA100_PRESETWHITEBALANCE_VALUES) },
+    BinDef { index: 37, width: 2, signed: false, name: "ColorTemperatureSetting", values: Some(MINOLTA_CAMERASETTINGSA100_COLORTEMPERATURESETTING_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "CustomWBSetting", values: Some(MINOLTA_CAMERASETTINGSA100_CUSTOMWBSETTING_VALUES) },
+    BinDef { index: 39, width: 2, signed: false, name: "DynamicRangeOptimizerSetting", values: Some(MINOLTA_CAMERASETTINGSA100_DYNAMICRANGEOPTIMIZERSETTING_VALUES) },
+    BinDef { index: 5, width: 2, signed: false, name: "HighSpeedSync", values: Some(MINOLTA_CAMERASETTINGSA100_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 55, width: 2, signed: false, name: "CustomWBError", values: Some(MINOLTA_CAMERASETTINGSA100_CUSTOMWBERROR_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "WhiteBalanceFineTune", values: None },
+    BinDef { index: 57, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 58, width: 2, signed: true, name: "ColorCompensationFilter", values: None },
+    BinDef { index: 59, width: 2, signed: false, name: "SonyImageSize", values: Some(MINOLTA_CAMERASETTINGSA100_SONYIMAGESIZE_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "SonyQuality", values: Some(MINOLTA_CAMERASETTINGSA100_SONYQUALITY_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "InstantPlaybackTime", values: None },
+    BinDef { index: 62, width: 2, signed: false, name: "InstantPlaybackSetup", values: Some(MINOLTA_CAMERASETTINGSA100_INSTANTPLAYBACKSETUP_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGSA100_NOISEREDUCTION_VALUES) },
+    BinDef { index: 64, width: 2, signed: false, name: "EyeStartAF", values: Some(MINOLTA_CAMERASETTINGSA100_EYESTARTAF_VALUES) },
+    BinDef { index: 65, width: 2, signed: false, name: "RedEyeReduction", values: Some(MINOLTA_CAMERASETTINGSA100_REDEYEREDUCTION_VALUES) },
+    BinDef { index: 66, width: 2, signed: false, name: "FlashDefault", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHDEFAULT_VALUES) },
+    BinDef { index: 67, width: 2, signed: false, name: "AutoBracketOrder", values: Some(MINOLTA_CAMERASETTINGSA100_AUTOBRACKETORDER_VALUES) },
+    BinDef { index: 68, width: 2, signed: false, name: "FocusHoldButton", values: Some(MINOLTA_CAMERASETTINGSA100_FOCUSHOLDBUTTON_VALUES) },
+    BinDef { index: 69, width: 2, signed: false, name: "AELButton", values: Some(MINOLTA_CAMERASETTINGSA100_AELBUTTON_VALUES) },
+    BinDef { index: 7, width: 2, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "ControlDialSet", values: Some(MINOLTA_CAMERASETTINGSA100_CONTROLDIALSET_VALUES) },
+    BinDef { index: 71, width: 2, signed: false, name: "ExposureCompensationMode", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSURECOMPENSATIONMODE_VALUES) },
+    BinDef { index: 72, width: 2, signed: false, name: "AFAssist", values: Some(MINOLTA_CAMERASETTINGSA100_AFASSIST_VALUES) },
+    BinDef { index: 73, width: 2, signed: false, name: "CardShutterLock", values: Some(MINOLTA_CAMERASETTINGSA100_CARDSHUTTERLOCK_VALUES) },
+    BinDef { index: 74, width: 2, signed: false, name: "LensShutterLock", values: Some(MINOLTA_CAMERASETTINGSA100_LENSSHUTTERLOCK_VALUES) },
+    BinDef { index: 75, width: 2, signed: false, name: "AFAreaIllumination", values: Some(MINOLTA_CAMERASETTINGSA100_AFAREAILLUMINATION_VALUES) },
+    BinDef { index: 76, width: 2, signed: false, name: "MonitorDisplayOff", values: Some(MINOLTA_CAMERASETTINGSA100_MONITORDISPLAYOFF_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "RecordDisplay", values: Some(MINOLTA_CAMERASETTINGSA100_RECORDDISPLAY_VALUES) },
+    BinDef { index: 78, width: 2, signed: false, name: "PlayDisplay", values: Some(MINOLTA_CAMERASETTINGSA100_PLAYDISPLAY_VALUES) },
+    BinDef { index: 8, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 80, width: 2, signed: false, name: "ExposureIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSUREINDICATOR_VALUES) },
+    BinDef { index: 81, width: 2, signed: false, name: "AELExposureIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_AELEXPOSUREINDICATOR_VALUES) },
+    BinDef { index: 82, width: 2, signed: false, name: "ExposureBracketingIndicatorLast", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSUREBRACKETINGINDICATORLAST_VALUES) },
+    BinDef { index: 83, width: 2, signed: false, name: "MeteringOffScaleIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_METERINGOFFSCALEINDICATOR_VALUES) },
+    BinDef { index: 84, width: 2, signed: false, name: "FlashExposureIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHEXPOSUREINDICATOR_VALUES) },
+    BinDef { index: 85, width: 2, signed: false, name: "FlashExposureIndicatorNext", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHEXPOSUREINDICATORNEXT_VALUES) },
+    BinDef { index: 86, width: 2, signed: false, name: "FlashExposureIndicatorLast", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHEXPOSUREINDICATORLAST_VALUES) },
+    BinDef { index: 87, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_CAMERASETTINGSA100_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "FocusModeSwitch", values: Some(MINOLTA_CAMERASETTINGSA100_FOCUSMODESWITCH_VALUES) },
+    BinDef { index: 89, width: 2, signed: false, name: "FlashType", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHTYPE_VALUES) },
+    BinDef { index: 9, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 90, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGSA100_ROTATION_VALUES) },
+    BinDef { index: 91, width: 2, signed: false, name: "AELock", values: Some(MINOLTA_CAMERASETTINGSA100_AELOCK_VALUES) },
+    BinDef { index: 94, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 95, width: 2, signed: true, name: "ColorCompensationFilter", values: None },
+    BinDef { index: 96, width: 2, signed: false, name: "BatteryState", values: Some(MINOLTA_CAMERASETTINGSA100_BATTERYSTATE_VALUES) },
+];
 
 pub static MINOLTA_CAMERASETTINGSA100_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
@@ -1221,6 +1434,11 @@ pub static MINOLTA_ISINFOA100: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ImageStabilization", values: Some(MINOLTA_ISINFOA100_IMAGESTABILIZATION_VALUES) },
 };
 
+/// Minolta::ISInfoA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_ISINFOA100_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_ISINFOA100_IMAGESTABILIZATION_VALUES) },
+];
+
 pub static MINOLTA_ISINFOA100_IMAGESTABILIZATION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (10116, "On"),
@@ -1590,6 +1808,38 @@ pub static MINOLTA_WBINFOA100: phf::Map<u16, TagDef> = phf::phf_map! {
     776u16 => TagDef { name: "WB_RBLevelsCoolWhiteF", values: None },
 };
 
+/// Minolta::WBInfoA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_WBINFOA100_BIN: &[BinDef] = &[
+    BinDef { index: 14, width: 1, signed: false, name: "DriveMode", values: Some(MINOLTA_WBINFOA100_DRIVEMODE_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "Rotation", values: Some(MINOLTA_WBINFOA100_ROTATION_VALUES) },
+    BinDef { index: 1680, width: 1, signed: false, name: "MeasuredLV", values: None },
+    BinDef { index: 1681, width: 1, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 18872, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 18874, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 18875, width: 1, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 18880, width: 1, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 18881, width: 1, signed: true, name: "FlashExposureComp", values: None },
+    BinDef { index: 18882, width: 1, signed: false, name: "ImageStabilization", values: Some(MINOLTA_WBINFOA100_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 18883, width: 1, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 18885, width: 1, signed: false, name: "MaxAperture", values: None },
+    BinDef { index: 18887, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "ImageStabilizationSetting", values: Some(MINOLTA_WBINFOA100_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "DynamicRangeOptimizerMode", values: Some(MINOLTA_WBINFOA100_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 392, width: 2, signed: false, name: "WB_RedLevel6500K", values: None },
+    BinDef { index: 394, width: 2, signed: false, name: "WB_BlueLevel6500K", values: None },
+    BinDef { index: 396, width: 2, signed: false, name: "WB_RedLevelCustom", values: None },
+    BinDef { index: 398, width: 2, signed: false, name: "WB_BlueLevelCustom", values: None },
+    BinDef { index: 408, width: 2, signed: false, name: "WB_RedLevel3500K", values: None },
+    BinDef { index: 410, width: 2, signed: false, name: "WB_BlueLevel3500K", values: None },
+    BinDef { index: 42, width: 1, signed: false, name: "ExposureCompensationMode", values: Some(MINOLTA_WBINFOA100_EXPOSURECOMPENSATIONMODE_VALUES) },
+    BinDef { index: 44, width: 1, signed: false, name: "WhiteBalanceBracketing", values: Some(MINOLTA_WBINFOA100_WHITEBALANCEBRACKETING_VALUES) },
+    BinDef { index: 49, width: 2, signed: false, name: "FlashFunction", values: Some(MINOLTA_WBINFOA100_FLASHFUNCTION_VALUES) },
+    BinDef { index: 52, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_WBINFOA100_EXPOSUREMODE_VALUES) },
+    BinDef { index: 54, width: 2, signed: false, name: "ColorMode", values: Some(MINOLTA_WBINFOA100_COLORMODE_VALUES) },
+    BinDef { index: 56, width: 2, signed: false, name: "AverageLV", values: None },
+    BinDef { index: 60, width: 1, signed: false, name: "FrameNumber", values: None },
+];
+
 pub static MINOLTA_WBINFOA100_DRIVEMODE_VALUES: &[(i64, &str)] = &[
     (0, "Self-timer 10 sec"),
     (1, "Continuous"),
@@ -1868,6 +2118,28 @@ pub static SONY_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "AFMicroAdj", values: None },
     9u16 => TagDef { name: "AFPointAtShutterRelease", values: Some(SONY_AFINFO_AFPOINTATSHUTTERRELEASE_VALUES) },
 };
+
+/// Sony::AFInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_AFINFO_AFAREAMODE_VALUES) },
+    BinDef { index: 11, width: 1, signed: false, name: "FocusMode", values: Some(SONY_AFINFO_FOCUSMODE_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "AFType", values: Some(SONY_AFINFO_AFTYPE_VALUES) },
+    BinDef { index: 366, width: 4, signed: false, name: "AFPointsUsed", values: Some(SONY_AFINFO_AFPOINTSUSED_VALUES) },
+    BinDef { index: 381, width: 1, signed: true, name: "AFMicroAdj", values: None },
+    BinDef { index: 382, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_AFINFO_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_AFINFO_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "FocusMode", values: Some(SONY_AFINFO_FOCUSMODE_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "AFPoint", values: Some(SONY_AFINFO_AFPOINT_VALUES) },
+    BinDef { index: 56, width: 1, signed: false, name: "AFPointInFocus", values: Some(SONY_AFINFO_AFPOINTINFOCUS_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "AFPointAtShutterRelease", values: Some(SONY_AFINFO_AFPOINTATSHUTTERRELEASE_VALUES) },
+    BinDef { index: 58, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_AFINFO_AFAREAMODE_VALUES) },
+    BinDef { index: 59, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_AFINFO_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 67, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_AFINFO_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "AFPoint", values: Some(SONY_AFINFO_AFPOINT_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "AFPointInFocus", values: Some(SONY_AFINFO_AFPOINTINFOCUS_VALUES) },
+    BinDef { index: 80, width: 1, signed: true, name: "AFMicroAdj", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "AFPointAtShutterRelease", values: Some(SONY_AFINFO_AFPOINTATSHUTTERRELEASE_VALUES) },
+];
 
 pub static SONY_AFINFO_AFAREAMODE_VALUES: &[(i64, &str)] = &[
     (0, "Wide"),
@@ -2255,6 +2527,28 @@ pub static SONY_AFSTATUS15: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "AFStatusTopHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSTOPHORIZONTAL_VALUES) },
 };
 
+/// Sony::AFStatus15 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFSTATUS15_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "AFStatusUpper-left", values: Some(SONY_AFSTATUS15_AFSTATUSUPPER_LEFT_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatusNearRight", values: Some(SONY_AFSTATUS15_AFSTATUSNEARRIGHT_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatusNearLeft", values: Some(SONY_AFSTATUS15_AFSTATUSNEARLEFT_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatusBottomHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSBOTTOMHORIZONTAL_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatusTopVertical", values: Some(SONY_AFSTATUS15_AFSTATUSTOPVERTICAL_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_AFSTATUS15_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 20, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_AFSTATUS15_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 22, width: 2, signed: true, name: "AFStatusBottomVertical", values: Some(SONY_AFSTATUS15_AFSTATUSBOTTOMVERTICAL_VALUES) },
+    BinDef { index: 24, width: 2, signed: true, name: "AFStatusFarRight", values: Some(SONY_AFSTATUS15_AFSTATUSFARRIGHT_VALUES) },
+    BinDef { index: 26, width: 2, signed: true, name: "AFStatusUpper-right", values: Some(SONY_AFSTATUS15_AFSTATUSUPPER_RIGHT_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_AFSTATUS15_AFSTATUSRIGHT_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatusLower-right", values: Some(SONY_AFSTATUS15_AFSTATUSLOWER_RIGHT_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatusUpper-middle", values: Some(SONY_AFSTATUS15_AFSTATUSUPPER_MIDDLE_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatusLower-middle", values: Some(SONY_AFSTATUS15_AFSTATUSLOWER_MIDDLE_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusLower-left", values: Some(SONY_AFSTATUS15_AFSTATUSLOWER_LEFT_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatusFarLeft", values: Some(SONY_AFSTATUS15_AFSTATUSFARLEFT_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatusTopHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSTOPHORIZONTAL_VALUES) },
+];
+
 pub static SONY_AFSTATUS15_AFSTATUSUPPER_LEFT_VALUES: &[(i64, &str)] = &[
     (-32768, "Out of Focus"),
     (0, "In Focus"),
@@ -2378,6 +2672,40 @@ pub static SONY_AFSTATUS19: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "AFStatusLeftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLEFTHORIZONTAL_VALUES) },
     8u16 => TagDef { name: "AFStatusLowerFarLeft", values: Some(SONY_AFSTATUS19_AFSTATUSLOWERFARLEFT_VALUES) },
 };
+
+/// Sony::AFStatus19 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFSTATUS19_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "AFStatusUpperFarLeft", values: Some(SONY_AFSTATUS19_AFSTATUSUPPERFARLEFT_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatusLower-leftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_LEFTHORIZONTAL_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatusUpper-leftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_LEFTVERTICAL_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatusLeftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSLEFTVERTICAL_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatusLower-leftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_LEFTVERTICAL_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatusFarLeftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSFARLEFTVERTICAL_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatusUpper-leftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_LEFTHORIZONTAL_VALUES) },
+    BinDef { index: 20, width: 2, signed: true, name: "AFStatusTopHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSTOPHORIZONTAL_VALUES) },
+    BinDef { index: 22, width: 2, signed: true, name: "AFStatusNearRight", values: Some(SONY_AFSTATUS19_AFSTATUSNEARRIGHT_VALUES) },
+    BinDef { index: 24, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 26, width: 2, signed: true, name: "AFStatusNearLeft", values: Some(SONY_AFSTATUS19_AFSTATUSNEARLEFT_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "AFStatusBottomHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSBOTTOMHORIZONTAL_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatusTopVertical", values: Some(SONY_AFSTATUS19_AFSTATUSTOPVERTICAL_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatusUpper-middle", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_MIDDLE_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_AFSTATUS19_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 36, width: 2, signed: true, name: "AFStatusLower-middle", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_MIDDLE_VALUES) },
+    BinDef { index: 38, width: 2, signed: true, name: "AFStatusBottomVertical", values: Some(SONY_AFSTATUS19_AFSTATUSBOTTOMVERTICAL_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusFarLeftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSFARLEFTHORIZONTAL_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "AFStatusUpperFarRight", values: Some(SONY_AFSTATUS19_AFSTATUSUPPERFARRIGHT_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "AFStatusUpper-rightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_RIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 44, width: 2, signed: true, name: "AFStatusFarRightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSFARRIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "AFStatusRightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSRIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 48, width: 2, signed: true, name: "AFStatusLowerFarRight", values: Some(SONY_AFSTATUS19_AFSTATUSLOWERFARRIGHT_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "AFStatusLower-rightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_RIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "AFStatusFarRightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSFARRIGHTVERTICAL_VALUES) },
+    BinDef { index: 54, width: 2, signed: true, name: "AFStatusUpper-rightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_RIGHTVERTICAL_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "AFStatusRightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSRIGHTVERTICAL_VALUES) },
+    BinDef { index: 58, width: 2, signed: true, name: "AFStatusLower-rightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_RIGHTVERTICAL_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatusLeftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLEFTHORIZONTAL_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatusLowerFarLeft", values: Some(SONY_AFSTATUS19_AFSTATUSLOWERFARLEFT_VALUES) },
+];
 
 pub static SONY_AFSTATUS19_AFSTATUSUPPERFARLEFT_VALUES: &[(i64, &str)] = &[
     (-32768, "Out of Focus"),
@@ -2627,6 +2955,105 @@ pub static SONY_AFSTATUS79: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "AFStatus_48_H7", values: Some(SONY_AFSTATUS79_AFSTATUS_48_H7_VALUES) },
     98u16 => TagDef { name: "AFStatus_49_I7", values: Some(SONY_AFSTATUS79_AFSTATUS_49_I7_VALUES) },
 };
+
+/// Sony::AFStatus79 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFSTATUS79_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "AFStatus_00_B4", values: Some(SONY_AFSTATUS79_AFSTATUS_00_B4_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatus_05_G4", values: Some(SONY_AFSTATUS79_AFSTATUS_05_G4_VALUES) },
+    BinDef { index: 100, width: 2, signed: true, name: "AFStatus_50_A6", values: Some(SONY_AFSTATUS79_AFSTATUS_50_A6_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "AFStatus_51_B6", values: Some(SONY_AFSTATUS79_AFSTATUS_51_B6_VALUES) },
+    BinDef { index: 104, width: 2, signed: true, name: "AFStatus_52_C6", values: Some(SONY_AFSTATUS79_AFSTATUS_52_C6_VALUES) },
+    BinDef { index: 106, width: 2, signed: true, name: "AFStatus_53_D6", values: Some(SONY_AFSTATUS79_AFSTATUS_53_D6_VALUES) },
+    BinDef { index: 108, width: 2, signed: true, name: "AFStatus_54_E6_Center", values: Some(SONY_AFSTATUS79_AFSTATUS_54_E6_CENTER_VALUES) },
+    BinDef { index: 110, width: 2, signed: true, name: "AFStatus_55_F6", values: Some(SONY_AFSTATUS79_AFSTATUS_55_F6_VALUES) },
+    BinDef { index: 112, width: 2, signed: true, name: "AFStatus_56_G6", values: Some(SONY_AFSTATUS79_AFSTATUS_56_G6_VALUES) },
+    BinDef { index: 114, width: 2, signed: true, name: "AFStatus_57_H6", values: Some(SONY_AFSTATUS79_AFSTATUS_57_H6_VALUES) },
+    BinDef { index: 116, width: 2, signed: true, name: "AFStatus_58_I6", values: Some(SONY_AFSTATUS79_AFSTATUS_58_I6_VALUES) },
+    BinDef { index: 118, width: 2, signed: true, name: "AFStatus_59_A5", values: Some(SONY_AFSTATUS79_AFSTATUS_59_A5_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatus_06_H4", values: Some(SONY_AFSTATUS79_AFSTATUS_06_H4_VALUES) },
+    BinDef { index: 120, width: 2, signed: true, name: "AFStatus_60_B5", values: Some(SONY_AFSTATUS79_AFSTATUS_60_B5_VALUES) },
+    BinDef { index: 122, width: 2, signed: true, name: "AFStatus_61_C5", values: Some(SONY_AFSTATUS79_AFSTATUS_61_C5_VALUES) },
+    BinDef { index: 124, width: 2, signed: true, name: "AFStatus_62_D5", values: Some(SONY_AFSTATUS79_AFSTATUS_62_D5_VALUES) },
+    BinDef { index: 126, width: 2, signed: true, name: "AFStatus_63_E5", values: Some(SONY_AFSTATUS79_AFSTATUS_63_E5_VALUES) },
+    BinDef { index: 128, width: 2, signed: true, name: "AFStatus_64_F5", values: Some(SONY_AFSTATUS79_AFSTATUS_64_F5_VALUES) },
+    BinDef { index: 130, width: 2, signed: true, name: "AFStatus_65_G5", values: Some(SONY_AFSTATUS79_AFSTATUS_65_G5_VALUES) },
+    BinDef { index: 132, width: 2, signed: true, name: "AFStatus_66_H5", values: Some(SONY_AFSTATUS79_AFSTATUS_66_H5_VALUES) },
+    BinDef { index: 134, width: 2, signed: true, name: "AFStatus_67_I5", values: Some(SONY_AFSTATUS79_AFSTATUS_67_I5_VALUES) },
+    BinDef { index: 136, width: 2, signed: true, name: "AFStatus_68_C11", values: Some(SONY_AFSTATUS79_AFSTATUS_68_C11_VALUES) },
+    BinDef { index: 138, width: 2, signed: true, name: "AFStatus_69_D11", values: Some(SONY_AFSTATUS79_AFSTATUS_69_D11_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatus_07_B3", values: Some(SONY_AFSTATUS79_AFSTATUS_07_B3_VALUES) },
+    BinDef { index: 140, width: 2, signed: true, name: "AFStatus_70_E11", values: Some(SONY_AFSTATUS79_AFSTATUS_70_E11_VALUES) },
+    BinDef { index: 142, width: 2, signed: true, name: "AFStatus_71_F11", values: Some(SONY_AFSTATUS79_AFSTATUS_71_F11_VALUES) },
+    BinDef { index: 144, width: 2, signed: true, name: "AFStatus_72_G11", values: Some(SONY_AFSTATUS79_AFSTATUS_72_G11_VALUES) },
+    BinDef { index: 146, width: 2, signed: true, name: "AFStatus_73_B10", values: Some(SONY_AFSTATUS79_AFSTATUS_73_B10_VALUES) },
+    BinDef { index: 148, width: 2, signed: true, name: "AFStatus_74_C10", values: Some(SONY_AFSTATUS79_AFSTATUS_74_C10_VALUES) },
+    BinDef { index: 150, width: 2, signed: true, name: "AFStatus_75_D10", values: Some(SONY_AFSTATUS79_AFSTATUS_75_D10_VALUES) },
+    BinDef { index: 152, width: 2, signed: true, name: "AFStatus_76_E10", values: Some(SONY_AFSTATUS79_AFSTATUS_76_E10_VALUES) },
+    BinDef { index: 154, width: 2, signed: true, name: "AFStatus_77_F10", values: Some(SONY_AFSTATUS79_AFSTATUS_77_F10_VALUES) },
+    BinDef { index: 156, width: 2, signed: true, name: "AFStatus_78_G10", values: Some(SONY_AFSTATUS79_AFSTATUS_78_G10_VALUES) },
+    BinDef { index: 158, width: 2, signed: true, name: "AFStatus_79_H10", values: Some(SONY_AFSTATUS79_AFSTATUS_79_H10_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatus_08_C3", values: Some(SONY_AFSTATUS79_AFSTATUS_08_C3_VALUES) },
+    BinDef { index: 160, width: 2, signed: true, name: "AFStatus_80_B9", values: Some(SONY_AFSTATUS79_AFSTATUS_80_B9_VALUES) },
+    BinDef { index: 162, width: 2, signed: true, name: "AFStatus_81_C9", values: Some(SONY_AFSTATUS79_AFSTATUS_81_C9_VALUES) },
+    BinDef { index: 164, width: 2, signed: true, name: "AFStatus_82_D9", values: Some(SONY_AFSTATUS79_AFSTATUS_82_D9_VALUES) },
+    BinDef { index: 166, width: 2, signed: true, name: "AFStatus_83_E9", values: Some(SONY_AFSTATUS79_AFSTATUS_83_E9_VALUES) },
+    BinDef { index: 168, width: 2, signed: true, name: "AFStatus_84_F9", values: Some(SONY_AFSTATUS79_AFSTATUS_84_F9_VALUES) },
+    BinDef { index: 170, width: 2, signed: true, name: "AFStatus_85_G9", values: Some(SONY_AFSTATUS79_AFSTATUS_85_G9_VALUES) },
+    BinDef { index: 172, width: 2, signed: true, name: "AFStatus_86_H9", values: Some(SONY_AFSTATUS79_AFSTATUS_86_H9_VALUES) },
+    BinDef { index: 174, width: 2, signed: true, name: "AFStatus_87_B8", values: Some(SONY_AFSTATUS79_AFSTATUS_87_B8_VALUES) },
+    BinDef { index: 176, width: 2, signed: true, name: "AFStatus_88_C8", values: Some(SONY_AFSTATUS79_AFSTATUS_88_C8_VALUES) },
+    BinDef { index: 178, width: 2, signed: true, name: "AFStatus_89_D8", values: Some(SONY_AFSTATUS79_AFSTATUS_89_D8_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatus_09_D3", values: Some(SONY_AFSTATUS79_AFSTATUS_09_D3_VALUES) },
+    BinDef { index: 180, width: 2, signed: true, name: "AFStatus_90_E8", values: Some(SONY_AFSTATUS79_AFSTATUS_90_E8_VALUES) },
+    BinDef { index: 182, width: 2, signed: true, name: "AFStatus_91_F8", values: Some(SONY_AFSTATUS79_AFSTATUS_91_F8_VALUES) },
+    BinDef { index: 184, width: 2, signed: true, name: "AFStatus_92_G8", values: Some(SONY_AFSTATUS79_AFSTATUS_92_G8_VALUES) },
+    BinDef { index: 186, width: 2, signed: true, name: "AFStatus_93_H8", values: Some(SONY_AFSTATUS79_AFSTATUS_93_H8_VALUES) },
+    BinDef { index: 188, width: 2, signed: true, name: "AFStatus_94_E6_Center_F2-8", values: Some(SONY_AFSTATUS79_AFSTATUS_94_E6_CENTER_F2_8_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatus_01_C4", values: Some(SONY_AFSTATUS79_AFSTATUS_01_C4_VALUES) },
+    BinDef { index: 20, width: 2, signed: true, name: "AFStatus_10_E3", values: Some(SONY_AFSTATUS79_AFSTATUS_10_E3_VALUES) },
+    BinDef { index: 22, width: 2, signed: true, name: "AFStatus_11_F3", values: Some(SONY_AFSTATUS79_AFSTATUS_11_F3_VALUES) },
+    BinDef { index: 24, width: 2, signed: true, name: "AFStatus_12_G3", values: Some(SONY_AFSTATUS79_AFSTATUS_12_G3_VALUES) },
+    BinDef { index: 26, width: 2, signed: true, name: "AFStatus_13_H3", values: Some(SONY_AFSTATUS79_AFSTATUS_13_H3_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "AFStatus_14_B2", values: Some(SONY_AFSTATUS79_AFSTATUS_14_B2_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatus_15_C2", values: Some(SONY_AFSTATUS79_AFSTATUS_15_C2_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatus_16_D2", values: Some(SONY_AFSTATUS79_AFSTATUS_16_D2_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatus_17_E2", values: Some(SONY_AFSTATUS79_AFSTATUS_17_E2_VALUES) },
+    BinDef { index: 36, width: 2, signed: true, name: "AFStatus_18_F2", values: Some(SONY_AFSTATUS79_AFSTATUS_18_F2_VALUES) },
+    BinDef { index: 38, width: 2, signed: true, name: "AFStatus_19_G2", values: Some(SONY_AFSTATUS79_AFSTATUS_19_G2_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatus_02_D4", values: Some(SONY_AFSTATUS79_AFSTATUS_02_D4_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "AFStatus_20_H2", values: Some(SONY_AFSTATUS79_AFSTATUS_20_H2_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "AFStatus_21_C1", values: Some(SONY_AFSTATUS79_AFSTATUS_21_C1_VALUES) },
+    BinDef { index: 44, width: 2, signed: true, name: "AFStatus_22_D1", values: Some(SONY_AFSTATUS79_AFSTATUS_22_D1_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "AFStatus_23_E1", values: Some(SONY_AFSTATUS79_AFSTATUS_23_E1_VALUES) },
+    BinDef { index: 48, width: 2, signed: true, name: "AFStatus_24_F1", values: Some(SONY_AFSTATUS79_AFSTATUS_24_F1_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "AFStatus_25_G1", values: Some(SONY_AFSTATUS79_AFSTATUS_25_G1_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "AFStatus_26_A7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_26_A7_VERTICAL_VALUES) },
+    BinDef { index: 54, width: 2, signed: true, name: "AFStatus_27_A6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_27_A6_VERTICAL_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "AFStatus_28_A5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_28_A5_VERTICAL_VALUES) },
+    BinDef { index: 58, width: 2, signed: true, name: "AFStatus_29_C7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_29_C7_VERTICAL_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatus_03_E4", values: Some(SONY_AFSTATUS79_AFSTATUS_03_E4_VALUES) },
+    BinDef { index: 60, width: 2, signed: true, name: "AFStatus_30_C6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_30_C6_VERTICAL_VALUES) },
+    BinDef { index: 62, width: 2, signed: true, name: "AFStatus_31_C5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_31_C5_VERTICAL_VALUES) },
+    BinDef { index: 64, width: 2, signed: true, name: "AFStatus_32_E7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_32_E7_VERTICAL_VALUES) },
+    BinDef { index: 66, width: 2, signed: true, name: "AFStatus_33_E6_Center_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_33_E6_CENTER_VERTICAL_VALUES) },
+    BinDef { index: 68, width: 2, signed: true, name: "AFStatus_34_E5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_34_E5_VERTICAL_VALUES) },
+    BinDef { index: 70, width: 2, signed: true, name: "AFStatus_35_G7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_35_G7_VERTICAL_VALUES) },
+    BinDef { index: 72, width: 2, signed: true, name: "AFStatus_36_G6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_36_G6_VERTICAL_VALUES) },
+    BinDef { index: 74, width: 2, signed: true, name: "AFStatus_37_G5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_37_G5_VERTICAL_VALUES) },
+    BinDef { index: 76, width: 2, signed: true, name: "AFStatus_38_I7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_38_I7_VERTICAL_VALUES) },
+    BinDef { index: 78, width: 2, signed: true, name: "AFStatus_39_I6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_39_I6_VERTICAL_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatus_04_F4", values: Some(SONY_AFSTATUS79_AFSTATUS_04_F4_VALUES) },
+    BinDef { index: 80, width: 2, signed: true, name: "AFStatus_40_I5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_40_I5_VERTICAL_VALUES) },
+    BinDef { index: 82, width: 2, signed: true, name: "AFStatus_41_A7", values: Some(SONY_AFSTATUS79_AFSTATUS_41_A7_VALUES) },
+    BinDef { index: 84, width: 2, signed: true, name: "AFStatus_42_B7", values: Some(SONY_AFSTATUS79_AFSTATUS_42_B7_VALUES) },
+    BinDef { index: 86, width: 2, signed: true, name: "AFStatus_43_C7", values: Some(SONY_AFSTATUS79_AFSTATUS_43_C7_VALUES) },
+    BinDef { index: 88, width: 2, signed: true, name: "AFStatus_44_D7", values: Some(SONY_AFSTATUS79_AFSTATUS_44_D7_VALUES) },
+    BinDef { index: 90, width: 2, signed: true, name: "AFStatus_45_E7", values: Some(SONY_AFSTATUS79_AFSTATUS_45_E7_VALUES) },
+    BinDef { index: 92, width: 2, signed: true, name: "AFStatus_46_F7", values: Some(SONY_AFSTATUS79_AFSTATUS_46_F7_VALUES) },
+    BinDef { index: 94, width: 2, signed: true, name: "AFStatus_47_G7", values: Some(SONY_AFSTATUS79_AFSTATUS_47_G7_VALUES) },
+    BinDef { index: 96, width: 2, signed: true, name: "AFStatus_48_H7", values: Some(SONY_AFSTATUS79_AFSTATUS_48_H7_VALUES) },
+    BinDef { index: 98, width: 2, signed: true, name: "AFStatus_49_I7", values: Some(SONY_AFSTATUS79_AFSTATUS_49_I7_VALUES) },
+];
 
 pub static SONY_AFSTATUS79_AFSTATUS_00_B4_VALUES: &[(i64, &str)] = &[
     (-32768, "Out of Focus"),
@@ -3143,6 +3570,38 @@ pub static SONY_CAMERAINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 305, mask: 0x7f, name: "AFMicroAdjRegisteredLenses", values: None },
 ];
 
+/// Sony::CameraInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERAINFO_BIN: &[BinDef] = &[
+    BinDef { index: 20, width: 1, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERAINFO_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO_AFPOINT_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 304, width: 1, signed: false, name: "AFMicroAdjValue", values: None },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatusUpper-left", values: Some(SONY_CAMERAINFO_AFSTATUSUPPER_LEFT_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_CAMERAINFO_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 36, width: 2, signed: true, name: "AFStatusLower-left", values: Some(SONY_CAMERAINFO_AFSTATUSLOWER_LEFT_VALUES) },
+    BinDef { index: 38, width: 2, signed: true, name: "AFStatusFarLeft", values: Some(SONY_CAMERAINFO_AFSTATUSFARLEFT_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "AFStatusBottomAssist-left", values: Some(SONY_CAMERAINFO_AFSTATUSBOTTOMASSIST_LEFT_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "AFStatusBottom", values: Some(SONY_CAMERAINFO_AFSTATUSBOTTOM_VALUES) },
+    BinDef { index: 44, width: 2, signed: true, name: "AFStatusBottomAssist-right", values: Some(SONY_CAMERAINFO_AFSTATUSBOTTOMASSIST_RIGHT_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "AFStatusCenter-7", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_7_VALUES) },
+    BinDef { index: 48, width: 2, signed: true, name: "AFStatusCenter-horizontal", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_HORIZONTAL_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "AFStatusCenter-9", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_9_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "AFStatusCenter-10", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_10_VALUES) },
+    BinDef { index: 54, width: 2, signed: true, name: "AFStatusCenter-11", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_11_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "AFStatusCenter-12", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_12_VALUES) },
+    BinDef { index: 58, width: 2, signed: true, name: "AFStatusCenter-vertical", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_VERTICAL_VALUES) },
+    BinDef { index: 60, width: 2, signed: true, name: "AFStatusCenter-14", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_14_VALUES) },
+    BinDef { index: 62, width: 2, signed: true, name: "AFStatusTopAssist-left", values: Some(SONY_CAMERAINFO_AFSTATUSTOPASSIST_LEFT_VALUES) },
+    BinDef { index: 64, width: 2, signed: true, name: "AFStatusTop", values: Some(SONY_CAMERAINFO_AFSTATUSTOP_VALUES) },
+    BinDef { index: 66, width: 2, signed: true, name: "AFStatusTopAssist-right", values: Some(SONY_CAMERAINFO_AFSTATUSTOPASSIST_RIGHT_VALUES) },
+    BinDef { index: 68, width: 2, signed: true, name: "AFStatusFarRight", values: Some(SONY_CAMERAINFO_AFSTATUSFARRIGHT_VALUES) },
+    BinDef { index: 70, width: 2, signed: true, name: "AFStatusUpper-right", values: Some(SONY_CAMERAINFO_AFSTATUSUPPER_RIGHT_VALUES) },
+    BinDef { index: 72, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_CAMERAINFO_AFSTATUSRIGHT_VALUES) },
+    BinDef { index: 74, width: 2, signed: true, name: "AFStatusLower-right", values: Some(SONY_CAMERAINFO_AFSTATUSLOWER_RIGHT_VALUES) },
+    BinDef { index: 76, width: 2, signed: true, name: "AFStatusCenterF2-8", values: Some(SONY_CAMERAINFO_AFSTATUSCENTERF2_8_VALUES) },
+];
+
 pub static SONY_CAMERAINFO_FOCUSMODESETTING_VALUES: &[(i64, &str)] = &[
     (0, "Manual"),
     (1, "AF-S"),
@@ -3337,6 +3796,25 @@ pub static SONY_CAMERAINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     49u16 => TagDef { name: "AFStatusRight", values: Some(SONY_CAMERAINFO2_AFSTATUSRIGHT_VALUES) },
 };
 
+/// Sony::CameraInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERAINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 20, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO2_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERAINFO2_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO2_AFPOINT_VALUES) },
+    BinDef { index: 27, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO2_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 29, width: 2, signed: true, name: "AFStatusTop-right", values: Some(SONY_CAMERAINFO2_AFSTATUSTOP_RIGHT_VALUES) },
+    BinDef { index: 31, width: 2, signed: true, name: "AFStatusBottom-right", values: Some(SONY_CAMERAINFO2_AFSTATUSBOTTOM_RIGHT_VALUES) },
+    BinDef { index: 33, width: 2, signed: true, name: "AFStatusBottom", values: Some(SONY_CAMERAINFO2_AFSTATUSBOTTOM_VALUES) },
+    BinDef { index: 35, width: 2, signed: true, name: "AFStatusMiddleHorizontal", values: Some(SONY_CAMERAINFO2_AFSTATUSMIDDLEHORIZONTAL_VALUES) },
+    BinDef { index: 37, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_CAMERAINFO2_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 39, width: 2, signed: true, name: "AFStatusTop", values: Some(SONY_CAMERAINFO2_AFSTATUSTOP_VALUES) },
+    BinDef { index: 41, width: 2, signed: true, name: "AFStatusTop-left", values: Some(SONY_CAMERAINFO2_AFSTATUSTOP_LEFT_VALUES) },
+    BinDef { index: 43, width: 2, signed: true, name: "AFStatusBottom-left", values: Some(SONY_CAMERAINFO2_AFSTATUSBOTTOM_LEFT_VALUES) },
+    BinDef { index: 45, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_CAMERAINFO2_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 47, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_CAMERAINFO2_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 49, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_CAMERAINFO2_AFSTATUSRIGHT_VALUES) },
+];
+
 pub static SONY_CAMERAINFO2_AFPOINTSELECTED_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Center"),
@@ -3453,6 +3931,29 @@ pub static SONY_CAMERAINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
     47u16 => TagDef { name: "AFStatusCenterHorizontal", values: Some(SONY_CAMERAINFO3_AFSTATUSCENTERHORIZONTAL_VALUES) },
     49u16 => TagDef { name: "AFStatusRight", values: Some(SONY_CAMERAINFO3_AFSTATUSRIGHT_VALUES) },
 };
+
+/// Sony::CameraInfo3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERAINFO3_BIN: &[BinDef] = &[
+    BinDef { index: 14, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "FocalLengthTeleZoom", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO3_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FocusMode", values: Some(SONY_CAMERAINFO3_FOCUSMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO3_AFPOINT_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "FocusStatus", values: Some(SONY_CAMERAINFO3_FOCUSSTATUS_VALUES) },
+    BinDef { index: 27, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO3_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 28, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO3_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 29, width: 1, signed: false, name: "FocusMode", values: Some(SONY_CAMERAINFO3_FOCUSMODE_VALUES) },
+    BinDef { index: 31, width: 2, signed: true, name: "AFStatusBottom-right", values: Some(SONY_CAMERAINFO3_AFSTATUSBOTTOM_RIGHT_VALUES) },
+    BinDef { index: 32, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO3_AFPOINT_VALUES) },
+    BinDef { index: 33, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO3_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 37, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_CAMERAINFO3_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 39, width: 2, signed: true, name: "AFStatusTop", values: Some(SONY_CAMERAINFO3_AFSTATUSTOP_VALUES) },
+    BinDef { index: 41, width: 2, signed: true, name: "AFStatusTop-left", values: Some(SONY_CAMERAINFO3_AFSTATUSTOP_LEFT_VALUES) },
+    BinDef { index: 43, width: 2, signed: true, name: "AFStatusBottom-left", values: Some(SONY_CAMERAINFO3_AFSTATUSBOTTOM_LEFT_VALUES) },
+    BinDef { index: 45, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_CAMERAINFO3_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 47, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_CAMERAINFO3_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 49, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_CAMERAINFO3_AFSTATUSRIGHT_VALUES) },
+];
 
 pub static SONY_CAMERAINFO3_AFPOINTSELECTED_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -3602,6 +4103,62 @@ pub static SONY_CAMERASETTINGS_MASKS: &[MaskDef] = &[
     MaskDef { index: 154, mask: 0x3ff, name: "FolderNumber", values: None },
     MaskDef { index: 155, mask: 0x3fff, name: "ImageNumber", values: None },
     MaskDef { index: 4, mask: 0xff, name: "DriveMode", values: Some(SONY_CAMERASETTINGS_DRIVEMODE_VALUES) },
+];
+
+/// Sony::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 1, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 106, width: 2, signed: false, name: "RedEyeReduction", values: Some(SONY_CAMERASETTINGS_REDEYEREDUCTION_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "ColorTemperatureCustom", values: None },
+    BinDef { index: 13, width: 2, signed: false, name: "ColorCompensationFilterCustom", values: None },
+    BinDef { index: 15, width: 2, signed: false, name: "WhiteBalance", values: Some(SONY_CAMERASETTINGS_WHITEBALANCE_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERASETTINGS_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 17, width: 2, signed: false, name: "AFAreaMode", values: Some(SONY_CAMERASETTINGS_AFAREAMODE_VALUES) },
+    BinDef { index: 18, width: 2, signed: false, name: "AFPointSetting", values: Some(SONY_CAMERASETTINGS_AFPOINTSETTING_VALUES) },
+    BinDef { index: 19, width: 2, signed: false, name: "FlashMode", values: Some(SONY_CAMERASETTINGS_FLASHMODE_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "HighSpeedSync", values: Some(SONY_CAMERASETTINGS_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 21, width: 2, signed: false, name: "MeteringMode", values: Some(SONY_CAMERASETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_CAMERASETTINGS_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "DynamicRangeOptimizerLevel", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "CreativeStyle", values: Some(SONY_CAMERASETTINGS_CREATIVESTYLE_VALUES) },
+    BinDef { index: 27, width: 2, signed: false, name: "ColorSpace", values: Some(SONY_CAMERASETTINGS_COLORSPACE_VALUES) },
+    BinDef { index: 28, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 29, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "ExposureCompensationSet", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 31, width: 2, signed: false, name: "ZoneMatchingValue", values: None },
+    BinDef { index: 34, width: 2, signed: false, name: "Brightness", values: None },
+    BinDef { index: 35, width: 2, signed: false, name: "FlashControl", values: Some(SONY_CAMERASETTINGS_FLASHCONTROL_VALUES) },
+    BinDef { index: 40, width: 2, signed: false, name: "PrioritySetupShutterRelease", values: Some(SONY_CAMERASETTINGS_PRIORITYSETUPSHUTTERRELEASE_VALUES) },
+    BinDef { index: 41, width: 2, signed: false, name: "AFIlluminator", values: Some(SONY_CAMERASETTINGS_AFILLUMINATOR_VALUES) },
+    BinDef { index: 42, width: 2, signed: false, name: "AFWithShutter", values: Some(SONY_CAMERASETTINGS_AFWITHSHUTTER_VALUES) },
+    BinDef { index: 43, width: 2, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_CAMERASETTINGS_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 44, width: 2, signed: false, name: "HighISONoiseReduction", values: Some(SONY_CAMERASETTINGS_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 45, width: 2, signed: false, name: "ImageStyle", values: Some(SONY_CAMERASETTINGS_IMAGESTYLE_VALUES) },
+    BinDef { index: 46, width: 2, signed: false, name: "FocusModeSwitch", values: Some(SONY_CAMERASETTINGS_FOCUSMODESWITCH_VALUES) },
+    BinDef { index: 47, width: 2, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 48, width: 2, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_CAMERASETTINGS_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "WhiteBalanceFineTune", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "ExposureProgram", values: Some(SONY_CAMERASETTINGS_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "ImageStabilizationSetting", values: Some(SONY_CAMERASETTINGS_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 62, width: 2, signed: false, name: "FlashAction", values: Some(SONY_CAMERASETTINGS_FLASHACTION_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "Rotation", values: Some(SONY_CAMERASETTINGS_ROTATION_VALUES) },
+    BinDef { index: 64, width: 2, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS_AELOCK_VALUES) },
+    BinDef { index: 7, width: 2, signed: false, name: "ColorTemperatureSet", values: None },
+    BinDef { index: 76, width: 2, signed: false, name: "FlashAction2", values: Some(SONY_CAMERASETTINGS_FLASHACTION2_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "FocusMode", values: Some(SONY_CAMERASETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 8, width: 2, signed: false, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 80, width: 2, signed: false, name: "BatteryState", values: Some(SONY_CAMERASETTINGS_BATTERYSTATE_VALUES) },
+    BinDef { index: 81, width: 2, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 83, width: 2, signed: false, name: "FocusStatus", values: Some(SONY_CAMERASETTINGS_FOCUSSTATUS_VALUES) },
+    BinDef { index: 84, width: 2, signed: false, name: "SonyImageSize", values: Some(SONY_CAMERASETTINGS_SONYIMAGESIZE_VALUES) },
+    BinDef { index: 85, width: 2, signed: false, name: "AspectRatio", values: Some(SONY_CAMERASETTINGS_ASPECTRATIO_VALUES) },
+    BinDef { index: 86, width: 2, signed: false, name: "Quality", values: Some(SONY_CAMERASETTINGS_QUALITY_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "ExposureLevelIncrements", values: Some(SONY_CAMERASETTINGS_EXPOSURELEVELINCREMENTS_VALUES) },
 ];
 
 pub static SONY_CAMERASETTINGS_REDEYEREDUCTION_VALUES: &[(i64, &str)] = &[
@@ -3938,6 +4495,52 @@ pub static SONY_CAMERASETTINGS2_MASKS: &[MaskDef] = &[
     MaskDef { index: 126, mask: 0xff, name: "DriveMode", values: Some(SONY_CAMERASETTINGS2_DRIVEMODE_VALUES) },
 ];
 
+/// Sony::CameraSettings2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERASETTINGS2_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 1, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 11, width: 2, signed: false, name: "ColorTemperatureCustom", values: None },
+    BinDef { index: 12, width: 2, signed: false, name: "ColorCompensationFilterCustom", values: None },
+    BinDef { index: 127, width: 2, signed: false, name: "FlashMode", values: Some(SONY_CAMERASETTINGS2_FLASHMODE_VALUES) },
+    BinDef { index: 131, width: 2, signed: false, name: "ColorSpace", values: Some(SONY_CAMERASETTINGS2_COLORSPACE_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "WhiteBalance", values: Some(SONY_CAMERASETTINGS2_WHITEBALANCE_VALUES) },
+    BinDef { index: 15, width: 2, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERASETTINGS2_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "AFAreaMode", values: Some(SONY_CAMERASETTINGS2_AFAREAMODE_VALUES) },
+    BinDef { index: 17, width: 2, signed: false, name: "AFPointSetting", values: Some(SONY_CAMERASETTINGS2_AFPOINTSETTING_VALUES) },
+    BinDef { index: 18, width: 2, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 19, width: 2, signed: false, name: "MeteringMode", values: Some(SONY_CAMERASETTINGS2_METERINGMODE_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "HighSpeedSync", values: Some(SONY_CAMERASETTINGS2_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 22, width: 2, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_CAMERASETTINGS2_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 24, width: 2, signed: false, name: "CreativeStyle", values: Some(SONY_CAMERASETTINGS2_CREATIVESTYLE_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 27, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "ExposureCompensationSet", values: None },
+    BinDef { index: 31, width: 2, signed: false, name: "FlashControl", values: Some(SONY_CAMERASETTINGS2_FLASHCONTROL_VALUES) },
+    BinDef { index: 37, width: 2, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_CAMERASETTINGS2_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "HighISONoiseReduction", values: Some(SONY_CAMERASETTINGS2_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 39, width: 2, signed: false, name: "ImageStyle", values: Some(SONY_CAMERASETTINGS2_IMAGESTYLE_VALUES) },
+    BinDef { index: 4, width: 2, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_CAMERASETTINGS2_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 40, width: 2, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 41, width: 2, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "WhiteBalanceFineTune", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "ColorTemperatureSet", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "ExposureProgram", values: Some(SONY_CAMERASETTINGS2_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "ImageStabilizationSetting", values: Some(SONY_CAMERASETTINGS2_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 62, width: 2, signed: false, name: "FlashAction", values: Some(SONY_CAMERASETTINGS2_FLASHACTION_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "Rotation", values: Some(SONY_CAMERASETTINGS2_ROTATION_VALUES) },
+    BinDef { index: 64, width: 2, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS2_AELOCK_VALUES) },
+    BinDef { index: 7, width: 2, signed: false, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 76, width: 2, signed: false, name: "FlashAction2", values: Some(SONY_CAMERASETTINGS2_FLASHACTION2_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "FocusMode", values: Some(SONY_CAMERASETTINGS2_FOCUSMODE_VALUES) },
+    BinDef { index: 83, width: 2, signed: false, name: "FocusStatus", values: Some(SONY_CAMERASETTINGS2_FOCUSSTATUS_VALUES) },
+    BinDef { index: 84, width: 2, signed: false, name: "SonyImageSize", values: Some(SONY_CAMERASETTINGS2_SONYIMAGESIZE_VALUES) },
+    BinDef { index: 85, width: 2, signed: false, name: "AspectRatio", values: Some(SONY_CAMERASETTINGS2_ASPECTRATIO_VALUES) },
+    BinDef { index: 86, width: 2, signed: false, name: "Quality", values: Some(SONY_CAMERASETTINGS2_QUALITY_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "ExposureLevelIncrements", values: Some(SONY_CAMERASETTINGS2_EXPOSURELEVELINCREMENTS_VALUES) },
+];
+
 pub static SONY_CAMERASETTINGS2_DRIVEMODE_VALUES: &[(i64, &str)] = &[
     (1, "Single Frame"),
     (10, "Remote Commander"),
@@ -4238,6 +4841,70 @@ pub static SONY_CAMERASETTINGS3_MASKS: &[MaskDef] = &[
     MaskDef { index: 276, mask: 0x3fff, name: "ImageNumber", values: None },
     MaskDef { index: 788, mask: 0x3fff, name: "ImageNumber", values: None },
     MaskDef { index: 790, mask: 0x3ff, name: "FolderNumber", values: None },
+];
+
+/// Sony::CameraSettings3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERASETTINGS3_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 10, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_CAMERASETTINGS3_ASPECTRATIO_VALUES) },
+    BinDef { index: 1008, width: 2, signed: false, name: "LensE-mountVersion", values: None },
+    BinDef { index: 1011, width: 2, signed: false, name: "LensFirmwareVersion", values: None },
+    BinDef { index: 1015, width: 2, signed: false, name: "LensType2", values: Some(SONY_CAMERASETTINGS3_LENSTYPE2_VALUES) },
+    BinDef { index: 11, width: 1, signed: false, name: "Quality", values: Some(SONY_CAMERASETTINGS3_QUALITY_VALUES) },
+    BinDef { index: 12, width: 1, signed: false, name: "DynamicRangeOptimizerSetting", values: Some(SONY_CAMERASETTINGS3_DYNAMICRANGEOPTIMIZERSETTING_VALUES) },
+    BinDef { index: 131, width: 1, signed: false, name: "AFButtonPressed", values: Some(SONY_CAMERASETTINGS3_AFBUTTONPRESSED_VALUES) },
+    BinDef { index: 132, width: 1, signed: false, name: "LiveViewMetering", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWMETERING_VALUES) },
+    BinDef { index: 133, width: 1, signed: false, name: "ViewingMode2", values: Some(SONY_CAMERASETTINGS3_VIEWINGMODE2_VALUES) },
+    BinDef { index: 134, width: 1, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS3_AELOCK_VALUES) },
+    BinDef { index: 135, width: 1, signed: false, name: "FlashStatusBuilt-in", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSBUILT_IN_VALUES) },
+    BinDef { index: 136, width: 1, signed: false, name: "FlashStatusExternal", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSEXTERNAL_VALUES) },
+    BinDef { index: 139, width: 1, signed: false, name: "LiveViewFocusMode", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWFOCUSMODE_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "ColorSpace", values: Some(SONY_CAMERASETTINGS3_COLORSPACE_VALUES) },
+    BinDef { index: 15, width: 1, signed: false, name: "CreativeStyleSetting", values: Some(SONY_CAMERASETTINGS3_CREATIVESTYLESETTING_VALUES) },
+    BinDef { index: 153, width: 1, signed: false, name: "LensMount", values: Some(SONY_CAMERASETTINGS3_LENSMOUNT_VALUES) },
+    BinDef { index: 16, width: 1, signed: true, name: "ContrastSetting", values: None },
+    BinDef { index: 17, width: 1, signed: true, name: "SaturationSetting", values: None },
+    BinDef { index: 18, width: 1, signed: true, name: "SharpnessSetting", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "ISOSetting", values: Some(SONY_CAMERASETTINGS3_ISOSETTING_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_CAMERASETTINGS3_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "ColorTemperatureSetting", values: None },
+    BinDef { index: 24, width: 1, signed: true, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 268, width: 1, signed: false, name: "SequenceNumber", values: Some(SONY_CAMERASETTINGS3_SEQUENCENUMBER_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "ExposureCompensationSet", values: None },
+    BinDef { index: 32, width: 1, signed: false, name: "FlashMode", values: Some(SONY_CAMERASETTINGS3_FLASHMODE_VALUES) },
+    BinDef { index: 33, width: 1, signed: false, name: "FlashControl", values: Some(SONY_CAMERASETTINGS3_FLASHCONTROL_VALUES) },
+    BinDef { index: 35, width: 1, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 36, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_CAMERASETTINGS3_AFAREAMODE_VALUES) },
+    BinDef { index: 37, width: 1, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_CAMERASETTINGS3_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 38, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(SONY_CAMERASETTINGS3_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 39, width: 1, signed: false, name: "SmileShutterMode", values: Some(SONY_CAMERASETTINGS3_SMILESHUTTERMODE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "DriveModeSetting", values: Some(SONY_CAMERASETTINGS3_DRIVEMODESETTING_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "RedEyeReduction", values: Some(SONY_CAMERASETTINGS3_REDEYEREDUCTION_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_CAMERASETTINGS3_HDRSETTING_VALUES) },
+    BinDef { index: 46, width: 1, signed: false, name: "HDRLevel", values: Some(SONY_CAMERASETTINGS3_HDRLEVEL_VALUES) },
+    BinDef { index: 47, width: 1, signed: false, name: "ViewingMode", values: Some(SONY_CAMERASETTINGS3_VIEWINGMODE_VALUES) },
+    BinDef { index: 48, width: 1, signed: false, name: "FaceDetection", values: Some(SONY_CAMERASETTINGS3_FACEDETECTION_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "SmileShutter", values: Some(SONY_CAMERASETTINGS3_SMILESHUTTER_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_CAMERASETTINGS3_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 50, width: 1, signed: false, name: "SweepPanoramaSize", values: Some(SONY_CAMERASETTINGS3_SWEEPPANORAMASIZE_VALUES) },
+    BinDef { index: 51, width: 1, signed: false, name: "SweepPanoramaDirection", values: Some(SONY_CAMERASETTINGS3_SWEEPPANORAMADIRECTION_VALUES) },
+    BinDef { index: 512, width: 4, signed: false, name: "ShotNumberSincePowerUp2", values: None },
+    BinDef { index: 52, width: 1, signed: false, name: "DriveMode", values: Some(SONY_CAMERASETTINGS3_DRIVEMODE_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "MultiFrameNoiseReduction", values: Some(SONY_CAMERASETTINGS3_MULTIFRAMENOISEREDUCTION_VALUES) },
+    BinDef { index: 54, width: 1, signed: false, name: "LiveViewAFSetting", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWAFSETTING_VALUES) },
+    BinDef { index: 56, width: 1, signed: false, name: "PanoramaSize3D", values: Some(SONY_CAMERASETTINGS3_PANORAMASIZE3D_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERASETTINGS3_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 643, width: 1, signed: false, name: "AFButtonPressed", values: Some(SONY_CAMERASETTINGS3_AFBUTTONPRESSED_VALUES) },
+    BinDef { index: 644, width: 1, signed: false, name: "LiveViewMetering", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWMETERING_VALUES) },
+    BinDef { index: 645, width: 1, signed: false, name: "ViewingMode2", values: Some(SONY_CAMERASETTINGS3_VIEWINGMODE2_VALUES) },
+    BinDef { index: 646, width: 1, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS3_AELOCK_VALUES) },
+    BinDef { index: 647, width: 1, signed: false, name: "FlashStatusBuilt-in", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSBUILT_IN_VALUES) },
+    BinDef { index: 648, width: 1, signed: false, name: "FlashStatusExternal", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSEXTERNAL_VALUES) },
+    BinDef { index: 651, width: 1, signed: false, name: "LiveViewFocusMode", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWFOCUSMODE_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_CAMERASETTINGS3_METERINGMODE_VALUES) },
+    BinDef { index: 780, width: 1, signed: false, name: "SequenceNumber", values: Some(SONY_CAMERASETTINGS3_SEQUENCENUMBER_VALUES) },
+    BinDef { index: 9, width: 1, signed: false, name: "SonyImageSize", values: Some(SONY_CAMERASETTINGS3_SONYIMAGESIZE_VALUES) },
 ];
 
 pub static SONY_CAMERASETTINGS3_ASPECTRATIO_VALUES: &[(i64, &str)] = &[
@@ -4877,6 +5544,13 @@ pub static SONY_EXTRAINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "BatteryVoltage", values: None },
 };
 
+/// Sony::ExtraInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_EXTRAINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "BatteryTemperature", values: None },
+    BinDef { index: 10, width: 1, signed: false, name: "ImageStabilization2", values: Some(SONY_EXTRAINFO_IMAGESTABILIZATION2_VALUES) },
+    BinDef { index: 12, width: 1, signed: false, name: "BatteryLevel", values: None },
+];
+
 pub static SONY_EXTRAINFO_IMAGESTABILIZATION2_VALUES: &[(i64, &str)] = &[
     (191, "On (191)"),
     (207, "On (207)"),
@@ -4890,6 +5564,12 @@ pub static SONY_EXTRAINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     18u16 => TagDef { name: "ImageStabilization", values: Some(SONY_EXTRAINFO2_IMAGESTABILIZATION_VALUES) },
     4u16 => TagDef { name: "BatteryLevel", values: None },
 };
+
+/// Sony::ExtraInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_EXTRAINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 18, width: 1, signed: false, name: "ImageStabilization", values: Some(SONY_EXTRAINFO2_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "BatteryLevel", values: None },
+];
 
 pub static SONY_EXTRAINFO2_IMAGESTABILIZATION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -4912,6 +5592,18 @@ pub static SONY_EXTRAINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Sony::ExtraInfo3 Mask bitfields (ExifTool 0.1-style indices)
 pub static SONY_EXTRAINFO3_MASKS: &[MaskDef] = &[
     MaskDef { index: 24, mask: 0x30, name: "CameraOrientation", values: Some(SONY_EXTRAINFO3_CAMERAORIENTATION_VALUES) },
+];
+
+/// Sony::ExtraInfo3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_EXTRAINFO3_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "BatteryUnknown", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "ImageStabilization", values: Some(SONY_EXTRAINFO3_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "BatteryTemperature", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "BatteryState", values: Some(SONY_EXTRAINFO3_BATTERYSTATE_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "MemoryCardConfiguration", values: Some(SONY_EXTRAINFO3_MEMORYCARDCONFIGURATION_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "BatteryVoltage1", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "BatteryVoltage2", values: None },
 ];
 
 pub static SONY_EXTRAINFO3_IMAGESTABILIZATION_VALUES: &[(i64, &str)] = &[
@@ -4953,6 +5645,11 @@ pub static SONY_FACEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     36u16 => TagDef { name: "Face8Position", values: None },
     6u16 => TagDef { name: "Face2Position", values: None },
 };
+
+/// Sony::FaceInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_FACEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "FacesDetected", values: Some(SONY_FACEINFO_FACESDETECTED_VALUES) },
+];
 
 pub static SONY_FACEINFO_FACESDETECTED_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
@@ -5001,6 +5698,13 @@ pub static SONY_FACEINFOA: phf::Map<u16, TagDef> = phf::phf_map! {
     91u16 => TagDef { name: "Face1Position", values: None },
 };
 
+/// Sony::FaceInfoA ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_FACEINFOA_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "FaceTest2", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "FacesDetected", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "FaceTest8", values: None },
+];
+
 /// Sony::FocusInfo tags
 pub static SONY_FOCUSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     109u16 => TagDef { name: "ISOSetting", values: None },
@@ -5021,6 +5725,26 @@ pub static SONY_FOCUSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     63u16 => TagDef { name: "ExposureProgram", values: Some(SONY_FOCUSINFO_EXPOSUREPROGRAM_VALUES) },
     65u16 => TagDef { name: "CreativeStyle", values: Some(SONY_FOCUSINFO_CREATIVESTYLE_VALUES) },
 };
+
+/// Sony::FocusInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_FOCUSINFO_BIN: &[BinDef] = &[
+    BinDef { index: 109, width: 1, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 111, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 119, width: 1, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "DriveMode2", values: Some(SONY_FOCUSINFO_DRIVEMODE2_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "Rotation", values: Some(SONY_FOCUSINFO_ROTATION_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "ImageStabilizationSetting", values: Some(SONY_FOCUSINFO_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 2118, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 2491, width: 1, signed: false, name: "FocusPosition", values: None },
+    BinDef { index: 43, width: 1, signed: false, name: "BracketShotNumber", values: None },
+    BinDef { index: 44, width: 1, signed: false, name: "WhiteBalanceBracketing", values: Some(SONY_FOCUSINFO_WHITEBALANCEBRACKETING_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "BracketShotNumber2", values: None },
+    BinDef { index: 46, width: 1, signed: false, name: "DynamicRangeOptimizerBracket", values: Some(SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERBRACKET_VALUES) },
+    BinDef { index: 47, width: 1, signed: false, name: "ExposureBracketShotNumber", values: None },
+    BinDef { index: 63, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_FOCUSINFO_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 65, width: 1, signed: false, name: "CreativeStyle", values: Some(SONY_FOCUSINFO_CREATIVESTYLE_VALUES) },
+];
 
 pub static SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -5102,12 +5826,24 @@ pub static SONY_HIDDENINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "HiddenDataLength", values: None },
 };
 
+/// Sony::HiddenInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_HIDDENINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "HiddenDataLength", values: None },
+];
+
 /// Sony::ISOInfo tags
 pub static SONY_ISOINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ISOSetting", values: None },
     2u16 => TagDef { name: "ISOAutoMin", values: None },
     4u16 => TagDef { name: "ISOAutoMax", values: None },
 };
+
+/// Sony::ISOInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_ISOINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "ISOAutoMin", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ISOAutoMax", values: None },
+];
 
 /// Sony::Main tags
 pub static SONY_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -6100,10 +6836,22 @@ pub static SONY_MOREINFO0201: phf::Map<u16, TagDef> = phf::phf_map! {
     330u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Sony::MoreInfo0201 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_MOREINFO0201_BIN: &[BinDef] = &[
+    BinDef { index: 283, width: 4, signed: false, name: "ImageCount", values: None },
+    BinDef { index: 293, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 330, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Sony::MoreInfo0401 tags
 pub static SONY_MOREINFO0401: phf::Map<u16, TagDef> = phf::phf_map! {
     1102u16 => TagDef { name: "ShotNumberSincePowerUp", values: None },
 };
+
+/// Sony::MoreInfo0401 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_MOREINFO0401_BIN: &[BinDef] = &[
+    BinDef { index: 1102, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+];
 
 /// Sony::MoreSettings tags
 pub static SONY_MORESETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -6154,6 +6902,55 @@ pub static SONY_MORESETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ContrastSetting", values: None },
     9u16 => TagDef { name: "SaturationSetting", values: None },
 };
+
+/// Sony::MoreSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_MORESETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "DriveMode2", values: Some(SONY_MORESETTINGS_DRIVEMODE2_VALUES) },
+    BinDef { index: 10, width: 1, signed: true, name: "SharpnessSetting", values: None },
+    BinDef { index: 119, width: 1, signed: false, name: "FlashAction2", values: Some(SONY_MORESETTINGS_FLASHACTION2_VALUES) },
+    BinDef { index: 120, width: 1, signed: false, name: "FlashActionExternal", values: Some(SONY_MORESETTINGS_FLASHACTIONEXTERNAL_VALUES) },
+    BinDef { index: 124, width: 1, signed: false, name: "FlashActionExternal", values: Some(SONY_MORESETTINGS_FLASHACTIONEXTERNAL_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_MORESETTINGS_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 130, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_MORESETTINGS_FLASHSTATUS_VALUES) },
+    BinDef { index: 134, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_MORESETTINGS_FLASHSTATUS_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "ColorTemperatureSetting", values: None },
+    BinDef { index: 15, width: 1, signed: true, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "FlashMode", values: Some(SONY_MORESETTINGS_FLASHMODE_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_MORESETTINGS_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(SONY_MORESETTINGS_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 19, width: 1, signed: false, name: "FocusMode", values: Some(SONY_MORESETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_MORESETTINGS_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "MultiFrameNoiseReduction", values: Some(SONY_MORESETTINGS_MULTIFRAMENOISEREDUCTION_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_MORESETTINGS_HDRSETTING_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "HDRLevel", values: Some(SONY_MORESETTINGS_HDRLEVEL_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "ViewingMode", values: Some(SONY_MORESETTINGS_VIEWINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "FaceDetection", values: Some(SONY_MORESETTINGS_FACEDETECTION_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_MORESETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 30, width: 1, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 31, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 32, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 33, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 34, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 35, width: 1, signed: false, name: "FocalLength2", values: None },
+    BinDef { index: 36, width: 2, signed: true, name: "ExposureCompensation2", values: None },
+    BinDef { index: 37, width: 1, signed: false, name: "FocalLength2", values: None },
+    BinDef { index: 38, width: 2, signed: true, name: "FlashExposureCompSet2", values: None },
+    BinDef { index: 39, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "DynamicRangeOptimizerSetting", values: Some(SONY_MORESETTINGS_DYNAMICRANGEOPTIMIZERSETTING_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "Orientation2", values: Some(SONY_MORESETTINGS_ORIENTATION2_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "FocusPosition2", values: None },
+    BinDef { index: 42, width: 1, signed: false, name: "FlashAction", values: Some(SONY_MORESETTINGS_FLASHACTION_VALUES) },
+    BinDef { index: 43, width: 1, signed: false, name: "FocusPosition2", values: None },
+    BinDef { index: 44, width: 1, signed: false, name: "FocusMode2", values: Some(SONY_MORESETTINGS_FOCUSMODE2_VALUES) },
+    BinDef { index: 46, width: 1, signed: false, name: "FocusMode2", values: Some(SONY_MORESETTINGS_FOCUSMODE2_VALUES) },
+    BinDef { index: 47, width: 1, signed: false, name: "FocusPosition2", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "FlashAction", values: Some(SONY_MORESETTINGS_FLASHACTION_VALUES) },
+    BinDef { index: 50, width: 1, signed: false, name: "FocusMode2", values: Some(SONY_MORESETTINGS_FOCUSMODE2_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ColorSpace", values: Some(SONY_MORESETTINGS_COLORSPACE_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "CreativeStyleSetting", values: Some(SONY_MORESETTINGS_CREATIVESTYLESETTING_VALUES) },
+    BinDef { index: 8, width: 1, signed: true, name: "ContrastSetting", values: None },
+    BinDef { index: 9, width: 1, signed: true, name: "SaturationSetting", values: None },
+];
 
 pub static SONY_MORESETTINGS_DRIVEMODE2_VALUES: &[(i64, &str)] = &[
     (113, "Continuous Bracketing 0.3 EV"),
@@ -6388,6 +7185,11 @@ pub static SONY_PANORAMA: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "PanoramaDirection", values: Some(SONY_PANORAMA_PANORAMADIRECTION_VALUES) },
 };
 
+/// Sony::Panorama ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_PANORAMA_BIN: &[BinDef] = &[
+    BinDef { index: 3, width: 4, signed: false, name: "PanoramaDirection", values: Some(SONY_PANORAMA_PANORAMADIRECTION_VALUES) },
+];
+
 pub static SONY_PANORAMA_PANORAMADIRECTION_VALUES: &[(i64, &str)] = &[
     (0, "Left or Up"),
     (1, "Right or Down"),
@@ -6405,6 +7207,16 @@ pub static SONY_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     72u16 => TagDef { name: "FaceInfo1", values: None },
     94u16 => TagDef { name: "FaceInfo2", values: None },
 };
+
+/// Sony::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 26, width: 2, signed: false, name: "SonyImageHeight", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "SonyImageWidth", values: None },
+    BinDef { index: 48, width: 2, signed: false, name: "FacesDetected", values: None },
+    BinDef { index: 50, width: 2, signed: false, name: "FaceInfoLength", values: None },
+    BinDef { index: 72, width: 1, signed: false, name: "FaceInfo1", values: None },
+    BinDef { index: 94, width: 1, signed: false, name: "FaceInfo2", values: None },
+];
 
 /// Sony::Tag2010a tags
 pub static SONY_TAG2010A: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -6426,6 +7238,25 @@ pub static SONY_TAG2010A: phf::Map<u16, TagDef> = phf::phf_map! {
     4469u16 => TagDef { name: "ExposureProgram", values: Some(SONY_TAG2010A_EXPOSUREPROGRAM_VALUES) },
     4476u16 => TagDef { name: "WB_RGBLevels", values: None },
 };
+
+/// Sony::Tag2010a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010A_BIN: &[BinDef] = &[
+    BinDef { index: 4392, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010A_RELEASEMODE3_VALUES) },
+    BinDef { index: 4396, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010A_RELEASEMODE2_VALUES) },
+    BinDef { index: 4404, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010A_SELFTIMER_VALUES) },
+    BinDef { index: 4408, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010A_FLASHMODE_VALUES) },
+    BinDef { index: 4414, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4416, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4420, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010A_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4424, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010A_HDRSETTING_VALUES) },
+    BinDef { index: 4428, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4446, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010A_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4447, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010A_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4451, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010A_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4464, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010A_QUALITY2_VALUES) },
+    BinDef { index: 4468, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010A_METERINGMODE_VALUES) },
+    BinDef { index: 4469, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010A_EXPOSUREPROGRAM_VALUES) },
+];
 
 pub static SONY_TAG2010A_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -6625,6 +7456,30 @@ pub static SONY_TAG2010B: phf::Map<u16, TagDef> = phf::phf_map! {
     804u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010B_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
 
+/// Sony::Tag2010b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010B_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4392, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010B_RELEASEMODE3_VALUES) },
+    BinDef { index: 4396, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010B_RELEASEMODE2_VALUES) },
+    BinDef { index: 4404, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010B_SELFTIMER_VALUES) },
+    BinDef { index: 4408, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010B_FLASHMODE_VALUES) },
+    BinDef { index: 4414, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4416, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4420, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010B_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4424, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010B_HDRSETTING_VALUES) },
+    BinDef { index: 4428, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4450, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010B_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4451, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010B_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4455, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010B_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4468, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010B_QUALITY2_VALUES) },
+    BinDef { index: 4472, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010B_METERINGMODE_VALUES) },
+    BinDef { index: 4473, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010B_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4632, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010B_RELEASEMODE2_VALUES) },
+    BinDef { index: 804, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010B_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
+
 pub static SONY_TAG2010B_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -6823,6 +7678,31 @@ pub static SONY_TAG2010C: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG2010C_RELEASEMODE2_VALUES) },
 };
 
+/// Sony::Tag2010c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010C_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4356, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010C_RELEASEMODE3_VALUES) },
+    BinDef { index: 4360, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010C_RELEASEMODE2_VALUES) },
+    BinDef { index: 4368, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010C_SELFTIMER_VALUES) },
+    BinDef { index: 4372, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010C_FLASHMODE_VALUES) },
+    BinDef { index: 4378, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4380, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4384, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010C_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4388, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010C_HDRSETTING_VALUES) },
+    BinDef { index: 4392, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4414, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010C_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4415, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010C_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4419, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010C_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4432, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010C_QUALITY2_VALUES) },
+    BinDef { index: 4436, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010C_METERINGMODE_VALUES) },
+    BinDef { index: 4437, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010C_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4596, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 512, width: 1, signed: false, name: "DigitalZoomRatio", values: None },
+    BinDef { index: 768, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010C_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010C_RELEASEMODE2_VALUES) },
+];
+
 pub static SONY_TAG2010C_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -7017,6 +7897,28 @@ pub static SONY_TAG2010D: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG2010D_RELEASEMODE2_VALUES) },
     892u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010D_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
+
+/// Sony::Tag2010d ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010D_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4480, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010D_RELEASEMODE3_VALUES) },
+    BinDef { index: 4484, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010D_RELEASEMODE2_VALUES) },
+    BinDef { index: 4492, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010D_SELFTIMER_VALUES) },
+    BinDef { index: 4496, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010D_FLASHMODE_VALUES) },
+    BinDef { index: 4502, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4504, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4508, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010D_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4512, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010D_HDRSETTING_VALUES) },
+    BinDef { index: 4538, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010D_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4539, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010D_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4543, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010D_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4560, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010D_METERINGMODE_VALUES) },
+    BinDef { index: 4561, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010D_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4720, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010D_RELEASEMODE2_VALUES) },
+    BinDef { index: 892, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010D_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
 
 pub static SONY_TAG2010D_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -7223,6 +8125,44 @@ pub static SONY_TAG2010E: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG2010E_RELEASEMODE2_VALUES) },
     808u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010E_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
+
+/// Sony::Tag2010e ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010E_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4444, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010E_RELEASEMODE3_VALUES) },
+    BinDef { index: 4448, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010E_RELEASEMODE2_VALUES) },
+    BinDef { index: 4456, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010E_SELFTIMER_VALUES) },
+    BinDef { index: 4460, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010E_FLASHMODE_VALUES) },
+    BinDef { index: 4466, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4468, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4472, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010E_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4476, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010E_HDRSETTING_VALUES) },
+    BinDef { index: 4480, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4502, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010E_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4503, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010E_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4507, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010E_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4520, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010E_QUALITY2_VALUES) },
+    BinDef { index: 4524, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010E_METERINGMODE_VALUES) },
+    BinDef { index: 4525, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010E_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4692, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 4696, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 4728, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 4730, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 4732, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 4736, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 540, width: 1, signed: false, name: "DigitalZoomRatio", values: None },
+    BinDef { index: 6289, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010E_LENSFORMAT_VALUES) },
+    BinDef { index: 6290, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010E_LENSMOUNT_VALUES) },
+    BinDef { index: 6291, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010E_LENSTYPE2_VALUES) },
+    BinDef { index: 6294, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010E_LENSTYPE_VALUES) },
+    BinDef { index: 6296, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010E_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6297, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010E_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6444, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010E_ASPECTRATIO_VALUES) },
+    BinDef { index: 6792, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010E_ASPECTRATIO_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010E_RELEASEMODE2_VALUES) },
+    BinDef { index: 808, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010E_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
 
 pub static SONY_TAG2010E_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -7981,6 +8921,32 @@ pub static SONY_TAG2010F: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010F_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
 
+/// Sony::Tag2010f ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010F_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010F_RELEASEMODE2_VALUES) },
+    BinDef { index: 4116, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010F_RELEASEMODE3_VALUES) },
+    BinDef { index: 4120, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010F_RELEASEMODE2_VALUES) },
+    BinDef { index: 4128, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010F_SELFTIMER_VALUES) },
+    BinDef { index: 4132, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010F_FLASHMODE_VALUES) },
+    BinDef { index: 4138, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4140, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4144, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010F_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4148, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010F_HDRSETTING_VALUES) },
+    BinDef { index: 4152, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4174, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010F_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4175, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010F_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4179, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010F_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4192, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010F_QUALITY2_VALUES) },
+    BinDef { index: 4196, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010F_METERINGMODE_VALUES) },
+    BinDef { index: 4197, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010F_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4404, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 4406, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 4408, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 4412, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 6444, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010F_ASPECTRATIO_VALUES) },
+    BinDef { index: 80, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010F_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
+
 pub static SONY_TAG2010F_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -8193,6 +9159,38 @@ pub static SONY_TAG2010G: phf::Map<u16, TagDef> = phf::phf_map! {
     836u16 => TagDef { name: "SonyISO", values: None },
     904u16 => TagDef { name: "MeterInfo", values: None },
 };
+
+/// Sony::Tag2010g ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010G_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010G_RELEASEMODE2_VALUES) },
+    BinDef { index: 524, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010G_RELEASEMODE3_VALUES) },
+    BinDef { index: 528, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010G_RELEASEMODE2_VALUES) },
+    BinDef { index: 536, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010G_SELFTIMER_VALUES) },
+    BinDef { index: 540, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010G_FLASHMODE_VALUES) },
+    BinDef { index: 546, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 548, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 552, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010G_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010G_HDRSETTING_VALUES) },
+    BinDef { index: 560, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 582, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010G_PICTUREPROFILE_VALUES) },
+    BinDef { index: 583, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010G_PICTUREPROFILE_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010G_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 600, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010G_QUALITY2_VALUES) },
+    BinDef { index: 604, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010G_METERINGMODE_VALUES) },
+    BinDef { index: 605, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010G_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 6333, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010G_LENSFORMAT_VALUES) },
+    BinDef { index: 6334, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010G_LENSMOUNT_VALUES) },
+    BinDef { index: 6335, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010G_LENSTYPE2_VALUES) },
+    BinDef { index: 6338, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010G_LENSTYPE_VALUES) },
+    BinDef { index: 6340, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010G_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6341, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010G_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6488, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010G_ASPECTRATIO_VALUES) },
+    BinDef { index: 80, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010G_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 812, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 814, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 816, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 836, width: 2, signed: false, name: "SonyISO", values: None },
+];
 
 pub static SONY_TAG2010G_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -8959,6 +9957,38 @@ pub static SONY_TAG2010H: phf::Map<u16, TagDef> = phf::phf_map! {
     920u16 => TagDef { name: "MeterInfo", values: None },
 };
 
+/// Sony::Tag2010h ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010H_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010H_RELEASEMODE2_VALUES) },
+    BinDef { index: 524, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010H_RELEASEMODE3_VALUES) },
+    BinDef { index: 528, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010H_RELEASEMODE2_VALUES) },
+    BinDef { index: 536, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010H_SELFTIMER_VALUES) },
+    BinDef { index: 540, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010H_FLASHMODE_VALUES) },
+    BinDef { index: 546, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 548, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 552, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010H_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010H_HDRSETTING_VALUES) },
+    BinDef { index: 560, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 582, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010H_PICTUREPROFILE_VALUES) },
+    BinDef { index: 583, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010H_PICTUREPROFILE_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010H_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 600, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010H_QUALITY2_VALUES) },
+    BinDef { index: 604, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010H_METERINGMODE_VALUES) },
+    BinDef { index: 605, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010H_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 6381, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010H_LENSFORMAT_VALUES) },
+    BinDef { index: 6382, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010H_LENSMOUNT_VALUES) },
+    BinDef { index: 6383, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010H_LENSTYPE2_VALUES) },
+    BinDef { index: 6386, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010H_LENSTYPE_VALUES) },
+    BinDef { index: 6388, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010H_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6389, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010H_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6444, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010H_ASPECTRATIO_VALUES) },
+    BinDef { index: 80, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010H_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 812, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 814, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 816, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 838, width: 2, signed: false, name: "SonyISO", values: None },
+];
+
 pub static SONY_TAG2010H_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -9723,6 +10753,38 @@ pub static SONY_TAG2010I: phf::Map<u16, TagDef> = phf::phf_map! {
     877u16 => TagDef { name: "MeterInfo", values: None },
 };
 
+/// Sony::Tag2010i ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010I_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010I_RELEASEMODE2_VALUES) },
+    BinDef { index: 516, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010I_RELEASEMODE3_VALUES) },
+    BinDef { index: 520, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010I_RELEASEMODE2_VALUES) },
+    BinDef { index: 528, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010I_SELFTIMER_VALUES) },
+    BinDef { index: 529, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010I_FLASHMODE_VALUES) },
+    BinDef { index: 535, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 537, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 539, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010I_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 543, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010I_HDRSETTING_VALUES) },
+    BinDef { index: 547, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 567, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010I_PICTUREPROFILE_VALUES) },
+    BinDef { index: 568, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010I_PICTUREPROFILE_VALUES) },
+    BinDef { index: 572, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010I_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 583, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010I_QUALITY2_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010I_METERINGMODE_VALUES) },
+    BinDef { index: 588, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010I_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 6129, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010I_LENSFORMAT_VALUES) },
+    BinDef { index: 6130, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010I_LENSMOUNT_VALUES) },
+    BinDef { index: 6131, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010I_LENSTYPE2_VALUES) },
+    BinDef { index: 6134, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010I_LENSTYPE_VALUES) },
+    BinDef { index: 6136, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010I_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6137, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010I_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6284, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010I_ASPECTRATIO_VALUES) },
+    BinDef { index: 778, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 78, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010I_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 780, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 782, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 800, width: 2, signed: false, name: "SonyISO", values: None },
+];
+
 pub static SONY_TAG2010I_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -10473,6 +11535,11 @@ pub static SONY_TAG202A: phf::Map<u16, TagDef> = phf::phf_map! {
     62u16 => TagDef { name: "FocalPlaneAFPointLocation15", values: None },
 };
 
+/// Sony::Tag202a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG202A_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "FocalPlaneAFPointsUsed", values: None },
+];
+
 /// Sony::Tag900b tags
 pub static SONY_TAG900B: phf::Map<u16, TagDef> = phf::phf_map! {
     189u16 => TagDef { name: "FaceDetection", values: Some(SONY_TAG900B_FACEDETECTION_VALUES) },
@@ -10523,6 +11590,28 @@ pub static SONY_TAG9050A: phf::Map<u16, TagDef> = phf::phf_map! {
     76u16 => TagDef { name: "ShutterCount2", values: None },
     81u16 => TagDef { name: "SonyDateTime2", values: None },
 };
+
+/// Sony::Tag9050a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050A_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SonyMaxAperture", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "SonyMinAperture", values: None },
+    BinDef { index: 103, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050A_RELEASEMODE2_VALUES) },
+    BinDef { index: 261, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9050A_LENSMOUNT_VALUES) },
+    BinDef { index: 262, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9050A_LENSFORMAT_VALUES) },
+    BinDef { index: 263, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9050A_LENSTYPE2_VALUES) },
+    BinDef { index: 265, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9050A_LENSTYPE_VALUES) },
+    BinDef { index: 267, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9050A_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 276, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050A_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 416, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 426, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 445, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_TAG9050A_FLASHSTATUS_VALUES) },
+    BinDef { index: 50, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 58, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 63, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050A_RELEASEMODE2_VALUES) },
+    BinDef { index: 76, width: 4, signed: false, name: "ShutterCount2", values: None },
+];
 
 pub static SONY_TAG9050A_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -11148,6 +12237,35 @@ pub static SONY_TAG9050B: phf::Map<u16, TagDef> = phf::phf_map! {
     97u16 => TagDef { name: "SonyTimeMinSec", values: None },
 };
 
+/// Sony::Tag9050b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050B_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SonyMaxAperture", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "SonyMinAperture", values: None },
+    BinDef { index: 107, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 109, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 115, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 261, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9050B_LENSMOUNT_VALUES) },
+    BinDef { index: 262, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9050B_LENSFORMAT_VALUES) },
+    BinDef { index: 263, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9050B_LENSTYPE2_VALUES) },
+    BinDef { index: 265, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9050B_LENSTYPE_VALUES) },
+    BinDef { index: 267, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9050B_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 276, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 415, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 459, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 461, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 491, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 494, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 538, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_TAG9050B_FLASHSTATUS_VALUES) },
+    BinDef { index: 58, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 75, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 80, width: 4, signed: false, name: "ShutterCount2", values: None },
+    BinDef { index: 82, width: 4, signed: false, name: "ShutterCount2", values: None },
+    BinDef { index: 88, width: 4, signed: false, name: "ShutterCount2", values: None },
+];
+
 pub static SONY_TAG9050B_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -11751,6 +12869,19 @@ pub static SONY_TAG9050C: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "ShutterCount2", values: None },
 };
 
+/// Sony::Tag9050c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050C_BIN: &[BinDef] = &[
+    BinDef { index: 102, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 104, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 107, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050C_RELEASEMODE2_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_TAG9050C_FLASHSTATUS_VALUES) },
+    BinDef { index: 58, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 75, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050C_RELEASEMODE2_VALUES) },
+    BinDef { index: 80, width: 4, signed: false, name: "ShutterCount2", values: None },
+];
+
 pub static SONY_TAG9050C_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -11796,6 +12927,14 @@ pub static SONY_TAG9050D: phf::Map<u16, TagDef> = phf::phf_map! {
     56u16 => TagDef { name: "InternalSerialNumber", values: None },
 };
 
+/// Sony::Tag9050d ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050D_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 31, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050D_RELEASEMODE2_VALUES) },
+];
+
 pub static SONY_TAG9050D_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -11835,6 +12974,20 @@ pub static SONY_TAG9400A: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "SequenceImageNumber", values: None },
     82u16 => TagDef { name: "ModelReleaseYear", values: None },
 };
+
+/// Sony::Tag9400a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9400A_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9400A_RELEASEMODE2_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "DigitalZoom", values: Some(SONY_TAG9400A_DIGITALZOOM_VALUES) },
+    BinDef { index: 26, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+    BinDef { index: 34, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400A_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "CameraOrientation", values: Some(SONY_TAG9400A_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG9400A_QUALITY2_VALUES) },
+    BinDef { index: 68, width: 2, signed: false, name: "SonyImageHeight", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 82, width: 1, signed: false, name: "ModelReleaseYear", values: None },
+];
 
 pub static SONY_TAG9400A_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -11907,6 +13060,20 @@ pub static SONY_TAG9400B: phf::Map<u16, TagDef> = phf::phf_map! {
     70u16 => TagDef { name: "ModelReleaseYear", values: None },
     8u16 => TagDef { name: "SequenceImageNumber", values: None },
 };
+
+/// Sony::Tag9400b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9400B_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9400B_RELEASEMODE2_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "DigitalZoom", values: Some(SONY_TAG9400B_DIGITALZOOM_VALUES) },
+    BinDef { index: 22, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+    BinDef { index: 30, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400B_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 36, width: 1, signed: false, name: "CameraOrientation", values: Some(SONY_TAG9400B_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 37, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG9400B_QUALITY2_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "SonyImageHeight", values: None },
+    BinDef { index: 70, width: 1, signed: false, name: "ModelReleaseYear", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+];
 
 pub static SONY_TAG9400B_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -11981,6 +13148,22 @@ pub static SONY_TAG9400C: phf::Map<u16, TagDef> = phf::phf_map! {
     83u16 => TagDef { name: "ModelReleaseYear", values: None },
     9u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG9400C_RELEASEMODE2_VALUES) },
 };
+
+/// Sony::Tag9400c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9400C_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+    BinDef { index: 18, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 22, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400C_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 26, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 30, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400C_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 307, width: 1, signed: false, name: "ShutterType", values: Some(SONY_TAG9400C_SHUTTERTYPE_VALUES) },
+    BinDef { index: 313, width: 1, signed: false, name: "ShutterType", values: Some(SONY_TAG9400C_SHUTTERTYPE_VALUES) },
+    BinDef { index: 319, width: 1, signed: false, name: "ShutterType", values: Some(SONY_TAG9400C_SHUTTERTYPE_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "CameraOrientation", values: Some(SONY_TAG9400C_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 42, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG9400C_QUALITY2_VALUES) },
+    BinDef { index: 83, width: 1, signed: false, name: "ModelReleaseYear", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9400C_RELEASEMODE2_VALUES) },
+];
 
 pub static SONY_TAG9400C_SEQUENCELENGTH_VALUES: &[(i64, &str)] = &[
     (0, "Continuous"),
@@ -12068,6 +13251,11 @@ pub static SONY_TAG9401: phf::Map<u16, TagDef> = phf::phf_map! {
     994u16 => TagDef { name: "ISOInfo", values: None },
 };
 
+/// Sony::Tag9401 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9401_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "Ver9401", values: None },
+];
+
 /// Sony::Tag9402 tags
 pub static SONY_TAG9402: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "TempTest1", values: None },
@@ -12080,6 +13268,14 @@ pub static SONY_TAG9402: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Sony::Tag9402 Mask bitfields (ExifTool 0.1-style indices)
 pub static SONY_TAG9402_MASKS: &[MaskDef] = &[
     MaskDef { index: 22, mask: 0x7f, name: "FocusMode", values: Some(SONY_TAG9402_FOCUSMODE_VALUES) },
+];
+
+/// Sony::Tag9402 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9402_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 1, signed: false, name: "TempTest1", values: None },
+    BinDef { index: 23, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_TAG9402_AFAREAMODE_VALUES) },
+    BinDef { index: 4, width: 1, signed: true, name: "AmbientTemperature", values: None },
+    BinDef { index: 45, width: 1, signed: false, name: "FocusPosition2", values: None },
 ];
 
 pub static SONY_TAG9402_FOCUSMODE_VALUES: &[(i64, &str)] = &[
@@ -12112,12 +13308,25 @@ pub static SONY_TAG9403: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "CameraTemperature", values: None },
 };
 
+/// Sony::Tag9403 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9403_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "TempTest2", values: None },
+    BinDef { index: 5, width: 1, signed: true, name: "CameraTemperature", values: None },
+];
+
 /// Sony::Tag9404a tags
 pub static SONY_TAG9404A: phf::Map<u16, TagDef> = phf::phf_map! {
     11u16 => TagDef { name: "ExposureProgram", values: Some(SONY_TAG9404A_EXPOSUREPROGRAM_VALUES) },
     13u16 => TagDef { name: "IntelligentAuto", values: Some(SONY_TAG9404A_INTELLIGENTAUTO_VALUES) },
     25u16 => TagDef { name: "LensZoomPosition", values: None },
 };
+
+/// Sony::Tag9404a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9404A_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9404A_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "IntelligentAuto", values: Some(SONY_TAG9404A_INTELLIGENTAUTO_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "LensZoomPosition", values: None },
+];
 
 pub static SONY_TAG9404A_EXPOSUREPROGRAM_VALUES: &[(i64, &str)] = &[
     (0, "Program AE"),
@@ -12168,6 +13377,14 @@ pub static SONY_TAG9404B: phf::Map<u16, TagDef> = phf::phf_map! {
     32u16 => TagDef { name: "FocusPosition2", values: None },
 };
 
+/// Sony::Tag9404b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9404B_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9404B_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "IntelligentAuto", values: Some(SONY_TAG9404B_INTELLIGENTAUTO_VALUES) },
+    BinDef { index: 30, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 32, width: 1, signed: false, name: "FocusPosition2", values: None },
+];
+
 pub static SONY_TAG9404B_EXPOSUREPROGRAM_VALUES: &[(i64, &str)] = &[
     (0, "Program AE"),
     (1, "Aperture-priority AE"),
@@ -12214,6 +13431,12 @@ pub static SONY_TAG9404C: phf::Map<u16, TagDef> = phf::phf_map! {
     11u16 => TagDef { name: "ExposureProgram", values: Some(SONY_TAG9404C_EXPOSUREPROGRAM_VALUES) },
     13u16 => TagDef { name: "IntelligentAuto", values: Some(SONY_TAG9404C_INTELLIGENTAUTO_VALUES) },
 };
+
+/// Sony::Tag9404c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9404C_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9404C_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "IntelligentAuto", values: Some(SONY_TAG9404C_INTELLIGENTAUTO_VALUES) },
+];
 
 pub static SONY_TAG9404C_EXPOSUREPROGRAM_VALUES: &[(i64, &str)] = &[
     (0, "Program AE"),
@@ -12268,6 +13491,16 @@ pub static SONY_TAG9405A: phf::Map<u16, TagDef> = phf::phf_map! {
     1642u16 => TagDef { name: "ChromaticAberrationCorrParams", values: None },
     1738u16 => TagDef { name: "DistortionCorrParams", values: None },
 };
+
+/// Sony::Tag9405a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9405A_BIN: &[BinDef] = &[
+    BinDef { index: 1536, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9405A_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 1537, width: 1, signed: false, name: "DistortionCorrection", values: Some(SONY_TAG9405A_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 1539, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9405A_LENSFORMAT_VALUES) },
+    BinDef { index: 1540, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9405A_LENSMOUNT_VALUES) },
+    BinDef { index: 1541, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9405A_LENSTYPE2_VALUES) },
+    BinDef { index: 1544, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9405A_LENSTYPE_VALUES) },
+];
 
 pub static SONY_TAG9405A_DISTORTIONCORRPARAMSPRESENT_VALUES: &[(i64, &str)] = &[
     (0, "No"),
@@ -12859,6 +14092,35 @@ pub static SONY_TAG9405B: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "LensType2", values: Some(SONY_TAG9405B_LENSTYPE2_VALUES) },
     98u16 => TagDef { name: "LensType", values: Some(SONY_TAG9405B_LENSTYPE_VALUES) },
 };
+
+/// Sony::Tag9405b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9405B_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "SonyExposureTime2", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 22, width: 2, signed: false, name: "SonyMaxApertureValue", values: None },
+    BinDef { index: 36, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 52, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9405B_RELEASEMODE2_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "BaseISO", values: None },
+    BinDef { index: 62, width: 2, signed: false, name: "SonyImageWidthMax", values: None },
+    BinDef { index: 64, width: 2, signed: false, name: "SonyImageHeightMax", values: None },
+    BinDef { index: 66, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(SONY_TAG9405B_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 68, width: 1, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_TAG9405B_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 70, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG9405B_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9405B_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 74, width: 1, signed: false, name: "CreativeStyle", values: Some(SONY_TAG9405B_CREATIVESTYLE_VALUES) },
+    BinDef { index: 82, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 834, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 846, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 858, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 90, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9405B_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 91, width: 1, signed: false, name: "DistortionCorrection", values: Some(SONY_TAG9405B_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9405B_LENSFORMAT_VALUES) },
+    BinDef { index: 94, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9405B_LENSMOUNT_VALUES) },
+    BinDef { index: 96, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9405B_LENSTYPE2_VALUES) },
+    BinDef { index: 98, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9405B_LENSTYPE_VALUES) },
+];
 
 pub static SONY_TAG9405B_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -13531,6 +14793,14 @@ pub static SONY_TAG9406: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "BatteryLevelGrip2", values: None },
 };
 
+/// Sony::Tag9406 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9406_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 1, signed: false, name: "BatteryTemperature", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "BatteryLevelGrip1", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "BatteryLevelGrip2", values: None },
+];
+
 /// Sony::Tag9406b tags
 pub static SONY_TAG9406B: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "Battery2", values: None },
@@ -13540,10 +14810,24 @@ pub static SONY_TAG9406B: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "BatteryLevel2", values: None },
 };
 
+/// Sony::Tag9406b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9406B_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "Battery2", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "BatteryStatus1", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "BatteryStatus2", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "BatteryLevel2", values: None },
+];
+
 /// Sony::Tag940a tags
 pub static SONY_TAG940A: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "AFPointsSelected", values: Some(SONY_TAG940A_AFPOINTSSELECTED_VALUES) },
 };
+
+/// Sony::Tag940a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG940A_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "AFPointsSelected", values: Some(SONY_TAG940A_AFPOINTSSELECTED_VALUES) },
+];
 
 pub static SONY_TAG940A_AFPOINTSSELECTED_VALUES: &[(i64, &str)] = &[
     (0, "(none)"),
@@ -13563,6 +14847,15 @@ pub static SONY_TAG940C: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "LensMount2", values: Some(SONY_TAG940C_LENSMOUNT2_VALUES) },
     9u16 => TagDef { name: "LensType3", values: Some(SONY_TAG940C_LENSTYPE3_VALUES) },
 };
+
+/// Sony::Tag940c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG940C_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 2, signed: false, name: "CameraE-mountVersion", values: None },
+    BinDef { index: 13, width: 2, signed: false, name: "LensE-mountVersion", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "LensFirmwareVersion", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "LensMount2", values: Some(SONY_TAG940C_LENSMOUNT2_VALUES) },
+    BinDef { index: 9, width: 2, signed: false, name: "LensType3", values: Some(SONY_TAG940C_LENSTYPE3_VALUES) },
+];
 
 pub static SONY_TAG940C_LENSMOUNT2_VALUES: &[(i64, &str)] = &[
     (0, "Unknown"),
@@ -13862,6 +15155,12 @@ pub static SONY_TAG940E: phf::Map<u16, TagDef> = phf::phf_map! {
     6664u16 => TagDef { name: "TiffMeteringImage", values: None },
 };
 
+/// Sony::Tag940e ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG940E_BIN: &[BinDef] = &[
+    BinDef { index: 6662, width: 1, signed: false, name: "TiffMeteringImageWidth", values: None },
+    BinDef { index: 6663, width: 1, signed: false, name: "TiffMeteringImageHeight", values: None },
+];
+
 /// Sony::Tag9416 tags
 pub static SONY_TAG9416: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "Tag9416_0000", values: None },
@@ -13901,6 +15200,34 @@ pub static SONY_TAG9416: phf::Map<u16, TagDef> = phf::phf_map! {
     77u16 => TagDef { name: "LensType", values: Some(SONY_TAG9416_LENSTYPE_VALUES) },
     79u16 => TagDef { name: "DistortionCorrParams", values: None },
 };
+
+/// Sony::Tag9416 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9416_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "Tag9416_0000", values: None },
+    BinDef { index: 10, width: 2, signed: false, name: "SonyExposureTime2", values: None },
+    BinDef { index: 112, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG9416_PICTUREPROFILE_VALUES) },
+    BinDef { index: 113, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 115, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 117, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "SonyFNumber2", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "SonyMaxApertureValue", values: None },
+    BinDef { index: 1866, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 1871, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 2229, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 2231, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 2277, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 29, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 43, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9416_RELEASEMODE2_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9416_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "CreativeStyle", values: Some(SONY_TAG9416_CREATIVESTYLE_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 72, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9416_LENSMOUNT_VALUES) },
+    BinDef { index: 73, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9416_LENSFORMAT_VALUES) },
+    BinDef { index: 74, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9416_LENSMOUNT_VALUES) },
+    BinDef { index: 75, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9416_LENSTYPE2_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9416_LENSTYPE_VALUES) },
+];
 
 pub static SONY_TAG9416_PICTUREPROFILE_VALUES: &[(i64, &str)] = &[
     (0, "Gamma Still - Standard/Neutral (PP2)"),

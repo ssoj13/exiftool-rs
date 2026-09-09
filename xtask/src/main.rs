@@ -201,6 +201,16 @@ pub struct MaskDef {{
     pub values: Option<&'static [(i64, &'static str)]>,
 }}
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {{
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}}
+
 "#,
             vendor
         );
@@ -208,6 +218,7 @@ pub struct MaskDef {{
         // Track generated constants to avoid duplicates
         let mut generated_constants: HashSet<String> = HashSet::new();
         let mut tables_with_masks: HashSet<String> = HashSet::new();
+        let mut tables_with_bin: HashSet<String> = HashSet::new();
 
         // Generate tag tables
         for (table_name, table) in tables {
@@ -221,6 +232,9 @@ pub struct MaskDef {{
                 ));
 
                 let mut mask_rows: Vec<(u16, u32, String, String)> = Vec::new();
+                let mut bin_rows: Vec<(u16, u8, bool, String, String)> = Vec::new();
+                let is_binary = table.first_entry.is_some();
+                let table_fmt = table.format.as_deref();
                 for (id, info) in tags {
                     let values_ref = if let Some(values) = &info.values {
                         if !values.is_empty() {
@@ -259,6 +273,21 @@ pub struct MaskDef {{
                             info.name.clone(),
                             values_ref.clone(),
                         ));
+                    } else if is_binary
+                        && !info.name.contains("Offset")
+                        && !info.name.starts_with("CustomSettings")
+                    {
+                        if let Some((width, signed)) =
+                            bin_spec(json_format_str(&info.format), table_fmt)
+                        {
+                            bin_rows.push((
+                                tag_id as u16,
+                                width,
+                                signed,
+                                info.name.clone(),
+                                values_ref.clone(),
+                            ));
+                        }
                     }
 
                     code.push_str(&format!(
@@ -282,6 +311,23 @@ pub struct MaskDef {{
                         code.push_str(&format!(
                             "    MaskDef {{ index: {}, mask: {:#x}, name: \"{}\", values: {} }},\n",
                             index, mask, name, values_ref
+                        ));
+                    }
+                    code.push_str("];\n\n");
+                }
+
+                if !bin_rows.is_empty() {
+                    tables_with_bin.insert(safe_name.clone());
+                    code.push_str(&format!(
+                        "/// {} ProcessBinaryData integers (table FORMAT or int8u)\n",
+                        table_name
+                    ));
+                    code.push_str(&format!("pub static {}_BIN: &[BinDef] = &[\n", safe_name));
+                    for (index, width, signed, name, values_ref) in &bin_rows {
+                        code.push_str(&format!(
+                            "    BinDef {{ index: {}, width: {}, signed: {}, name: \"{}\", values: {} }},
+",
+                            index, width, signed, name, values_ref
                         ));
                     }
                     code.push_str("];\n\n");
@@ -322,7 +368,7 @@ pub struct MaskDef {{
         }
 
         if vendor == "Nikon" {
-            emit_nikon_shotinfo_custom(tables, &tables_with_masks, &mut code);
+            emit_nikon_shotinfo_custom(tables, &tables_with_masks, &tables_with_bin, &mut code);
         }
 
         // Add lookup function
@@ -343,6 +389,26 @@ pub fn lookup(_tag_id: u16) -> Option<&'static TagDef> {
     }
 
     Ok(())
+}
+
+fn json_format_str(format: &Option<serde_json::Value>) -> Option<&str> {
+    match format {
+        Some(serde_json::Value::String(s)) => Some(s.as_str()),
+        _ => None,
+    }
+}
+
+fn bin_spec(tag_format: Option<&str>, table_format: Option<&str>) -> Option<(u8, bool)> {
+    let f = tag_format.or(table_format).unwrap_or("int8u");
+    match f {
+        "int8u" | "int8" => Some((1, false)),
+        "int8s" => Some((1, true)),
+        "int16u" => Some((2, false)),
+        "int16s" => Some((2, true)),
+        "int32u" => Some((4, false)),
+        "int32s" => Some((4, true)),
+        _ => None,
+    }
 }
 
 fn undef_len(format: &Option<serde_json::Value>) -> Option<u16> {
@@ -367,6 +433,7 @@ fn is_settings_ptr(name: &str) -> bool {
 fn emit_nikon_shotinfo_custom(
     tables: &BTreeMap<String, TagTable>,
     tables_with_masks: &HashSet<String>,
+    tables_with_bin: &HashSet<String>,
     code: &mut String,
 ) {
     let mut rows: Vec<(String, u16, u16, String, String)> = Vec::new();
@@ -448,7 +515,7 @@ fn emit_nikon_shotinfo_custom(
     ptrs.dedup();
     code.push_str(
         r#"/// ShotInfo / MenuSettings blob slice for a NikonCustom Settings* subdirectory.
-/// `size` 0 means the slice runs to the last Mask index (pointer-target Settings tables).
+/// `size` 0 means the slice runs to the last Mask or BinDef index (pointer-target Settings tables).
 #[derive(Debug, Clone, Copy)]
 pub struct ShotInfoCustomDir {
     pub shot_info_table: &'static str,
@@ -456,6 +523,7 @@ pub struct ShotInfoCustomDir {
     pub size: u16,
     pub group: &'static str,
     pub masks: &'static [MaskDef],
+    pub fields: &'static [BinDef],
 }
 
 /// int32u pointer (`Start => $val`) to a nested binary table inside ShotInfo.
@@ -476,10 +544,15 @@ pub static NIKON_SHOTINFO_CUSTOM_DIRS: &[ShotInfoCustomDir] = &[
         } else {
             "&[]".to_string()
         };
+        let fields_ref = if tables_with_bin.contains(masks_ident) {
+            format!("{}_BIN", masks_ident)
+        } else {
+            "&[]".to_string()
+        };
         code.push_str(&format!(
-            "    ShotInfoCustomDir {{ shot_info_table: \"{}\", offset: {}, size: {}, group: \"{}\", masks: {} }},
+            "    ShotInfoCustomDir {{ shot_info_table: \"{}\", offset: {}, size: {}, group: \"{}\", masks: {}, fields: {} }},
 ",
-            table_name, offset, size, group, masks_ref
+            table_name, offset, size, group, masks_ref, fields_ref
         ));
     }
     code.push_str(

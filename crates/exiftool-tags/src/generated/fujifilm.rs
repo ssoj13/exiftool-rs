@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// FujiFilm::AFCSettings tags
 pub static FUJIFILM_AFCSETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AF-CSetting", values: Some(FUJIFILM_AFCSETTINGS_AF_CSETTING_VALUES) },

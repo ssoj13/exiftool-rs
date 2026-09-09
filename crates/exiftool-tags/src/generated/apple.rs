@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Apple::Main tags
 pub static APPLE_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "MakerNoteVersion", values: None },

@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Minolta::CameraSettings tags
 pub static MINOLTA_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES) },
@@ -66,6 +76,54 @@ pub static MINOLTA_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ISO", values: None },
     9u16 => TagDef { name: "ExposureTime", values: None },
 };
+
+/// Minolta::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES) },
+    BinDef { index: 10, width: 4, signed: false, name: "FNumber", values: None },
+    BinDef { index: 11, width: 4, signed: false, name: "MacroMode", values: Some(MINOLTA_CAMERASETTINGS_MACROMODE_VALUES) },
+    BinDef { index: 12, width: 4, signed: false, name: "DigitalZoom", values: Some(MINOLTA_CAMERASETTINGS_DIGITALZOOM_VALUES) },
+    BinDef { index: 13, width: 4, signed: false, name: "ExposureCompensation", values: None },
+    BinDef { index: 14, width: 4, signed: false, name: "BracketStep", values: Some(MINOLTA_CAMERASETTINGS_BRACKETSTEP_VALUES) },
+    BinDef { index: 18, width: 4, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 19, width: 4, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 2, width: 4, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGS_FLASHMODE_VALUES) },
+    BinDef { index: 20, width: 4, signed: false, name: "FlashFired", values: Some(MINOLTA_CAMERASETTINGS_FLASHFIRED_VALUES) },
+    BinDef { index: 21, width: 4, signed: false, name: "MinoltaDate", values: None },
+    BinDef { index: 22, width: 4, signed: false, name: "MinoltaTime", values: None },
+    BinDef { index: 23, width: 4, signed: false, name: "MaxAperture", values: None },
+    BinDef { index: 26, width: 4, signed: false, name: "FileNumberMemory", values: Some(MINOLTA_CAMERASETTINGS_FILENUMBERMEMORY_VALUES) },
+    BinDef { index: 28, width: 4, signed: false, name: "ColorBalanceRed", values: None },
+    BinDef { index: 29, width: 4, signed: false, name: "ColorBalanceGreen", values: None },
+    BinDef { index: 3, width: 4, signed: false, name: "WhiteBalance", values: None },
+    BinDef { index: 30, width: 4, signed: false, name: "ColorBalanceBlue", values: None },
+    BinDef { index: 31, width: 4, signed: false, name: "Saturation", values: Some(MINOLTA_CAMERASETTINGS_SATURATION_VALUES) },
+    BinDef { index: 32, width: 4, signed: false, name: "Contrast", values: Some(MINOLTA_CAMERASETTINGS_CONTRAST_VALUES) },
+    BinDef { index: 33, width: 4, signed: false, name: "Sharpness", values: Some(MINOLTA_CAMERASETTINGS_SHARPNESS_VALUES) },
+    BinDef { index: 34, width: 4, signed: false, name: "SubjectProgram", values: Some(MINOLTA_CAMERASETTINGS_SUBJECTPROGRAM_VALUES) },
+    BinDef { index: 35, width: 4, signed: false, name: "FlashExposureComp", values: None },
+    BinDef { index: 36, width: 4, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGS_ISOSETTING_VALUES) },
+    BinDef { index: 37, width: 4, signed: false, name: "MinoltaModelID", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAMODELID_VALUES) },
+    BinDef { index: 38, width: 4, signed: false, name: "IntervalMode", values: Some(MINOLTA_CAMERASETTINGS_INTERVALMODE_VALUES) },
+    BinDef { index: 39, width: 4, signed: false, name: "FolderName", values: Some(MINOLTA_CAMERASETTINGS_FOLDERNAME_VALUES) },
+    BinDef { index: 4, width: 4, signed: false, name: "MinoltaImageSize", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAIMAGESIZE_VALUES) },
+    BinDef { index: 40, width: 4, signed: false, name: "ColorMode", values: Some(MINOLTA_CAMERASETTINGS_COLORMODE_VALUES) },
+    BinDef { index: 41, width: 4, signed: false, name: "ColorFilter", values: None },
+    BinDef { index: 43, width: 4, signed: false, name: "InternalFlash", values: Some(MINOLTA_CAMERASETTINGS_INTERNALFLASH_VALUES) },
+    BinDef { index: 44, width: 4, signed: false, name: "Brightness", values: None },
+    BinDef { index: 47, width: 4, signed: false, name: "WideFocusZone", values: Some(MINOLTA_CAMERASETTINGS_WIDEFOCUSZONE_VALUES) },
+    BinDef { index: 48, width: 4, signed: false, name: "FocusMode", values: Some(MINOLTA_CAMERASETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 49, width: 4, signed: false, name: "FocusArea", values: Some(MINOLTA_CAMERASETTINGS_FOCUSAREA_VALUES) },
+    BinDef { index: 5, width: 4, signed: false, name: "MinoltaQuality", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAQUALITY_VALUES) },
+    BinDef { index: 50, width: 4, signed: false, name: "DECPosition", values: Some(MINOLTA_CAMERASETTINGS_DECPOSITION_VALUES) },
+    BinDef { index: 51, width: 4, signed: false, name: "ColorProfile", values: Some(MINOLTA_CAMERASETTINGS_COLORPROFILE_VALUES) },
+    BinDef { index: 52, width: 4, signed: false, name: "DataImprint", values: Some(MINOLTA_CAMERASETTINGS_DATAIMPRINT_VALUES) },
+    BinDef { index: 6, width: 4, signed: false, name: "DriveMode", values: Some(MINOLTA_CAMERASETTINGS_DRIVEMODE_VALUES) },
+    BinDef { index: 63, width: 4, signed: false, name: "FlashMetering", values: Some(MINOLTA_CAMERASETTINGS_FLASHMETERING_VALUES) },
+    BinDef { index: 7, width: 4, signed: false, name: "MeteringMode", values: Some(MINOLTA_CAMERASETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "ISO", values: None },
+    BinDef { index: 9, width: 4, signed: false, name: "ExposureTime", values: None },
+];
 
 pub static MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
@@ -258,6 +316,11 @@ pub static MINOLTA_CAMERASETTINGS_METERINGMODE_VALUES: &[(i64, &str)] = &[
 pub static OLYMPUS_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1580u16 => TagDef { name: "CAFSensitivity", values: None },
 };
+
+/// Olympus::AFInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static OLYMPUS_AFINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1580, width: 1, signed: true, name: "CAFSensitivity", values: None },
+];
 
 /// Olympus::AFTargetInfo tags
 pub static OLYMPUS_AFTARGETINFO: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -1227,6 +1290,11 @@ pub static OLYMPUS_SUBJECTDETECTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "SubjectDetectArea", values: None },
     6u16 => TagDef { name: "SubjectDetectDetail", values: None },
 };
+
+/// Olympus::SubjectDetectInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static OLYMPUS_SUBJECTDETECTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "SubjectDetectStatus", values: Some(OLYMPUS_SUBJECTDETECTINFO_SUBJECTDETECTSTATUS_VALUES) },
+];
 
 pub static OLYMPUS_SUBJECTDETECTINFO_SUBJECTDETECTSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "No Data"),

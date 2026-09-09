@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Canon::AFConfig tags
 pub static CANON_AFCONFIG: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "AFConfigTool", values: Some(CANON_AFCONFIG_AFCONFIGTOOL_VALUES) },
@@ -49,6 +59,37 @@ pub static CANON_AFCONFIG: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "AFAssistBeam", values: Some(CANON_AFCONFIG_AFASSISTBEAM_VALUES) },
     9u16 => TagDef { name: "OneShotAFRelease", values: Some(CANON_AFCONFIG_ONESHOTAFRELEASE_VALUES) },
 };
+
+/// Canon::AFConfig ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_AFCONFIG_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "AFConfigTool", values: Some(CANON_AFCONFIG_AFCONFIGTOOL_VALUES) },
+    BinDef { index: 10, width: 4, signed: true, name: "AutoAFPointSelEOSiTRAF", values: Some(CANON_AFCONFIG_AUTOAFPOINTSELEOSITRAF_VALUES) },
+    BinDef { index: 11, width: 4, signed: true, name: "LensDriveWhenAFImpossible", values: Some(CANON_AFCONFIG_LENSDRIVEWHENAFIMPOSSIBLE_VALUES) },
+    BinDef { index: 12, width: 4, signed: true, name: "SelectAFAreaSelectionMode", values: None },
+    BinDef { index: 13, width: 4, signed: true, name: "AFAreaSelectionMethod", values: Some(CANON_AFCONFIG_AFAREASELECTIONMETHOD_VALUES) },
+    BinDef { index: 14, width: 4, signed: true, name: "OrientationLinkedAF", values: Some(CANON_AFCONFIG_ORIENTATIONLINKEDAF_VALUES) },
+    BinDef { index: 15, width: 4, signed: true, name: "ManualAFPointSelPattern", values: Some(CANON_AFCONFIG_MANUALAFPOINTSELPATTERN_VALUES) },
+    BinDef { index: 16, width: 4, signed: true, name: "AFPointDisplayDuringFocus", values: Some(CANON_AFCONFIG_AFPOINTDISPLAYDURINGFOCUS_VALUES) },
+    BinDef { index: 17, width: 4, signed: true, name: "VFDisplayIllumination", values: Some(CANON_AFCONFIG_VFDISPLAYILLUMINATION_VALUES) },
+    BinDef { index: 18, width: 4, signed: true, name: "AFStatusViewfinder", values: Some(CANON_AFCONFIG_AFSTATUSVIEWFINDER_VALUES) },
+    BinDef { index: 19, width: 4, signed: true, name: "InitialAFPointInServo", values: Some(CANON_AFCONFIG_INITIALAFPOINTINSERVO_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "AFTrackingSensitivity", values: Some(CANON_AFCONFIG_AFTRACKINGSENSITIVITY_VALUES) },
+    BinDef { index: 20, width: 4, signed: true, name: "SubjectToDetect", values: Some(CANON_AFCONFIG_SUBJECTTODETECT_VALUES) },
+    BinDef { index: 21, width: 4, signed: true, name: "SubjectSwitching", values: Some(CANON_AFCONFIG_SUBJECTSWITCHING_VALUES) },
+    BinDef { index: 24, width: 4, signed: true, name: "EyeDetection", values: Some(CANON_AFCONFIG_EYEDETECTION_VALUES) },
+    BinDef { index: 26, width: 4, signed: true, name: "WholeAreaTracking", values: Some(CANON_AFCONFIG_WHOLEAREATRACKING_VALUES) },
+    BinDef { index: 27, width: 4, signed: true, name: "ServoAFCharacteristics", values: Some(CANON_AFCONFIG_SERVOAFCHARACTERISTICS_VALUES) },
+    BinDef { index: 28, width: 4, signed: true, name: "CaseAutoSetting", values: Some(CANON_AFCONFIG_CASEAUTOSETTING_VALUES) },
+    BinDef { index: 29, width: 4, signed: true, name: "ActionPriority", values: Some(CANON_AFCONFIG_ACTIONPRIORITY_VALUES) },
+    BinDef { index: 3, width: 4, signed: true, name: "AFAccelDecelTracking", values: Some(CANON_AFCONFIG_AFACCELDECELTRACKING_VALUES) },
+    BinDef { index: 30, width: 4, signed: true, name: "SportEvents", values: Some(CANON_AFCONFIG_SPORTEVENTS_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "AFPointSwitching", values: Some(CANON_AFCONFIG_AFPOINTSWITCHING_VALUES) },
+    BinDef { index: 5, width: 4, signed: true, name: "AIServoFirstImage", values: Some(CANON_AFCONFIG_AISERVOFIRSTIMAGE_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "AIServoSecondImage", values: Some(CANON_AFCONFIG_AISERVOSECONDIMAGE_VALUES) },
+    BinDef { index: 7, width: 4, signed: true, name: "USMLensElectronicMF", values: Some(CANON_AFCONFIG_USMLENSELECTRONICMF_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "AFAssistBeam", values: Some(CANON_AFCONFIG_AFASSISTBEAM_VALUES) },
+    BinDef { index: 9, width: 4, signed: true, name: "OneShotAFRelease", values: Some(CANON_AFCONFIG_ONESHOTAFRELEASE_VALUES) },
+];
 
 pub static CANON_AFCONFIG_AFCONFIGTOOL_VALUES: &[(i64, &str)] = &[
     (11, "Case A"),
@@ -263,6 +304,11 @@ pub static CANON_AFMICROADJ: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "AFMicroAdjValue", values: None },
 };
 
+/// Canon::AFMicroAdj ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_AFMICROADJ_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "AFMicroAdjMode", values: Some(CANON_AFMICROADJ_AFMICROADJMODE_VALUES) },
+];
+
 pub static CANON_AFMICROADJ_AFMICROADJMODE_VALUES: &[(i64, &str)] = &[
     (0, "Disable"),
     (1, "Adjust all by the same amount"),
@@ -273,6 +319,11 @@ pub static CANON_AFMICROADJ_AFMICROADJMODE_VALUES: &[(i64, &str)] = &[
 pub static CANON_AMBIENCE: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "AmbienceSelection", values: Some(CANON_AMBIENCE_AMBIENCESELECTION_VALUES) },
 };
+
+/// Canon::Ambience ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_AMBIENCE_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "AmbienceSelection", values: Some(CANON_AMBIENCE_AMBIENCESELECTION_VALUES) },
+];
 
 pub static CANON_AMBIENCE_AMBIENCESELECTION_VALUES: &[(i64, &str)] = &[
     (0, "Standard"),
@@ -290,6 +341,11 @@ pub static CANON_AMBIENCE_AMBIENCESELECTION_VALUES: &[(i64, &str)] = &[
 pub static CANON_ASPECTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AspectRatio", values: Some(CANON_ASPECTINFO_ASPECTRATIO_VALUES) },
 };
+
+/// Canon::AspectInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_ASPECTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "AspectRatio", values: Some(CANON_ASPECTINFO_ASPECTRATIO_VALUES) },
+];
 
 pub static CANON_ASPECTINFO_ASPECTRATIO_VALUES: &[(i64, &str)] = &[
     (0, "3:2"),
@@ -330,6 +386,22 @@ pub static CANON_CAMERAINFO1000D: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Canon::CameraInfo1000D Mask bitfields (ExifTool 0.1-style indices)
 pub static CANON_CAMERAINFO1000D_MASKS: &[MaskDef] = &[
     MaskDef { index: 19, mask: 0x7f, name: "FlashModel", values: Some(CANON_CAMERAINFO1000D_FLASHMODEL_VALUES) },
+];
+
+/// Canon::CameraInfo1000D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1000D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1000D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO1000D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 311, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 323, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1000D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 615, width: 1, signed: false, name: "PictureStyleInfo", values: None },
 ];
 
 pub static CANON_CAMERAINFO1000D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
@@ -650,6 +722,23 @@ pub static CANON_CAMERAINFO1D: phf::Map<u16, TagDef> = phf::phf_map! {
     78u16 => TagDef { name: "ColorTemperature", values: None },
     81u16 => TagDef { name: "PictureStyle", values: Some(CANON_CAMERAINFO1D_PICTURESTYLE_VALUES) },
 };
+
+/// Canon::CameraInfo1D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1D_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 65, width: 1, signed: false, name: "SharpnessFrequency", values: Some(CANON_CAMERAINFO1D_SHARPNESSFREQUENCY_VALUES) },
+    BinDef { index: 66, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 68, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1D_WHITEBALANCE_VALUES) },
+    BinDef { index: 71, width: 1, signed: false, name: "SharpnessFrequency", values: Some(CANON_CAMERAINFO1D_SHARPNESSFREQUENCY_VALUES) },
+    BinDef { index: 72, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 74, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1D_WHITEBALANCE_VALUES) },
+    BinDef { index: 75, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1D_PICTURESTYLE_VALUES) },
+    BinDef { index: 78, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 81, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1D_PICTURESTYLE_VALUES) },
+];
 
 pub static CANON_CAMERAINFO1D_LENSTYPE_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
@@ -977,6 +1066,21 @@ pub static CANON_CAMERAINFO1DX: phf::Map<u16, TagDef> = phf::phf_map! {
     732u16 => TagDef { name: "DirectoryIndex", values: None },
 };
 
+/// Canon::CameraInfo1DX ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DX_BIN: &[BinDef] = &[
+    BinDef { index: 1012, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 125, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1DX_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 188, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DX_WHITEBALANCE_VALUES) },
+    BinDef { index: 192, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 244, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DX_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 720, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 732, width: 4, signed: false, name: "DirectoryIndex", values: None },
+];
+
 pub static CANON_CAMERAINFO1DX_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -1296,6 +1400,20 @@ pub static CANON_CAMERAINFO1DMKII: phf::Map<u16, TagDef> = phf::phf_map! {
     57u16 => TagDef { name: "CanonImageSize", values: Some(CANON_CAMERAINFO1DMKII_CANONIMAGESIZE_VALUES) },
     9u16 => TagDef { name: "FocalLength", values: None },
 };
+
+/// Canon::CameraInfo1DmkII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKII_BIN: &[BinDef] = &[
+    BinDef { index: 102, width: 1, signed: false, name: "JPEGQuality", values: None },
+    BinDef { index: 108, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DMKII_PICTURESTYLE_VALUES) },
+    BinDef { index: 110, width: 1, signed: true, name: "Saturation", values: Some(CANON_CAMERAINFO1DMKII_SATURATION_VALUES) },
+    BinDef { index: 111, width: 1, signed: true, name: "ColorTone", values: Some(CANON_CAMERAINFO1DMKII_COLORTONE_VALUES) },
+    BinDef { index: 114, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 115, width: 1, signed: true, name: "Contrast", values: Some(CANON_CAMERAINFO1DMKII_CONTRAST_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 45, width: 1, signed: false, name: "FocalType", values: Some(CANON_CAMERAINFO1DMKII_FOCALTYPE_VALUES) },
+    BinDef { index: 54, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKII_WHITEBALANCE_VALUES) },
+    BinDef { index: 57, width: 2, signed: false, name: "CanonImageSize", values: Some(CANON_CAMERAINFO1DMKII_CANONIMAGESIZE_VALUES) },
+];
 
 pub static CANON_CAMERAINFO1DMKII_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -1656,6 +1774,25 @@ pub static CANON_CAMERAINFO1DMKIII: phf::Map<u16, TagDef> = phf::phf_map! {
     98u16 => TagDef { name: "ColorTemperature", values: None },
 };
 
+/// Canon::CameraInfo1DmkIII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKIII_BIN: &[BinDef] = &[
+    BinDef { index: 1114, width: 4, signed: false, name: "TimeStamp1", values: None },
+    BinDef { index: 1118, width: 4, signed: false, name: "TimeStamp", values: None },
+    BinDef { index: 134, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DMKIII_PICTURESTYLE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 370, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 374, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 382, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1DMKIII_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 682, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 94, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKIII_WHITEBALANCE_VALUES) },
+    BinDef { index: 98, width: 2, signed: false, name: "ColorTemperature", values: None },
+];
+
 pub static CANON_CAMERAINFO1DMKIII_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
     (1, "Standard"),
@@ -1972,6 +2109,17 @@ pub static CANON_CAMERAINFO1DMKIIN: phf::Map<u16, TagDef> = phf::phf_map! {
     55u16 => TagDef { name: "ColorTemperature", values: None },
     9u16 => TagDef { name: "FocalLength", values: None },
 };
+
+/// Canon::CameraInfo1DmkIIN ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKIIN_BIN: &[BinDef] = &[
+    BinDef { index: 115, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DMKIIN_PICTURESTYLE_VALUES) },
+    BinDef { index: 116, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 117, width: 1, signed: true, name: "Contrast", values: Some(CANON_CAMERAINFO1DMKIIN_CONTRAST_VALUES) },
+    BinDef { index: 118, width: 1, signed: true, name: "Saturation", values: Some(CANON_CAMERAINFO1DMKIIN_SATURATION_VALUES) },
+    BinDef { index: 119, width: 1, signed: true, name: "ColorTone", values: Some(CANON_CAMERAINFO1DMKIIN_COLORTONE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 54, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKIIN_WHITEBALANCE_VALUES) },
+];
 
 pub static CANON_CAMERAINFO1DMKIIN_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -2305,6 +2453,24 @@ pub static CANON_CAMERAINFO1DMKIV: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "MeasuredEV3", values: None },
 };
 
+/// Canon::CameraInfo1DmkIV ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKIV_BIN: &[BinDef] = &[
+    BinDef { index: 120, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKIV_WHITEBALANCE_VALUES) },
+    BinDef { index: 124, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO1DMKIV_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1DMKIV_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 556, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 568, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO1DMKIV_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "MeasuredEV2", values: None },
+    BinDef { index: 872, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "MeasuredEV3", values: None },
+];
+
 pub static CANON_CAMERAINFO1DMKIV_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -2615,6 +2781,22 @@ pub static CANON_CAMERAINFO40D: phf::Map<u16, TagDef> = phf::phf_map! {
     69u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo40D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO40D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO40D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO40D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 307, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 319, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO40D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 603, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO40D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -2918,6 +3100,22 @@ pub static CANON_CAMERAINFO450D: phf::Map<u16, TagDef> = phf::phf_map! {
     67u16 => TagDef { name: "FocusDistanceUpper", values: None },
     69u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
+
+/// Canon::CameraInfo450D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO450D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO450D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO450D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 307, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 319, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO450D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 611, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO450D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -3225,6 +3423,25 @@ pub static CANON_CAMERAINFO500D: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "FocusDistanceUpper", values: None },
     82u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
+
+/// Canon::CameraInfo500D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO500D_BIN: &[BinDef] = &[
+    BinDef { index: 115, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO500D_WHITEBALANCE_VALUES) },
+    BinDef { index: 119, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 171, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO500D_PICTURESTYLE_VALUES) },
+    BinDef { index: 188, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO500D_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 190, width: 1, signed: false, name: "AutoLightingOptimizer", values: Some(CANON_CAMERAINFO500D_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO500D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 467, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 479, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO500D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO500D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 779, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO500D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -3580,6 +3797,25 @@ pub static CANON_CAMERAINFO50D: phf::Map<u16, TagDef> = phf::phf_map! {
     82u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo50D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO50D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO50D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 167, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO50D_PICTURESTYLE_VALUES) },
+    BinDef { index: 189, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO50D_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 191, width: 1, signed: false, name: "AutoLightingOptimizer", values: Some(CANON_CAMERAINFO50D_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO50D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 411, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 423, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO50D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO50D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 727, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO50D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -3931,6 +4167,23 @@ pub static CANON_CAMERAINFO550D: phf::Map<u16, TagDef> = phf::phf_map! {
     86u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo550D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO550D_BIN: &[BinDef] = &[
+    BinDef { index: 120, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO550D_WHITEBALANCE_VALUES) },
+    BinDef { index: 124, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 176, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO550D_PICTURESTYLE_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO550D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 484, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 496, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO550D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO550D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 796, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO550D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -4272,6 +4525,27 @@ pub static CANON_CAMERAINFO5D: phf::Map<u16, TagDef> = phf::phf_map! {
     84u16 => TagDef { name: "WhiteBalance", values: Some(CANON_CAMERAINFO5D_WHITEBALANCE_VALUES) },
     88u16 => TagDef { name: "ColorTemperature", values: None },
 };
+
+/// Canon::CameraInfo5D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO5D_BIN: &[BinDef] = &[
+    BinDef { index: 108, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO5D_PICTURESTYLE_VALUES) },
+    BinDef { index: 204, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 208, width: 2, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 23, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 255, width: 1, signed: true, name: "FilterEffectMonochrome", values: Some(CANON_CAMERAINFO5D_FILTEREFFECTMONOCHROME_VALUES) },
+    BinDef { index: 264, width: 1, signed: true, name: "ToningEffectMonochrome", values: Some(CANON_CAMERAINFO5D_TONINGEFFECTMONOCHROME_VALUES) },
+    BinDef { index: 268, width: 2, signed: false, name: "UserDef1PictureStyle", values: Some(CANON_CAMERAINFO5D_USERDEF1PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: true, name: "MacroMagnification", values: None },
+    BinDef { index: 270, width: 2, signed: false, name: "UserDef2PictureStyle", values: Some(CANON_CAMERAINFO5D_USERDEF2PICTURESTYLE_VALUES) },
+    BinDef { index: 272, width: 2, signed: false, name: "UserDef3PictureStyle", values: Some(CANON_CAMERAINFO5D_USERDEF3PICTURESTYLE_VALUES) },
+    BinDef { index: 284, width: 4, signed: false, name: "TimeStamp", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 39, width: 1, signed: true, name: "CameraOrientation", values: Some(CANON_CAMERAINFO5D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 84, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO5D_WHITEBALANCE_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "ColorTemperature", values: None },
+];
 
 pub static CANON_CAMERAINFO5D_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -4669,6 +4943,26 @@ pub static CANON_CAMERAINFO5DMKII_MASKS: &[MaskDef] = &[
     MaskDef { index: 19, mask: 0x7f, name: "FlashModel", values: Some(CANON_CAMERAINFO5DMKII_FLASHMODEL_VALUES) },
 ];
 
+/// Canon::CameraInfo5DmkII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO5DMKII_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO5DMKII_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 167, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO5DMKII_PICTURESTYLE_VALUES) },
+    BinDef { index: 189, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO5DMKII_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 191, width: 1, signed: false, name: "AutoLightingOptimizer", values: Some(CANON_CAMERAINFO5DMKII_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO5DMKII_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 443, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 455, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO5DMKII_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO5DMKII_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 759, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO5DMKII_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -5042,6 +5336,23 @@ pub static CANON_CAMERAINFO5DMKIII: phf::Map<u16, TagDef> = phf::phf_map! {
     944u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
 
+/// Canon::CameraInfo5DmkIII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO5DMKIII_BIN: &[BinDef] = &[
+    BinDef { index: 125, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO5DMKIII_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 188, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO5DMKIII_WHITEBALANCE_VALUES) },
+    BinDef { index: 192, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 244, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO5DMKIII_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 652, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 656, width: 4, signed: false, name: "FileIndex2", values: None },
+    BinDef { index: 664, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 668, width: 4, signed: false, name: "DirectoryIndex2", values: None },
+    BinDef { index: 944, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO5DMKIII_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -5365,6 +5676,23 @@ pub static CANON_CAMERAINFO600D: phf::Map<u16, TagDef> = phf::phf_map! {
     87u16 => TagDef { name: "FocusDistanceUpper", values: None },
     89u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
+
+/// Canon::CameraInfo600D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO600D_BIN: &[BinDef] = &[
+    BinDef { index: 123, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO600D_WHITEBALANCE_VALUES) },
+    BinDef { index: 127, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 179, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO600D_PICTURESTYLE_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO600D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 475, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 487, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 56, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO600D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO600D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 763, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO600D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -5701,6 +6029,21 @@ pub static CANON_CAMERAINFO60D: phf::Map<u16, TagDef> = phf::phf_map! {
     87u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo60D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO60D_BIN: &[BinDef] = &[
+    BinDef { index: 125, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 473, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 485, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 54, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO60D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 58, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO60D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 761, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 801, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO60D_LENSTYPE_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
     (1, "Canon EF 50mm f/1.8"),
@@ -5973,6 +6316,23 @@ pub static CANON_CAMERAINFO650D: phf::Map<u16, TagDef> = phf::phf_map! {
     640u16 => TagDef { name: "DirectoryIndex", values: None },
     912u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
+
+/// Canon::CameraInfo650D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO650D_BIN: &[BinDef] = &[
+    BinDef { index: 125, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO650D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 188, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO650D_WHITEBALANCE_VALUES) },
+    BinDef { index: 192, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 244, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO650D_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 624, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 628, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 636, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 640, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 912, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO650D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
@@ -6296,6 +6656,21 @@ pub static CANON_CAMERAINFO6D: phf::Map<u16, TagDef> = phf::phf_map! {
     966u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
 
+/// Canon::CameraInfo6D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO6D_BIN: &[BinDef] = &[
+    BinDef { index: 131, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO6D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 194, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO6D_WHITEBALANCE_VALUES) },
+    BinDef { index: 198, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 250, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO6D_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 682, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 694, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 966, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO6D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -6616,6 +6991,19 @@ pub static CANON_CAMERAINFO70D: phf::Map<u16, TagDef> = phf::phf_map! {
     975u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
 
+/// Canon::CameraInfo70D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO70D_BIN: &[BinDef] = &[
+    BinDef { index: 132, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO70D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 199, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 691, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 703, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 975, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO70D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -6883,6 +7271,18 @@ pub static CANON_CAMERAINFO750D: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "ExposureTime", values: None },
     6u16 => TagDef { name: "ISO", values: None },
 };
+
+/// Canon::CameraInfo750D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO750D_BIN: &[BinDef] = &[
+    BinDef { index: 150, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO750D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 305, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO750D_WHITEBALANCE_VALUES) },
+    BinDef { index: 309, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 361, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO750D_PICTURESTYLE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+];
 
 pub static CANON_CAMERAINFO750D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
@@ -7212,6 +7612,26 @@ pub static CANON_CAMERAINFO7D: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "MeasuredEV", values: None },
 };
 
+/// Canon::CameraInfo7D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO7D_BIN: &[BinDef] = &[
+    BinDef { index: 119, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO7D_WHITEBALANCE_VALUES) },
+    BinDef { index: 123, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 175, width: 1, signed: false, name: "CameraPictureStyle", values: Some(CANON_CAMERAINFO7D_CAMERAPICTURESTYLE_VALUES) },
+    BinDef { index: 201, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO7D_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO7D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 491, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 503, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO7D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO7D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "MeasuredEV2", values: None },
+    BinDef { index: 807, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "MeasuredEV", values: None },
+];
+
 pub static CANON_CAMERAINFO7D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -7536,6 +7956,18 @@ pub static CANON_CAMERAINFO80D: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "ISO", values: None },
 };
 
+/// Canon::CameraInfo80D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO80D_BIN: &[BinDef] = &[
+    BinDef { index: 1198, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 1210, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 150, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO80D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 314, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+];
+
 pub static CANON_CAMERAINFO80D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -7792,6 +8224,14 @@ pub static CANON_CAMERAINFOG5XII: phf::Map<u16, TagDef> = phf::phf_map! {
     659u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Canon::CameraInfoG5XII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOG5XII_BIN: &[BinDef] = &[
+    BinDef { index: 2709, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 2849, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 2861, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 659, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Canon::CameraInfoPowerShot tags
 pub static CANON_CAMERAINFOPOWERSHOT: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ISO", values: None },
@@ -7800,6 +8240,15 @@ pub static CANON_CAMERAINFOPOWERSHOT: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "FNumber", values: None },
     6u16 => TagDef { name: "ExposureTime", values: None },
 };
+
+/// Canon::CameraInfoPowerShot ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOPOWERSHOT_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: true, name: "ISO", values: None },
+    BinDef { index: 135, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 145, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 5, width: 4, signed: true, name: "FNumber", values: None },
+    BinDef { index: 6, width: 4, signed: true, name: "ExposureTime", values: None },
+];
 
 /// Canon::CameraInfoPowerShot2 tags
 pub static CANON_CAMERAINFOPOWERSHOT2: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -7813,21 +8262,49 @@ pub static CANON_CAMERAINFOPOWERSHOT2: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "ExposureTime", values: None },
 };
 
+/// Canon::CameraInfoPowerShot2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOPOWERSHOT2_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "ISO", values: None },
+    BinDef { index: 153, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 159, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 164, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 168, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 261, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 6, width: 4, signed: true, name: "FNumber", values: None },
+    BinDef { index: 7, width: 4, signed: true, name: "ExposureTime", values: None },
+];
+
 /// Canon::CameraInfoR6 tags
 pub static CANON_CAMERAINFOR6: phf::Map<u16, TagDef> = phf::phf_map! {
     2522u16 => TagDef { name: "CameraTemperature", values: None },
     2801u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Canon::CameraInfoR6 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOR6_BIN: &[BinDef] = &[
+    BinDef { index: 2522, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 2801, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Canon::CameraInfoR6m2 tags
 pub static CANON_CAMERAINFOR6M2: phf::Map<u16, TagDef> = phf::phf_map! {
     3369u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Canon::CameraInfoR6m2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOR6M2_BIN: &[BinDef] = &[
+    BinDef { index: 3369, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Canon::CameraInfoR6m3 tags
 pub static CANON_CAMERAINFOR6M3: phf::Map<u16, TagDef> = phf::phf_map! {
     2157u16 => TagDef { name: "ImageCount", values: None },
 };
+
+/// Canon::CameraInfoR6m3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOR6M3_BIN: &[BinDef] = &[
+    BinDef { index: 2157, width: 2, signed: false, name: "ImageCount", values: None },
+];
 
 /// Canon::CameraInfoUnknown tags
 pub static CANON_CAMERAINFOUNKNOWN: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -7843,6 +8320,15 @@ pub static CANON_CAMERAINFOUNKNOWN32: phf::Map<u16, TagDef> = phf::phf_map! {
     91u16 => TagDef { name: "CameraTemperature", values: None },
     92u16 => TagDef { name: "CameraTemperature", values: None },
 };
+
+/// Canon::CameraInfoUnknown32 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOUNKNOWN32_BIN: &[BinDef] = &[
+    BinDef { index: 100, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 71, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 83, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 91, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 92, width: 4, signed: true, name: "CameraTemperature", values: None },
+];
 
 /// Canon::CameraSettings tags
 pub static CANON_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -7889,6 +8375,47 @@ pub static CANON_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Canon::CameraSettings Mask bitfields (ExifTool 0.1-style indices)
 pub static CANON_CAMERASETTINGS_MASKS: &[MaskDef] = &[
     MaskDef { index: 28, mask: 0x7f, name: "FlashModel", values: Some(CANON_CAMERASETTINGS_FLASHMODEL_VALUES) },
+];
+
+/// Canon::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "MacroMode", values: Some(CANON_CAMERASETTINGS_MACROMODE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "CanonImageSize", values: Some(CANON_CAMERASETTINGS_CANONIMAGESIZE_VALUES) },
+    BinDef { index: 11, width: 2, signed: true, name: "EasyMode", values: Some(CANON_CAMERASETTINGS_EASYMODE_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "DigitalZoom", values: Some(CANON_CAMERASETTINGS_DIGITALZOOM_VALUES) },
+    BinDef { index: 13, width: 2, signed: true, name: "Contrast", values: Some(CANON_CAMERASETTINGS_CONTRAST_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "Saturation", values: Some(CANON_CAMERASETTINGS_SATURATION_VALUES) },
+    BinDef { index: 15, width: 2, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 16, width: 2, signed: true, name: "CameraISO", values: None },
+    BinDef { index: 17, width: 2, signed: true, name: "MeteringMode", values: Some(CANON_CAMERASETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "FocusRange", values: Some(CANON_CAMERASETTINGS_FOCUSRANGE_VALUES) },
+    BinDef { index: 19, width: 2, signed: true, name: "AFPoint", values: Some(CANON_CAMERASETTINGS_AFPOINT_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "SelfTimer", values: None },
+    BinDef { index: 20, width: 2, signed: true, name: "CanonExposureMode", values: Some(CANON_CAMERASETTINGS_CANONEXPOSUREMODE_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "LensType", values: Some(CANON_CAMERASETTINGS_LENSTYPE_VALUES) },
+    BinDef { index: 23, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 25, width: 2, signed: true, name: "FocalUnits", values: None },
+    BinDef { index: 26, width: 2, signed: true, name: "MaxAperture", values: None },
+    BinDef { index: 27, width: 2, signed: true, name: "MinAperture", values: None },
+    BinDef { index: 29, width: 2, signed: true, name: "FlashBits", values: Some(CANON_CAMERASETTINGS_FLASHBITS_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "Quality", values: Some(CANON_CAMERASETTINGS_QUALITY_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "FocusContinuous", values: Some(CANON_CAMERASETTINGS_FOCUSCONTINUOUS_VALUES) },
+    BinDef { index: 33, width: 2, signed: true, name: "AESetting", values: Some(CANON_CAMERASETTINGS_AESETTING_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "ImageStabilization", values: Some(CANON_CAMERASETTINGS_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 35, width: 2, signed: true, name: "DisplayAperture", values: None },
+    BinDef { index: 39, width: 2, signed: true, name: "SpotMeteringMode", values: Some(CANON_CAMERASETTINGS_SPOTMETERINGMODE_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "CanonFlashMode", values: Some(CANON_CAMERASETTINGS_CANONFLASHMODE_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "PhotoEffect", values: Some(CANON_CAMERASETTINGS_PHOTOEFFECT_VALUES) },
+    BinDef { index: 41, width: 2, signed: true, name: "ManualFlashOutput", values: Some(CANON_CAMERASETTINGS_MANUALFLASHOUTPUT_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "ColorTone", values: Some(CANON_CAMERASETTINGS_COLORTONE_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "SRAWQuality", values: Some(CANON_CAMERASETTINGS_SRAWQUALITY_VALUES) },
+    BinDef { index: 5, width: 2, signed: true, name: "ContinuousDrive", values: Some(CANON_CAMERASETTINGS_CONTINUOUSDRIVE_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "FocusBracketing", values: Some(CANON_CAMERASETTINGS_FOCUSBRACKETING_VALUES) },
+    BinDef { index: 51, width: 2, signed: true, name: "Clarity", values: Some(CANON_CAMERASETTINGS_CLARITY_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "HDR-PQ", values: Some(CANON_CAMERASETTINGS_HDR_PQ_VALUES) },
+    BinDef { index: 7, width: 2, signed: true, name: "FocusMode", values: Some(CANON_CAMERASETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 9, width: 2, signed: true, name: "RecordMode", values: Some(CANON_CAMERASETTINGS_RECORDMODE_VALUES) },
 ];
 
 pub static CANON_CAMERASETTINGS_MACROMODE_VALUES: &[(i64, &str)] = &[
@@ -8561,6 +9088,23 @@ pub static CANON_COLORCOEFS: phf::Map<u16, TagDef> = phf::phf_map! {
     99u16 => TagDef { name: "ColorTempUnknown10", values: None },
 };
 
+/// Canon::ColorCoefs ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORCOEFS_BIN: &[BinDef] = &[
+    BinDef { index: 104, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 109, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 114, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 19, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 59, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 64, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 69, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 74, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 79, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 84, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 89, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 94, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 99, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+];
+
 /// Canon::ColorCoefs2 tags
 pub static CANON_COLORCOEFS2: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "WB_RGGBLevelsAsShot", values: None },
@@ -8600,6 +9144,23 @@ pub static CANON_COLORCOEFS2: phf::Map<u16, TagDef> = phf::phf_map! {
     95u16 => TagDef { name: "ColorTempUnknown2", values: None },
     96u16 => TagDef { name: "WB_RGGBLevelsUnknown3", values: None },
 };
+
+/// Canon::ColorCoefs2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORCOEFS2_BIN: &[BinDef] = &[
+    BinDef { index: 103, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 111, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 119, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 127, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 135, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 143, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 151, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 159, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 167, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 175, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 183, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 31, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 95, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+];
 
 /// Canon::ColorData1 tags
 pub static CANON_COLORDATA1: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -8696,6 +9257,45 @@ pub static CANON_COLORDATA10: phf::Map<u16, TagDef> = phf::phf_map! {
     95u16 => TagDef { name: "WB_RGGBLevelsMeasured", values: None },
 };
 
+/// Canon::ColorData10 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA10_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA10_COLORDATAVERSION_VALUES) },
+    BinDef { index: 104, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 109, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 114, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 119, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 124, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 129, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 134, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 139, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 144, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 149, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 189, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 194, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 199, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 204, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 209, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 214, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 219, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 224, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 229, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 234, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 239, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 244, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 249, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 254, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 259, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 264, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 269, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 274, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 279, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 665, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 666, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 810, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 811, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 812, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
+
 pub static CANON_COLORDATA10_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (32, "32 (1DXmkIII)"),
     (33, "33 (R5/R6)"),
@@ -8776,6 +9376,42 @@ pub static CANON_COLORDATA11: phf::Map<u16, TagDef> = phf::phf_map! {
     641u16 => TagDef { name: "SpecularWhiteLevel", values: None },
     642u16 => TagDef { name: "LinearityUpperMargin", values: None },
 };
+
+/// Canon::ColorData11 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA11_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA11_COLORDATAVERSION_VALUES) },
+    BinDef { index: 124, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 129, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 134, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 139, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 144, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 149, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 154, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 159, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 164, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 169, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 174, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 179, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 184, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 189, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 194, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 199, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 204, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 244, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 249, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 254, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 259, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 264, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 269, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 274, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 279, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 284, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 289, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 294, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 640, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 641, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 642, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
 
 pub static CANON_COLORDATA11_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (34, "34 (R3)"),
@@ -8865,6 +9501,48 @@ pub static CANON_COLORDATA12: phf::Map<u16, TagDef> = phf::phf_map! {
     662u16 => TagDef { name: "LinearityUpperMargin", values: None },
 };
 
+/// Canon::ColorData12 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA12_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA12_COLORDATAVERSION_VALUES) },
+    BinDef { index: 144, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 149, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 154, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 159, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 164, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 169, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 174, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 179, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 184, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 189, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 194, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 199, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 204, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 209, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 214, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 219, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 224, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 229, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 234, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 239, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 244, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 249, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 254, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 259, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 264, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 269, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 274, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 279, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 284, width: 2, signed: true, name: "ColorTempUnknown30", values: None },
+    BinDef { index: 289, width: 2, signed: true, name: "ColorTempUnknown31", values: None },
+    BinDef { index: 294, width: 2, signed: true, name: "ColorTempUnknown32", values: None },
+    BinDef { index: 299, width: 2, signed: true, name: "ColorTempUnknown33", values: None },
+    BinDef { index: 515, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 516, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 660, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 661, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 662, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
+
 pub static CANON_COLORDATA12_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (64, "64 (R1/R5mkII)"),
     (65, "65 (R50V)"),
@@ -8920,6 +9598,26 @@ pub static CANON_COLORDATA2: phf::Map<u16, TagDef> = phf::phf_map! {
     99u16 => TagDef { name: "WB_RGGBLevelsUnknown7", values: None },
 };
 
+/// Canon::ColorData2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA2_BIN: &[BinDef] = &[
+    BinDef { index: 103, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 108, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 113, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 118, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 123, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 128, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 133, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 138, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 143, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 163, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 33, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 78, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 83, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 88, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 93, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 98, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+];
+
 /// Canon::ColorData3 tags
 pub static CANON_COLORDATA3: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ColorDataVersion", values: Some(CANON_COLORDATA3_COLORDATAVERSION_VALUES) },
@@ -8944,6 +9642,14 @@ pub static CANON_COLORDATA3: phf::Map<u16, TagDef> = phf::phf_map! {
     93u16 => TagDef { name: "WB_RGGBLevelsTungsten", values: None },
     98u16 => TagDef { name: "WB_RGGBLevelsFluorescent", values: None },
 };
+
+/// Canon::ColorData3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA3_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA3_COLORDATAVERSION_VALUES) },
+    BinDef { index: 584, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 585, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 586, width: 2, signed: true, name: "ColorTempFlashData", values: None },
+];
 
 pub static CANON_COLORDATA3_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (1, "1 (1DmkIIN/5D/30D/400D)"),
@@ -8971,6 +9677,22 @@ pub static CANON_COLORDATA4: phf::Map<u16, TagDef> = phf::phf_map! {
     725u16 => TagDef { name: "LinearityUpperMargin", values: None },
 };
 
+/// Canon::ColorData4 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA4_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA4_COLORDATAVERSION_VALUES) },
+    BinDef { index: 619, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 620, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 696, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 697, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 698, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 719, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 720, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 721, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 723, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 724, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 725, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
+
 pub static CANON_COLORDATA4_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (2, "2 (1DmkIII)"),
     (3, "3 (40D)"),
@@ -8993,6 +9715,14 @@ pub static CANON_COLORDATA5: phf::Map<u16, TagDef> = phf::phf_map! {
     662u16 => TagDef { name: "SpecularWhiteLevel", values: None },
     71u16 => TagDef { name: "ColorCoefs", values: None },
 };
+
+/// Canon::ColorData5 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA5_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA5_COLORDATAVERSION_VALUES) },
+    BinDef { index: 1385, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 1386, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 662, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+];
 
 pub static CANON_COLORDATA5_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (-3, "-3 (M10/M3)"),
@@ -9050,6 +9780,29 @@ pub static CANON_COLORDATA6: phf::Map<u16, TagDef> = phf::phf_map! {
     97u16 => TagDef { name: "ColorTempUnknown4", values: None },
     98u16 => TagDef { name: "WB_RGGBLevelsUnknown5", values: None },
 };
+
+/// Canon::ColorData6 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA6_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA6_COLORDATAVERSION_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 142, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 147, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 152, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 157, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 162, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 167, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 172, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 177, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 182, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 187, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 483, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 484, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 485, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 82, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 87, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 92, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 97, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+];
 
 pub static CANON_COLORDATA6_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (10, "10 (600D/1200D)"),
@@ -9123,6 +9876,39 @@ pub static CANON_COLORDATA7: phf::Map<u16, TagDef> = phf::phf_map! {
     97u16 => TagDef { name: "ColorTempUnknown4", values: None },
     98u16 => TagDef { name: "WB_RGGBLevelsUnknown5", values: None },
 };
+
+/// Canon::ColorData7 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA7_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA7_COLORDATAVERSION_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 107, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 112, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 117, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 122, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 127, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 167, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 172, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 177, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 182, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 187, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 192, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 197, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 202, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 207, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 212, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 408, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 409, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 508, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 509, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 510, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 732, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 733, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 734, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 82, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 87, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 92, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 97, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+];
 
 pub static CANON_COLORDATA7_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (10, "10 (1DX/5DmkIII/6D/70D/100D/650D/700D/M/M2)"),
@@ -9214,6 +10000,47 @@ pub static CANON_COLORDATA8: phf::Map<u16, TagDef> = phf::phf_map! {
     98u16 => TagDef { name: "WB_RGGBLevelsUnknown5", values: None },
 };
 
+/// Canon::ColorData8 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA8_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA8_COLORDATAVERSION_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 107, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 112, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 117, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 122, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 127, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 132, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 172, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 177, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 182, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 187, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 192, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 197, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 202, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 207, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 212, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 217, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 222, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 227, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 232, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 237, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 242, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 247, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 252, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 257, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 262, width: 2, signed: true, name: "ColorTempUnknown30", values: None },
+    BinDef { index: 560, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 561, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 562, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 782, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 783, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 784, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 82, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 87, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 92, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 97, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+];
+
 pub static CANON_COLORDATA8_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (12, "12 (1DXmkII/5DS/5DSR)"),
     (13, "13 (80D/5DmkIV)"),
@@ -9299,6 +10126,43 @@ pub static CANON_COLORDATA9: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "WB_RGGBLevelsUnknown3", values: None },
 };
 
+/// Canon::ColorData9 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA9_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA9_COLORDATAVERSION_VALUES) },
+    BinDef { index: 100, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 105, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 110, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 115, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 120, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 125, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 130, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 135, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 175, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 180, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 185, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 190, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 195, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 200, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 205, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 210, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 215, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 220, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 225, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 230, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 235, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 240, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 245, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 250, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 255, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 260, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 265, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 796, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 797, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 798, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 90, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 95, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+];
+
 pub static CANON_COLORDATA9_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (16, "16 (M50)"),
     (17, "17 (R)"),
@@ -9312,6 +10176,13 @@ pub static CANON_COLORINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "ColorTone", values: Some(CANON_COLORINFO_COLORTONE_VALUES) },
     3u16 => TagDef { name: "ColorSpace", values: Some(CANON_COLORINFO_COLORSPACE_VALUES) },
 };
+
+/// Canon::ColorInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "Saturation", values: Some(CANON_COLORINFO_SATURATION_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "ColorTone", values: Some(CANON_COLORINFO_COLORTONE_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "ColorSpace", values: Some(CANON_COLORINFO_COLORSPACE_VALUES) },
+];
 
 pub static CANON_COLORINFO_SATURATION_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -9352,6 +10223,11 @@ pub static CANON_FACEDETECT1: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "Face1Position", values: None },
 };
 
+/// Canon::FaceDetect1 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FACEDETECT1_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "FacesDetected", values: None },
+];
+
 /// Canon::FileInfo tags
 pub static CANON_FILEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "FileNumber", values: None },
@@ -9371,6 +10247,26 @@ pub static CANON_FILEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "LongExposureNoiseReduction2", values: Some(CANON_FILEINFO_LONGEXPOSURENOISEREDUCTION2_VALUES) },
     9u16 => TagDef { name: "WBBracketMode", values: Some(CANON_FILEINFO_WBBRACKETMODE_VALUES) },
 };
+
+/// Canon::FileInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FILEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "FileNumber", values: None },
+    BinDef { index: 14, width: 2, signed: true, name: "FilterEffect", values: Some(CANON_FILEINFO_FILTEREFFECT_VALUES) },
+    BinDef { index: 15, width: 2, signed: true, name: "ToningEffect", values: Some(CANON_FILEINFO_TONINGEFFECT_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "MacroMagnification", values: None },
+    BinDef { index: 19, width: 2, signed: true, name: "LiveViewShooting", values: Some(CANON_FILEINFO_LIVEVIEWSHOOTING_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "FocusDistanceUpper", values: None },
+    BinDef { index: 21, width: 2, signed: false, name: "FocusDistanceLower", values: None },
+    BinDef { index: 23, width: 2, signed: true, name: "ShutterMode", values: Some(CANON_FILEINFO_SHUTTERMODE_VALUES) },
+    BinDef { index: 25, width: 2, signed: true, name: "FlashExposureLock", values: Some(CANON_FILEINFO_FLASHEXPOSURELOCK_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "BracketMode", values: Some(CANON_FILEINFO_BRACKETMODE_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AntiFlicker", values: Some(CANON_FILEINFO_ANTIFLICKER_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "RawJpgQuality", values: Some(CANON_FILEINFO_RAWJPGQUALITY_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "RFLensType", values: Some(CANON_FILEINFO_RFLENSTYPE_VALUES) },
+    BinDef { index: 7, width: 2, signed: true, name: "RawJpgSize", values: Some(CANON_FILEINFO_RAWJPGSIZE_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "LongExposureNoiseReduction2", values: Some(CANON_FILEINFO_LONGEXPOSURENOISEREDUCTION2_VALUES) },
+    BinDef { index: 9, width: 2, signed: true, name: "WBBracketMode", values: Some(CANON_FILEINFO_WBBRACKETMODE_VALUES) },
+];
 
 pub static CANON_FILEINFO_FILTEREFFECT_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -9596,6 +10492,14 @@ pub static CANON_FOCALLENGTH: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "FocalPlaneYSize", values: None },
 };
 
+/// Canon::FocalLength ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FOCALLENGTH_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "FocalType", values: Some(CANON_FOCALLENGTH_FOCALTYPE_VALUES) },
+    BinDef { index: 1, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "FocalPlaneXSize", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "FocalPlaneYSize", values: None },
+];
+
 pub static CANON_FOCALLENGTH_FOCALTYPE_VALUES: &[(i64, &str)] = &[
     (1, "Fixed"),
     (2, "Zoom"),
@@ -9608,6 +10512,14 @@ pub static CANON_FOCUSBRACKETINGINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "FocusBracketingDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGDEPTHCOMPOSITE_VALUES) },
     6u16 => TagDef { name: "FocusBracketingCropDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGCROPDEPTHCOMPOSITE_VALUES) },
 };
+
+/// Canon::FocusBracketingInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FOCUSBRACKETINGINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "FocusBracketing", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETING_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "FocusBracketingExposureSmoothing", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGEXPOSURESMOOTHING_VALUES) },
+    BinDef { index: 5, width: 4, signed: true, name: "FocusBracketingDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGDEPTHCOMPOSITE_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "FocusBracketingCropDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGCROPDEPTHCOMPOSITE_VALUES) },
+];
 
 pub static CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -9634,6 +10546,12 @@ pub static CANON_HDRINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "HDR", values: Some(CANON_HDRINFO_HDR_VALUES) },
     2u16 => TagDef { name: "HDREffect", values: Some(CANON_HDRINFO_HDREFFECT_VALUES) },
 };
+
+/// Canon::HDRInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_HDRINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "HDR", values: Some(CANON_HDRINFO_HDR_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "HDREffect", values: Some(CANON_HDRINFO_HDREFFECT_VALUES) },
+];
 
 pub static CANON_HDRINFO_HDR_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -9663,6 +10581,15 @@ pub static CANON_LEVELINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "MaxFocalLength2", values: None },
 };
 
+/// Canon::LevelInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_LEVELINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: true, name: "RollAngle", values: None },
+    BinDef { index: 5, width: 4, signed: true, name: "PitchAngle", values: None },
+    BinDef { index: 7, width: 4, signed: true, name: "FocalLength", values: None },
+    BinDef { index: 8, width: 4, signed: true, name: "MinFocalLength2", values: None },
+    BinDef { index: 9, width: 4, signed: true, name: "MaxFocalLength2", values: None },
+];
+
 /// Canon::LightingOpt tags
 pub static CANON_LIGHTINGOPT: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "PeripheralIlluminationCorr", values: Some(CANON_LIGHTINGOPT_PERIPHERALILLUMINATIONCORR_VALUES) },
@@ -9673,6 +10600,17 @@ pub static CANON_LIGHTINGOPT: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "LongExposureNoiseReduction", values: Some(CANON_LIGHTINGOPT_LONGEXPOSURENOISEREDUCTION_VALUES) },
     5u16 => TagDef { name: "HighISONoiseReduction", values: Some(CANON_LIGHTINGOPT_HIGHISONOISEREDUCTION_VALUES) },
 };
+
+/// Canon::LightingOpt ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_LIGHTINGOPT_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "PeripheralIlluminationCorr", values: Some(CANON_LIGHTINGOPT_PERIPHERALILLUMINATIONCORR_VALUES) },
+    BinDef { index: 10, width: 4, signed: true, name: "DigitalLensOptimizer", values: Some(CANON_LIGHTINGOPT_DIGITALLENSOPTIMIZER_VALUES) },
+    BinDef { index: 11, width: 4, signed: true, name: "DualPixelRaw", values: Some(CANON_LIGHTINGOPT_DUALPIXELRAW_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "AutoLightingOptimizer", values: Some(CANON_LIGHTINGOPT_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 3, width: 4, signed: true, name: "HighlightTonePriority", values: Some(CANON_LIGHTINGOPT_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "LongExposureNoiseReduction", values: Some(CANON_LIGHTINGOPT_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 5, width: 4, signed: true, name: "HighISONoiseReduction", values: Some(CANON_LIGHTINGOPT_HIGHISONOISEREDUCTION_VALUES) },
+];
 
 pub static CANON_LIGHTINGOPT_PERIPHERALILLUMINATIONCORR_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -9726,6 +10664,17 @@ pub static CANON_LOGINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ColorTone", values: Some(CANON_LOGINFO_COLORTONE_VALUES) },
     9u16 => TagDef { name: "ColorSpace2", values: Some(CANON_LOGINFO_COLORSPACE2_VALUES) },
 };
+
+/// Canon::LogInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_LOGINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 4, signed: true, name: "ColorMatrix", values: Some(CANON_LOGINFO_COLORMATRIX_VALUES) },
+    BinDef { index: 11, width: 4, signed: true, name: "CanonLogVersion", values: Some(CANON_LOGINFO_CANONLOGVERSION_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "CompressionFormat", values: Some(CANON_LOGINFO_COMPRESSIONFORMAT_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 7, width: 4, signed: true, name: "Saturation", values: Some(CANON_LOGINFO_SATURATION_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "ColorTone", values: Some(CANON_LOGINFO_COLORTONE_VALUES) },
+    BinDef { index: 9, width: 4, signed: true, name: "ColorSpace2", values: Some(CANON_LOGINFO_COLORSPACE2_VALUES) },
+];
 
 pub static CANON_LOGINFO_COLORMATRIX_VALUES: &[(i64, &str)] = &[
     (0, "EOS Original"),
@@ -10252,6 +11201,16 @@ pub static CANON_MODIFIEDINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ModifiedWhiteBalance", values: Some(CANON_MODIFIEDINFO_MODIFIEDWHITEBALANCE_VALUES) },
 };
 
+/// Canon::ModifiedInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MODIFIEDINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "ModifiedToneCurve", values: Some(CANON_MODIFIEDINFO_MODIFIEDTONECURVE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "ModifiedPictureStyle", values: Some(CANON_MODIFIEDINFO_MODIFIEDPICTURESTYLE_VALUES) },
+    BinDef { index: 11, width: 2, signed: true, name: "ModifiedDigitalGain", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "ModifiedSharpness", values: None },
+    BinDef { index: 3, width: 2, signed: true, name: "ModifiedSharpnessFreq", values: Some(CANON_MODIFIEDINFO_MODIFIEDSHARPNESSFREQ_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "ModifiedWhiteBalance", values: Some(CANON_MODIFIEDINFO_MODIFIEDWHITEBALANCE_VALUES) },
+];
+
 pub static CANON_MODIFIEDINFO_MODIFIEDTONECURVE_VALUES: &[(i64, &str)] = &[
     (0, "Standard"),
     (1, "Manual"),
@@ -10332,11 +11291,28 @@ pub static CANON_MOVIEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "FrameRate", values: None },
 };
 
+/// Canon::MovieInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MOVIEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: false, name: "FrameRate", values: None },
+    BinDef { index: 106, width: 4, signed: false, name: "Duration", values: None },
+    BinDef { index: 108, width: 4, signed: false, name: "AudioBitrate", values: None },
+    BinDef { index: 110, width: 4, signed: false, name: "AudioSampleRate", values: None },
+    BinDef { index: 112, width: 4, signed: false, name: "AudioChannels", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "FrameCount", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "FrameCount", values: None },
+];
+
 /// Canon::MultiExp tags
 pub static CANON_MULTIEXP: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "MultiExposure", values: Some(CANON_MULTIEXP_MULTIEXPOSURE_VALUES) },
     2u16 => TagDef { name: "MultiExposureControl", values: Some(CANON_MULTIEXP_MULTIEXPOSURECONTROL_VALUES) },
 };
+
+/// Canon::MultiExp ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MULTIEXP_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "MultiExposure", values: Some(CANON_MULTIEXP_MULTIEXPOSURE_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "MultiExposureControl", values: Some(CANON_MULTIEXP_MULTIEXPOSURECONTROL_VALUES) },
+];
 
 pub static CANON_MULTIEXP_MULTIEXPOSURE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -10355,6 +11331,11 @@ pub static CANON_MULTIEXP_MULTIEXPOSURECONTROL_VALUES: &[(i64, &str)] = &[
 pub static CANON_MYCOLORS: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "MyColorMode", values: Some(CANON_MYCOLORS_MYCOLORMODE_VALUES) },
 };
+
+/// Canon::MyColors ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MYCOLORS_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "MyColorMode", values: Some(CANON_MYCOLORS_MYCOLORMODE_VALUES) },
+];
 
 pub static CANON_MYCOLORS_MYCOLORMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -10433,6 +11414,67 @@ pub static CANON_PSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     92u16 => TagDef { name: "ToningEffectNeutral", values: Some(CANON_PSINFO_TONINGEFFECTNEUTRAL_VALUES) },
     96u16 => TagDef { name: "ContrastFaithful", values: Some(CANON_PSINFO_CONTRASTFAITHFUL_VALUES) },
 };
+
+/// Canon::PSInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PSINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: true, name: "ContrastStandard", values: Some(CANON_PSINFO_CONTRASTSTANDARD_VALUES) },
+    BinDef { index: 100, width: 4, signed: true, name: "SharpnessFaithful", values: Some(CANON_PSINFO_SHARPNESSFAITHFUL_VALUES) },
+    BinDef { index: 104, width: 4, signed: true, name: "SaturationFaithful", values: Some(CANON_PSINFO_SATURATIONFAITHFUL_VALUES) },
+    BinDef { index: 108, width: 4, signed: true, name: "ColorToneFaithful", values: Some(CANON_PSINFO_COLORTONEFAITHFUL_VALUES) },
+    BinDef { index: 112, width: 4, signed: true, name: "FilterEffectFaithful", values: Some(CANON_PSINFO_FILTEREFFECTFAITHFUL_VALUES) },
+    BinDef { index: 116, width: 4, signed: true, name: "ToningEffectFaithful", values: Some(CANON_PSINFO_TONINGEFFECTFAITHFUL_VALUES) },
+    BinDef { index: 12, width: 4, signed: true, name: "ColorToneStandard", values: Some(CANON_PSINFO_COLORTONESTANDARD_VALUES) },
+    BinDef { index: 120, width: 4, signed: true, name: "ContrastMonochrome", values: Some(CANON_PSINFO_CONTRASTMONOCHROME_VALUES) },
+    BinDef { index: 124, width: 4, signed: true, name: "SharpnessMonochrome", values: Some(CANON_PSINFO_SHARPNESSMONOCHROME_VALUES) },
+    BinDef { index: 128, width: 4, signed: true, name: "SaturationMonochrome", values: Some(CANON_PSINFO_SATURATIONMONOCHROME_VALUES) },
+    BinDef { index: 132, width: 4, signed: true, name: "ColorToneMonochrome", values: Some(CANON_PSINFO_COLORTONEMONOCHROME_VALUES) },
+    BinDef { index: 136, width: 4, signed: true, name: "FilterEffectMonochrome", values: Some(CANON_PSINFO_FILTEREFFECTMONOCHROME_VALUES) },
+    BinDef { index: 140, width: 4, signed: true, name: "ToningEffectMonochrome", values: Some(CANON_PSINFO_TONINGEFFECTMONOCHROME_VALUES) },
+    BinDef { index: 144, width: 4, signed: true, name: "ContrastUserDef1", values: Some(CANON_PSINFO_CONTRASTUSERDEF1_VALUES) },
+    BinDef { index: 148, width: 4, signed: true, name: "SharpnessUserDef1", values: Some(CANON_PSINFO_SHARPNESSUSERDEF1_VALUES) },
+    BinDef { index: 152, width: 4, signed: true, name: "SaturationUserDef1", values: Some(CANON_PSINFO_SATURATIONUSERDEF1_VALUES) },
+    BinDef { index: 156, width: 4, signed: true, name: "ColorToneUserDef1", values: Some(CANON_PSINFO_COLORTONEUSERDEF1_VALUES) },
+    BinDef { index: 16, width: 4, signed: true, name: "FilterEffectStandard", values: Some(CANON_PSINFO_FILTEREFFECTSTANDARD_VALUES) },
+    BinDef { index: 160, width: 4, signed: true, name: "FilterEffectUserDef1", values: Some(CANON_PSINFO_FILTEREFFECTUSERDEF1_VALUES) },
+    BinDef { index: 164, width: 4, signed: true, name: "ToningEffectUserDef1", values: Some(CANON_PSINFO_TONINGEFFECTUSERDEF1_VALUES) },
+    BinDef { index: 168, width: 4, signed: true, name: "ContrastUserDef2", values: Some(CANON_PSINFO_CONTRASTUSERDEF2_VALUES) },
+    BinDef { index: 172, width: 4, signed: true, name: "SharpnessUserDef2", values: Some(CANON_PSINFO_SHARPNESSUSERDEF2_VALUES) },
+    BinDef { index: 176, width: 4, signed: true, name: "SaturationUserDef2", values: Some(CANON_PSINFO_SATURATIONUSERDEF2_VALUES) },
+    BinDef { index: 180, width: 4, signed: true, name: "ColorToneUserDef2", values: Some(CANON_PSINFO_COLORTONEUSERDEF2_VALUES) },
+    BinDef { index: 184, width: 4, signed: true, name: "FilterEffectUserDef2", values: Some(CANON_PSINFO_FILTEREFFECTUSERDEF2_VALUES) },
+    BinDef { index: 188, width: 4, signed: true, name: "ToningEffectUserDef2", values: Some(CANON_PSINFO_TONINGEFFECTUSERDEF2_VALUES) },
+    BinDef { index: 192, width: 4, signed: true, name: "ContrastUserDef3", values: Some(CANON_PSINFO_CONTRASTUSERDEF3_VALUES) },
+    BinDef { index: 196, width: 4, signed: true, name: "SharpnessUserDef3", values: Some(CANON_PSINFO_SHARPNESSUSERDEF3_VALUES) },
+    BinDef { index: 20, width: 4, signed: true, name: "ToningEffectStandard", values: Some(CANON_PSINFO_TONINGEFFECTSTANDARD_VALUES) },
+    BinDef { index: 200, width: 4, signed: true, name: "SaturationUserDef3", values: Some(CANON_PSINFO_SATURATIONUSERDEF3_VALUES) },
+    BinDef { index: 204, width: 4, signed: true, name: "ColorToneUserDef3", values: Some(CANON_PSINFO_COLORTONEUSERDEF3_VALUES) },
+    BinDef { index: 208, width: 4, signed: true, name: "FilterEffectUserDef3", values: Some(CANON_PSINFO_FILTEREFFECTUSERDEF3_VALUES) },
+    BinDef { index: 212, width: 4, signed: true, name: "ToningEffectUserDef3", values: Some(CANON_PSINFO_TONINGEFFECTUSERDEF3_VALUES) },
+    BinDef { index: 216, width: 2, signed: false, name: "UserDef1PictureStyle", values: Some(CANON_PSINFO_USERDEF1PICTURESTYLE_VALUES) },
+    BinDef { index: 218, width: 2, signed: false, name: "UserDef2PictureStyle", values: Some(CANON_PSINFO_USERDEF2PICTURESTYLE_VALUES) },
+    BinDef { index: 220, width: 2, signed: false, name: "UserDef3PictureStyle", values: Some(CANON_PSINFO_USERDEF3PICTURESTYLE_VALUES) },
+    BinDef { index: 24, width: 4, signed: true, name: "ContrastPortrait", values: Some(CANON_PSINFO_CONTRASTPORTRAIT_VALUES) },
+    BinDef { index: 28, width: 4, signed: true, name: "SharpnessPortrait", values: Some(CANON_PSINFO_SHARPNESSPORTRAIT_VALUES) },
+    BinDef { index: 32, width: 4, signed: true, name: "SaturationPortrait", values: Some(CANON_PSINFO_SATURATIONPORTRAIT_VALUES) },
+    BinDef { index: 36, width: 4, signed: true, name: "ColorTonePortrait", values: Some(CANON_PSINFO_COLORTONEPORTRAIT_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "SharpnessStandard", values: Some(CANON_PSINFO_SHARPNESSSTANDARD_VALUES) },
+    BinDef { index: 40, width: 4, signed: true, name: "FilterEffectPortrait", values: Some(CANON_PSINFO_FILTEREFFECTPORTRAIT_VALUES) },
+    BinDef { index: 44, width: 4, signed: true, name: "ToningEffectPortrait", values: Some(CANON_PSINFO_TONINGEFFECTPORTRAIT_VALUES) },
+    BinDef { index: 48, width: 4, signed: true, name: "ContrastLandscape", values: Some(CANON_PSINFO_CONTRASTLANDSCAPE_VALUES) },
+    BinDef { index: 52, width: 4, signed: true, name: "SharpnessLandscape", values: Some(CANON_PSINFO_SHARPNESSLANDSCAPE_VALUES) },
+    BinDef { index: 56, width: 4, signed: true, name: "SaturationLandscape", values: Some(CANON_PSINFO_SATURATIONLANDSCAPE_VALUES) },
+    BinDef { index: 60, width: 4, signed: true, name: "ColorToneLandscape", values: Some(CANON_PSINFO_COLORTONELANDSCAPE_VALUES) },
+    BinDef { index: 64, width: 4, signed: true, name: "FilterEffectLandscape", values: Some(CANON_PSINFO_FILTEREFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 68, width: 4, signed: true, name: "ToningEffectLandscape", values: Some(CANON_PSINFO_TONINGEFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 72, width: 4, signed: true, name: "ContrastNeutral", values: Some(CANON_PSINFO_CONTRASTNEUTRAL_VALUES) },
+    BinDef { index: 76, width: 4, signed: true, name: "SharpnessNeutral", values: Some(CANON_PSINFO_SHARPNESSNEUTRAL_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "SaturationStandard", values: Some(CANON_PSINFO_SATURATIONSTANDARD_VALUES) },
+    BinDef { index: 80, width: 4, signed: true, name: "SaturationNeutral", values: Some(CANON_PSINFO_SATURATIONNEUTRAL_VALUES) },
+    BinDef { index: 84, width: 4, signed: true, name: "ColorToneNeutral", values: Some(CANON_PSINFO_COLORTONENEUTRAL_VALUES) },
+    BinDef { index: 88, width: 4, signed: true, name: "FilterEffectNeutral", values: Some(CANON_PSINFO_FILTEREFFECTNEUTRAL_VALUES) },
+    BinDef { index: 92, width: 4, signed: true, name: "ToningEffectNeutral", values: Some(CANON_PSINFO_TONINGEFFECTNEUTRAL_VALUES) },
+    BinDef { index: 96, width: 4, signed: true, name: "ContrastFaithful", values: Some(CANON_PSINFO_CONTRASTFAITHFUL_VALUES) },
+];
 
 pub static CANON_PSINFO_CONTRASTSTANDARD_VALUES: &[(i64, &str)] = &[
     (-559038737, "n/a"),
@@ -10796,6 +11838,73 @@ pub static CANON_PSINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "ContrastFaithful", values: Some(CANON_PSINFO2_CONTRASTFAITHFUL_VALUES) },
 };
 
+/// Canon::PSInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PSINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: true, name: "ContrastStandard", values: Some(CANON_PSINFO2_CONTRASTSTANDARD_VALUES) },
+    BinDef { index: 100, width: 4, signed: true, name: "SharpnessFaithful", values: Some(CANON_PSINFO2_SHARPNESSFAITHFUL_VALUES) },
+    BinDef { index: 104, width: 4, signed: true, name: "SaturationFaithful", values: Some(CANON_PSINFO2_SATURATIONFAITHFUL_VALUES) },
+    BinDef { index: 108, width: 4, signed: true, name: "ColorToneFaithful", values: Some(CANON_PSINFO2_COLORTONEFAITHFUL_VALUES) },
+    BinDef { index: 112, width: 4, signed: true, name: "FilterEffectFaithful", values: Some(CANON_PSINFO2_FILTEREFFECTFAITHFUL_VALUES) },
+    BinDef { index: 116, width: 4, signed: true, name: "ToningEffectFaithful", values: Some(CANON_PSINFO2_TONINGEFFECTFAITHFUL_VALUES) },
+    BinDef { index: 12, width: 4, signed: true, name: "ColorToneStandard", values: Some(CANON_PSINFO2_COLORTONESTANDARD_VALUES) },
+    BinDef { index: 120, width: 4, signed: true, name: "ContrastMonochrome", values: Some(CANON_PSINFO2_CONTRASTMONOCHROME_VALUES) },
+    BinDef { index: 124, width: 4, signed: true, name: "SharpnessMonochrome", values: Some(CANON_PSINFO2_SHARPNESSMONOCHROME_VALUES) },
+    BinDef { index: 128, width: 4, signed: true, name: "SaturationMonochrome", values: Some(CANON_PSINFO2_SATURATIONMONOCHROME_VALUES) },
+    BinDef { index: 132, width: 4, signed: true, name: "ColorToneMonochrome", values: Some(CANON_PSINFO2_COLORTONEMONOCHROME_VALUES) },
+    BinDef { index: 136, width: 4, signed: true, name: "FilterEffectMonochrome", values: Some(CANON_PSINFO2_FILTEREFFECTMONOCHROME_VALUES) },
+    BinDef { index: 140, width: 4, signed: true, name: "ToningEffectMonochrome", values: Some(CANON_PSINFO2_TONINGEFFECTMONOCHROME_VALUES) },
+    BinDef { index: 144, width: 4, signed: true, name: "ContrastAuto", values: Some(CANON_PSINFO2_CONTRASTAUTO_VALUES) },
+    BinDef { index: 148, width: 4, signed: true, name: "SharpnessAuto", values: Some(CANON_PSINFO2_SHARPNESSAUTO_VALUES) },
+    BinDef { index: 152, width: 4, signed: true, name: "SaturationAuto", values: Some(CANON_PSINFO2_SATURATIONAUTO_VALUES) },
+    BinDef { index: 156, width: 4, signed: true, name: "ColorToneAuto", values: Some(CANON_PSINFO2_COLORTONEAUTO_VALUES) },
+    BinDef { index: 16, width: 4, signed: true, name: "FilterEffectStandard", values: Some(CANON_PSINFO2_FILTEREFFECTSTANDARD_VALUES) },
+    BinDef { index: 160, width: 4, signed: true, name: "FilterEffectAuto", values: Some(CANON_PSINFO2_FILTEREFFECTAUTO_VALUES) },
+    BinDef { index: 164, width: 4, signed: true, name: "ToningEffectAuto", values: Some(CANON_PSINFO2_TONINGEFFECTAUTO_VALUES) },
+    BinDef { index: 168, width: 4, signed: true, name: "ContrastUserDef1", values: Some(CANON_PSINFO2_CONTRASTUSERDEF1_VALUES) },
+    BinDef { index: 172, width: 4, signed: true, name: "SharpnessUserDef1", values: Some(CANON_PSINFO2_SHARPNESSUSERDEF1_VALUES) },
+    BinDef { index: 176, width: 4, signed: true, name: "SaturationUserDef1", values: Some(CANON_PSINFO2_SATURATIONUSERDEF1_VALUES) },
+    BinDef { index: 180, width: 4, signed: true, name: "ColorToneUserDef1", values: Some(CANON_PSINFO2_COLORTONEUSERDEF1_VALUES) },
+    BinDef { index: 184, width: 4, signed: true, name: "FilterEffectUserDef1", values: Some(CANON_PSINFO2_FILTEREFFECTUSERDEF1_VALUES) },
+    BinDef { index: 188, width: 4, signed: true, name: "ToningEffectUserDef1", values: Some(CANON_PSINFO2_TONINGEFFECTUSERDEF1_VALUES) },
+    BinDef { index: 192, width: 4, signed: true, name: "ContrastUserDef2", values: Some(CANON_PSINFO2_CONTRASTUSERDEF2_VALUES) },
+    BinDef { index: 196, width: 4, signed: true, name: "SharpnessUserDef2", values: Some(CANON_PSINFO2_SHARPNESSUSERDEF2_VALUES) },
+    BinDef { index: 20, width: 4, signed: true, name: "ToningEffectStandard", values: Some(CANON_PSINFO2_TONINGEFFECTSTANDARD_VALUES) },
+    BinDef { index: 200, width: 4, signed: true, name: "SaturationUserDef2", values: Some(CANON_PSINFO2_SATURATIONUSERDEF2_VALUES) },
+    BinDef { index: 204, width: 4, signed: true, name: "ColorToneUserDef2", values: Some(CANON_PSINFO2_COLORTONEUSERDEF2_VALUES) },
+    BinDef { index: 208, width: 4, signed: true, name: "FilterEffectUserDef2", values: Some(CANON_PSINFO2_FILTEREFFECTUSERDEF2_VALUES) },
+    BinDef { index: 212, width: 4, signed: true, name: "ToningEffectUserDef2", values: Some(CANON_PSINFO2_TONINGEFFECTUSERDEF2_VALUES) },
+    BinDef { index: 216, width: 4, signed: true, name: "ContrastUserDef3", values: Some(CANON_PSINFO2_CONTRASTUSERDEF3_VALUES) },
+    BinDef { index: 220, width: 4, signed: true, name: "SharpnessUserDef3", values: Some(CANON_PSINFO2_SHARPNESSUSERDEF3_VALUES) },
+    BinDef { index: 224, width: 4, signed: true, name: "SaturationUserDef3", values: Some(CANON_PSINFO2_SATURATIONUSERDEF3_VALUES) },
+    BinDef { index: 228, width: 4, signed: true, name: "ColorToneUserDef3", values: Some(CANON_PSINFO2_COLORTONEUSERDEF3_VALUES) },
+    BinDef { index: 232, width: 4, signed: true, name: "FilterEffectUserDef3", values: Some(CANON_PSINFO2_FILTEREFFECTUSERDEF3_VALUES) },
+    BinDef { index: 236, width: 4, signed: true, name: "ToningEffectUserDef3", values: Some(CANON_PSINFO2_TONINGEFFECTUSERDEF3_VALUES) },
+    BinDef { index: 24, width: 4, signed: true, name: "ContrastPortrait", values: Some(CANON_PSINFO2_CONTRASTPORTRAIT_VALUES) },
+    BinDef { index: 240, width: 2, signed: false, name: "UserDef1PictureStyle", values: Some(CANON_PSINFO2_USERDEF1PICTURESTYLE_VALUES) },
+    BinDef { index: 242, width: 2, signed: false, name: "UserDef2PictureStyle", values: Some(CANON_PSINFO2_USERDEF2PICTURESTYLE_VALUES) },
+    BinDef { index: 244, width: 2, signed: false, name: "UserDef3PictureStyle", values: Some(CANON_PSINFO2_USERDEF3PICTURESTYLE_VALUES) },
+    BinDef { index: 28, width: 4, signed: true, name: "SharpnessPortrait", values: Some(CANON_PSINFO2_SHARPNESSPORTRAIT_VALUES) },
+    BinDef { index: 32, width: 4, signed: true, name: "SaturationPortrait", values: Some(CANON_PSINFO2_SATURATIONPORTRAIT_VALUES) },
+    BinDef { index: 36, width: 4, signed: true, name: "ColorTonePortrait", values: Some(CANON_PSINFO2_COLORTONEPORTRAIT_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "SharpnessStandard", values: Some(CANON_PSINFO2_SHARPNESSSTANDARD_VALUES) },
+    BinDef { index: 40, width: 4, signed: true, name: "FilterEffectPortrait", values: Some(CANON_PSINFO2_FILTEREFFECTPORTRAIT_VALUES) },
+    BinDef { index: 44, width: 4, signed: true, name: "ToningEffectPortrait", values: Some(CANON_PSINFO2_TONINGEFFECTPORTRAIT_VALUES) },
+    BinDef { index: 48, width: 4, signed: true, name: "ContrastLandscape", values: Some(CANON_PSINFO2_CONTRASTLANDSCAPE_VALUES) },
+    BinDef { index: 52, width: 4, signed: true, name: "SharpnessLandscape", values: Some(CANON_PSINFO2_SHARPNESSLANDSCAPE_VALUES) },
+    BinDef { index: 56, width: 4, signed: true, name: "SaturationLandscape", values: Some(CANON_PSINFO2_SATURATIONLANDSCAPE_VALUES) },
+    BinDef { index: 60, width: 4, signed: true, name: "ColorToneLandscape", values: Some(CANON_PSINFO2_COLORTONELANDSCAPE_VALUES) },
+    BinDef { index: 64, width: 4, signed: true, name: "FilterEffectLandscape", values: Some(CANON_PSINFO2_FILTEREFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 68, width: 4, signed: true, name: "ToningEffectLandscape", values: Some(CANON_PSINFO2_TONINGEFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 72, width: 4, signed: true, name: "ContrastNeutral", values: Some(CANON_PSINFO2_CONTRASTNEUTRAL_VALUES) },
+    BinDef { index: 76, width: 4, signed: true, name: "SharpnessNeutral", values: Some(CANON_PSINFO2_SHARPNESSNEUTRAL_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "SaturationStandard", values: Some(CANON_PSINFO2_SATURATIONSTANDARD_VALUES) },
+    BinDef { index: 80, width: 4, signed: true, name: "SaturationNeutral", values: Some(CANON_PSINFO2_SATURATIONNEUTRAL_VALUES) },
+    BinDef { index: 84, width: 4, signed: true, name: "ColorToneNeutral", values: Some(CANON_PSINFO2_COLORTONENEUTRAL_VALUES) },
+    BinDef { index: 88, width: 4, signed: true, name: "FilterEffectNeutral", values: Some(CANON_PSINFO2_FILTEREFFECTNEUTRAL_VALUES) },
+    BinDef { index: 92, width: 4, signed: true, name: "ToningEffectNeutral", values: Some(CANON_PSINFO2_TONINGEFFECTNEUTRAL_VALUES) },
+    BinDef { index: 96, width: 4, signed: true, name: "ContrastFaithful", values: Some(CANON_PSINFO2_CONTRASTFAITHFUL_VALUES) },
+];
+
 pub static CANON_PSINFO2_CONTRASTSTANDARD_VALUES: &[(i64, &str)] = &[
     (-559038737, "n/a"),
 ];
@@ -11130,6 +12239,11 @@ pub static CANON_PANORAMA: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "PanoramaDirection", values: Some(CANON_PANORAMA_PANORAMADIRECTION_VALUES) },
 };
 
+/// Canon::Panorama ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PANORAMA_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 2, signed: true, name: "PanoramaDirection", values: Some(CANON_PANORAMA_PANORAMADIRECTION_VALUES) },
+];
+
 pub static CANON_PANORAMA_PANORAMADIRECTION_VALUES: &[(i64, &str)] = &[
     (0, "Left to Right"),
     (1, "Right to Left"),
@@ -11144,6 +12258,13 @@ pub static CANON_PREVIEWIMAGEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "PreviewImageLength", values: None },
     5u16 => TagDef { name: "PreviewImageStart", values: None },
 };
+
+/// Canon::PreviewImageInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PREVIEWIMAGEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "PreviewQuality", values: Some(CANON_PREVIEWIMAGEINFO_PREVIEWQUALITY_VALUES) },
+    BinDef { index: 2, width: 4, signed: false, name: "PreviewImageLength", values: None },
+    BinDef { index: 5, width: 4, signed: false, name: "PreviewImageStart", values: None },
+];
 
 pub static CANON_PREVIEWIMAGEINFO_PREVIEWQUALITY_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
@@ -11168,6 +12289,18 @@ pub static CANON_PROCESSING: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "SharpnessFrequency", values: Some(CANON_PROCESSING_SHARPNESSFREQUENCY_VALUES) },
     8u16 => TagDef { name: "WhiteBalance", values: Some(CANON_PROCESSING_WHITEBALANCE_VALUES) },
 };
+
+/// Canon::Processing ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PROCESSING_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "ToneCurve", values: Some(CANON_PROCESSING_TONECURVE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "PictureStyle", values: Some(CANON_PROCESSING_PICTURESTYLE_VALUES) },
+    BinDef { index: 11, width: 2, signed: true, name: "DigitalGain", values: None },
+    BinDef { index: 12, width: 2, signed: true, name: "WBShiftAB", values: None },
+    BinDef { index: 13, width: 2, signed: true, name: "WBShiftGM", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 3, width: 2, signed: true, name: "SharpnessFrequency", values: Some(CANON_PROCESSING_SHARPNESSFREQUENCY_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "WhiteBalance", values: Some(CANON_PROCESSING_WHITEBALANCE_VALUES) },
+];
 
 pub static CANON_PROCESSING_TONECURVE_VALUES: &[(i64, &str)] = &[
     (0, "Standard"),
@@ -11241,6 +12374,11 @@ pub static CANON_SENSORINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "BlackMaskLeftBorder", values: None },
 };
 
+/// Canon::SensorInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_SENSORINFO_BIN: &[BinDef] = &[
+    BinDef { index: 9, width: 2, signed: true, name: "BlackMaskLeftBorder", values: None },
+];
+
 /// Canon::SerialInfo tags
 pub static CANON_SERIALINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "InternalSerialNumber2", values: None },
@@ -11278,6 +12416,38 @@ pub static CANON_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "SlowShutter", values: Some(CANON_SHOTINFO_SLOWSHUTTER_VALUES) },
     9u16 => TagDef { name: "SequenceNumber", values: None },
 };
+
+/// Canon::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "AutoISO", values: None },
+    BinDef { index: 10, width: 2, signed: true, name: "OpticalZoomCode", values: None },
+    BinDef { index: 12, width: 2, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 13, width: 2, signed: true, name: "FlashGuideNumber", values: None },
+    BinDef { index: 14, width: 2, signed: true, name: "AFPointsInFocus", values: Some(CANON_SHOTINFO_AFPOINTSINFOCUS_VALUES) },
+    BinDef { index: 15, width: 2, signed: true, name: "FlashExposureComp", values: None },
+    BinDef { index: 16, width: 2, signed: true, name: "AutoExposureBracketing", values: Some(CANON_SHOTINFO_AUTOEXPOSUREBRACKETING_VALUES) },
+    BinDef { index: 17, width: 2, signed: true, name: "AEBBracketValue", values: None },
+    BinDef { index: 18, width: 2, signed: true, name: "ControlMode", values: Some(CANON_SHOTINFO_CONTROLMODE_VALUES) },
+    BinDef { index: 19, width: 2, signed: false, name: "FocusDistanceUpper", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "BaseISO", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "FocusDistanceLower", values: None },
+    BinDef { index: 21, width: 2, signed: true, name: "FNumber", values: None },
+    BinDef { index: 22, width: 2, signed: true, name: "ExposureTime", values: None },
+    BinDef { index: 23, width: 2, signed: true, name: "MeasuredEV2", values: None },
+    BinDef { index: 24, width: 2, signed: true, name: "BulbDuration", values: None },
+    BinDef { index: 26, width: 2, signed: true, name: "CameraType", values: Some(CANON_SHOTINFO_CAMERATYPE_VALUES) },
+    BinDef { index: 27, width: 2, signed: true, name: "AutoRotate", values: Some(CANON_SHOTINFO_AUTOROTATE_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "NDFilter", values: Some(CANON_SHOTINFO_NDFILTER_VALUES) },
+    BinDef { index: 29, width: 2, signed: true, name: "SelfTimer2", values: None },
+    BinDef { index: 3, width: 2, signed: true, name: "MeasuredEV", values: None },
+    BinDef { index: 33, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 4, width: 2, signed: true, name: "TargetAperture", values: None },
+    BinDef { index: 5, width: 2, signed: true, name: "TargetExposureTime", values: None },
+    BinDef { index: 6, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 7, width: 2, signed: true, name: "WhiteBalance", values: Some(CANON_SHOTINFO_WHITEBALANCE_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "SlowShutter", values: Some(CANON_SHOTINFO_SLOWSHUTTER_VALUES) },
+    BinDef { index: 9, width: 2, signed: true, name: "SequenceNumber", values: None },
+];
 
 pub static CANON_SHOTINFO_AFPOINTSINFOCUS_VALUES: &[(i64, &str)] = &[
     (12288, "None (MF)"),
@@ -11366,6 +12536,13 @@ pub static CANON_TIMEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "DaylightSavings", values: Some(CANON_TIMEINFO_DAYLIGHTSAVINGS_VALUES) },
 };
 
+/// Canon::TimeInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_TIMEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "TimeZone", values: None },
+    BinDef { index: 2, width: 4, signed: true, name: "TimeZoneCity", values: Some(CANON_TIMEINFO_TIMEZONECITY_VALUES) },
+    BinDef { index: 3, width: 4, signed: true, name: "DaylightSavings", values: Some(CANON_TIMEINFO_DAYLIGHTSAVINGS_VALUES) },
+];
+
 pub static CANON_TIMEINFO_TIMEZONECITY_VALUES: &[(i64, &str)] = &[
     (0, "n/a"),
     (1, "Chatham Islands"),
@@ -11419,6 +12596,16 @@ pub static CANON_VIGNETTINGCORR: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "ChromaticAberrationCorr", values: Some(CANON_VIGNETTINGCORR_CHROMATICABERRATIONCORR_VALUES) },
 };
 
+/// Canon::VignettingCorr ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_VIGNETTINGCORR_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "VignettingCorrVersion", values: None },
+    BinDef { index: 11, width: 2, signed: true, name: "OriginalImageWidth", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "PeripheralLighting", values: Some(CANON_VIGNETTINGCORR_PERIPHERALLIGHTING_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "DistortionCorrection", values: Some(CANON_VIGNETTINGCORR_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "ChromaticAberrationCorr", values: Some(CANON_VIGNETTINGCORR_CHROMATICABERRATIONCORR_VALUES) },
+    BinDef { index: 5, width: 2, signed: true, name: "ChromaticAberrationCorr", values: Some(CANON_VIGNETTINGCORR_CHROMATICABERRATIONCORR_VALUES) },
+];
+
 pub static CANON_VIGNETTINGCORR_PERIPHERALLIGHTING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -11441,6 +12628,14 @@ pub static CANON_VIGNETTINGCORR2: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "DistortionCorrectionSetting", values: Some(CANON_VIGNETTINGCORR2_DISTORTIONCORRECTIONSETTING_VALUES) },
     9u16 => TagDef { name: "DigitalLensOptimizerSetting", values: Some(CANON_VIGNETTINGCORR2_DIGITALLENSOPTIMIZERSETTING_VALUES) },
 };
+
+/// Canon::VignettingCorr2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_VIGNETTINGCORR2_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 4, signed: true, name: "PeripheralLightingSetting", values: Some(CANON_VIGNETTINGCORR2_PERIPHERALLIGHTINGSETTING_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "ChromaticAberrationSetting", values: Some(CANON_VIGNETTINGCORR2_CHROMATICABERRATIONSETTING_VALUES) },
+    BinDef { index: 7, width: 4, signed: true, name: "DistortionCorrectionSetting", values: Some(CANON_VIGNETTINGCORR2_DISTORTIONCORRECTIONSETTING_VALUES) },
+    BinDef { index: 9, width: 4, signed: true, name: "DigitalLensOptimizerSetting", values: Some(CANON_VIGNETTINGCORR2_DIGITALLENSOPTIMIZERSETTING_VALUES) },
+];
 
 pub static CANON_VIGNETTINGCORR2_PERIPHERALLIGHTINGSETTING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -11466,6 +12661,11 @@ pub static CANON_VIGNETTINGCORR2_DIGITALLENSOPTIMIZERSETTING_VALUES: &[(i64, &st
 pub static CANON_VIGNETTINGCORRUNKNOWN: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "VignettingCorrVersion", values: None },
 };
+
+/// Canon::VignettingCorrUnknown ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_VIGNETTINGCORRUNKNOWN_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "VignettingCorrVersion", values: None },
+];
 
 /// Canon::WBInfo tags
 pub static CANON_WBINFO: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -12982,6 +14182,14 @@ pub static CANONCUSTOM_PERSONALFUNCVALUES: phf::Map<u16, TagDef> = phf::phf_map!
     7u16 => TagDef { name: "PF5ApertureMax", values: None },
 };
 
+/// CanonCustom::PersonalFuncValues ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANONCUSTOM_PERSONALFUNCVALUES_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 2, signed: false, name: "PF4ExposureTimeMin", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "PF4ExposureTimeMax", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "PF5ApertureMin", values: None },
+    BinDef { index: 7, width: 2, signed: false, name: "PF5ApertureMax", values: None },
+];
+
 /// CanonCustom::PersonalFuncs tags
 pub static CANONCUSTOM_PERSONALFUNCS: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "PF0CustomFuncRegistration", values: None },
@@ -13014,6 +14222,39 @@ pub static CANONCUSTOM_PERSONALFUNCS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "PF7BracketContinuousShoot", values: None },
     9u16 => TagDef { name: "PF8SetBracketShots", values: None },
 };
+
+/// CanonCustom::PersonalFuncs ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANONCUSTOM_PERSONALFUNCS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: false, name: "PF0CustomFuncRegistration", values: None },
+    BinDef { index: 10, width: 2, signed: false, name: "PF9ChangeBracketSequence", values: None },
+    BinDef { index: 11, width: 2, signed: false, name: "PF10RetainProgramShift", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "PF13DrivePriority", values: None },
+    BinDef { index: 15, width: 2, signed: false, name: "PF14DisableFocusSearch", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "PF15DisableAFAssistBeam", values: None },
+    BinDef { index: 17, width: 2, signed: false, name: "PF16AutoFocusPointShoot", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "PF17DisableAFPointSel", values: None },
+    BinDef { index: 19, width: 2, signed: false, name: "PF18EnableAutoAFPointSel", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "PF1DisableShootingModes", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "PF19ContinuousShootSpeed", values: None },
+    BinDef { index: 21, width: 2, signed: false, name: "PF20LimitContinousShots", values: None },
+    BinDef { index: 22, width: 2, signed: false, name: "PF21EnableQuietOperation", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "PF23SetTimerLengths", values: None },
+    BinDef { index: 25, width: 2, signed: false, name: "PF24LightLCDDuringBulb", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "PF25DefaultClearSettings", values: None },
+    BinDef { index: 27, width: 2, signed: false, name: "PF26ShortenReleaseLag", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "PF27ReverseDialRotation", values: None },
+    BinDef { index: 29, width: 2, signed: false, name: "PF28NoQuickDialExpComp", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "PF2DisableMeteringModes", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "PF29QuickDialSwitchOff", values: None },
+    BinDef { index: 31, width: 2, signed: false, name: "PF30EnlargementMode", values: None },
+    BinDef { index: 32, width: 2, signed: false, name: "PF31OriginalDecisionData", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "PF3ManualExposureMetering", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "PF4ExposureTimeLimits", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "PF5ApertureLimits", values: None },
+    BinDef { index: 7, width: 2, signed: false, name: "PF6PresetShootingModes", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "PF7BracketContinuousShoot", values: None },
+    BinDef { index: 9, width: 2, signed: false, name: "PF8SetBracketShots", values: None },
+];
 
 
 /// Look up a tag by ID in the main table.

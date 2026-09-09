@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Apple::Main tags
 pub static APPLE_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "MakerNoteVersion", values: None },
@@ -124,6 +134,37 @@ pub static CANON_AFCONFIG: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "AFAssistBeam", values: Some(CANON_AFCONFIG_AFASSISTBEAM_VALUES) },
     9u16 => TagDef { name: "OneShotAFRelease", values: Some(CANON_AFCONFIG_ONESHOTAFRELEASE_VALUES) },
 };
+
+/// Canon::AFConfig ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_AFCONFIG_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "AFConfigTool", values: Some(CANON_AFCONFIG_AFCONFIGTOOL_VALUES) },
+    BinDef { index: 10, width: 4, signed: true, name: "AutoAFPointSelEOSiTRAF", values: Some(CANON_AFCONFIG_AUTOAFPOINTSELEOSITRAF_VALUES) },
+    BinDef { index: 11, width: 4, signed: true, name: "LensDriveWhenAFImpossible", values: Some(CANON_AFCONFIG_LENSDRIVEWHENAFIMPOSSIBLE_VALUES) },
+    BinDef { index: 12, width: 4, signed: true, name: "SelectAFAreaSelectionMode", values: None },
+    BinDef { index: 13, width: 4, signed: true, name: "AFAreaSelectionMethod", values: Some(CANON_AFCONFIG_AFAREASELECTIONMETHOD_VALUES) },
+    BinDef { index: 14, width: 4, signed: true, name: "OrientationLinkedAF", values: Some(CANON_AFCONFIG_ORIENTATIONLINKEDAF_VALUES) },
+    BinDef { index: 15, width: 4, signed: true, name: "ManualAFPointSelPattern", values: Some(CANON_AFCONFIG_MANUALAFPOINTSELPATTERN_VALUES) },
+    BinDef { index: 16, width: 4, signed: true, name: "AFPointDisplayDuringFocus", values: Some(CANON_AFCONFIG_AFPOINTDISPLAYDURINGFOCUS_VALUES) },
+    BinDef { index: 17, width: 4, signed: true, name: "VFDisplayIllumination", values: Some(CANON_AFCONFIG_VFDISPLAYILLUMINATION_VALUES) },
+    BinDef { index: 18, width: 4, signed: true, name: "AFStatusViewfinder", values: Some(CANON_AFCONFIG_AFSTATUSVIEWFINDER_VALUES) },
+    BinDef { index: 19, width: 4, signed: true, name: "InitialAFPointInServo", values: Some(CANON_AFCONFIG_INITIALAFPOINTINSERVO_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "AFTrackingSensitivity", values: Some(CANON_AFCONFIG_AFTRACKINGSENSITIVITY_VALUES) },
+    BinDef { index: 20, width: 4, signed: true, name: "SubjectToDetect", values: Some(CANON_AFCONFIG_SUBJECTTODETECT_VALUES) },
+    BinDef { index: 21, width: 4, signed: true, name: "SubjectSwitching", values: Some(CANON_AFCONFIG_SUBJECTSWITCHING_VALUES) },
+    BinDef { index: 24, width: 4, signed: true, name: "EyeDetection", values: Some(CANON_AFCONFIG_EYEDETECTION_VALUES) },
+    BinDef { index: 26, width: 4, signed: true, name: "WholeAreaTracking", values: Some(CANON_AFCONFIG_WHOLEAREATRACKING_VALUES) },
+    BinDef { index: 27, width: 4, signed: true, name: "ServoAFCharacteristics", values: Some(CANON_AFCONFIG_SERVOAFCHARACTERISTICS_VALUES) },
+    BinDef { index: 28, width: 4, signed: true, name: "CaseAutoSetting", values: Some(CANON_AFCONFIG_CASEAUTOSETTING_VALUES) },
+    BinDef { index: 29, width: 4, signed: true, name: "ActionPriority", values: Some(CANON_AFCONFIG_ACTIONPRIORITY_VALUES) },
+    BinDef { index: 3, width: 4, signed: true, name: "AFAccelDecelTracking", values: Some(CANON_AFCONFIG_AFACCELDECELTRACKING_VALUES) },
+    BinDef { index: 30, width: 4, signed: true, name: "SportEvents", values: Some(CANON_AFCONFIG_SPORTEVENTS_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "AFPointSwitching", values: Some(CANON_AFCONFIG_AFPOINTSWITCHING_VALUES) },
+    BinDef { index: 5, width: 4, signed: true, name: "AIServoFirstImage", values: Some(CANON_AFCONFIG_AISERVOFIRSTIMAGE_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "AIServoSecondImage", values: Some(CANON_AFCONFIG_AISERVOSECONDIMAGE_VALUES) },
+    BinDef { index: 7, width: 4, signed: true, name: "USMLensElectronicMF", values: Some(CANON_AFCONFIG_USMLENSELECTRONICMF_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "AFAssistBeam", values: Some(CANON_AFCONFIG_AFASSISTBEAM_VALUES) },
+    BinDef { index: 9, width: 4, signed: true, name: "OneShotAFRelease", values: Some(CANON_AFCONFIG_ONESHOTAFRELEASE_VALUES) },
+];
 
 pub static CANON_AFCONFIG_AFCONFIGTOOL_VALUES: &[(i64, &str)] = &[
     (11, "Case A"),
@@ -338,6 +379,11 @@ pub static CANON_AFMICROADJ: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "AFMicroAdjValue", values: None },
 };
 
+/// Canon::AFMicroAdj ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_AFMICROADJ_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "AFMicroAdjMode", values: Some(CANON_AFMICROADJ_AFMICROADJMODE_VALUES) },
+];
+
 pub static CANON_AFMICROADJ_AFMICROADJMODE_VALUES: &[(i64, &str)] = &[
     (0, "Disable"),
     (1, "Adjust all by the same amount"),
@@ -348,6 +394,11 @@ pub static CANON_AFMICROADJ_AFMICROADJMODE_VALUES: &[(i64, &str)] = &[
 pub static CANON_AMBIENCE: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "AmbienceSelection", values: Some(CANON_AMBIENCE_AMBIENCESELECTION_VALUES) },
 };
+
+/// Canon::Ambience ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_AMBIENCE_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "AmbienceSelection", values: Some(CANON_AMBIENCE_AMBIENCESELECTION_VALUES) },
+];
 
 pub static CANON_AMBIENCE_AMBIENCESELECTION_VALUES: &[(i64, &str)] = &[
     (0, "Standard"),
@@ -365,6 +416,11 @@ pub static CANON_AMBIENCE_AMBIENCESELECTION_VALUES: &[(i64, &str)] = &[
 pub static CANON_ASPECTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AspectRatio", values: Some(CANON_ASPECTINFO_ASPECTRATIO_VALUES) },
 };
+
+/// Canon::AspectInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_ASPECTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "AspectRatio", values: Some(CANON_ASPECTINFO_ASPECTRATIO_VALUES) },
+];
 
 pub static CANON_ASPECTINFO_ASPECTRATIO_VALUES: &[(i64, &str)] = &[
     (0, "3:2"),
@@ -405,6 +461,22 @@ pub static CANON_CAMERAINFO1000D: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Canon::CameraInfo1000D Mask bitfields (ExifTool 0.1-style indices)
 pub static CANON_CAMERAINFO1000D_MASKS: &[MaskDef] = &[
     MaskDef { index: 19, mask: 0x7f, name: "FlashModel", values: Some(CANON_CAMERAINFO1000D_FLASHMODEL_VALUES) },
+];
+
+/// Canon::CameraInfo1000D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1000D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1000D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO1000D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 311, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 323, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1000D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 615, width: 1, signed: false, name: "PictureStyleInfo", values: None },
 ];
 
 pub static CANON_CAMERAINFO1000D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
@@ -725,6 +797,23 @@ pub static CANON_CAMERAINFO1D: phf::Map<u16, TagDef> = phf::phf_map! {
     78u16 => TagDef { name: "ColorTemperature", values: None },
     81u16 => TagDef { name: "PictureStyle", values: Some(CANON_CAMERAINFO1D_PICTURESTYLE_VALUES) },
 };
+
+/// Canon::CameraInfo1D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1D_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 65, width: 1, signed: false, name: "SharpnessFrequency", values: Some(CANON_CAMERAINFO1D_SHARPNESSFREQUENCY_VALUES) },
+    BinDef { index: 66, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 68, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1D_WHITEBALANCE_VALUES) },
+    BinDef { index: 71, width: 1, signed: false, name: "SharpnessFrequency", values: Some(CANON_CAMERAINFO1D_SHARPNESSFREQUENCY_VALUES) },
+    BinDef { index: 72, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 74, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1D_WHITEBALANCE_VALUES) },
+    BinDef { index: 75, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1D_PICTURESTYLE_VALUES) },
+    BinDef { index: 78, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 81, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1D_PICTURESTYLE_VALUES) },
+];
 
 pub static CANON_CAMERAINFO1D_LENSTYPE_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
@@ -1052,6 +1141,21 @@ pub static CANON_CAMERAINFO1DX: phf::Map<u16, TagDef> = phf::phf_map! {
     732u16 => TagDef { name: "DirectoryIndex", values: None },
 };
 
+/// Canon::CameraInfo1DX ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DX_BIN: &[BinDef] = &[
+    BinDef { index: 1012, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 125, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1DX_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 188, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DX_WHITEBALANCE_VALUES) },
+    BinDef { index: 192, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 244, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DX_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 720, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 732, width: 4, signed: false, name: "DirectoryIndex", values: None },
+];
+
 pub static CANON_CAMERAINFO1DX_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -1371,6 +1475,20 @@ pub static CANON_CAMERAINFO1DMKII: phf::Map<u16, TagDef> = phf::phf_map! {
     57u16 => TagDef { name: "CanonImageSize", values: Some(CANON_CAMERAINFO1DMKII_CANONIMAGESIZE_VALUES) },
     9u16 => TagDef { name: "FocalLength", values: None },
 };
+
+/// Canon::CameraInfo1DmkII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKII_BIN: &[BinDef] = &[
+    BinDef { index: 102, width: 1, signed: false, name: "JPEGQuality", values: None },
+    BinDef { index: 108, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DMKII_PICTURESTYLE_VALUES) },
+    BinDef { index: 110, width: 1, signed: true, name: "Saturation", values: Some(CANON_CAMERAINFO1DMKII_SATURATION_VALUES) },
+    BinDef { index: 111, width: 1, signed: true, name: "ColorTone", values: Some(CANON_CAMERAINFO1DMKII_COLORTONE_VALUES) },
+    BinDef { index: 114, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 115, width: 1, signed: true, name: "Contrast", values: Some(CANON_CAMERAINFO1DMKII_CONTRAST_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 45, width: 1, signed: false, name: "FocalType", values: Some(CANON_CAMERAINFO1DMKII_FOCALTYPE_VALUES) },
+    BinDef { index: 54, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKII_WHITEBALANCE_VALUES) },
+    BinDef { index: 57, width: 2, signed: false, name: "CanonImageSize", values: Some(CANON_CAMERAINFO1DMKII_CANONIMAGESIZE_VALUES) },
+];
 
 pub static CANON_CAMERAINFO1DMKII_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -1731,6 +1849,25 @@ pub static CANON_CAMERAINFO1DMKIII: phf::Map<u16, TagDef> = phf::phf_map! {
     98u16 => TagDef { name: "ColorTemperature", values: None },
 };
 
+/// Canon::CameraInfo1DmkIII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKIII_BIN: &[BinDef] = &[
+    BinDef { index: 1114, width: 4, signed: false, name: "TimeStamp1", values: None },
+    BinDef { index: 1118, width: 4, signed: false, name: "TimeStamp", values: None },
+    BinDef { index: 134, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DMKIII_PICTURESTYLE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 370, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 374, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 382, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1DMKIII_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 682, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 94, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKIII_WHITEBALANCE_VALUES) },
+    BinDef { index: 98, width: 2, signed: false, name: "ColorTemperature", values: None },
+];
+
 pub static CANON_CAMERAINFO1DMKIII_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
     (1, "Standard"),
@@ -2047,6 +2184,17 @@ pub static CANON_CAMERAINFO1DMKIIN: phf::Map<u16, TagDef> = phf::phf_map! {
     55u16 => TagDef { name: "ColorTemperature", values: None },
     9u16 => TagDef { name: "FocalLength", values: None },
 };
+
+/// Canon::CameraInfo1DmkIIN ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKIIN_BIN: &[BinDef] = &[
+    BinDef { index: 115, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO1DMKIIN_PICTURESTYLE_VALUES) },
+    BinDef { index: 116, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 117, width: 1, signed: true, name: "Contrast", values: Some(CANON_CAMERAINFO1DMKIIN_CONTRAST_VALUES) },
+    BinDef { index: 118, width: 1, signed: true, name: "Saturation", values: Some(CANON_CAMERAINFO1DMKIIN_SATURATION_VALUES) },
+    BinDef { index: 119, width: 1, signed: true, name: "ColorTone", values: Some(CANON_CAMERAINFO1DMKIIN_COLORTONE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 54, width: 1, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKIIN_WHITEBALANCE_VALUES) },
+];
 
 pub static CANON_CAMERAINFO1DMKIIN_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -2380,6 +2528,24 @@ pub static CANON_CAMERAINFO1DMKIV: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "MeasuredEV3", values: None },
 };
 
+/// Canon::CameraInfo1DmkIV ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO1DMKIV_BIN: &[BinDef] = &[
+    BinDef { index: 120, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO1DMKIV_WHITEBALANCE_VALUES) },
+    BinDef { index: 124, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO1DMKIV_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO1DMKIV_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 556, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 568, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO1DMKIV_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "MeasuredEV2", values: None },
+    BinDef { index: 872, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "MeasuredEV3", values: None },
+];
+
 pub static CANON_CAMERAINFO1DMKIV_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -2690,6 +2856,22 @@ pub static CANON_CAMERAINFO40D: phf::Map<u16, TagDef> = phf::phf_map! {
     69u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo40D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO40D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO40D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO40D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 307, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 319, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO40D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 603, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO40D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -2993,6 +3175,22 @@ pub static CANON_CAMERAINFO450D: phf::Map<u16, TagDef> = phf::phf_map! {
     67u16 => TagDef { name: "FocusDistanceUpper", values: None },
     69u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
+
+/// Canon::CameraInfo450D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO450D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO450D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO450D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 307, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 319, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO450D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 611, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO450D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -3300,6 +3498,25 @@ pub static CANON_CAMERAINFO500D: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "FocusDistanceUpper", values: None },
     82u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
+
+/// Canon::CameraInfo500D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO500D_BIN: &[BinDef] = &[
+    BinDef { index: 115, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO500D_WHITEBALANCE_VALUES) },
+    BinDef { index: 119, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 171, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO500D_PICTURESTYLE_VALUES) },
+    BinDef { index: 188, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO500D_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 190, width: 1, signed: false, name: "AutoLightingOptimizer", values: Some(CANON_CAMERAINFO500D_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO500D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 467, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 479, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO500D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO500D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 779, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO500D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -3655,6 +3872,25 @@ pub static CANON_CAMERAINFO50D: phf::Map<u16, TagDef> = phf::phf_map! {
     82u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo50D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO50D_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO50D_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 167, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO50D_PICTURESTYLE_VALUES) },
+    BinDef { index: 189, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO50D_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 191, width: 1, signed: false, name: "AutoLightingOptimizer", values: Some(CANON_CAMERAINFO50D_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO50D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 411, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 423, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO50D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO50D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 727, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO50D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -4006,6 +4242,23 @@ pub static CANON_CAMERAINFO550D: phf::Map<u16, TagDef> = phf::phf_map! {
     86u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo550D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO550D_BIN: &[BinDef] = &[
+    BinDef { index: 120, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO550D_WHITEBALANCE_VALUES) },
+    BinDef { index: 124, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 176, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO550D_PICTURESTYLE_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO550D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 484, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 496, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO550D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO550D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 796, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO550D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -4347,6 +4600,27 @@ pub static CANON_CAMERAINFO5D: phf::Map<u16, TagDef> = phf::phf_map! {
     84u16 => TagDef { name: "WhiteBalance", values: Some(CANON_CAMERAINFO5D_WHITEBALANCE_VALUES) },
     88u16 => TagDef { name: "ColorTemperature", values: None },
 };
+
+/// Canon::CameraInfo5D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO5D_BIN: &[BinDef] = &[
+    BinDef { index: 108, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO5D_PICTURESTYLE_VALUES) },
+    BinDef { index: 204, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 208, width: 2, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 23, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 255, width: 1, signed: true, name: "FilterEffectMonochrome", values: Some(CANON_CAMERAINFO5D_FILTEREFFECTMONOCHROME_VALUES) },
+    BinDef { index: 264, width: 1, signed: true, name: "ToningEffectMonochrome", values: Some(CANON_CAMERAINFO5D_TONINGEFFECTMONOCHROME_VALUES) },
+    BinDef { index: 268, width: 2, signed: false, name: "UserDef1PictureStyle", values: Some(CANON_CAMERAINFO5D_USERDEF1PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: true, name: "MacroMagnification", values: None },
+    BinDef { index: 270, width: 2, signed: false, name: "UserDef2PictureStyle", values: Some(CANON_CAMERAINFO5D_USERDEF2PICTURESTYLE_VALUES) },
+    BinDef { index: 272, width: 2, signed: false, name: "UserDef3PictureStyle", values: Some(CANON_CAMERAINFO5D_USERDEF3PICTURESTYLE_VALUES) },
+    BinDef { index: 284, width: 4, signed: false, name: "TimeStamp", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 39, width: 1, signed: true, name: "CameraOrientation", values: Some(CANON_CAMERAINFO5D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 84, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO5D_WHITEBALANCE_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "ColorTemperature", values: None },
+];
 
 pub static CANON_CAMERAINFO5D_PICTURESTYLE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -4744,6 +5018,26 @@ pub static CANON_CAMERAINFO5DMKII_MASKS: &[MaskDef] = &[
     MaskDef { index: 19, mask: 0x7f, name: "FlashModel", values: Some(CANON_CAMERAINFO5DMKII_FLASHMODEL_VALUES) },
 ];
 
+/// Canon::CameraInfo5DmkII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO5DMKII_BIN: &[BinDef] = &[
+    BinDef { index: 111, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO5DMKII_WHITEBALANCE_VALUES) },
+    BinDef { index: 115, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 167, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO5DMKII_PICTURESTYLE_VALUES) },
+    BinDef { index: 189, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO5DMKII_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 191, width: 1, signed: false, name: "AutoLightingOptimizer", values: Some(CANON_CAMERAINFO5DMKII_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO5DMKII_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "MacroMagnification", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 443, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 455, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO5DMKII_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO5DMKII_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 759, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO5DMKII_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -5117,6 +5411,23 @@ pub static CANON_CAMERAINFO5DMKIII: phf::Map<u16, TagDef> = phf::phf_map! {
     944u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
 
+/// Canon::CameraInfo5DmkIII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO5DMKIII_BIN: &[BinDef] = &[
+    BinDef { index: 125, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO5DMKIII_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 188, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO5DMKIII_WHITEBALANCE_VALUES) },
+    BinDef { index: 192, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 244, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO5DMKIII_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 652, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 656, width: 4, signed: false, name: "FileIndex2", values: None },
+    BinDef { index: 664, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 668, width: 4, signed: false, name: "DirectoryIndex2", values: None },
+    BinDef { index: 944, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO5DMKIII_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -5440,6 +5751,23 @@ pub static CANON_CAMERAINFO600D: phf::Map<u16, TagDef> = phf::phf_map! {
     87u16 => TagDef { name: "FocusDistanceUpper", values: None },
     89u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
+
+/// Canon::CameraInfo600D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO600D_BIN: &[BinDef] = &[
+    BinDef { index: 123, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO600D_WHITEBALANCE_VALUES) },
+    BinDef { index: 127, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 179, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO600D_PICTURESTYLE_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO600D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 475, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 487, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 56, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO600D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO600D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 763, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO600D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -5776,6 +6104,21 @@ pub static CANON_CAMERAINFO60D: phf::Map<u16, TagDef> = phf::phf_map! {
     87u16 => TagDef { name: "FocusDistanceLower", values: None },
 };
 
+/// Canon::CameraInfo60D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO60D_BIN: &[BinDef] = &[
+    BinDef { index: 125, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 473, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 485, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 54, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO60D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 58, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO60D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 761, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 801, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO60D_LENSTYPE_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
     (1, "Canon EF 50mm f/1.8"),
@@ -6048,6 +6391,23 @@ pub static CANON_CAMERAINFO650D: phf::Map<u16, TagDef> = phf::phf_map! {
     640u16 => TagDef { name: "DirectoryIndex", values: None },
     912u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
+
+/// Canon::CameraInfo650D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO650D_BIN: &[BinDef] = &[
+    BinDef { index: 125, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO650D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 188, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO650D_WHITEBALANCE_VALUES) },
+    BinDef { index: 192, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 244, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO650D_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 624, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 628, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 636, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 640, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 912, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
 
 pub static CANON_CAMERAINFO650D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
@@ -6371,6 +6731,21 @@ pub static CANON_CAMERAINFO6D: phf::Map<u16, TagDef> = phf::phf_map! {
     966u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
 
+/// Canon::CameraInfo6D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO6D_BIN: &[BinDef] = &[
+    BinDef { index: 131, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO6D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 194, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO6D_WHITEBALANCE_VALUES) },
+    BinDef { index: 198, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 250, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO6D_PICTURESTYLE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 682, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 694, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 966, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO6D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -6691,6 +7066,19 @@ pub static CANON_CAMERAINFO70D: phf::Map<u16, TagDef> = phf::phf_map! {
     975u16 => TagDef { name: "PictureStyleInfo", values: None },
 };
 
+/// Canon::CameraInfo70D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO70D_BIN: &[BinDef] = &[
+    BinDef { index: 132, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO70D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 199, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 691, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 703, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 975, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+];
+
 pub static CANON_CAMERAINFO70D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -6958,6 +7346,18 @@ pub static CANON_CAMERAINFO750D: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "ExposureTime", values: None },
     6u16 => TagDef { name: "ISO", values: None },
 };
+
+/// Canon::CameraInfo750D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO750D_BIN: &[BinDef] = &[
+    BinDef { index: 150, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO750D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 305, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO750D_WHITEBALANCE_VALUES) },
+    BinDef { index: 309, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 361, width: 1, signed: false, name: "PictureStyle", values: Some(CANON_CAMERAINFO750D_PICTURESTYLE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+];
 
 pub static CANON_CAMERAINFO750D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
@@ -7287,6 +7687,26 @@ pub static CANON_CAMERAINFO7D: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "MeasuredEV", values: None },
 };
 
+/// Canon::CameraInfo7D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO7D_BIN: &[BinDef] = &[
+    BinDef { index: 119, width: 2, signed: false, name: "WhiteBalance", values: Some(CANON_CAMERAINFO7D_WHITEBALANCE_VALUES) },
+    BinDef { index: 123, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 175, width: 1, signed: false, name: "CameraPictureStyle", values: Some(CANON_CAMERAINFO7D_CAMERAPICTURESTYLE_VALUES) },
+    BinDef { index: 201, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(CANON_CAMERAINFO7D_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashMeteringMode", values: Some(CANON_CAMERAINFO7D_FLASHMETERINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 491, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 503, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO7D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "HighlightTonePriority", values: Some(CANON_CAMERAINFO7D_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "MeasuredEV2", values: None },
+    BinDef { index: 807, width: 1, signed: false, name: "PictureStyleInfo", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "MeasuredEV", values: None },
+];
+
 pub static CANON_CAMERAINFO7D_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Daylight"),
@@ -7611,6 +8031,18 @@ pub static CANON_CAMERAINFO80D: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "ISO", values: None },
 };
 
+/// Canon::CameraInfo80D ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFO80D_BIN: &[BinDef] = &[
+    BinDef { index: 1198, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 1210, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 150, width: 1, signed: false, name: "CameraOrientation", values: Some(CANON_CAMERAINFO80D_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 314, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO", values: None },
+];
+
 pub static CANON_CAMERAINFO80D_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
     (1, "Rotate 90 CW"),
@@ -7867,6 +8299,14 @@ pub static CANON_CAMERAINFOG5XII: phf::Map<u16, TagDef> = phf::phf_map! {
     659u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Canon::CameraInfoG5XII ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOG5XII_BIN: &[BinDef] = &[
+    BinDef { index: 2709, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 2849, width: 4, signed: false, name: "DirectoryIndex", values: None },
+    BinDef { index: 2861, width: 4, signed: false, name: "FileIndex", values: None },
+    BinDef { index: 659, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Canon::CameraInfoPowerShot tags
 pub static CANON_CAMERAINFOPOWERSHOT: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ISO", values: None },
@@ -7875,6 +8315,15 @@ pub static CANON_CAMERAINFOPOWERSHOT: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "FNumber", values: None },
     6u16 => TagDef { name: "ExposureTime", values: None },
 };
+
+/// Canon::CameraInfoPowerShot ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOPOWERSHOT_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: true, name: "ISO", values: None },
+    BinDef { index: 135, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 145, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 5, width: 4, signed: true, name: "FNumber", values: None },
+    BinDef { index: 6, width: 4, signed: true, name: "ExposureTime", values: None },
+];
 
 /// Canon::CameraInfoPowerShot2 tags
 pub static CANON_CAMERAINFOPOWERSHOT2: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -7888,21 +8337,49 @@ pub static CANON_CAMERAINFOPOWERSHOT2: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "ExposureTime", values: None },
 };
 
+/// Canon::CameraInfoPowerShot2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOPOWERSHOT2_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "ISO", values: None },
+    BinDef { index: 153, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 159, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 164, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 168, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 261, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 6, width: 4, signed: true, name: "FNumber", values: None },
+    BinDef { index: 7, width: 4, signed: true, name: "ExposureTime", values: None },
+];
+
 /// Canon::CameraInfoR6 tags
 pub static CANON_CAMERAINFOR6: phf::Map<u16, TagDef> = phf::phf_map! {
     2522u16 => TagDef { name: "CameraTemperature", values: None },
     2801u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Canon::CameraInfoR6 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOR6_BIN: &[BinDef] = &[
+    BinDef { index: 2522, width: 1, signed: false, name: "CameraTemperature", values: None },
+    BinDef { index: 2801, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Canon::CameraInfoR6m2 tags
 pub static CANON_CAMERAINFOR6M2: phf::Map<u16, TagDef> = phf::phf_map! {
     3369u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Canon::CameraInfoR6m2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOR6M2_BIN: &[BinDef] = &[
+    BinDef { index: 3369, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Canon::CameraInfoR6m3 tags
 pub static CANON_CAMERAINFOR6M3: phf::Map<u16, TagDef> = phf::phf_map! {
     2157u16 => TagDef { name: "ImageCount", values: None },
 };
+
+/// Canon::CameraInfoR6m3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOR6M3_BIN: &[BinDef] = &[
+    BinDef { index: 2157, width: 2, signed: false, name: "ImageCount", values: None },
+];
 
 /// Canon::CameraInfoUnknown tags
 pub static CANON_CAMERAINFOUNKNOWN: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -7918,6 +8395,15 @@ pub static CANON_CAMERAINFOUNKNOWN32: phf::Map<u16, TagDef> = phf::phf_map! {
     91u16 => TagDef { name: "CameraTemperature", values: None },
     92u16 => TagDef { name: "CameraTemperature", values: None },
 };
+
+/// Canon::CameraInfoUnknown32 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERAINFOUNKNOWN32_BIN: &[BinDef] = &[
+    BinDef { index: 100, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 71, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 83, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 91, width: 4, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 92, width: 4, signed: true, name: "CameraTemperature", values: None },
+];
 
 /// Canon::CameraSettings tags
 pub static CANON_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -7964,6 +8450,47 @@ pub static CANON_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Canon::CameraSettings Mask bitfields (ExifTool 0.1-style indices)
 pub static CANON_CAMERASETTINGS_MASKS: &[MaskDef] = &[
     MaskDef { index: 28, mask: 0x7f, name: "FlashModel", values: Some(CANON_CAMERASETTINGS_FLASHMODEL_VALUES) },
+];
+
+/// Canon::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "MacroMode", values: Some(CANON_CAMERASETTINGS_MACROMODE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "CanonImageSize", values: Some(CANON_CAMERASETTINGS_CANONIMAGESIZE_VALUES) },
+    BinDef { index: 11, width: 2, signed: true, name: "EasyMode", values: Some(CANON_CAMERASETTINGS_EASYMODE_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "DigitalZoom", values: Some(CANON_CAMERASETTINGS_DIGITALZOOM_VALUES) },
+    BinDef { index: 13, width: 2, signed: true, name: "Contrast", values: Some(CANON_CAMERASETTINGS_CONTRAST_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "Saturation", values: Some(CANON_CAMERASETTINGS_SATURATION_VALUES) },
+    BinDef { index: 15, width: 2, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 16, width: 2, signed: true, name: "CameraISO", values: None },
+    BinDef { index: 17, width: 2, signed: true, name: "MeteringMode", values: Some(CANON_CAMERASETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "FocusRange", values: Some(CANON_CAMERASETTINGS_FOCUSRANGE_VALUES) },
+    BinDef { index: 19, width: 2, signed: true, name: "AFPoint", values: Some(CANON_CAMERASETTINGS_AFPOINT_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "SelfTimer", values: None },
+    BinDef { index: 20, width: 2, signed: true, name: "CanonExposureMode", values: Some(CANON_CAMERASETTINGS_CANONEXPOSUREMODE_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "LensType", values: Some(CANON_CAMERASETTINGS_LENSTYPE_VALUES) },
+    BinDef { index: 23, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 25, width: 2, signed: true, name: "FocalUnits", values: None },
+    BinDef { index: 26, width: 2, signed: true, name: "MaxAperture", values: None },
+    BinDef { index: 27, width: 2, signed: true, name: "MinAperture", values: None },
+    BinDef { index: 29, width: 2, signed: true, name: "FlashBits", values: Some(CANON_CAMERASETTINGS_FLASHBITS_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "Quality", values: Some(CANON_CAMERASETTINGS_QUALITY_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "FocusContinuous", values: Some(CANON_CAMERASETTINGS_FOCUSCONTINUOUS_VALUES) },
+    BinDef { index: 33, width: 2, signed: true, name: "AESetting", values: Some(CANON_CAMERASETTINGS_AESETTING_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "ImageStabilization", values: Some(CANON_CAMERASETTINGS_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 35, width: 2, signed: true, name: "DisplayAperture", values: None },
+    BinDef { index: 39, width: 2, signed: true, name: "SpotMeteringMode", values: Some(CANON_CAMERASETTINGS_SPOTMETERINGMODE_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "CanonFlashMode", values: Some(CANON_CAMERASETTINGS_CANONFLASHMODE_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "PhotoEffect", values: Some(CANON_CAMERASETTINGS_PHOTOEFFECT_VALUES) },
+    BinDef { index: 41, width: 2, signed: true, name: "ManualFlashOutput", values: Some(CANON_CAMERASETTINGS_MANUALFLASHOUTPUT_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "ColorTone", values: Some(CANON_CAMERASETTINGS_COLORTONE_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "SRAWQuality", values: Some(CANON_CAMERASETTINGS_SRAWQUALITY_VALUES) },
+    BinDef { index: 5, width: 2, signed: true, name: "ContinuousDrive", values: Some(CANON_CAMERASETTINGS_CONTINUOUSDRIVE_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "FocusBracketing", values: Some(CANON_CAMERASETTINGS_FOCUSBRACKETING_VALUES) },
+    BinDef { index: 51, width: 2, signed: true, name: "Clarity", values: Some(CANON_CAMERASETTINGS_CLARITY_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "HDR-PQ", values: Some(CANON_CAMERASETTINGS_HDR_PQ_VALUES) },
+    BinDef { index: 7, width: 2, signed: true, name: "FocusMode", values: Some(CANON_CAMERASETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 9, width: 2, signed: true, name: "RecordMode", values: Some(CANON_CAMERASETTINGS_RECORDMODE_VALUES) },
 ];
 
 pub static CANON_CAMERASETTINGS_MACROMODE_VALUES: &[(i64, &str)] = &[
@@ -8636,6 +9163,23 @@ pub static CANON_COLORCOEFS: phf::Map<u16, TagDef> = phf::phf_map! {
     99u16 => TagDef { name: "ColorTempUnknown10", values: None },
 };
 
+/// Canon::ColorCoefs ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORCOEFS_BIN: &[BinDef] = &[
+    BinDef { index: 104, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 109, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 114, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 19, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 59, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 64, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 69, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 74, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 79, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 84, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 89, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 94, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 99, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+];
+
 /// Canon::ColorCoefs2 tags
 pub static CANON_COLORCOEFS2: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "WB_RGGBLevelsAsShot", values: None },
@@ -8675,6 +9219,23 @@ pub static CANON_COLORCOEFS2: phf::Map<u16, TagDef> = phf::phf_map! {
     95u16 => TagDef { name: "ColorTempUnknown2", values: None },
     96u16 => TagDef { name: "WB_RGGBLevelsUnknown3", values: None },
 };
+
+/// Canon::ColorCoefs2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORCOEFS2_BIN: &[BinDef] = &[
+    BinDef { index: 103, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 111, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 119, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 127, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 135, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 143, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 151, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 159, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 167, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 175, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 183, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 31, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 95, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+];
 
 /// Canon::ColorData1 tags
 pub static CANON_COLORDATA1: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -8771,6 +9332,45 @@ pub static CANON_COLORDATA10: phf::Map<u16, TagDef> = phf::phf_map! {
     95u16 => TagDef { name: "WB_RGGBLevelsMeasured", values: None },
 };
 
+/// Canon::ColorData10 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA10_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA10_COLORDATAVERSION_VALUES) },
+    BinDef { index: 104, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 109, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 114, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 119, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 124, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 129, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 134, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 139, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 144, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 149, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 189, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 194, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 199, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 204, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 209, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 214, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 219, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 224, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 229, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 234, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 239, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 244, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 249, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 254, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 259, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 264, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 269, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 274, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 279, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 665, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 666, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 810, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 811, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 812, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
+
 pub static CANON_COLORDATA10_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (32, "32 (1DXmkIII)"),
     (33, "33 (R5/R6)"),
@@ -8851,6 +9451,42 @@ pub static CANON_COLORDATA11: phf::Map<u16, TagDef> = phf::phf_map! {
     641u16 => TagDef { name: "SpecularWhiteLevel", values: None },
     642u16 => TagDef { name: "LinearityUpperMargin", values: None },
 };
+
+/// Canon::ColorData11 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA11_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA11_COLORDATAVERSION_VALUES) },
+    BinDef { index: 124, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 129, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 134, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 139, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 144, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 149, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 154, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 159, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 164, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 169, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 174, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 179, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 184, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 189, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 194, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 199, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 204, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 244, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 249, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 254, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 259, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 264, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 269, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 274, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 279, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 284, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 289, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 294, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 640, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 641, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 642, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
 
 pub static CANON_COLORDATA11_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (34, "34 (R3)"),
@@ -8940,6 +9576,48 @@ pub static CANON_COLORDATA12: phf::Map<u16, TagDef> = phf::phf_map! {
     662u16 => TagDef { name: "LinearityUpperMargin", values: None },
 };
 
+/// Canon::ColorData12 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA12_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA12_COLORDATAVERSION_VALUES) },
+    BinDef { index: 144, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 149, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 154, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 159, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 164, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 169, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 174, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 179, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 184, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 189, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 194, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 199, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 204, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 209, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 214, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 219, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 224, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 229, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 234, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 239, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 244, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 249, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 254, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 259, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 264, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 269, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 274, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 279, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 284, width: 2, signed: true, name: "ColorTempUnknown30", values: None },
+    BinDef { index: 289, width: 2, signed: true, name: "ColorTempUnknown31", values: None },
+    BinDef { index: 294, width: 2, signed: true, name: "ColorTempUnknown32", values: None },
+    BinDef { index: 299, width: 2, signed: true, name: "ColorTempUnknown33", values: None },
+    BinDef { index: 515, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 516, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 660, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 661, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 662, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
+
 pub static CANON_COLORDATA12_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (64, "64 (R1/R5mkII)"),
     (65, "65 (R50V)"),
@@ -8995,6 +9673,26 @@ pub static CANON_COLORDATA2: phf::Map<u16, TagDef> = phf::phf_map! {
     99u16 => TagDef { name: "WB_RGGBLevelsUnknown7", values: None },
 };
 
+/// Canon::ColorData2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA2_BIN: &[BinDef] = &[
+    BinDef { index: 103, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 108, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 113, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 118, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 123, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 128, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 133, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 138, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 143, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 163, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 33, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 78, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 83, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 88, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 93, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 98, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+];
+
 /// Canon::ColorData3 tags
 pub static CANON_COLORDATA3: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ColorDataVersion", values: Some(CANON_COLORDATA3_COLORDATAVERSION_VALUES) },
@@ -9019,6 +9717,14 @@ pub static CANON_COLORDATA3: phf::Map<u16, TagDef> = phf::phf_map! {
     93u16 => TagDef { name: "WB_RGGBLevelsTungsten", values: None },
     98u16 => TagDef { name: "WB_RGGBLevelsFluorescent", values: None },
 };
+
+/// Canon::ColorData3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA3_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA3_COLORDATAVERSION_VALUES) },
+    BinDef { index: 584, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 585, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 586, width: 2, signed: true, name: "ColorTempFlashData", values: None },
+];
 
 pub static CANON_COLORDATA3_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (1, "1 (1DmkIIN/5D/30D/400D)"),
@@ -9046,6 +9752,22 @@ pub static CANON_COLORDATA4: phf::Map<u16, TagDef> = phf::phf_map! {
     725u16 => TagDef { name: "LinearityUpperMargin", values: None },
 };
 
+/// Canon::ColorData4 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA4_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA4_COLORDATAVERSION_VALUES) },
+    BinDef { index: 619, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 620, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 696, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 697, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 698, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 719, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 720, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 721, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 723, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 724, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 725, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+];
+
 pub static CANON_COLORDATA4_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (2, "2 (1DmkIII)"),
     (3, "3 (40D)"),
@@ -9068,6 +9790,14 @@ pub static CANON_COLORDATA5: phf::Map<u16, TagDef> = phf::phf_map! {
     662u16 => TagDef { name: "SpecularWhiteLevel", values: None },
     71u16 => TagDef { name: "ColorCoefs", values: None },
 };
+
+/// Canon::ColorData5 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA5_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA5_COLORDATAVERSION_VALUES) },
+    BinDef { index: 1385, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 1386, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 662, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+];
 
 pub static CANON_COLORDATA5_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (-3, "-3 (M10/M3)"),
@@ -9125,6 +9855,29 @@ pub static CANON_COLORDATA6: phf::Map<u16, TagDef> = phf::phf_map! {
     97u16 => TagDef { name: "ColorTempUnknown4", values: None },
     98u16 => TagDef { name: "WB_RGGBLevelsUnknown5", values: None },
 };
+
+/// Canon::ColorData6 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA6_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA6_COLORDATAVERSION_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 142, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 147, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 152, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 157, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 162, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 167, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 172, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 177, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 182, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 187, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 483, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 484, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 485, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 82, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 87, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 92, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 97, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+];
 
 pub static CANON_COLORDATA6_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (10, "10 (600D/1200D)"),
@@ -9198,6 +9951,39 @@ pub static CANON_COLORDATA7: phf::Map<u16, TagDef> = phf::phf_map! {
     97u16 => TagDef { name: "ColorTempUnknown4", values: None },
     98u16 => TagDef { name: "WB_RGGBLevelsUnknown5", values: None },
 };
+
+/// Canon::ColorData7 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA7_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA7_COLORDATAVERSION_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 107, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 112, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 117, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 122, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 127, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 167, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 172, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 177, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 182, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 187, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 192, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 197, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 202, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 207, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 212, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 408, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 409, width: 2, signed: true, name: "FlashBatteryLevel", values: None },
+    BinDef { index: 508, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 509, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 510, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 732, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 733, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 734, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 82, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 87, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 92, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 97, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+];
 
 pub static CANON_COLORDATA7_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (10, "10 (1DX/5DmkIII/6D/70D/100D/650D/700D/M/M2)"),
@@ -9289,6 +10075,47 @@ pub static CANON_COLORDATA8: phf::Map<u16, TagDef> = phf::phf_map! {
     98u16 => TagDef { name: "WB_RGGBLevelsUnknown5", values: None },
 };
 
+/// Canon::ColorData8 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA8_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA8_COLORDATAVERSION_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 107, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 112, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 117, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 122, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 127, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 132, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 172, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 177, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 182, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 187, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 192, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 197, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 202, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 207, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 212, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 217, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 222, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 227, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 232, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 237, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 242, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 247, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 252, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 257, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 262, width: 2, signed: true, name: "ColorTempUnknown30", values: None },
+    BinDef { index: 560, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 561, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 562, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 782, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 783, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 784, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 82, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 87, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+    BinDef { index: 92, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 97, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+];
+
 pub static CANON_COLORDATA8_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (12, "12 (1DXmkII/5DS/5DSR)"),
     (13, "13 (80D/5DmkIV)"),
@@ -9374,6 +10201,43 @@ pub static CANON_COLORDATA9: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "WB_RGGBLevelsUnknown3", values: None },
 };
 
+/// Canon::ColorData9 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORDATA9_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ColorDataVersion", values: Some(CANON_COLORDATA9_COLORDATAVERSION_VALUES) },
+    BinDef { index: 100, width: 2, signed: true, name: "ColorTempUnknown3", values: None },
+    BinDef { index: 105, width: 2, signed: true, name: "ColorTempUnknown4", values: None },
+    BinDef { index: 110, width: 2, signed: true, name: "ColorTempUnknown5", values: None },
+    BinDef { index: 115, width: 2, signed: true, name: "ColorTempUnknown6", values: None },
+    BinDef { index: 120, width: 2, signed: true, name: "ColorTempUnknown7", values: None },
+    BinDef { index: 125, width: 2, signed: true, name: "ColorTempUnknown8", values: None },
+    BinDef { index: 130, width: 2, signed: true, name: "ColorTempUnknown9", values: None },
+    BinDef { index: 135, width: 2, signed: true, name: "ColorTempUnknown10", values: None },
+    BinDef { index: 175, width: 2, signed: true, name: "ColorTempUnknown11", values: None },
+    BinDef { index: 180, width: 2, signed: true, name: "ColorTempUnknown12", values: None },
+    BinDef { index: 185, width: 2, signed: true, name: "ColorTempUnknown13", values: None },
+    BinDef { index: 190, width: 2, signed: true, name: "ColorTempUnknown14", values: None },
+    BinDef { index: 195, width: 2, signed: true, name: "ColorTempUnknown15", values: None },
+    BinDef { index: 200, width: 2, signed: true, name: "ColorTempUnknown16", values: None },
+    BinDef { index: 205, width: 2, signed: true, name: "ColorTempUnknown17", values: None },
+    BinDef { index: 210, width: 2, signed: true, name: "ColorTempUnknown18", values: None },
+    BinDef { index: 215, width: 2, signed: true, name: "ColorTempUnknown19", values: None },
+    BinDef { index: 220, width: 2, signed: true, name: "ColorTempUnknown20", values: None },
+    BinDef { index: 225, width: 2, signed: true, name: "ColorTempUnknown21", values: None },
+    BinDef { index: 230, width: 2, signed: true, name: "ColorTempUnknown22", values: None },
+    BinDef { index: 235, width: 2, signed: true, name: "ColorTempUnknown23", values: None },
+    BinDef { index: 240, width: 2, signed: true, name: "ColorTempUnknown24", values: None },
+    BinDef { index: 245, width: 2, signed: true, name: "ColorTempUnknown25", values: None },
+    BinDef { index: 250, width: 2, signed: true, name: "ColorTempUnknown26", values: None },
+    BinDef { index: 255, width: 2, signed: true, name: "ColorTempUnknown27", values: None },
+    BinDef { index: 260, width: 2, signed: true, name: "ColorTempUnknown28", values: None },
+    BinDef { index: 265, width: 2, signed: true, name: "ColorTempUnknown29", values: None },
+    BinDef { index: 796, width: 2, signed: false, name: "NormalWhiteLevel", values: None },
+    BinDef { index: 797, width: 2, signed: false, name: "SpecularWhiteLevel", values: None },
+    BinDef { index: 798, width: 2, signed: false, name: "LinearityUpperMargin", values: None },
+    BinDef { index: 90, width: 2, signed: true, name: "ColorTempUnknown", values: None },
+    BinDef { index: 95, width: 2, signed: true, name: "ColorTempUnknown2", values: None },
+];
+
 pub static CANON_COLORDATA9_COLORDATAVERSION_VALUES: &[(i64, &str)] = &[
     (16, "16 (M50)"),
     (17, "17 (R)"),
@@ -9387,6 +10251,13 @@ pub static CANON_COLORINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "ColorTone", values: Some(CANON_COLORINFO_COLORTONE_VALUES) },
     3u16 => TagDef { name: "ColorSpace", values: Some(CANON_COLORINFO_COLORSPACE_VALUES) },
 };
+
+/// Canon::ColorInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_COLORINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "Saturation", values: Some(CANON_COLORINFO_SATURATION_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "ColorTone", values: Some(CANON_COLORINFO_COLORTONE_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "ColorSpace", values: Some(CANON_COLORINFO_COLORSPACE_VALUES) },
+];
 
 pub static CANON_COLORINFO_SATURATION_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -9427,6 +10298,11 @@ pub static CANON_FACEDETECT1: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "Face1Position", values: None },
 };
 
+/// Canon::FaceDetect1 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FACEDETECT1_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "FacesDetected", values: None },
+];
+
 /// Canon::FileInfo tags
 pub static CANON_FILEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "FileNumber", values: None },
@@ -9446,6 +10322,26 @@ pub static CANON_FILEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "LongExposureNoiseReduction2", values: Some(CANON_FILEINFO_LONGEXPOSURENOISEREDUCTION2_VALUES) },
     9u16 => TagDef { name: "WBBracketMode", values: Some(CANON_FILEINFO_WBBRACKETMODE_VALUES) },
 };
+
+/// Canon::FileInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FILEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "FileNumber", values: None },
+    BinDef { index: 14, width: 2, signed: true, name: "FilterEffect", values: Some(CANON_FILEINFO_FILTEREFFECT_VALUES) },
+    BinDef { index: 15, width: 2, signed: true, name: "ToningEffect", values: Some(CANON_FILEINFO_TONINGEFFECT_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "MacroMagnification", values: None },
+    BinDef { index: 19, width: 2, signed: true, name: "LiveViewShooting", values: Some(CANON_FILEINFO_LIVEVIEWSHOOTING_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "FocusDistanceUpper", values: None },
+    BinDef { index: 21, width: 2, signed: false, name: "FocusDistanceLower", values: None },
+    BinDef { index: 23, width: 2, signed: true, name: "ShutterMode", values: Some(CANON_FILEINFO_SHUTTERMODE_VALUES) },
+    BinDef { index: 25, width: 2, signed: true, name: "FlashExposureLock", values: Some(CANON_FILEINFO_FLASHEXPOSURELOCK_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "BracketMode", values: Some(CANON_FILEINFO_BRACKETMODE_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AntiFlicker", values: Some(CANON_FILEINFO_ANTIFLICKER_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "RawJpgQuality", values: Some(CANON_FILEINFO_RAWJPGQUALITY_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "RFLensType", values: Some(CANON_FILEINFO_RFLENSTYPE_VALUES) },
+    BinDef { index: 7, width: 2, signed: true, name: "RawJpgSize", values: Some(CANON_FILEINFO_RAWJPGSIZE_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "LongExposureNoiseReduction2", values: Some(CANON_FILEINFO_LONGEXPOSURENOISEREDUCTION2_VALUES) },
+    BinDef { index: 9, width: 2, signed: true, name: "WBBracketMode", values: Some(CANON_FILEINFO_WBBRACKETMODE_VALUES) },
+];
 
 pub static CANON_FILEINFO_FILTEREFFECT_VALUES: &[(i64, &str)] = &[
     (0, "None"),
@@ -9671,6 +10567,14 @@ pub static CANON_FOCALLENGTH: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "FocalPlaneYSize", values: None },
 };
 
+/// Canon::FocalLength ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FOCALLENGTH_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "FocalType", values: Some(CANON_FOCALLENGTH_FOCALTYPE_VALUES) },
+    BinDef { index: 1, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "FocalPlaneXSize", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "FocalPlaneYSize", values: None },
+];
+
 pub static CANON_FOCALLENGTH_FOCALTYPE_VALUES: &[(i64, &str)] = &[
     (1, "Fixed"),
     (2, "Zoom"),
@@ -9683,6 +10587,14 @@ pub static CANON_FOCUSBRACKETINGINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "FocusBracketingDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGDEPTHCOMPOSITE_VALUES) },
     6u16 => TagDef { name: "FocusBracketingCropDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGCROPDEPTHCOMPOSITE_VALUES) },
 };
+
+/// Canon::FocusBracketingInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_FOCUSBRACKETINGINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "FocusBracketing", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETING_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "FocusBracketingExposureSmoothing", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGEXPOSURESMOOTHING_VALUES) },
+    BinDef { index: 5, width: 4, signed: true, name: "FocusBracketingDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGDEPTHCOMPOSITE_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "FocusBracketingCropDepthComposite", values: Some(CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETINGCROPDEPTHCOMPOSITE_VALUES) },
+];
 
 pub static CANON_FOCUSBRACKETINGINFO_FOCUSBRACKETING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -9709,6 +10621,12 @@ pub static CANON_HDRINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "HDR", values: Some(CANON_HDRINFO_HDR_VALUES) },
     2u16 => TagDef { name: "HDREffect", values: Some(CANON_HDRINFO_HDREFFECT_VALUES) },
 };
+
+/// Canon::HDRInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_HDRINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "HDR", values: Some(CANON_HDRINFO_HDR_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "HDREffect", values: Some(CANON_HDRINFO_HDREFFECT_VALUES) },
+];
 
 pub static CANON_HDRINFO_HDR_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -9738,6 +10656,15 @@ pub static CANON_LEVELINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "MaxFocalLength2", values: None },
 };
 
+/// Canon::LevelInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_LEVELINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: true, name: "RollAngle", values: None },
+    BinDef { index: 5, width: 4, signed: true, name: "PitchAngle", values: None },
+    BinDef { index: 7, width: 4, signed: true, name: "FocalLength", values: None },
+    BinDef { index: 8, width: 4, signed: true, name: "MinFocalLength2", values: None },
+    BinDef { index: 9, width: 4, signed: true, name: "MaxFocalLength2", values: None },
+];
+
 /// Canon::LightingOpt tags
 pub static CANON_LIGHTINGOPT: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "PeripheralIlluminationCorr", values: Some(CANON_LIGHTINGOPT_PERIPHERALILLUMINATIONCORR_VALUES) },
@@ -9748,6 +10675,17 @@ pub static CANON_LIGHTINGOPT: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "LongExposureNoiseReduction", values: Some(CANON_LIGHTINGOPT_LONGEXPOSURENOISEREDUCTION_VALUES) },
     5u16 => TagDef { name: "HighISONoiseReduction", values: Some(CANON_LIGHTINGOPT_HIGHISONOISEREDUCTION_VALUES) },
 };
+
+/// Canon::LightingOpt ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_LIGHTINGOPT_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "PeripheralIlluminationCorr", values: Some(CANON_LIGHTINGOPT_PERIPHERALILLUMINATIONCORR_VALUES) },
+    BinDef { index: 10, width: 4, signed: true, name: "DigitalLensOptimizer", values: Some(CANON_LIGHTINGOPT_DIGITALLENSOPTIMIZER_VALUES) },
+    BinDef { index: 11, width: 4, signed: true, name: "DualPixelRaw", values: Some(CANON_LIGHTINGOPT_DUALPIXELRAW_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "AutoLightingOptimizer", values: Some(CANON_LIGHTINGOPT_AUTOLIGHTINGOPTIMIZER_VALUES) },
+    BinDef { index: 3, width: 4, signed: true, name: "HighlightTonePriority", values: Some(CANON_LIGHTINGOPT_HIGHLIGHTTONEPRIORITY_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "LongExposureNoiseReduction", values: Some(CANON_LIGHTINGOPT_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 5, width: 4, signed: true, name: "HighISONoiseReduction", values: Some(CANON_LIGHTINGOPT_HIGHISONOISEREDUCTION_VALUES) },
+];
 
 pub static CANON_LIGHTINGOPT_PERIPHERALILLUMINATIONCORR_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -9801,6 +10739,17 @@ pub static CANON_LOGINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ColorTone", values: Some(CANON_LOGINFO_COLORTONE_VALUES) },
     9u16 => TagDef { name: "ColorSpace2", values: Some(CANON_LOGINFO_COLORSPACE2_VALUES) },
 };
+
+/// Canon::LogInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_LOGINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 4, signed: true, name: "ColorMatrix", values: Some(CANON_LOGINFO_COLORMATRIX_VALUES) },
+    BinDef { index: 11, width: 4, signed: true, name: "CanonLogVersion", values: Some(CANON_LOGINFO_CANONLOGVERSION_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "CompressionFormat", values: Some(CANON_LOGINFO_COMPRESSIONFORMAT_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 7, width: 4, signed: true, name: "Saturation", values: Some(CANON_LOGINFO_SATURATION_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "ColorTone", values: Some(CANON_LOGINFO_COLORTONE_VALUES) },
+    BinDef { index: 9, width: 4, signed: true, name: "ColorSpace2", values: Some(CANON_LOGINFO_COLORSPACE2_VALUES) },
+];
 
 pub static CANON_LOGINFO_COLORMATRIX_VALUES: &[(i64, &str)] = &[
     (0, "EOS Original"),
@@ -10327,6 +11276,16 @@ pub static CANON_MODIFIEDINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ModifiedWhiteBalance", values: Some(CANON_MODIFIEDINFO_MODIFIEDWHITEBALANCE_VALUES) },
 };
 
+/// Canon::ModifiedInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MODIFIEDINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "ModifiedToneCurve", values: Some(CANON_MODIFIEDINFO_MODIFIEDTONECURVE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "ModifiedPictureStyle", values: Some(CANON_MODIFIEDINFO_MODIFIEDPICTURESTYLE_VALUES) },
+    BinDef { index: 11, width: 2, signed: true, name: "ModifiedDigitalGain", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "ModifiedSharpness", values: None },
+    BinDef { index: 3, width: 2, signed: true, name: "ModifiedSharpnessFreq", values: Some(CANON_MODIFIEDINFO_MODIFIEDSHARPNESSFREQ_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "ModifiedWhiteBalance", values: Some(CANON_MODIFIEDINFO_MODIFIEDWHITEBALANCE_VALUES) },
+];
+
 pub static CANON_MODIFIEDINFO_MODIFIEDTONECURVE_VALUES: &[(i64, &str)] = &[
     (0, "Standard"),
     (1, "Manual"),
@@ -10407,11 +11366,28 @@ pub static CANON_MOVIEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "FrameRate", values: None },
 };
 
+/// Canon::MovieInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MOVIEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: false, name: "FrameRate", values: None },
+    BinDef { index: 106, width: 4, signed: false, name: "Duration", values: None },
+    BinDef { index: 108, width: 4, signed: false, name: "AudioBitrate", values: None },
+    BinDef { index: 110, width: 4, signed: false, name: "AudioSampleRate", values: None },
+    BinDef { index: 112, width: 4, signed: false, name: "AudioChannels", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "FrameCount", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "FrameCount", values: None },
+];
+
 /// Canon::MultiExp tags
 pub static CANON_MULTIEXP: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "MultiExposure", values: Some(CANON_MULTIEXP_MULTIEXPOSURE_VALUES) },
     2u16 => TagDef { name: "MultiExposureControl", values: Some(CANON_MULTIEXP_MULTIEXPOSURECONTROL_VALUES) },
 };
+
+/// Canon::MultiExp ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MULTIEXP_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "MultiExposure", values: Some(CANON_MULTIEXP_MULTIEXPOSURE_VALUES) },
+    BinDef { index: 2, width: 4, signed: true, name: "MultiExposureControl", values: Some(CANON_MULTIEXP_MULTIEXPOSURECONTROL_VALUES) },
+];
 
 pub static CANON_MULTIEXP_MULTIEXPOSURE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -10430,6 +11406,11 @@ pub static CANON_MULTIEXP_MULTIEXPOSURECONTROL_VALUES: &[(i64, &str)] = &[
 pub static CANON_MYCOLORS: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "MyColorMode", values: Some(CANON_MYCOLORS_MYCOLORMODE_VALUES) },
 };
+
+/// Canon::MyColors ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_MYCOLORS_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "MyColorMode", values: Some(CANON_MYCOLORS_MYCOLORMODE_VALUES) },
+];
 
 pub static CANON_MYCOLORS_MYCOLORMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -10508,6 +11489,67 @@ pub static CANON_PSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     92u16 => TagDef { name: "ToningEffectNeutral", values: Some(CANON_PSINFO_TONINGEFFECTNEUTRAL_VALUES) },
     96u16 => TagDef { name: "ContrastFaithful", values: Some(CANON_PSINFO_CONTRASTFAITHFUL_VALUES) },
 };
+
+/// Canon::PSInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PSINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: true, name: "ContrastStandard", values: Some(CANON_PSINFO_CONTRASTSTANDARD_VALUES) },
+    BinDef { index: 100, width: 4, signed: true, name: "SharpnessFaithful", values: Some(CANON_PSINFO_SHARPNESSFAITHFUL_VALUES) },
+    BinDef { index: 104, width: 4, signed: true, name: "SaturationFaithful", values: Some(CANON_PSINFO_SATURATIONFAITHFUL_VALUES) },
+    BinDef { index: 108, width: 4, signed: true, name: "ColorToneFaithful", values: Some(CANON_PSINFO_COLORTONEFAITHFUL_VALUES) },
+    BinDef { index: 112, width: 4, signed: true, name: "FilterEffectFaithful", values: Some(CANON_PSINFO_FILTEREFFECTFAITHFUL_VALUES) },
+    BinDef { index: 116, width: 4, signed: true, name: "ToningEffectFaithful", values: Some(CANON_PSINFO_TONINGEFFECTFAITHFUL_VALUES) },
+    BinDef { index: 12, width: 4, signed: true, name: "ColorToneStandard", values: Some(CANON_PSINFO_COLORTONESTANDARD_VALUES) },
+    BinDef { index: 120, width: 4, signed: true, name: "ContrastMonochrome", values: Some(CANON_PSINFO_CONTRASTMONOCHROME_VALUES) },
+    BinDef { index: 124, width: 4, signed: true, name: "SharpnessMonochrome", values: Some(CANON_PSINFO_SHARPNESSMONOCHROME_VALUES) },
+    BinDef { index: 128, width: 4, signed: true, name: "SaturationMonochrome", values: Some(CANON_PSINFO_SATURATIONMONOCHROME_VALUES) },
+    BinDef { index: 132, width: 4, signed: true, name: "ColorToneMonochrome", values: Some(CANON_PSINFO_COLORTONEMONOCHROME_VALUES) },
+    BinDef { index: 136, width: 4, signed: true, name: "FilterEffectMonochrome", values: Some(CANON_PSINFO_FILTEREFFECTMONOCHROME_VALUES) },
+    BinDef { index: 140, width: 4, signed: true, name: "ToningEffectMonochrome", values: Some(CANON_PSINFO_TONINGEFFECTMONOCHROME_VALUES) },
+    BinDef { index: 144, width: 4, signed: true, name: "ContrastUserDef1", values: Some(CANON_PSINFO_CONTRASTUSERDEF1_VALUES) },
+    BinDef { index: 148, width: 4, signed: true, name: "SharpnessUserDef1", values: Some(CANON_PSINFO_SHARPNESSUSERDEF1_VALUES) },
+    BinDef { index: 152, width: 4, signed: true, name: "SaturationUserDef1", values: Some(CANON_PSINFO_SATURATIONUSERDEF1_VALUES) },
+    BinDef { index: 156, width: 4, signed: true, name: "ColorToneUserDef1", values: Some(CANON_PSINFO_COLORTONEUSERDEF1_VALUES) },
+    BinDef { index: 16, width: 4, signed: true, name: "FilterEffectStandard", values: Some(CANON_PSINFO_FILTEREFFECTSTANDARD_VALUES) },
+    BinDef { index: 160, width: 4, signed: true, name: "FilterEffectUserDef1", values: Some(CANON_PSINFO_FILTEREFFECTUSERDEF1_VALUES) },
+    BinDef { index: 164, width: 4, signed: true, name: "ToningEffectUserDef1", values: Some(CANON_PSINFO_TONINGEFFECTUSERDEF1_VALUES) },
+    BinDef { index: 168, width: 4, signed: true, name: "ContrastUserDef2", values: Some(CANON_PSINFO_CONTRASTUSERDEF2_VALUES) },
+    BinDef { index: 172, width: 4, signed: true, name: "SharpnessUserDef2", values: Some(CANON_PSINFO_SHARPNESSUSERDEF2_VALUES) },
+    BinDef { index: 176, width: 4, signed: true, name: "SaturationUserDef2", values: Some(CANON_PSINFO_SATURATIONUSERDEF2_VALUES) },
+    BinDef { index: 180, width: 4, signed: true, name: "ColorToneUserDef2", values: Some(CANON_PSINFO_COLORTONEUSERDEF2_VALUES) },
+    BinDef { index: 184, width: 4, signed: true, name: "FilterEffectUserDef2", values: Some(CANON_PSINFO_FILTEREFFECTUSERDEF2_VALUES) },
+    BinDef { index: 188, width: 4, signed: true, name: "ToningEffectUserDef2", values: Some(CANON_PSINFO_TONINGEFFECTUSERDEF2_VALUES) },
+    BinDef { index: 192, width: 4, signed: true, name: "ContrastUserDef3", values: Some(CANON_PSINFO_CONTRASTUSERDEF3_VALUES) },
+    BinDef { index: 196, width: 4, signed: true, name: "SharpnessUserDef3", values: Some(CANON_PSINFO_SHARPNESSUSERDEF3_VALUES) },
+    BinDef { index: 20, width: 4, signed: true, name: "ToningEffectStandard", values: Some(CANON_PSINFO_TONINGEFFECTSTANDARD_VALUES) },
+    BinDef { index: 200, width: 4, signed: true, name: "SaturationUserDef3", values: Some(CANON_PSINFO_SATURATIONUSERDEF3_VALUES) },
+    BinDef { index: 204, width: 4, signed: true, name: "ColorToneUserDef3", values: Some(CANON_PSINFO_COLORTONEUSERDEF3_VALUES) },
+    BinDef { index: 208, width: 4, signed: true, name: "FilterEffectUserDef3", values: Some(CANON_PSINFO_FILTEREFFECTUSERDEF3_VALUES) },
+    BinDef { index: 212, width: 4, signed: true, name: "ToningEffectUserDef3", values: Some(CANON_PSINFO_TONINGEFFECTUSERDEF3_VALUES) },
+    BinDef { index: 216, width: 2, signed: false, name: "UserDef1PictureStyle", values: Some(CANON_PSINFO_USERDEF1PICTURESTYLE_VALUES) },
+    BinDef { index: 218, width: 2, signed: false, name: "UserDef2PictureStyle", values: Some(CANON_PSINFO_USERDEF2PICTURESTYLE_VALUES) },
+    BinDef { index: 220, width: 2, signed: false, name: "UserDef3PictureStyle", values: Some(CANON_PSINFO_USERDEF3PICTURESTYLE_VALUES) },
+    BinDef { index: 24, width: 4, signed: true, name: "ContrastPortrait", values: Some(CANON_PSINFO_CONTRASTPORTRAIT_VALUES) },
+    BinDef { index: 28, width: 4, signed: true, name: "SharpnessPortrait", values: Some(CANON_PSINFO_SHARPNESSPORTRAIT_VALUES) },
+    BinDef { index: 32, width: 4, signed: true, name: "SaturationPortrait", values: Some(CANON_PSINFO_SATURATIONPORTRAIT_VALUES) },
+    BinDef { index: 36, width: 4, signed: true, name: "ColorTonePortrait", values: Some(CANON_PSINFO_COLORTONEPORTRAIT_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "SharpnessStandard", values: Some(CANON_PSINFO_SHARPNESSSTANDARD_VALUES) },
+    BinDef { index: 40, width: 4, signed: true, name: "FilterEffectPortrait", values: Some(CANON_PSINFO_FILTEREFFECTPORTRAIT_VALUES) },
+    BinDef { index: 44, width: 4, signed: true, name: "ToningEffectPortrait", values: Some(CANON_PSINFO_TONINGEFFECTPORTRAIT_VALUES) },
+    BinDef { index: 48, width: 4, signed: true, name: "ContrastLandscape", values: Some(CANON_PSINFO_CONTRASTLANDSCAPE_VALUES) },
+    BinDef { index: 52, width: 4, signed: true, name: "SharpnessLandscape", values: Some(CANON_PSINFO_SHARPNESSLANDSCAPE_VALUES) },
+    BinDef { index: 56, width: 4, signed: true, name: "SaturationLandscape", values: Some(CANON_PSINFO_SATURATIONLANDSCAPE_VALUES) },
+    BinDef { index: 60, width: 4, signed: true, name: "ColorToneLandscape", values: Some(CANON_PSINFO_COLORTONELANDSCAPE_VALUES) },
+    BinDef { index: 64, width: 4, signed: true, name: "FilterEffectLandscape", values: Some(CANON_PSINFO_FILTEREFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 68, width: 4, signed: true, name: "ToningEffectLandscape", values: Some(CANON_PSINFO_TONINGEFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 72, width: 4, signed: true, name: "ContrastNeutral", values: Some(CANON_PSINFO_CONTRASTNEUTRAL_VALUES) },
+    BinDef { index: 76, width: 4, signed: true, name: "SharpnessNeutral", values: Some(CANON_PSINFO_SHARPNESSNEUTRAL_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "SaturationStandard", values: Some(CANON_PSINFO_SATURATIONSTANDARD_VALUES) },
+    BinDef { index: 80, width: 4, signed: true, name: "SaturationNeutral", values: Some(CANON_PSINFO_SATURATIONNEUTRAL_VALUES) },
+    BinDef { index: 84, width: 4, signed: true, name: "ColorToneNeutral", values: Some(CANON_PSINFO_COLORTONENEUTRAL_VALUES) },
+    BinDef { index: 88, width: 4, signed: true, name: "FilterEffectNeutral", values: Some(CANON_PSINFO_FILTEREFFECTNEUTRAL_VALUES) },
+    BinDef { index: 92, width: 4, signed: true, name: "ToningEffectNeutral", values: Some(CANON_PSINFO_TONINGEFFECTNEUTRAL_VALUES) },
+    BinDef { index: 96, width: 4, signed: true, name: "ContrastFaithful", values: Some(CANON_PSINFO_CONTRASTFAITHFUL_VALUES) },
+];
 
 pub static CANON_PSINFO_CONTRASTSTANDARD_VALUES: &[(i64, &str)] = &[
     (-559038737, "n/a"),
@@ -10871,6 +11913,73 @@ pub static CANON_PSINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "ContrastFaithful", values: Some(CANON_PSINFO2_CONTRASTFAITHFUL_VALUES) },
 };
 
+/// Canon::PSInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PSINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: true, name: "ContrastStandard", values: Some(CANON_PSINFO2_CONTRASTSTANDARD_VALUES) },
+    BinDef { index: 100, width: 4, signed: true, name: "SharpnessFaithful", values: Some(CANON_PSINFO2_SHARPNESSFAITHFUL_VALUES) },
+    BinDef { index: 104, width: 4, signed: true, name: "SaturationFaithful", values: Some(CANON_PSINFO2_SATURATIONFAITHFUL_VALUES) },
+    BinDef { index: 108, width: 4, signed: true, name: "ColorToneFaithful", values: Some(CANON_PSINFO2_COLORTONEFAITHFUL_VALUES) },
+    BinDef { index: 112, width: 4, signed: true, name: "FilterEffectFaithful", values: Some(CANON_PSINFO2_FILTEREFFECTFAITHFUL_VALUES) },
+    BinDef { index: 116, width: 4, signed: true, name: "ToningEffectFaithful", values: Some(CANON_PSINFO2_TONINGEFFECTFAITHFUL_VALUES) },
+    BinDef { index: 12, width: 4, signed: true, name: "ColorToneStandard", values: Some(CANON_PSINFO2_COLORTONESTANDARD_VALUES) },
+    BinDef { index: 120, width: 4, signed: true, name: "ContrastMonochrome", values: Some(CANON_PSINFO2_CONTRASTMONOCHROME_VALUES) },
+    BinDef { index: 124, width: 4, signed: true, name: "SharpnessMonochrome", values: Some(CANON_PSINFO2_SHARPNESSMONOCHROME_VALUES) },
+    BinDef { index: 128, width: 4, signed: true, name: "SaturationMonochrome", values: Some(CANON_PSINFO2_SATURATIONMONOCHROME_VALUES) },
+    BinDef { index: 132, width: 4, signed: true, name: "ColorToneMonochrome", values: Some(CANON_PSINFO2_COLORTONEMONOCHROME_VALUES) },
+    BinDef { index: 136, width: 4, signed: true, name: "FilterEffectMonochrome", values: Some(CANON_PSINFO2_FILTEREFFECTMONOCHROME_VALUES) },
+    BinDef { index: 140, width: 4, signed: true, name: "ToningEffectMonochrome", values: Some(CANON_PSINFO2_TONINGEFFECTMONOCHROME_VALUES) },
+    BinDef { index: 144, width: 4, signed: true, name: "ContrastAuto", values: Some(CANON_PSINFO2_CONTRASTAUTO_VALUES) },
+    BinDef { index: 148, width: 4, signed: true, name: "SharpnessAuto", values: Some(CANON_PSINFO2_SHARPNESSAUTO_VALUES) },
+    BinDef { index: 152, width: 4, signed: true, name: "SaturationAuto", values: Some(CANON_PSINFO2_SATURATIONAUTO_VALUES) },
+    BinDef { index: 156, width: 4, signed: true, name: "ColorToneAuto", values: Some(CANON_PSINFO2_COLORTONEAUTO_VALUES) },
+    BinDef { index: 16, width: 4, signed: true, name: "FilterEffectStandard", values: Some(CANON_PSINFO2_FILTEREFFECTSTANDARD_VALUES) },
+    BinDef { index: 160, width: 4, signed: true, name: "FilterEffectAuto", values: Some(CANON_PSINFO2_FILTEREFFECTAUTO_VALUES) },
+    BinDef { index: 164, width: 4, signed: true, name: "ToningEffectAuto", values: Some(CANON_PSINFO2_TONINGEFFECTAUTO_VALUES) },
+    BinDef { index: 168, width: 4, signed: true, name: "ContrastUserDef1", values: Some(CANON_PSINFO2_CONTRASTUSERDEF1_VALUES) },
+    BinDef { index: 172, width: 4, signed: true, name: "SharpnessUserDef1", values: Some(CANON_PSINFO2_SHARPNESSUSERDEF1_VALUES) },
+    BinDef { index: 176, width: 4, signed: true, name: "SaturationUserDef1", values: Some(CANON_PSINFO2_SATURATIONUSERDEF1_VALUES) },
+    BinDef { index: 180, width: 4, signed: true, name: "ColorToneUserDef1", values: Some(CANON_PSINFO2_COLORTONEUSERDEF1_VALUES) },
+    BinDef { index: 184, width: 4, signed: true, name: "FilterEffectUserDef1", values: Some(CANON_PSINFO2_FILTEREFFECTUSERDEF1_VALUES) },
+    BinDef { index: 188, width: 4, signed: true, name: "ToningEffectUserDef1", values: Some(CANON_PSINFO2_TONINGEFFECTUSERDEF1_VALUES) },
+    BinDef { index: 192, width: 4, signed: true, name: "ContrastUserDef2", values: Some(CANON_PSINFO2_CONTRASTUSERDEF2_VALUES) },
+    BinDef { index: 196, width: 4, signed: true, name: "SharpnessUserDef2", values: Some(CANON_PSINFO2_SHARPNESSUSERDEF2_VALUES) },
+    BinDef { index: 20, width: 4, signed: true, name: "ToningEffectStandard", values: Some(CANON_PSINFO2_TONINGEFFECTSTANDARD_VALUES) },
+    BinDef { index: 200, width: 4, signed: true, name: "SaturationUserDef2", values: Some(CANON_PSINFO2_SATURATIONUSERDEF2_VALUES) },
+    BinDef { index: 204, width: 4, signed: true, name: "ColorToneUserDef2", values: Some(CANON_PSINFO2_COLORTONEUSERDEF2_VALUES) },
+    BinDef { index: 208, width: 4, signed: true, name: "FilterEffectUserDef2", values: Some(CANON_PSINFO2_FILTEREFFECTUSERDEF2_VALUES) },
+    BinDef { index: 212, width: 4, signed: true, name: "ToningEffectUserDef2", values: Some(CANON_PSINFO2_TONINGEFFECTUSERDEF2_VALUES) },
+    BinDef { index: 216, width: 4, signed: true, name: "ContrastUserDef3", values: Some(CANON_PSINFO2_CONTRASTUSERDEF3_VALUES) },
+    BinDef { index: 220, width: 4, signed: true, name: "SharpnessUserDef3", values: Some(CANON_PSINFO2_SHARPNESSUSERDEF3_VALUES) },
+    BinDef { index: 224, width: 4, signed: true, name: "SaturationUserDef3", values: Some(CANON_PSINFO2_SATURATIONUSERDEF3_VALUES) },
+    BinDef { index: 228, width: 4, signed: true, name: "ColorToneUserDef3", values: Some(CANON_PSINFO2_COLORTONEUSERDEF3_VALUES) },
+    BinDef { index: 232, width: 4, signed: true, name: "FilterEffectUserDef3", values: Some(CANON_PSINFO2_FILTEREFFECTUSERDEF3_VALUES) },
+    BinDef { index: 236, width: 4, signed: true, name: "ToningEffectUserDef3", values: Some(CANON_PSINFO2_TONINGEFFECTUSERDEF3_VALUES) },
+    BinDef { index: 24, width: 4, signed: true, name: "ContrastPortrait", values: Some(CANON_PSINFO2_CONTRASTPORTRAIT_VALUES) },
+    BinDef { index: 240, width: 2, signed: false, name: "UserDef1PictureStyle", values: Some(CANON_PSINFO2_USERDEF1PICTURESTYLE_VALUES) },
+    BinDef { index: 242, width: 2, signed: false, name: "UserDef2PictureStyle", values: Some(CANON_PSINFO2_USERDEF2PICTURESTYLE_VALUES) },
+    BinDef { index: 244, width: 2, signed: false, name: "UserDef3PictureStyle", values: Some(CANON_PSINFO2_USERDEF3PICTURESTYLE_VALUES) },
+    BinDef { index: 28, width: 4, signed: true, name: "SharpnessPortrait", values: Some(CANON_PSINFO2_SHARPNESSPORTRAIT_VALUES) },
+    BinDef { index: 32, width: 4, signed: true, name: "SaturationPortrait", values: Some(CANON_PSINFO2_SATURATIONPORTRAIT_VALUES) },
+    BinDef { index: 36, width: 4, signed: true, name: "ColorTonePortrait", values: Some(CANON_PSINFO2_COLORTONEPORTRAIT_VALUES) },
+    BinDef { index: 4, width: 4, signed: true, name: "SharpnessStandard", values: Some(CANON_PSINFO2_SHARPNESSSTANDARD_VALUES) },
+    BinDef { index: 40, width: 4, signed: true, name: "FilterEffectPortrait", values: Some(CANON_PSINFO2_FILTEREFFECTPORTRAIT_VALUES) },
+    BinDef { index: 44, width: 4, signed: true, name: "ToningEffectPortrait", values: Some(CANON_PSINFO2_TONINGEFFECTPORTRAIT_VALUES) },
+    BinDef { index: 48, width: 4, signed: true, name: "ContrastLandscape", values: Some(CANON_PSINFO2_CONTRASTLANDSCAPE_VALUES) },
+    BinDef { index: 52, width: 4, signed: true, name: "SharpnessLandscape", values: Some(CANON_PSINFO2_SHARPNESSLANDSCAPE_VALUES) },
+    BinDef { index: 56, width: 4, signed: true, name: "SaturationLandscape", values: Some(CANON_PSINFO2_SATURATIONLANDSCAPE_VALUES) },
+    BinDef { index: 60, width: 4, signed: true, name: "ColorToneLandscape", values: Some(CANON_PSINFO2_COLORTONELANDSCAPE_VALUES) },
+    BinDef { index: 64, width: 4, signed: true, name: "FilterEffectLandscape", values: Some(CANON_PSINFO2_FILTEREFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 68, width: 4, signed: true, name: "ToningEffectLandscape", values: Some(CANON_PSINFO2_TONINGEFFECTLANDSCAPE_VALUES) },
+    BinDef { index: 72, width: 4, signed: true, name: "ContrastNeutral", values: Some(CANON_PSINFO2_CONTRASTNEUTRAL_VALUES) },
+    BinDef { index: 76, width: 4, signed: true, name: "SharpnessNeutral", values: Some(CANON_PSINFO2_SHARPNESSNEUTRAL_VALUES) },
+    BinDef { index: 8, width: 4, signed: true, name: "SaturationStandard", values: Some(CANON_PSINFO2_SATURATIONSTANDARD_VALUES) },
+    BinDef { index: 80, width: 4, signed: true, name: "SaturationNeutral", values: Some(CANON_PSINFO2_SATURATIONNEUTRAL_VALUES) },
+    BinDef { index: 84, width: 4, signed: true, name: "ColorToneNeutral", values: Some(CANON_PSINFO2_COLORTONENEUTRAL_VALUES) },
+    BinDef { index: 88, width: 4, signed: true, name: "FilterEffectNeutral", values: Some(CANON_PSINFO2_FILTEREFFECTNEUTRAL_VALUES) },
+    BinDef { index: 92, width: 4, signed: true, name: "ToningEffectNeutral", values: Some(CANON_PSINFO2_TONINGEFFECTNEUTRAL_VALUES) },
+    BinDef { index: 96, width: 4, signed: true, name: "ContrastFaithful", values: Some(CANON_PSINFO2_CONTRASTFAITHFUL_VALUES) },
+];
+
 pub static CANON_PSINFO2_CONTRASTSTANDARD_VALUES: &[(i64, &str)] = &[
     (-559038737, "n/a"),
 ];
@@ -11205,6 +12314,11 @@ pub static CANON_PANORAMA: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "PanoramaDirection", values: Some(CANON_PANORAMA_PANORAMADIRECTION_VALUES) },
 };
 
+/// Canon::Panorama ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PANORAMA_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 2, signed: true, name: "PanoramaDirection", values: Some(CANON_PANORAMA_PANORAMADIRECTION_VALUES) },
+];
+
 pub static CANON_PANORAMA_PANORAMADIRECTION_VALUES: &[(i64, &str)] = &[
     (0, "Left to Right"),
     (1, "Right to Left"),
@@ -11219,6 +12333,13 @@ pub static CANON_PREVIEWIMAGEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "PreviewImageLength", values: None },
     5u16 => TagDef { name: "PreviewImageStart", values: None },
 };
+
+/// Canon::PreviewImageInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PREVIEWIMAGEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "PreviewQuality", values: Some(CANON_PREVIEWIMAGEINFO_PREVIEWQUALITY_VALUES) },
+    BinDef { index: 2, width: 4, signed: false, name: "PreviewImageLength", values: None },
+    BinDef { index: 5, width: 4, signed: false, name: "PreviewImageStart", values: None },
+];
 
 pub static CANON_PREVIEWIMAGEINFO_PREVIEWQUALITY_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
@@ -11243,6 +12364,18 @@ pub static CANON_PROCESSING: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "SharpnessFrequency", values: Some(CANON_PROCESSING_SHARPNESSFREQUENCY_VALUES) },
     8u16 => TagDef { name: "WhiteBalance", values: Some(CANON_PROCESSING_WHITEBALANCE_VALUES) },
 };
+
+/// Canon::Processing ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_PROCESSING_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "ToneCurve", values: Some(CANON_PROCESSING_TONECURVE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "PictureStyle", values: Some(CANON_PROCESSING_PICTURESTYLE_VALUES) },
+    BinDef { index: 11, width: 2, signed: true, name: "DigitalGain", values: None },
+    BinDef { index: 12, width: 2, signed: true, name: "WBShiftAB", values: None },
+    BinDef { index: 13, width: 2, signed: true, name: "WBShiftGM", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 3, width: 2, signed: true, name: "SharpnessFrequency", values: Some(CANON_PROCESSING_SHARPNESSFREQUENCY_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "WhiteBalance", values: Some(CANON_PROCESSING_WHITEBALANCE_VALUES) },
+];
 
 pub static CANON_PROCESSING_TONECURVE_VALUES: &[(i64, &str)] = &[
     (0, "Standard"),
@@ -11316,6 +12449,11 @@ pub static CANON_SENSORINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "BlackMaskLeftBorder", values: None },
 };
 
+/// Canon::SensorInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_SENSORINFO_BIN: &[BinDef] = &[
+    BinDef { index: 9, width: 2, signed: true, name: "BlackMaskLeftBorder", values: None },
+];
+
 /// Canon::SerialInfo tags
 pub static CANON_SERIALINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "InternalSerialNumber2", values: None },
@@ -11353,6 +12491,38 @@ pub static CANON_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "SlowShutter", values: Some(CANON_SHOTINFO_SLOWSHUTTER_VALUES) },
     9u16 => TagDef { name: "SequenceNumber", values: None },
 };
+
+/// Canon::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: true, name: "AutoISO", values: None },
+    BinDef { index: 10, width: 2, signed: true, name: "OpticalZoomCode", values: None },
+    BinDef { index: 12, width: 2, signed: true, name: "CameraTemperature", values: None },
+    BinDef { index: 13, width: 2, signed: true, name: "FlashGuideNumber", values: None },
+    BinDef { index: 14, width: 2, signed: true, name: "AFPointsInFocus", values: Some(CANON_SHOTINFO_AFPOINTSINFOCUS_VALUES) },
+    BinDef { index: 15, width: 2, signed: true, name: "FlashExposureComp", values: None },
+    BinDef { index: 16, width: 2, signed: true, name: "AutoExposureBracketing", values: Some(CANON_SHOTINFO_AUTOEXPOSUREBRACKETING_VALUES) },
+    BinDef { index: 17, width: 2, signed: true, name: "AEBBracketValue", values: None },
+    BinDef { index: 18, width: 2, signed: true, name: "ControlMode", values: Some(CANON_SHOTINFO_CONTROLMODE_VALUES) },
+    BinDef { index: 19, width: 2, signed: false, name: "FocusDistanceUpper", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "BaseISO", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "FocusDistanceLower", values: None },
+    BinDef { index: 21, width: 2, signed: true, name: "FNumber", values: None },
+    BinDef { index: 22, width: 2, signed: true, name: "ExposureTime", values: None },
+    BinDef { index: 23, width: 2, signed: true, name: "MeasuredEV2", values: None },
+    BinDef { index: 24, width: 2, signed: true, name: "BulbDuration", values: None },
+    BinDef { index: 26, width: 2, signed: true, name: "CameraType", values: Some(CANON_SHOTINFO_CAMERATYPE_VALUES) },
+    BinDef { index: 27, width: 2, signed: true, name: "AutoRotate", values: Some(CANON_SHOTINFO_AUTOROTATE_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "NDFilter", values: Some(CANON_SHOTINFO_NDFILTER_VALUES) },
+    BinDef { index: 29, width: 2, signed: true, name: "SelfTimer2", values: None },
+    BinDef { index: 3, width: 2, signed: true, name: "MeasuredEV", values: None },
+    BinDef { index: 33, width: 2, signed: true, name: "FlashOutput", values: None },
+    BinDef { index: 4, width: 2, signed: true, name: "TargetAperture", values: None },
+    BinDef { index: 5, width: 2, signed: true, name: "TargetExposureTime", values: None },
+    BinDef { index: 6, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 7, width: 2, signed: true, name: "WhiteBalance", values: Some(CANON_SHOTINFO_WHITEBALANCE_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "SlowShutter", values: Some(CANON_SHOTINFO_SLOWSHUTTER_VALUES) },
+    BinDef { index: 9, width: 2, signed: true, name: "SequenceNumber", values: None },
+];
 
 pub static CANON_SHOTINFO_AFPOINTSINFOCUS_VALUES: &[(i64, &str)] = &[
     (12288, "None (MF)"),
@@ -11441,6 +12611,13 @@ pub static CANON_TIMEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "DaylightSavings", values: Some(CANON_TIMEINFO_DAYLIGHTSAVINGS_VALUES) },
 };
 
+/// Canon::TimeInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_TIMEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: true, name: "TimeZone", values: None },
+    BinDef { index: 2, width: 4, signed: true, name: "TimeZoneCity", values: Some(CANON_TIMEINFO_TIMEZONECITY_VALUES) },
+    BinDef { index: 3, width: 4, signed: true, name: "DaylightSavings", values: Some(CANON_TIMEINFO_DAYLIGHTSAVINGS_VALUES) },
+];
+
 pub static CANON_TIMEINFO_TIMEZONECITY_VALUES: &[(i64, &str)] = &[
     (0, "n/a"),
     (1, "Chatham Islands"),
@@ -11494,6 +12671,16 @@ pub static CANON_VIGNETTINGCORR: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "ChromaticAberrationCorr", values: Some(CANON_VIGNETTINGCORR_CHROMATICABERRATIONCORR_VALUES) },
 };
 
+/// Canon::VignettingCorr ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_VIGNETTINGCORR_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "VignettingCorrVersion", values: None },
+    BinDef { index: 11, width: 2, signed: true, name: "OriginalImageWidth", values: None },
+    BinDef { index: 2, width: 2, signed: true, name: "PeripheralLighting", values: Some(CANON_VIGNETTINGCORR_PERIPHERALLIGHTING_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "DistortionCorrection", values: Some(CANON_VIGNETTINGCORR_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "ChromaticAberrationCorr", values: Some(CANON_VIGNETTINGCORR_CHROMATICABERRATIONCORR_VALUES) },
+    BinDef { index: 5, width: 2, signed: true, name: "ChromaticAberrationCorr", values: Some(CANON_VIGNETTINGCORR_CHROMATICABERRATIONCORR_VALUES) },
+];
+
 pub static CANON_VIGNETTINGCORR_PERIPHERALLIGHTING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -11516,6 +12703,14 @@ pub static CANON_VIGNETTINGCORR2: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "DistortionCorrectionSetting", values: Some(CANON_VIGNETTINGCORR2_DISTORTIONCORRECTIONSETTING_VALUES) },
     9u16 => TagDef { name: "DigitalLensOptimizerSetting", values: Some(CANON_VIGNETTINGCORR2_DIGITALLENSOPTIMIZERSETTING_VALUES) },
 };
+
+/// Canon::VignettingCorr2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_VIGNETTINGCORR2_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 4, signed: true, name: "PeripheralLightingSetting", values: Some(CANON_VIGNETTINGCORR2_PERIPHERALLIGHTINGSETTING_VALUES) },
+    BinDef { index: 6, width: 4, signed: true, name: "ChromaticAberrationSetting", values: Some(CANON_VIGNETTINGCORR2_CHROMATICABERRATIONSETTING_VALUES) },
+    BinDef { index: 7, width: 4, signed: true, name: "DistortionCorrectionSetting", values: Some(CANON_VIGNETTINGCORR2_DISTORTIONCORRECTIONSETTING_VALUES) },
+    BinDef { index: 9, width: 4, signed: true, name: "DigitalLensOptimizerSetting", values: Some(CANON_VIGNETTINGCORR2_DIGITALLENSOPTIMIZERSETTING_VALUES) },
+];
 
 pub static CANON_VIGNETTINGCORR2_PERIPHERALLIGHTINGSETTING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -11541,6 +12736,11 @@ pub static CANON_VIGNETTINGCORR2_DIGITALLENSOPTIMIZERSETTING_VALUES: &[(i64, &st
 pub static CANON_VIGNETTINGCORRUNKNOWN: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "VignettingCorrVersion", values: None },
 };
+
+/// Canon::VignettingCorrUnknown ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANON_VIGNETTINGCORRUNKNOWN_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "VignettingCorrVersion", values: None },
+];
 
 /// Canon::WBInfo tags
 pub static CANON_WBINFO: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -13057,6 +14257,14 @@ pub static CANONCUSTOM_PERSONALFUNCVALUES: phf::Map<u16, TagDef> = phf::phf_map!
     7u16 => TagDef { name: "PF5ApertureMax", values: None },
 };
 
+/// CanonCustom::PersonalFuncValues ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANONCUSTOM_PERSONALFUNCVALUES_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 2, signed: false, name: "PF4ExposureTimeMin", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "PF4ExposureTimeMax", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "PF5ApertureMin", values: None },
+    BinDef { index: 7, width: 2, signed: false, name: "PF5ApertureMax", values: None },
+];
+
 /// CanonCustom::PersonalFuncs tags
 pub static CANONCUSTOM_PERSONALFUNCS: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "PF0CustomFuncRegistration", values: None },
@@ -13090,6 +14298,39 @@ pub static CANONCUSTOM_PERSONALFUNCS: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "PF8SetBracketShots", values: None },
 };
 
+/// CanonCustom::PersonalFuncs ProcessBinaryData integers (table FORMAT or int8u)
+pub static CANONCUSTOM_PERSONALFUNCS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: false, name: "PF0CustomFuncRegistration", values: None },
+    BinDef { index: 10, width: 2, signed: false, name: "PF9ChangeBracketSequence", values: None },
+    BinDef { index: 11, width: 2, signed: false, name: "PF10RetainProgramShift", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "PF13DrivePriority", values: None },
+    BinDef { index: 15, width: 2, signed: false, name: "PF14DisableFocusSearch", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "PF15DisableAFAssistBeam", values: None },
+    BinDef { index: 17, width: 2, signed: false, name: "PF16AutoFocusPointShoot", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "PF17DisableAFPointSel", values: None },
+    BinDef { index: 19, width: 2, signed: false, name: "PF18EnableAutoAFPointSel", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "PF1DisableShootingModes", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "PF19ContinuousShootSpeed", values: None },
+    BinDef { index: 21, width: 2, signed: false, name: "PF20LimitContinousShots", values: None },
+    BinDef { index: 22, width: 2, signed: false, name: "PF21EnableQuietOperation", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "PF23SetTimerLengths", values: None },
+    BinDef { index: 25, width: 2, signed: false, name: "PF24LightLCDDuringBulb", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "PF25DefaultClearSettings", values: None },
+    BinDef { index: 27, width: 2, signed: false, name: "PF26ShortenReleaseLag", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "PF27ReverseDialRotation", values: None },
+    BinDef { index: 29, width: 2, signed: false, name: "PF28NoQuickDialExpComp", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "PF2DisableMeteringModes", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "PF29QuickDialSwitchOff", values: None },
+    BinDef { index: 31, width: 2, signed: false, name: "PF30EnlargementMode", values: None },
+    BinDef { index: 32, width: 2, signed: false, name: "PF31OriginalDecisionData", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "PF3ManualExposureMetering", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "PF4ExposureTimeLimits", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "PF5ApertureLimits", values: None },
+    BinDef { index: 7, width: 2, signed: false, name: "PF6PresetShootingModes", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "PF7BracketContinuousShoot", values: None },
+    BinDef { index: 9, width: 2, signed: false, name: "PF8SetBracketShots", values: None },
+];
+
 /// Casio::FaceInfo1 tags
 pub static CASIO_FACEINFO1: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FacesDetected", values: None },
@@ -13105,6 +14346,11 @@ pub static CASIO_FACEINFO1: phf::Map<u16, TagDef> = phf::phf_map! {
     790u16 => TagDef { name: "Face8Position", values: None },
     901u16 => TagDef { name: "Face9Position", values: None },
 };
+
+/// Casio::FaceInfo1 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CASIO_FACEINFO1_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "FacesDetected", values: None },
+];
 
 /// Casio::FaceInfo2 tags
 pub static CASIO_FACEINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -13122,6 +14368,12 @@ pub static CASIO_FACEINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     76u16 => TagDef { name: "Face2Position", values: None },
     8u16 => TagDef { name: "FaceOrientation", values: Some(CASIO_FACEINFO2_FACEORIENTATION_VALUES) },
 };
+
+/// Casio::FaceInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static CASIO_FACEINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 1, signed: false, name: "FacesDetected", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "FaceOrientation", values: Some(CASIO_FACEINFO2_FACEORIENTATION_VALUES) },
+];
 
 pub static CASIO_FACEINFO2_FACEORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
@@ -16437,6 +17689,40 @@ pub static KODAK_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     98u16 => TagDef { name: "TotalZoom", values: None },
 };
 
+/// Kodak::Main ProcessBinaryData integers (table FORMAT or int8u)
+pub static KODAK_MAIN_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "BurstMode", values: Some(KODAK_MAIN_BURSTMODE_VALUES) },
+    BinDef { index: 100, width: 2, signed: false, name: "DateTimeStamp", values: None },
+    BinDef { index: 102, width: 2, signed: false, name: "ColorMode", values: Some(KODAK_MAIN_COLORMODE_VALUES) },
+    BinDef { index: 104, width: 2, signed: false, name: "DigitalZoom", values: None },
+    BinDef { index: 107, width: 1, signed: true, name: "Sharpness", values: Some(KODAK_MAIN_SHARPNESS_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "KodakImageWidth", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "KodakImageHeight", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "YearCreated", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "BurstMode2", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "ShutterMode", values: Some(KODAK_MAIN_SHUTTERMODE_VALUES) },
+    BinDef { index: 28, width: 1, signed: false, name: "MeteringMode", values: Some(KODAK_MAIN_METERINGMODE_VALUES) },
+    BinDef { index: 30, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 32, width: 4, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 36, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 38, width: 2, signed: false, name: "VariousModes", values: None },
+    BinDef { index: 40, width: 4, signed: false, name: "Distance1", values: None },
+    BinDef { index: 44, width: 4, signed: false, name: "Distance2", values: None },
+    BinDef { index: 48, width: 4, signed: false, name: "Distance3", values: None },
+    BinDef { index: 52, width: 4, signed: false, name: "Distance4", values: None },
+    BinDef { index: 56, width: 1, signed: false, name: "FocusMode", values: Some(KODAK_MAIN_FOCUSMODE_VALUES) },
+    BinDef { index: 58, width: 2, signed: false, name: "VariousModes2", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "PanoramaMode", values: None },
+    BinDef { index: 62, width: 2, signed: false, name: "SubjectDistance", values: None },
+    BinDef { index: 64, width: 1, signed: false, name: "WhiteBalance", values: Some(KODAK_MAIN_WHITEBALANCE_VALUES) },
+    BinDef { index: 9, width: 1, signed: false, name: "Quality", values: Some(KODAK_MAIN_QUALITY_VALUES) },
+    BinDef { index: 92, width: 1, signed: false, name: "FlashMode", values: Some(KODAK_MAIN_FLASHMODE_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "FlashFired", values: Some(KODAK_MAIN_FLASHFIRED_VALUES) },
+    BinDef { index: 94, width: 2, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 96, width: 2, signed: false, name: "ISO", values: None },
+    BinDef { index: 98, width: 2, signed: false, name: "TotalZoom", values: None },
+];
+
 pub static KODAK_MAIN_BURSTMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -16661,6 +17947,12 @@ pub static KODAK_TYPE2: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "KodakMaker", values: None },
 };
 
+/// Kodak::Type2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static KODAK_TYPE2_BIN: &[BinDef] = &[
+    BinDef { index: 108, width: 4, signed: false, name: "KodakImageWidth", values: None },
+    BinDef { index: 112, width: 4, signed: false, name: "KodakImageHeight", values: None },
+];
+
 /// Kodak::Type3 tags
 pub static KODAK_TYPE3: phf::Map<u16, TagDef> = phf::phf_map! {
     12u16 => TagDef { name: "YearCreated", values: None },
@@ -16672,6 +17964,16 @@ pub static KODAK_TYPE3: phf::Map<u16, TagDef> = phf::phf_map! {
     60u16 => TagDef { name: "FNumber", values: None },
     78u16 => TagDef { name: "ISO", values: None },
 };
+
+/// Kodak::Type3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static KODAK_TYPE3_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 2, signed: false, name: "YearCreated", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "OpticalZoom", values: None },
+    BinDef { index: 55, width: 1, signed: true, name: "Sharpness", values: Some(KODAK_TYPE3_SHARPNESS_VALUES) },
+    BinDef { index: 56, width: 4, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 78, width: 2, signed: false, name: "ISO", values: None },
+];
 
 pub static KODAK_TYPE3_SHARPNESS_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -16694,6 +17996,19 @@ pub static KODAK_TYPE5: phf::Map<u16, TagDef> = phf::phf_map! {
     42u16 => TagDef { name: "ImageRotated", values: Some(KODAK_TYPE5_IMAGEROTATED_VALUES) },
     43u16 => TagDef { name: "Macro", values: Some(KODAK_TYPE5_MACRO_VALUES) },
 };
+
+/// Kodak::Type5 ProcessBinaryData integers (table FORMAT or int8u)
+pub static KODAK_TYPE5_BIN: &[BinDef] = &[
+    BinDef { index: 20, width: 4, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 26, width: 1, signed: false, name: "WhiteBalance", values: Some(KODAK_TYPE5_WHITEBALANCE_VALUES) },
+    BinDef { index: 28, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "ISO", values: None },
+    BinDef { index: 32, width: 2, signed: false, name: "OpticalZoom", values: None },
+    BinDef { index: 34, width: 2, signed: false, name: "DigitalZoom", values: None },
+    BinDef { index: 39, width: 1, signed: false, name: "FlashMode", values: Some(KODAK_TYPE5_FLASHMODE_VALUES) },
+    BinDef { index: 42, width: 1, signed: false, name: "ImageRotated", values: Some(KODAK_TYPE5_IMAGEROTATED_VALUES) },
+    BinDef { index: 43, width: 1, signed: false, name: "Macro", values: Some(KODAK_TYPE5_MACRO_VALUES) },
+];
 
 pub static KODAK_TYPE5_WHITEBALANCE_VALUES: &[(i64, &str)] = &[
     (1, "Daylight"),
@@ -16729,6 +18044,17 @@ pub static KODAK_TYPE6: phf::Map<u16, TagDef> = phf::phf_map! {
     34u16 => TagDef { name: "Flash", values: Some(KODAK_TYPE6_FLASH_VALUES) },
 };
 
+/// Kodak::Type6 ProcessBinaryData integers (table FORMAT or int8u)
+pub static KODAK_TYPE6_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 4, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 20, width: 4, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "ISO", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "OpticalZoom", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "DigitalZoom", values: None },
+    BinDef { index: 34, width: 2, signed: false, name: "Flash", values: Some(KODAK_TYPE6_FLASH_VALUES) },
+];
+
 pub static KODAK_TYPE6_FLASH_VALUES: &[(i64, &str)] = &[
     (0, "No Flash"),
     (1, "Fired"),
@@ -16763,12 +18089,26 @@ pub static KODAK_TYPE9: phf::Map<u16, TagDef> = phf::phf_map! {
     87u16 => TagDef { name: "FirmwareVersion", values: None },
 };
 
+/// Kodak::Type9 ProcessBinaryData integers (table FORMAT or int8u)
+pub static KODAK_TYPE9_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 16, width: 4, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 52, width: 2, signed: false, name: "ISO", values: None },
+];
+
 /// Microsoft::Stitch tags
 pub static MICROSOFT_STITCH: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "PanoramicStitchVersion", values: None },
     1u16 => TagDef { name: "PanoramicStitchCameraMotion", values: Some(MICROSOFT_STITCH_PANORAMICSTITCHCAMERAMOTION_VALUES) },
     2u16 => TagDef { name: "PanoramicStitchMapType", values: Some(MICROSOFT_STITCH_PANORAMICSTITCHMAPTYPE_VALUES) },
 };
+
+/// Microsoft::Stitch ProcessBinaryData integers (table FORMAT or int8u)
+pub static MICROSOFT_STITCH_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "PanoramicStitchVersion", values: None },
+    BinDef { index: 1, width: 4, signed: false, name: "PanoramicStitchCameraMotion", values: Some(MICROSOFT_STITCH_PANORAMICSTITCHCAMERAMOTION_VALUES) },
+    BinDef { index: 2, width: 4, signed: false, name: "PanoramicStitchMapType", values: Some(MICROSOFT_STITCH_PANORAMICSTITCHMAPTYPE_VALUES) },
+];
 
 pub static MICROSOFT_STITCH_PANORAMICSTITCHCAMERAMOTION_VALUES: &[(i64, &str)] = &[
     (2, "Rigid Scale"),
@@ -16805,6 +18145,27 @@ pub static MINOLTA_CAMERAINFOA100: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "AFStatusBottom-right", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_RIGHT_VALUES) },
     8u16 => TagDef { name: "AFStatusBottom", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_VALUES) },
 };
+
+/// Minolta::CameraInfoA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERAINFOA100_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "AFSensorActive", values: Some(MINOLTA_CAMERAINFOA100_AFSENSORACTIVE_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatusMiddleHorizontal", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSMIDDLEHORIZONTAL_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatusTop", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSTOP_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatusTop-left", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSTOP_LEFT_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatusBottom-left", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_LEFT_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "FocusLocked", values: Some(MINOLTA_CAMERAINFOA100_FOCUSLOCKED_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "AFPoint", values: Some(MINOLTA_CAMERAINFOA100_AFPOINT_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "AFMode", values: Some(MINOLTA_CAMERAINFOA100_AFMODE_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusTop-right", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSTOP_RIGHT_VALUES) },
+    BinDef { index: 45, width: 2, signed: true, name: "AFStatusLeft", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 47, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 49, width: 2, signed: true, name: "AFStatusRight", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSRIGHT_VALUES) },
+    BinDef { index: 51, width: 1, signed: false, name: "AFAreaMode", values: Some(MINOLTA_CAMERAINFOA100_AFAREAMODE_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatusBottom-right", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_RIGHT_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatusBottom", values: Some(MINOLTA_CAMERAINFOA100_AFSTATUSBOTTOM_VALUES) },
+];
 
 pub static MINOLTA_CAMERAINFOA100_AFSENSORACTIVE_VALUES: &[(i64, &str)] = &[
     (0, "Top-right"),
@@ -16957,6 +18318,54 @@ pub static MINOLTA_CAMERASETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ISO", values: None },
     9u16 => TagDef { name: "ExposureTime", values: None },
 };
+
+/// Minolta::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES) },
+    BinDef { index: 10, width: 4, signed: false, name: "FNumber", values: None },
+    BinDef { index: 11, width: 4, signed: false, name: "MacroMode", values: Some(MINOLTA_CAMERASETTINGS_MACROMODE_VALUES) },
+    BinDef { index: 12, width: 4, signed: false, name: "DigitalZoom", values: Some(MINOLTA_CAMERASETTINGS_DIGITALZOOM_VALUES) },
+    BinDef { index: 13, width: 4, signed: false, name: "ExposureCompensation", values: None },
+    BinDef { index: 14, width: 4, signed: false, name: "BracketStep", values: Some(MINOLTA_CAMERASETTINGS_BRACKETSTEP_VALUES) },
+    BinDef { index: 18, width: 4, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 19, width: 4, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 2, width: 4, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGS_FLASHMODE_VALUES) },
+    BinDef { index: 20, width: 4, signed: false, name: "FlashFired", values: Some(MINOLTA_CAMERASETTINGS_FLASHFIRED_VALUES) },
+    BinDef { index: 21, width: 4, signed: false, name: "MinoltaDate", values: None },
+    BinDef { index: 22, width: 4, signed: false, name: "MinoltaTime", values: None },
+    BinDef { index: 23, width: 4, signed: false, name: "MaxAperture", values: None },
+    BinDef { index: 26, width: 4, signed: false, name: "FileNumberMemory", values: Some(MINOLTA_CAMERASETTINGS_FILENUMBERMEMORY_VALUES) },
+    BinDef { index: 28, width: 4, signed: false, name: "ColorBalanceRed", values: None },
+    BinDef { index: 29, width: 4, signed: false, name: "ColorBalanceGreen", values: None },
+    BinDef { index: 3, width: 4, signed: false, name: "WhiteBalance", values: None },
+    BinDef { index: 30, width: 4, signed: false, name: "ColorBalanceBlue", values: None },
+    BinDef { index: 31, width: 4, signed: false, name: "Saturation", values: Some(MINOLTA_CAMERASETTINGS_SATURATION_VALUES) },
+    BinDef { index: 32, width: 4, signed: false, name: "Contrast", values: Some(MINOLTA_CAMERASETTINGS_CONTRAST_VALUES) },
+    BinDef { index: 33, width: 4, signed: false, name: "Sharpness", values: Some(MINOLTA_CAMERASETTINGS_SHARPNESS_VALUES) },
+    BinDef { index: 34, width: 4, signed: false, name: "SubjectProgram", values: Some(MINOLTA_CAMERASETTINGS_SUBJECTPROGRAM_VALUES) },
+    BinDef { index: 35, width: 4, signed: false, name: "FlashExposureComp", values: None },
+    BinDef { index: 36, width: 4, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGS_ISOSETTING_VALUES) },
+    BinDef { index: 37, width: 4, signed: false, name: "MinoltaModelID", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAMODELID_VALUES) },
+    BinDef { index: 38, width: 4, signed: false, name: "IntervalMode", values: Some(MINOLTA_CAMERASETTINGS_INTERVALMODE_VALUES) },
+    BinDef { index: 39, width: 4, signed: false, name: "FolderName", values: Some(MINOLTA_CAMERASETTINGS_FOLDERNAME_VALUES) },
+    BinDef { index: 4, width: 4, signed: false, name: "MinoltaImageSize", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAIMAGESIZE_VALUES) },
+    BinDef { index: 40, width: 4, signed: false, name: "ColorMode", values: Some(MINOLTA_CAMERASETTINGS_COLORMODE_VALUES) },
+    BinDef { index: 41, width: 4, signed: false, name: "ColorFilter", values: None },
+    BinDef { index: 43, width: 4, signed: false, name: "InternalFlash", values: Some(MINOLTA_CAMERASETTINGS_INTERNALFLASH_VALUES) },
+    BinDef { index: 44, width: 4, signed: false, name: "Brightness", values: None },
+    BinDef { index: 47, width: 4, signed: false, name: "WideFocusZone", values: Some(MINOLTA_CAMERASETTINGS_WIDEFOCUSZONE_VALUES) },
+    BinDef { index: 48, width: 4, signed: false, name: "FocusMode", values: Some(MINOLTA_CAMERASETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 49, width: 4, signed: false, name: "FocusArea", values: Some(MINOLTA_CAMERASETTINGS_FOCUSAREA_VALUES) },
+    BinDef { index: 5, width: 4, signed: false, name: "MinoltaQuality", values: Some(MINOLTA_CAMERASETTINGS_MINOLTAQUALITY_VALUES) },
+    BinDef { index: 50, width: 4, signed: false, name: "DECPosition", values: Some(MINOLTA_CAMERASETTINGS_DECPOSITION_VALUES) },
+    BinDef { index: 51, width: 4, signed: false, name: "ColorProfile", values: Some(MINOLTA_CAMERASETTINGS_COLORPROFILE_VALUES) },
+    BinDef { index: 52, width: 4, signed: false, name: "DataImprint", values: Some(MINOLTA_CAMERASETTINGS_DATAIMPRINT_VALUES) },
+    BinDef { index: 6, width: 4, signed: false, name: "DriveMode", values: Some(MINOLTA_CAMERASETTINGS_DRIVEMODE_VALUES) },
+    BinDef { index: 63, width: 4, signed: false, name: "FlashMetering", values: Some(MINOLTA_CAMERASETTINGS_FLASHMETERING_VALUES) },
+    BinDef { index: 7, width: 4, signed: false, name: "MeteringMode", values: Some(MINOLTA_CAMERASETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "ISO", values: None },
+    BinDef { index: 9, width: 4, signed: false, name: "ExposureTime", values: None },
+];
 
 pub static MINOLTA_CAMERASETTINGS_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
@@ -17173,6 +18582,34 @@ pub static MINOLTA_CAMERASETTINGS5D: phf::Map<u16, TagDef> = phf::phf_map! {
     83u16 => TagDef { name: "ExposureCompensation", values: None },
 };
 
+/// Minolta::CameraSettings5D ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGS5D_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS5D_EXPOSUREMODE_VALUES) },
+    BinDef { index: 101, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGS5D_ROTATION_VALUES) },
+    BinDef { index: 110, width: 2, signed: true, name: "ColorTemperature", values: None },
+    BinDef { index: 113, width: 2, signed: false, name: "PictureFinish", values: Some(MINOLTA_CAMERASETTINGS5D_PICTUREFINISH_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "MinoltaImageSize", values: Some(MINOLTA_CAMERASETTINGS5D_MINOLTAIMAGESIZE_VALUES) },
+    BinDef { index: 13, width: 2, signed: false, name: "MinoltaQuality", values: Some(MINOLTA_CAMERASETTINGS5D_MINOLTAQUALITY_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "WhiteBalance", values: Some(MINOLTA_CAMERASETTINGS5D_WHITEBALANCE_VALUES) },
+    BinDef { index: 174, width: 2, signed: false, name: "ImageNumber", values: None },
+    BinDef { index: 176, width: 2, signed: false, name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGS5D_NOISEREDUCTION_VALUES) },
+    BinDef { index: 189, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_CAMERASETTINGS5D_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 31, width: 2, signed: false, name: "Flash", values: Some(MINOLTA_CAMERASETTINGS5D_FLASH_VALUES) },
+    BinDef { index: 32, width: 2, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGS5D_FLASHMODE_VALUES) },
+    BinDef { index: 37, width: 2, signed: false, name: "MeteringMode", values: Some(MINOLTA_CAMERASETTINGS5D_METERINGMODE_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGS5D_ISOSETTING_VALUES) },
+    BinDef { index: 47, width: 2, signed: false, name: "ColorSpace", values: Some(MINOLTA_CAMERASETTINGS5D_COLORSPACE_VALUES) },
+    BinDef { index: 48, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 49, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 50, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 53, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 54, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 73, width: 2, signed: true, name: "ColorTemperature", values: None },
+    BinDef { index: 74, width: 2, signed: false, name: "HueAdjustment", values: None },
+    BinDef { index: 80, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGS5D_ROTATION_VALUES) },
+    BinDef { index: 83, width: 2, signed: false, name: "ExposureCompensation", values: None },
+];
+
 pub static MINOLTA_CAMERASETTINGS5D_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
     (1, "Aperture Priority"),
@@ -17301,6 +18738,34 @@ pub static MINOLTA_CAMERASETTINGS7D: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGS7D_NOISEREDUCTION_VALUES) },
     98u16 => TagDef { name: "ImageNumber2", values: None },
 };
+
+/// Minolta::CameraSettings7D ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGS7D_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGS7D_EXPOSUREMODE_VALUES) },
+    BinDef { index: 113, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_CAMERASETTINGS7D_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 117, width: 2, signed: false, name: "ZoneMatchingOn", values: Some(MINOLTA_CAMERASETTINGS7D_ZONEMATCHINGON_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "FocusMode", values: Some(MINOLTA_CAMERASETTINGS7D_FOCUSMODE_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "AFPoints", values: Some(MINOLTA_CAMERASETTINGS7D_AFPOINTS_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "MinoltaImageSize", values: Some(MINOLTA_CAMERASETTINGS7D_MINOLTAIMAGESIZE_VALUES) },
+    BinDef { index: 21, width: 2, signed: false, name: "Flash", values: Some(MINOLTA_CAMERASETTINGS7D_FLASH_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGS7D_FLASHMODE_VALUES) },
+    BinDef { index: 28, width: 2, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGS7D_ISOSETTING_VALUES) },
+    BinDef { index: 3, width: 2, signed: false, name: "MinoltaQuality", values: Some(MINOLTA_CAMERASETTINGS7D_MINOLTAQUALITY_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 37, width: 2, signed: false, name: "ColorSpace", values: Some(MINOLTA_CAMERASETTINGS7D_COLORSPACE_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 39, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "WhiteBalance", values: Some(MINOLTA_CAMERASETTINGS7D_WHITEBALANCE_VALUES) },
+    BinDef { index: 40, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 63, width: 2, signed: true, name: "ColorTemperature", values: None },
+    BinDef { index: 64, width: 2, signed: false, name: "HueAdjustment", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGS7D_ROTATION_VALUES) },
+    BinDef { index: 71, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 94, width: 2, signed: false, name: "ImageNumber", values: None },
+    BinDef { index: 96, width: 2, signed: false, name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGS7D_NOISEREDUCTION_VALUES) },
+    BinDef { index: 98, width: 2, signed: false, name: "ImageNumber2", values: None },
+];
 
 pub static MINOLTA_CAMERASETTINGS7D_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
@@ -17473,6 +18938,84 @@ pub static MINOLTA_CAMERASETTINGSA100: phf::Map<u16, TagDef> = phf::phf_map! {
     95u16 => TagDef { name: "ColorCompensationFilter", values: None },
     96u16 => TagDef { name: "BatteryState", values: Some(MINOLTA_CAMERASETTINGSA100_BATTERYSTATE_VALUES) },
 };
+
+/// Minolta::CameraSettingsA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_CAMERASETTINGSA100_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSUREMODE_VALUES) },
+    BinDef { index: 1, width: 2, signed: false, name: "ExposureCompensationSetting", values: None },
+    BinDef { index: 10, width: 2, signed: false, name: "DriveMode2", values: Some(MINOLTA_CAMERASETTINGSA100_DRIVEMODE2_VALUES) },
+    BinDef { index: 11, width: 2, signed: false, name: "WhiteBalance", values: Some(MINOLTA_CAMERASETTINGSA100_WHITEBALANCE_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "FocusMode", values: Some(MINOLTA_CAMERASETTINGSA100_FOCUSMODE_VALUES) },
+    BinDef { index: 13, width: 2, signed: false, name: "AFPointSelected", values: Some(MINOLTA_CAMERASETTINGSA100_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "AFAreaMode", values: Some(MINOLTA_CAMERASETTINGSA100_AFAREAMODE_VALUES) },
+    BinDef { index: 15, width: 2, signed: false, name: "FlashMode", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHMODE_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "MeteringMode", values: Some(MINOLTA_CAMERASETTINGSA100_METERINGMODE_VALUES) },
+    BinDef { index: 19, width: 2, signed: false, name: "ISOSetting", values: Some(MINOLTA_CAMERASETTINGSA100_ISOSETTING_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "ZoneMatchingMode", values: Some(MINOLTA_CAMERASETTINGSA100_ZONEMATCHINGMODE_VALUES) },
+    BinDef { index: 21, width: 2, signed: false, name: "DynamicRangeOptimizer", values: Some(MINOLTA_CAMERASETTINGSA100_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "ColorMode", values: Some(MINOLTA_CAMERASETTINGSA100_COLORMODE_VALUES) },
+    BinDef { index: 23, width: 2, signed: false, name: "ColorSpace", values: Some(MINOLTA_CAMERASETTINGSA100_COLORSPACE_VALUES) },
+    BinDef { index: 24, width: 2, signed: false, name: "Sharpness", values: Some(MINOLTA_CAMERASETTINGSA100_SHARPNESS_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "Contrast", values: Some(MINOLTA_CAMERASETTINGSA100_CONTRAST_VALUES) },
+    BinDef { index: 26, width: 2, signed: false, name: "Saturation", values: Some(MINOLTA_CAMERASETTINGSA100_SATURATION_VALUES) },
+    BinDef { index: 28, width: 2, signed: false, name: "FlashMetering", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHMETERING_VALUES) },
+    BinDef { index: 29, width: 2, signed: false, name: "PrioritySetupShutterRelease", values: Some(MINOLTA_CAMERASETTINGSA100_PRIORITYSETUPSHUTTERRELEASE_VALUES) },
+    BinDef { index: 30, width: 2, signed: false, name: "DriveMode", values: Some(MINOLTA_CAMERASETTINGSA100_DRIVEMODE_VALUES) },
+    BinDef { index: 31, width: 2, signed: false, name: "SelfTimerTime", values: Some(MINOLTA_CAMERASETTINGSA100_SELFTIMERTIME_VALUES) },
+    BinDef { index: 32, width: 2, signed: false, name: "ContinuousBracketing", values: Some(MINOLTA_CAMERASETTINGSA100_CONTINUOUSBRACKETING_VALUES) },
+    BinDef { index: 33, width: 2, signed: false, name: "SingleFrameBracketing", values: Some(MINOLTA_CAMERASETTINGSA100_SINGLEFRAMEBRACKETING_VALUES) },
+    BinDef { index: 34, width: 2, signed: false, name: "WhiteBalanceBracketing", values: Some(MINOLTA_CAMERASETTINGSA100_WHITEBALANCEBRACKETING_VALUES) },
+    BinDef { index: 35, width: 2, signed: false, name: "WhiteBalanceSetting", values: Some(MINOLTA_CAMERASETTINGSA100_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 36, width: 2, signed: false, name: "PresetWhiteBalance", values: Some(MINOLTA_CAMERASETTINGSA100_PRESETWHITEBALANCE_VALUES) },
+    BinDef { index: 37, width: 2, signed: false, name: "ColorTemperatureSetting", values: Some(MINOLTA_CAMERASETTINGSA100_COLORTEMPERATURESETTING_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "CustomWBSetting", values: Some(MINOLTA_CAMERASETTINGSA100_CUSTOMWBSETTING_VALUES) },
+    BinDef { index: 39, width: 2, signed: false, name: "DynamicRangeOptimizerSetting", values: Some(MINOLTA_CAMERASETTINGSA100_DYNAMICRANGEOPTIMIZERSETTING_VALUES) },
+    BinDef { index: 5, width: 2, signed: false, name: "HighSpeedSync", values: Some(MINOLTA_CAMERASETTINGSA100_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 55, width: 2, signed: false, name: "CustomWBError", values: Some(MINOLTA_CAMERASETTINGSA100_CUSTOMWBERROR_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "WhiteBalanceFineTune", values: None },
+    BinDef { index: 57, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 58, width: 2, signed: true, name: "ColorCompensationFilter", values: None },
+    BinDef { index: 59, width: 2, signed: false, name: "SonyImageSize", values: Some(MINOLTA_CAMERASETTINGSA100_SONYIMAGESIZE_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "SonyQuality", values: Some(MINOLTA_CAMERASETTINGSA100_SONYQUALITY_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "InstantPlaybackTime", values: None },
+    BinDef { index: 62, width: 2, signed: false, name: "InstantPlaybackSetup", values: Some(MINOLTA_CAMERASETTINGSA100_INSTANTPLAYBACKSETUP_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "NoiseReduction", values: Some(MINOLTA_CAMERASETTINGSA100_NOISEREDUCTION_VALUES) },
+    BinDef { index: 64, width: 2, signed: false, name: "EyeStartAF", values: Some(MINOLTA_CAMERASETTINGSA100_EYESTARTAF_VALUES) },
+    BinDef { index: 65, width: 2, signed: false, name: "RedEyeReduction", values: Some(MINOLTA_CAMERASETTINGSA100_REDEYEREDUCTION_VALUES) },
+    BinDef { index: 66, width: 2, signed: false, name: "FlashDefault", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHDEFAULT_VALUES) },
+    BinDef { index: 67, width: 2, signed: false, name: "AutoBracketOrder", values: Some(MINOLTA_CAMERASETTINGSA100_AUTOBRACKETORDER_VALUES) },
+    BinDef { index: 68, width: 2, signed: false, name: "FocusHoldButton", values: Some(MINOLTA_CAMERASETTINGSA100_FOCUSHOLDBUTTON_VALUES) },
+    BinDef { index: 69, width: 2, signed: false, name: "AELButton", values: Some(MINOLTA_CAMERASETTINGSA100_AELBUTTON_VALUES) },
+    BinDef { index: 7, width: 2, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "ControlDialSet", values: Some(MINOLTA_CAMERASETTINGSA100_CONTROLDIALSET_VALUES) },
+    BinDef { index: 71, width: 2, signed: false, name: "ExposureCompensationMode", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSURECOMPENSATIONMODE_VALUES) },
+    BinDef { index: 72, width: 2, signed: false, name: "AFAssist", values: Some(MINOLTA_CAMERASETTINGSA100_AFASSIST_VALUES) },
+    BinDef { index: 73, width: 2, signed: false, name: "CardShutterLock", values: Some(MINOLTA_CAMERASETTINGSA100_CARDSHUTTERLOCK_VALUES) },
+    BinDef { index: 74, width: 2, signed: false, name: "LensShutterLock", values: Some(MINOLTA_CAMERASETTINGSA100_LENSSHUTTERLOCK_VALUES) },
+    BinDef { index: 75, width: 2, signed: false, name: "AFAreaIllumination", values: Some(MINOLTA_CAMERASETTINGSA100_AFAREAILLUMINATION_VALUES) },
+    BinDef { index: 76, width: 2, signed: false, name: "MonitorDisplayOff", values: Some(MINOLTA_CAMERASETTINGSA100_MONITORDISPLAYOFF_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "RecordDisplay", values: Some(MINOLTA_CAMERASETTINGSA100_RECORDDISPLAY_VALUES) },
+    BinDef { index: 78, width: 2, signed: false, name: "PlayDisplay", values: Some(MINOLTA_CAMERASETTINGSA100_PLAYDISPLAY_VALUES) },
+    BinDef { index: 8, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 80, width: 2, signed: false, name: "ExposureIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSUREINDICATOR_VALUES) },
+    BinDef { index: 81, width: 2, signed: false, name: "AELExposureIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_AELEXPOSUREINDICATOR_VALUES) },
+    BinDef { index: 82, width: 2, signed: false, name: "ExposureBracketingIndicatorLast", values: Some(MINOLTA_CAMERASETTINGSA100_EXPOSUREBRACKETINGINDICATORLAST_VALUES) },
+    BinDef { index: 83, width: 2, signed: false, name: "MeteringOffScaleIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_METERINGOFFSCALEINDICATOR_VALUES) },
+    BinDef { index: 84, width: 2, signed: false, name: "FlashExposureIndicator", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHEXPOSUREINDICATOR_VALUES) },
+    BinDef { index: 85, width: 2, signed: false, name: "FlashExposureIndicatorNext", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHEXPOSUREINDICATORNEXT_VALUES) },
+    BinDef { index: 86, width: 2, signed: false, name: "FlashExposureIndicatorLast", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHEXPOSUREINDICATORLAST_VALUES) },
+    BinDef { index: 87, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_CAMERASETTINGSA100_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "FocusModeSwitch", values: Some(MINOLTA_CAMERASETTINGSA100_FOCUSMODESWITCH_VALUES) },
+    BinDef { index: 89, width: 2, signed: false, name: "FlashType", values: Some(MINOLTA_CAMERASETTINGSA100_FLASHTYPE_VALUES) },
+    BinDef { index: 9, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 90, width: 2, signed: false, name: "Rotation", values: Some(MINOLTA_CAMERASETTINGSA100_ROTATION_VALUES) },
+    BinDef { index: 91, width: 2, signed: false, name: "AELock", values: Some(MINOLTA_CAMERASETTINGSA100_AELOCK_VALUES) },
+    BinDef { index: 94, width: 2, signed: false, name: "ColorTemperature", values: None },
+    BinDef { index: 95, width: 2, signed: true, name: "ColorCompensationFilter", values: None },
+    BinDef { index: 96, width: 2, signed: false, name: "BatteryState", values: Some(MINOLTA_CAMERASETTINGSA100_BATTERYSTATE_VALUES) },
+];
 
 pub static MINOLTA_CAMERASETTINGSA100_EXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Program"),
@@ -17987,6 +19530,11 @@ pub static MINOLTA_ISINFOA100: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ImageStabilization", values: Some(MINOLTA_ISINFOA100_IMAGESTABILIZATION_VALUES) },
 };
 
+/// Minolta::ISInfoA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_ISINFOA100_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ImageStabilization", values: Some(MINOLTA_ISINFOA100_IMAGESTABILIZATION_VALUES) },
+];
+
 pub static MINOLTA_ISINFOA100_IMAGESTABILIZATION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (10116, "On"),
@@ -18356,6 +19904,38 @@ pub static MINOLTA_WBINFOA100: phf::Map<u16, TagDef> = phf::phf_map! {
     776u16 => TagDef { name: "WB_RBLevelsCoolWhiteF", values: None },
 };
 
+/// Minolta::WBInfoA100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static MINOLTA_WBINFOA100_BIN: &[BinDef] = &[
+    BinDef { index: 14, width: 1, signed: false, name: "DriveMode", values: Some(MINOLTA_WBINFOA100_DRIVEMODE_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "Rotation", values: Some(MINOLTA_WBINFOA100_ROTATION_VALUES) },
+    BinDef { index: 1680, width: 1, signed: false, name: "MeasuredLV", values: None },
+    BinDef { index: 1681, width: 1, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 18872, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 18874, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 18875, width: 1, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 18880, width: 1, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 18881, width: 1, signed: true, name: "FlashExposureComp", values: None },
+    BinDef { index: 18882, width: 1, signed: false, name: "ImageStabilization", values: Some(MINOLTA_WBINFOA100_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 18883, width: 1, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 18885, width: 1, signed: false, name: "MaxAperture", values: None },
+    BinDef { index: 18887, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "ImageStabilizationSetting", values: Some(MINOLTA_WBINFOA100_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "DynamicRangeOptimizerMode", values: Some(MINOLTA_WBINFOA100_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 392, width: 2, signed: false, name: "WB_RedLevel6500K", values: None },
+    BinDef { index: 394, width: 2, signed: false, name: "WB_BlueLevel6500K", values: None },
+    BinDef { index: 396, width: 2, signed: false, name: "WB_RedLevelCustom", values: None },
+    BinDef { index: 398, width: 2, signed: false, name: "WB_BlueLevelCustom", values: None },
+    BinDef { index: 408, width: 2, signed: false, name: "WB_RedLevel3500K", values: None },
+    BinDef { index: 410, width: 2, signed: false, name: "WB_BlueLevel3500K", values: None },
+    BinDef { index: 42, width: 1, signed: false, name: "ExposureCompensationMode", values: Some(MINOLTA_WBINFOA100_EXPOSURECOMPENSATIONMODE_VALUES) },
+    BinDef { index: 44, width: 1, signed: false, name: "WhiteBalanceBracketing", values: Some(MINOLTA_WBINFOA100_WHITEBALANCEBRACKETING_VALUES) },
+    BinDef { index: 49, width: 2, signed: false, name: "FlashFunction", values: Some(MINOLTA_WBINFOA100_FLASHFUNCTION_VALUES) },
+    BinDef { index: 52, width: 2, signed: false, name: "ExposureMode", values: Some(MINOLTA_WBINFOA100_EXPOSUREMODE_VALUES) },
+    BinDef { index: 54, width: 2, signed: false, name: "ColorMode", values: Some(MINOLTA_WBINFOA100_COLORMODE_VALUES) },
+    BinDef { index: 56, width: 2, signed: false, name: "AverageLV", values: None },
+    BinDef { index: 60, width: 1, signed: false, name: "FrameNumber", values: None },
+];
+
 pub static MINOLTA_WBINFOA100_DRIVEMODE_VALUES: &[(i64, &str)] = &[
     (0, "Self-timer 10 sec"),
     (1, "Continuous"),
@@ -18627,6 +20207,13 @@ pub static NIKON_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "AFPointsInFocus", values: Some(NIKON_AFINFO_AFPOINTSINFOCUS_VALUES) },
 };
 
+/// Nikon::AFInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AFINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_AFINFO_AFAREAMODE_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "AFPoint", values: Some(NIKON_AFINFO_AFPOINT_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "AFPointsInFocus", values: Some(NIKON_AFINFO_AFPOINTSINFOCUS_VALUES) },
+];
+
 pub static NIKON_AFINFO_AFAREAMODE_VALUES: &[(i64, &str)] = &[
     (0, "Single Area"),
     (1, "Dynamic Area"),
@@ -18671,6 +20258,21 @@ pub static NIKON_AFINFO2V0100: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "PrimaryAFPoint", values: Some(NIKON_AFINFO2V0100_PRIMARYAFPOINT_VALUES) },
     8u16 => TagDef { name: "AFPointsUsed", values: None },
 };
+
+/// Nikon::AFInfo2V0100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AFINFO2V0100_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 2, signed: false, name: "AFImageWidth", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "AFImageHeight", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "AFAreaXPosition", values: None },
+    BinDef { index: 22, width: 2, signed: false, name: "AFAreaYPosition", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "AFAreaWidth", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "AFAreaHeight", values: None },
+    BinDef { index: 28, width: 1, signed: false, name: "ContrastDetectAFInFocus", values: Some(NIKON_AFINFO2V0100_CONTRASTDETECTAFINFOCUS_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "AFDetectionMethod", values: Some(NIKON_AFINFO2V0100_AFDETECTIONMETHOD_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_AFINFO2V0100_AFAREAMODE_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "FocusPointSchema", values: Some(NIKON_AFINFO2V0100_FOCUSPOINTSCHEMA_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "PrimaryAFPoint", values: Some(NIKON_AFINFO2V0100_PRIMARYAFPOINT_VALUES) },
+];
 
 pub static NIKON_AFINFO2V0100_CONTRASTDETECTAFINFOCUS_VALUES: &[(i64, &str)] = &[
     (0, "No"),
@@ -18797,6 +20399,22 @@ pub static NIKON_AFINFO2V0101: phf::Map<u16, TagDef> = phf::phf_map! {
     82u16 => TagDef { name: "ContrastDetectAFInFocus", values: Some(NIKON_AFINFO2V0101_CONTRASTDETECTAFINFOCUS_VALUES) },
 };
 
+/// Nikon::AFInfo2V0101 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AFINFO2V0101_BIN: &[BinDef] = &[
+    BinDef { index: 28, width: 1, signed: false, name: "ContrastDetectAFInFocus", values: Some(NIKON_AFINFO2V0101_CONTRASTDETECTAFINFOCUS_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "AFDetectionMethod", values: Some(NIKON_AFINFO2V0101_AFDETECTIONMETHOD_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_AFINFO2V0101_AFAREAMODE_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "FocusPointSchema", values: Some(NIKON_AFINFO2V0101_FOCUSPOINTSCHEMA_VALUES) },
+    BinDef { index: 68, width: 1, signed: false, name: "PrimaryAFPoint", values: Some(NIKON_AFINFO2V0101_PRIMARYAFPOINT_VALUES) },
+    BinDef { index: 70, width: 2, signed: false, name: "AFImageWidth", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "AFImageHeight", values: None },
+    BinDef { index: 74, width: 2, signed: false, name: "AFAreaXPosition", values: None },
+    BinDef { index: 76, width: 2, signed: false, name: "AFAreaYPosition", values: None },
+    BinDef { index: 78, width: 2, signed: false, name: "AFAreaWidth", values: None },
+    BinDef { index: 80, width: 2, signed: false, name: "AFAreaHeight", values: None },
+    BinDef { index: 82, width: 1, signed: false, name: "ContrastDetectAFInFocus", values: Some(NIKON_AFINFO2V0101_CONTRASTDETECTAFINFOCUS_VALUES) },
+];
+
 pub static NIKON_AFINFO2V0101_CONTRASTDETECTAFINFOCUS_VALUES: &[(i64, &str)] = &[
     (0, "No"),
     (1, "Yes"),
@@ -18911,6 +20529,13 @@ pub static NIKON_AFINFO2V0200: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "PrimaryAFPoint", values: Some(NIKON_AFINFO2V0200_PRIMARYAFPOINT_VALUES) },
     8u16 => TagDef { name: "AFPointsUsed", values: None },
 };
+
+/// Nikon::AFInfo2V0200 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AFINFO2V0200_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_AFINFO2V0200_AFAREAMODE_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "PhaseDetectAF", values: Some(NIKON_AFINFO2V0200_PHASEDETECTAF_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "PrimaryAFPoint", values: Some(NIKON_AFINFO2V0200_PRIMARYAFPOINT_VALUES) },
+];
 
 pub static NIKON_AFINFO2V0200_AFAREAMODE_VALUES: &[(i64, &str)] = &[
     (128, "Single"),
@@ -19083,6 +20708,23 @@ pub static NIKON_AFINFO2V0300: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "AFCoordinatesAvailable", values: Some(NIKON_AFINFO2V0300_AFCOORDINATESAVAILABLE_VALUES) },
 };
 
+/// Nikon::AFInfo2V0300 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AFINFO2V0300_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "AFDetectionMethod", values: Some(NIKON_AFINFO2V0300_AFDETECTIONMETHOD_VALUES) },
+    BinDef { index: 42, width: 2, signed: false, name: "AFImageWidth", values: None },
+    BinDef { index: 44, width: 2, signed: false, name: "AFImageHeight", values: None },
+    BinDef { index: 46, width: 2, signed: false, name: "AFAreaXPosition", values: None },
+    BinDef { index: 47, width: 1, signed: false, name: "FocusPositionHorizontal", values: None },
+    BinDef { index: 48, width: 2, signed: false, name: "AFAreaYPosition", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "FocusPositionVertical", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_AFINFO2V0300_AFAREAMODE_VALUES) },
+    BinDef { index: 50, width: 2, signed: false, name: "AFAreaWidth", values: None },
+    BinDef { index: 52, width: 2, signed: false, name: "AFAreaHeight", values: None },
+    BinDef { index: 56, width: 1, signed: false, name: "PrimaryAFPoint", values: Some(NIKON_AFINFO2V0300_PRIMARYAFPOINT_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "FocusPointSchema", values: Some(NIKON_AFINFO2V0300_FOCUSPOINTSCHEMA_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "AFCoordinatesAvailable", values: Some(NIKON_AFINFO2V0300_AFCOORDINATESAVAILABLE_VALUES) },
+];
+
 pub static NIKON_AFINFO2V0300_AFDETECTIONMETHOD_VALUES: &[(i64, &str)] = &[
     (0, "Phase Detect"),
     (1, "Contrast Detect"),
@@ -19207,6 +20849,22 @@ pub static NIKON_AFINFO2V0400: phf::Map<u16, TagDef> = phf::phf_map! {
     74u16 => TagDef { name: "FocusResult", values: Some(NIKON_AFINFO2V0400_FOCUSRESULT_VALUES) },
 };
 
+/// Nikon::AFInfo2V0400 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AFINFO2V0400_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "AFDetectionMethod", values: Some(NIKON_AFINFO2V0400_AFDETECTIONMETHOD_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_AFINFO2V0400_AFAREAMODE_VALUES) },
+    BinDef { index: 62, width: 2, signed: false, name: "AFImageWidth", values: None },
+    BinDef { index: 64, width: 2, signed: false, name: "AFImageHeight", values: None },
+    BinDef { index: 66, width: 2, signed: false, name: "AFAreaXPosition", values: None },
+    BinDef { index: 67, width: 1, signed: false, name: "FocusPositionHorizontal", values: None },
+    BinDef { index: 68, width: 2, signed: false, name: "AFAreaYPosition", values: None },
+    BinDef { index: 69, width: 1, signed: false, name: "FocusPositionVertical", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "AFCoordinatesAvailable", values: Some(NIKON_AFINFO2V0400_AFCOORDINATESAVAILABLE_VALUES) },
+    BinDef { index: 70, width: 2, signed: false, name: "AFAreaWidth", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "AFAreaHeight", values: None },
+    BinDef { index: 74, width: 1, signed: false, name: "FocusResult", values: Some(NIKON_AFINFO2V0400_FOCUSRESULT_VALUES) },
+];
+
 pub static NIKON_AFINFO2V0400_AFDETECTIONMETHOD_VALUES: &[(i64, &str)] = &[
     (0, "Phase Detect"),
     (1, "Contrast Detect"),
@@ -19244,6 +20902,14 @@ pub static NIKON_AFTUNE: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "AFFineTuneAdjTele", values: None },
 };
 
+/// Nikon::AFTune ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AFTUNE_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "AFFineTune", values: Some(NIKON_AFTUNE_AFFINETUNE_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "AFFineTuneIndex", values: None },
+    BinDef { index: 2, width: 1, signed: true, name: "AFFineTuneAdj", values: None },
+    BinDef { index: 3, width: 1, signed: true, name: "AFFineTuneAdjTele", values: None },
+];
+
 pub static NIKON_AFTUNE_AFFINETUNE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On (1)"),
@@ -19265,6 +20931,21 @@ pub static NIKON_AUTOCAPTUREINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     95u16 => TagDef { name: "AutoCaptureCriteriaMotionDirection", values: None },
     99u16 => TagDef { name: "AutoCaptureCriteriaMotionSpeed", values: None },
 };
+
+/// Nikon::AutoCaptureInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_AUTOCAPTUREINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "AutoCapturedFrame", values: Some(NIKON_AUTOCAPTUREINFO_AUTOCAPTUREDFRAME_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "AutoCaptureCriteria", values: None },
+    BinDef { index: 100, width: 1, signed: false, name: "AutoCaptureCriteriaMotionSize", values: None },
+    BinDef { index: 105, width: 1, signed: false, name: "AutoCaptureCriteriaSubjectSize", values: None },
+    BinDef { index: 106, width: 1, signed: false, name: "AutoCaptureCriteriaSubjectType", values: Some(NIKON_AUTOCAPTUREINFO_AUTOCAPTURECRITERIASUBJECTTYPE_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "AutoCaptureRecordingTime", values: Some(NIKON_AUTOCAPTUREINFO_AUTOCAPTURERECORDINGTIME_VALUES) },
+    BinDef { index: 56, width: 1, signed: false, name: "AutoCaptureWaitTime", values: Some(NIKON_AUTOCAPTUREINFO_AUTOCAPTUREWAITTIME_VALUES) },
+    BinDef { index: 74, width: 1, signed: false, name: "AutoCaptureDistanceFar", values: None },
+    BinDef { index: 78, width: 1, signed: false, name: "AutoCaptureDistanceNear", values: None },
+    BinDef { index: 95, width: 1, signed: false, name: "AutoCaptureCriteriaMotionDirection", values: None },
+    BinDef { index: 99, width: 1, signed: false, name: "AutoCaptureCriteriaMotionSpeed", values: None },
+];
 
 pub static NIKON_AUTOCAPTUREINFO_AUTOCAPTUREDFRAME_VALUES: &[(i64, &str)] = &[
     (0, "No"),
@@ -19319,6 +21000,11 @@ pub static NIKON_BAROMETERINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "BarometerInfoVersion", values: None },
     6u16 => TagDef { name: "Altitude", values: None },
 };
+
+/// Nikon::BarometerInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_BAROMETERINFO_BIN: &[BinDef] = &[
+    BinDef { index: 6, width: 4, signed: true, name: "Altitude", values: None },
+];
 
 /// Nikon::BracketingInfoD500 tags
 pub static NIKON_BRACKETINGINFOD500: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -19600,6 +21286,11 @@ pub static NIKON_COLORBALANCEC: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "WB_RGGBLevelsCloudy", values: None },
 };
 
+/// Nikon::ColorBalanceC ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_COLORBALANCEC_BIN: &[BinDef] = &[
+    BinDef { index: 32, width: 2, signed: false, name: "BlackLevel", values: None },
+];
+
 /// Nikon::ColorBalanceUnknown tags
 pub static NIKON_COLORBALANCEUNKNOWN: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ColorBalanceVersion", values: None },
@@ -19621,6 +21312,11 @@ pub static NIKON_DISTORTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "AutoDistortionControl", values: Some(NIKON_DISTORTINFO_AUTODISTORTIONCONTROL_VALUES) },
 };
 
+/// Nikon::DistortInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_DISTORTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "AutoDistortionControl", values: Some(NIKON_DISTORTINFO_AUTODISTORTIONCONTROL_VALUES) },
+];
+
 pub static NIKON_DISTORTINFO_AUTODISTORTIONCONTROL_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -19635,6 +21331,11 @@ pub static NIKON_DISTORTIONINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     36u16 => TagDef { name: "RadialDistortionCoefficient3", values: None },
     4u16 => TagDef { name: "DistortionCorrection", values: Some(NIKON_DISTORTIONINFO_DISTORTIONCORRECTION_VALUES) },
 };
+
+/// Nikon::DistortionInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_DISTORTIONINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "DistortionCorrection", values: Some(NIKON_DISTORTIONINFO_DISTORTIONCORRECTION_VALUES) },
+];
 
 pub static NIKON_DISTORTIONINFO_DISTORTIONCORRECTION_VALUES: &[(i64, &str)] = &[
     (0, "No Lens Attached"),
@@ -19661,12 +21362,23 @@ pub static NIKON_FACEDETECT: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "Face2Position", values: None },
 };
 
+/// Nikon::FaceDetect ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FACEDETECT_BIN: &[BinDef] = &[
+    BinDef { index: 3, width: 2, signed: false, name: "FacesDetected", values: None },
+];
+
 /// Nikon::FileInfo tags
 pub static NIKON_FILEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FileInfoVersion", values: None },
     3u16 => TagDef { name: "DirectoryNumber", values: None },
     4u16 => TagDef { name: "FileNumber", values: None },
 };
+
+/// Nikon::FileInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FILEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 3, width: 2, signed: false, name: "DirectoryNumber", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "FileNumber", values: None },
+];
 
 /// Nikon::FlashInfo0100 tags
 pub static NIKON_FLASHINFO0100: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -19691,6 +21403,19 @@ pub static NIKON_FLASHINFO0100_MASKS: &[MaskDef] = &[
     MaskDef { index: 16, mask: 0xf, name: "FlashGroupBControlMode", values: Some(NIKON_FLASHINFO0100_FLASHGROUPBCONTROLMODE_VALUES) },
     MaskDef { index: 9, mask: 0x80, name: "FlashCommanderMode", values: Some(NIKON_FLASHINFO0100_FLASHCOMMANDERMODE_VALUES) },
     MaskDef { index: 9, mask: 0x7f, name: "FlashControlMode", values: Some(NIKON_FLASHINFO0100_FLASHCONTROLMODE_VALUES) },
+];
+
+/// Nikon::FlashInfo0100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FLASHINFO0100_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "FlashFocalLength", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "RepeatingFlashRate", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "RepeatingFlashCount", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_FLASHINFO0100_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "FlashGroupAOutput", values: None },
+    BinDef { index: 18, width: 1, signed: false, name: "FlashGroupBOutput", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "FlashSource", values: Some(NIKON_FLASHINFO0100_FLASHSOURCE_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "ExternalFlashFlags", values: Some(NIKON_FLASHINFO0100_EXTERNALFLASHFLAGS_VALUES) },
 ];
 
 pub static NIKON_FLASHINFO0100_FLASHGNDISTANCE_VALUES: &[(i64, &str)] = &[
@@ -19805,6 +21530,20 @@ pub static NIKON_FLASHINFO0102_MASKS: &[MaskDef] = &[
     MaskDef { index: 17, mask: 0xf, name: "FlashGroupCControlMode", values: Some(NIKON_FLASHINFO0102_FLASHGROUPCCONTROLMODE_VALUES) },
     MaskDef { index: 9, mask: 0x80, name: "FlashCommanderMode", values: Some(NIKON_FLASHINFO0102_FLASHCOMMANDERMODE_VALUES) },
     MaskDef { index: 9, mask: 0x7f, name: "FlashControlMode", values: Some(NIKON_FLASHINFO0102_FLASHCONTROLMODE_VALUES) },
+];
+
+/// Nikon::FlashInfo0102 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FLASHINFO0102_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "FlashFocalLength", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "RepeatingFlashRate", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "RepeatingFlashCount", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_FLASHINFO0102_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "FlashGroupAOutput", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "FlashGroupBOutput", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "FlashGroupCOutput", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "FlashSource", values: Some(NIKON_FLASHINFO0102_FLASHSOURCE_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "ExternalFlashFlags", values: None },
 ];
 
 pub static NIKON_FLASHINFO0102_FLASHGNDISTANCE_VALUES: &[(i64, &str)] = &[
@@ -19930,6 +21669,24 @@ pub static NIKON_FLASHINFO0103_MASKS: &[MaskDef] = &[
     MaskDef { index: 18, mask: 0xf, name: "FlashGroupCControlMode", values: Some(NIKON_FLASHINFO0103_FLASHGROUPCCONTROLMODE_VALUES) },
     MaskDef { index: 9, mask: 0x80, name: "FlashCommanderMode", values: Some(NIKON_FLASHINFO0103_FLASHCOMMANDERMODE_VALUES) },
     MaskDef { index: 9, mask: 0x7f, name: "FlashControlMode", values: Some(NIKON_FLASHINFO0103_FLASHCONTROLMODE_VALUES) },
+];
+
+/// Nikon::FlashInfo0103 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FLASHINFO0103_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "FlashFocalLength", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "RepeatingFlashRate", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "RepeatingFlashCount", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_FLASHINFO0103_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "FlashColorFilter", values: Some(NIKON_FLASHINFO0103_FLASHCOLORFILTER_VALUES) },
+    BinDef { index: 19, width: 1, signed: false, name: "FlashGroupAOutput", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "FlashGroupBOutput", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "FlashGroupCOutput", values: None },
+    BinDef { index: 27, width: 1, signed: true, name: "ExternalFlashCompensation", values: None },
+    BinDef { index: 29, width: 1, signed: true, name: "FlashExposureComp3", values: None },
+    BinDef { index: 39, width: 1, signed: true, name: "FlashExposureComp4", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "FlashSource", values: Some(NIKON_FLASHINFO0103_FLASHSOURCE_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "ExternalFlashFlags", values: None },
 ];
 
 pub static NIKON_FLASHINFO0103_FLASHGNDISTANCE_VALUES: &[(i64, &str)] = &[
@@ -20067,6 +21824,21 @@ pub static NIKON_FLASHINFO0106_MASKS: &[MaskDef] = &[
     MaskDef { index: 9, mask: 0x7f, name: "FlashControlMode", values: Some(NIKON_FLASHINFO0106_FLASHCONTROLMODE_VALUES) },
 ];
 
+/// Nikon::FlashInfo0106 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FLASHINFO0106_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 1, signed: false, name: "FlashFocalLength", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "RepeatingFlashRate", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "RepeatingFlashCount", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_FLASHINFO0106_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "FlashColorFilter", values: Some(NIKON_FLASHINFO0106_FLASHCOLORFILTER_VALUES) },
+    BinDef { index: 39, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "FlashSource", values: Some(NIKON_FLASHINFO0106_FLASHSOURCE_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "FlashGroupAOutput", values: None },
+    BinDef { index: 41, width: 1, signed: false, name: "FlashGroupBOutput", values: None },
+    BinDef { index: 42, width: 1, signed: false, name: "FlashGroupCOutput", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "ExternalFlashFlags", values: None },
+];
+
 pub static NIKON_FLASHINFO0106_FLASHGNDISTANCE_VALUES: &[(i64, &str)] = &[
     (0, "0"),
     (1, "0.1 m"),
@@ -20201,6 +21973,19 @@ pub static NIKON_FLASHINFO0107_MASKS: &[MaskDef] = &[
     MaskDef { index: 9, mask: 0x7, name: "ExternalFlashReadyState", values: Some(NIKON_FLASHINFO0107_EXTERNALFLASHREADYSTATE_VALUES) },
 ];
 
+/// Nikon::FlashInfo0107 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FLASHINFO0107_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: true, name: "FlashCompensation", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "FlashFocalLength", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "RepeatingFlashRate", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "RepeatingFlashCount", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_FLASHINFO0107_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "FlashSource", values: Some(NIKON_FLASHINFO0107_FLASHSOURCE_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "FlashGroupAOutput", values: None },
+    BinDef { index: 41, width: 1, signed: false, name: "FlashGroupBOutput", values: None },
+    BinDef { index: 42, width: 1, signed: false, name: "FlashGroupCOutput", values: None },
+];
+
 pub static NIKON_FLASHINFO0107_FLASHGNDISTANCE_VALUES: &[(i64, &str)] = &[
     (0, "0"),
     (1, "0.1 m"),
@@ -20323,6 +22108,23 @@ pub static NIKON_FLASHINFO0300_MASKS: &[MaskDef] = &[
     MaskDef { index: 18, mask: 0xf, name: "FlashGroupCControlMode", values: Some(NIKON_FLASHINFO0300_FLASHGROUPCCONTROLMODE_VALUES) },
     MaskDef { index: 9, mask: 0x80, name: "FlashCommanderMode", values: Some(NIKON_FLASHINFO0300_FLASHCOMMANDERMODE_VALUES) },
     MaskDef { index: 9, mask: 0x7f, name: "FlashControlMode", values: Some(NIKON_FLASHINFO0300_FLASHCONTROLMODE_VALUES) },
+];
+
+/// Nikon::FlashInfo0300 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_FLASHINFO0300_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: true, name: "FlashCompensation", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "RepeatingFlashRate", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "RepeatingFlashCount", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_FLASHINFO0300_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "FlashColorFilter", values: Some(NIKON_FLASHINFO0300_FLASHCOLORFILTER_VALUES) },
+    BinDef { index: 33, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 37, width: 1, signed: false, name: "FlashIlluminationPattern", values: Some(NIKON_FLASHINFO0300_FLASHILLUMINATIONPATTERN_VALUES) },
+    BinDef { index: 38, width: 1, signed: false, name: "FlashFocalLength", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "FlashSource", values: Some(NIKON_FLASHINFO0300_FLASHSOURCE_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "FlashGroupAOutput", values: None },
+    BinDef { index: 41, width: 1, signed: false, name: "FlashGroupBOutput", values: None },
+    BinDef { index: 42, width: 1, signed: false, name: "FlashGroupCOutput", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "ExternalFlashFlags", values: None },
 ];
 
 pub static NIKON_FLASHINFO0300_FLASHGNDISTANCE_VALUES: &[(i64, &str)] = &[
@@ -20450,6 +22252,11 @@ pub static NIKON_GEM: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "DigitalGEM", values: None },
 };
 
+/// Nikon::GEM ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_GEM_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "DigitalGEM", values: None },
+];
+
 /// Nikon::HDRInfo tags
 pub static NIKON_HDRINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "HDRInfoVersion", values: None },
@@ -20458,6 +22265,14 @@ pub static NIKON_HDRINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "HDRSmoothing", values: Some(NIKON_HDRINFO_HDRSMOOTHING_VALUES) },
     7u16 => TagDef { name: "HDRLevel2", values: Some(NIKON_HDRINFO_HDRLEVEL2_VALUES) },
 };
+
+/// Nikon::HDRInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_HDRINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "HDR", values: Some(NIKON_HDRINFO_HDR_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "HDRLevel", values: Some(NIKON_HDRINFO_HDRLEVEL_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "HDRSmoothing", values: Some(NIKON_HDRINFO_HDRSMOOTHING_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "HDRLevel2", values: Some(NIKON_HDRINFO_HDRLEVEL2_VALUES) },
+];
 
 pub static NIKON_HDRINFO_HDR_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -20496,6 +22311,12 @@ pub static NIKON_HDRINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "HDR", values: Some(NIKON_HDRINFO2_HDR_VALUES) },
     5u16 => TagDef { name: "HDRLevel", values: Some(NIKON_HDRINFO2_HDRLEVEL_VALUES) },
 };
+
+/// Nikon::HDRInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_HDRINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "HDR", values: Some(NIKON_HDRINFO2_HDR_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "HDRLevel", values: Some(NIKON_HDRINFO2_HDRLEVEL_VALUES) },
+];
 
 pub static NIKON_HDRINFO2_HDR_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -20615,6 +22436,14 @@ pub static NIKON_ISOINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "ISO2", values: None },
 };
 
+/// Nikon::ISOInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_ISOINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 10, width: 2, signed: false, name: "ISOExpansion2", values: Some(NIKON_ISOINFO_ISOEXPANSION2_VALUES) },
+    BinDef { index: 4, width: 2, signed: false, name: "ISOExpansion", values: Some(NIKON_ISOINFO_ISOEXPANSION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISO2", values: None },
+];
+
 pub static NIKON_ISOINFO_ISOEXPANSION2_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (257, "Hi 0.3"),
@@ -20680,6 +22509,28 @@ pub static NIKON_INTERVALINFOD6: phf::Map<u16, TagDef> = phf::phf_map! {
     564u16 => TagDef { name: "FlashWirelessOption", values: Some(NIKON_INTERVALINFOD6_FLASHWIRELESSOPTION_VALUES) },
     714u16 => TagDef { name: "MovieType", values: Some(NIKON_INTERVALINFOD6_MOVIETYPE_VALUES) },
 };
+
+/// Nikon::IntervalInfoD6 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_INTERVALINFOD6_BIN: &[BinDef] = &[
+    BinDef { index: 380, width: 4, signed: false, name: "Intervals", values: None },
+    BinDef { index: 384, width: 4, signed: false, name: "ShotsPerInterval", values: None },
+    BinDef { index: 388, width: 1, signed: false, name: "IntervalExposureSmoothing", values: Some(NIKON_INTERVALINFOD6_INTERVALEXPOSURESMOOTHING_VALUES) },
+    BinDef { index: 390, width: 1, signed: false, name: "IntervalPriority", values: Some(NIKON_INTERVALINFOD6_INTERVALPRIORITY_VALUES) },
+    BinDef { index: 424, width: 1, signed: false, name: "FocusShiftNumberShots", values: None },
+    BinDef { index: 428, width: 1, signed: false, name: "FocusShiftStepWidth", values: None },
+    BinDef { index: 432, width: 1, signed: false, name: "FocusShiftInterval", values: None },
+    BinDef { index: 436, width: 1, signed: false, name: "FocusShiftExposureLock", values: Some(NIKON_INTERVALINFOD6_FOCUSSHIFTEXPOSURELOCK_VALUES) },
+    BinDef { index: 526, width: 1, signed: false, name: "DiffractionCompensation", values: Some(NIKON_INTERVALINFOD6_DIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 532, width: 1, signed: false, name: "FlashControlMode", values: Some(NIKON_INTERVALINFOD6_FLASHCONTROLMODE_VALUES) },
+    BinDef { index: 538, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_INTERVALINFOD6_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 542, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 552, width: 1, signed: false, name: "FlashRemoteControl", values: Some(NIKON_INTERVALINFOD6_FLASHREMOTECONTROL_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "FlashMasterControlMode", values: Some(NIKON_INTERVALINFOD6_FLASHMASTERCONTROLMODE_VALUES) },
+    BinDef { index: 558, width: 1, signed: true, name: "FlashMasterCompensation", values: None },
+    BinDef { index: 562, width: 1, signed: false, name: "FlashMasterOutput", values: None },
+    BinDef { index: 564, width: 1, signed: false, name: "FlashWirelessOption", values: Some(NIKON_INTERVALINFOD6_FLASHWIRELESSOPTION_VALUES) },
+    BinDef { index: 714, width: 1, signed: false, name: "MovieType", values: Some(NIKON_INTERVALINFOD6_MOVIETYPE_VALUES) },
+];
 
 pub static NIKON_INTERVALINFOD6_INTERVALEXPOSURESMOOTHING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -20780,6 +22631,13 @@ pub static NIKON_INTERVALINFOZ7II: phf::Map<u16, TagDef> = phf::phf_map! {
     43u16 => TagDef { name: "ImageArea", values: Some(NIKON_INTERVALINFOZ7II_IMAGEAREA_VALUES) },
 };
 
+/// Nikon::IntervalInfoZ7II ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_INTERVALINFOZ7II_BIN: &[BinDef] = &[
+    BinDef { index: 36, width: 2, signed: false, name: "IntervalShooting", values: None },
+    BinDef { index: 40, width: 2, signed: false, name: "IntervalFrame", values: None },
+    BinDef { index: 43, width: 1, signed: false, name: "ImageArea", values: Some(NIKON_INTERVALINFOZ7II_IMAGEAREA_VALUES) },
+];
+
 pub static NIKON_INTERVALINFOZ7II_IMAGEAREA_VALUES: &[(i64, &str)] = &[
     (0, "FX (36x24)"),
     (1, "DX (24x16)"),
@@ -20815,6 +22673,16 @@ pub static NIKON_LENSDATA00: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "MaxFocalLength", values: None },
 };
 
+/// Nikon::LensData00 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_LENSDATA00_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "MaxApertureAtMinFocal", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "MaxApertureAtMaxFocal", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "LensIDNumber", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "LensFStops", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "MaxFocalLength", values: None },
+];
+
 /// Nikon::LensData01 tags
 pub static NIKON_LENSDATA01: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "LensDataVersion", values: None },
@@ -20832,6 +22700,22 @@ pub static NIKON_LENSDATA01: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "FocusDistance", values: None },
 };
 
+/// Nikon::LensData01 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_LENSDATA01_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "LensIDNumber", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "LensFStops", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "MaxApertureAtMinFocal", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "MaxApertureAtMaxFocal", values: None },
+    BinDef { index: 18, width: 1, signed: false, name: "EffectiveMaxAperture", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExitPupilPosition", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AFAperture", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "FocusPosition", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "FocusDistance", values: None },
+];
+
 /// Nikon::LensData0204 tags
 pub static NIKON_LENSDATA0204: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "LensDataVersion", values: None },
@@ -20848,6 +22732,22 @@ pub static NIKON_LENSDATA0204: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "AFAperture", values: None },
     8u16 => TagDef { name: "FocusPosition", values: None },
 };
+
+/// Nikon::LensData0204 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_LENSDATA0204_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "LensIDNumber", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "LensFStops", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "MaxApertureAtMinFocal", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "MaxApertureAtMaxFocal", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "EffectiveMaxAperture", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExitPupilPosition", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AFAperture", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "FocusPosition", values: None },
+];
 
 /// Nikon::LensData0400 tags
 pub static NIKON_LENSDATA0400: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -20900,6 +22800,32 @@ pub static NIKON_LENSDATA0800: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Nikon::LensData0800 Mask bitfields (ExifTool 0.1-style indices)
 pub static NIKON_LENSDATA0800_MASKS: &[MaskDef] = &[
     MaskDef { index: 95, mask: 0x1, name: "LensMountType", values: Some(NIKON_LENSDATA0800_LENSMOUNTTYPE_VALUES) },
+];
+
+/// Nikon::LensData0800 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_LENSDATA0800_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "LensIDNumber", values: None },
+    BinDef { index: 14, width: 1, signed: false, name: "LensFStops", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "MaxApertureAtMinFocal", values: None },
+    BinDef { index: 18, width: 1, signed: false, name: "MaxApertureAtMaxFocal", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "MCUVersion", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "EffectiveMaxAperture", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ExitPupilPosition", values: None },
+    BinDef { index: 48, width: 2, signed: false, name: "LensID", values: Some(NIKON_LENSDATA0800_LENSID_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "AFAperture", values: None },
+    BinDef { index: 52, width: 2, signed: false, name: "LensFirmwareVersion", values: None },
+    BinDef { index: 54, width: 2, signed: false, name: "MaxAperture", values: None },
+    BinDef { index: 56, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 76, width: 1, signed: false, name: "FocusDistanceRangeWidth", values: None },
+    BinDef { index: 78, width: 2, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 86, width: 1, signed: false, name: "LensDriveEnd", values: None },
+    BinDef { index: 88, width: 1, signed: false, name: "FocusStepsFromInfinity", values: None },
+    BinDef { index: 90, width: 4, signed: true, name: "LensPositionAbsolute", values: None },
 ];
 
 pub static NIKON_LENSDATA0800_LENSID_VALUES: &[(i64, &str)] = &[
@@ -20970,6 +22896,11 @@ pub static NIKON_LOCATIONINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "CountryCode", values: None },
     9u16 => TagDef { name: "Location", values: None },
 };
+
+/// Nikon::LocationInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_LOCATIONINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "TextEncoding", values: Some(NIKON_LOCATIONINFO_TEXTENCODING_VALUES) },
+];
 
 pub static NIKON_LOCATIONINFO_TEXTENCODING_VALUES: &[(i64, &str)] = &[
     (0, "n/a"),
@@ -21216,6 +23147,11 @@ pub static NIKON_MAKERNOTES0X51: phf::Map<u16, TagDef> = phf::phf_map! {
     10u16 => TagDef { name: "NEFCompression", values: Some(NIKON_MAKERNOTES0X51_NEFCOMPRESSION_VALUES) },
 };
 
+/// Nikon::MakerNotes0x51 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MAKERNOTES0X51_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "NEFCompression", values: Some(NIKON_MAKERNOTES0X51_NEFCOMPRESSION_VALUES) },
+];
+
 pub static NIKON_MAKERNOTES0X51_NEFCOMPRESSION_VALUES: &[(i64, &str)] = &[
     (1, "Lossy (type 1)"),
     (10, "Packed 14 bits"),
@@ -21245,6 +23181,13 @@ pub static NIKON_MAKERNOTES0X56_MASKS: &[MaskDef] = &[
     MaskDef { index: 4, mask: 0x1ff80000, name: "BurstStartFolderNumber", values: None },
     MaskDef { index: 4, mask: 0x7ffe0, name: "BurstStartImageNumber", values: None },
     MaskDef { index: 4, mask: 0x1f, name: "BurstStartImageType", values: Some(NIKON_MAKERNOTES0X56_BURSTSTARTIMAGETYPE_VALUES) },
+];
+
+/// Nikon::MakerNotes0x56 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MAKERNOTES0X56_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 1, signed: false, name: "PixelShiftActive", values: Some(NIKON_MAKERNOTES0X56_PIXELSHIFTACTIVE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "BurstFlag", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "BurstShotNumber", values: None },
 ];
 
 pub static NIKON_MAKERNOTES0X56_PIXELSHIFTACTIVE_VALUES: &[(i64, &str)] = &[
@@ -21361,6 +23304,72 @@ pub static NIKON_MENUSETTINGSZ6III: phf::Map<u16, TagDef> = phf::phf_map! {
     908u16 => TagDef { name: "PixelShiftDelay", values: None },
     910u16 => TagDef { name: "PixelShiftInterval", values: None },
 };
+
+/// Nikon::MenuSettingsZ6III ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ6III_BIN: &[BinDef] = &[
+    BinDef { index: 1002, width: 1, signed: false, name: "SubjectDetectionAreaMF", values: Some(NIKON_MENUSETTINGSZ6III_SUBJECTDETECTIONAREAMF_VALUES) },
+    BinDef { index: 1004, width: 1, signed: false, name: "LinkVRToFocusPoint", values: Some(NIKON_MENUSETTINGSZ6III_LINKVRTOFOCUSPOINT_VALUES) },
+    BinDef { index: 1046, width: 1, signed: false, name: "MovieSlowMotion", values: Some(NIKON_MENUSETTINGSZ6III_MOVIESLOWMOTION_VALUES) },
+    BinDef { index: 1050, width: 1, signed: false, name: "MovieType", values: Some(NIKON_MENUSETTINGSZ6III_MOVIETYPE_VALUES) },
+    BinDef { index: 1162, width: 1, signed: false, name: "MovieFrameSize", values: Some(NIKON_MENUSETTINGSZ6III_MOVIEFRAMESIZE_VALUES) },
+    BinDef { index: 1164, width: 1, signed: false, name: "MovieFrameRate", values: Some(NIKON_MENUSETTINGSZ6III_MOVIEFRAMERATE_VALUES) },
+    BinDef { index: 2300, width: 1, signed: false, name: "Language", values: Some(NIKON_MENUSETTINGSZ6III_LANGUAGE_VALUES) },
+    BinDef { index: 2302, width: 1, signed: false, name: "TimeZone", values: Some(NIKON_MENUSETTINGSZ6III_TIMEZONE_VALUES) },
+    BinDef { index: 2308, width: 1, signed: false, name: "MonitorBrightness", values: Some(NIKON_MENUSETTINGSZ6III_MONITORBRIGHTNESS_VALUES) },
+    BinDef { index: 2444, width: 1, signed: false, name: "EmptySlotRelease", values: Some(NIKON_MENUSETTINGSZ6III_EMPTYSLOTRELEASE_VALUES) },
+    BinDef { index: 2450, width: 1, signed: false, name: "EnergySavingMode", values: Some(NIKON_MENUSETTINGSZ6III_ENERGYSAVINGMODE_VALUES) },
+    BinDef { index: 2476, width: 1, signed: false, name: "USBPowerDelivery", values: Some(NIKON_MENUSETTINGSZ6III_USBPOWERDELIVERY_VALUES) },
+    BinDef { index: 2480, width: 1, signed: false, name: "SaveFocusPosition", values: Some(NIKON_MENUSETTINGSZ6III_SAVEFOCUSPOSITION_VALUES) },
+    BinDef { index: 2487, width: 1, signed: false, name: "SilentPhotography", values: Some(NIKON_MENUSETTINGSZ6III_SILENTPHOTOGRAPHY_VALUES) },
+    BinDef { index: 2496, width: 1, signed: false, name: "AirplaneMode", values: Some(NIKON_MENUSETTINGSZ6III_AIRPLANEMODE_VALUES) },
+    BinDef { index: 360, width: 1, signed: false, name: "SingleFrame", values: None },
+    BinDef { index: 364, width: 1, signed: false, name: "HighFrameRate", values: Some(NIKON_MENUSETTINGSZ6III_HIGHFRAMERATE_VALUES) },
+    BinDef { index: 444, width: 1, signed: false, name: "MultipleExposureMode", values: Some(NIKON_MENUSETTINGSZ6III_MULTIPLEEXPOSUREMODE_VALUES) },
+    BinDef { index: 446, width: 1, signed: false, name: "MultiExposureShots", values: None },
+    BinDef { index: 476, width: 4, signed: false, name: "IntervalDurationHours", values: None },
+    BinDef { index: 480, width: 4, signed: false, name: "IntervalDurationMinutes", values: None },
+    BinDef { index: 484, width: 4, signed: false, name: "IntervalDurationSeconds", values: None },
+    BinDef { index: 492, width: 4, signed: false, name: "Intervals", values: None },
+    BinDef { index: 496, width: 4, signed: false, name: "ShotsPerInterval", values: None },
+    BinDef { index: 500, width: 1, signed: false, name: "IntervalExposureSmoothing", values: Some(NIKON_MENUSETTINGSZ6III_INTERVALEXPOSURESMOOTHING_VALUES) },
+    BinDef { index: 502, width: 1, signed: false, name: "IntervalPriority", values: Some(NIKON_MENUSETTINGSZ6III_INTERVALPRIORITY_VALUES) },
+    BinDef { index: 536, width: 1, signed: false, name: "FocusShiftNumberShots", values: None },
+    BinDef { index: 540, width: 1, signed: false, name: "FocusShiftStepWidth", values: None },
+    BinDef { index: 544, width: 1, signed: false, name: "FocusShiftInterval", values: None },
+    BinDef { index: 548, width: 1, signed: false, name: "FocusShiftExposureLock", values: Some(NIKON_MENUSETTINGSZ6III_FOCUSSHIFTEXPOSURELOCK_VALUES) },
+    BinDef { index: 648, width: 1, signed: false, name: "AutoISO", values: Some(NIKON_MENUSETTINGSZ6III_AUTOISO_VALUES) },
+    BinDef { index: 650, width: 2, signed: false, name: "ISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ6III_ISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 718, width: 1, signed: false, name: "DiffractionCompensation", values: Some(NIKON_MENUSETTINGSZ6III_DIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 719, width: 1, signed: false, name: "AutoDistortionControl", values: Some(NIKON_MENUSETTINGSZ6III_AUTODISTORTIONCONTROL_VALUES) },
+    BinDef { index: 720, width: 1, signed: false, name: "FlickerReductionShooting", values: Some(NIKON_MENUSETTINGSZ6III_FLICKERREDUCTIONSHOOTING_VALUES) },
+    BinDef { index: 722, width: 1, signed: false, name: "NikonMeteringMode", values: Some(NIKON_MENUSETTINGSZ6III_NIKONMETERINGMODE_VALUES) },
+    BinDef { index: 724, width: 1, signed: false, name: "FlashControlMode", values: Some(NIKON_MENUSETTINGSZ6III_FLASHCONTROLMODE_VALUES) },
+    BinDef { index: 730, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_MENUSETTINGSZ6III_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 734, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 742, width: 1, signed: false, name: "FlashWirelessOption", values: Some(NIKON_MENUSETTINGSZ6III_FLASHWIRELESSOPTION_VALUES) },
+    BinDef { index: 744, width: 1, signed: false, name: "FlashRemoteControl", values: Some(NIKON_MENUSETTINGSZ6III_FLASHREMOTECONTROL_VALUES) },
+    BinDef { index: 748, width: 1, signed: false, name: "FlashMasterControlMode", values: Some(NIKON_MENUSETTINGSZ6III_FLASHMASTERCONTROLMODE_VALUES) },
+    BinDef { index: 750, width: 1, signed: true, name: "FlashMasterCompensation", values: None },
+    BinDef { index: 754, width: 1, signed: false, name: "FlashMasterOutput", values: None },
+    BinDef { index: 832, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_MENUSETTINGSZ6III_AFAREAMODE_VALUES) },
+    BinDef { index: 834, width: 1, signed: false, name: "VRMode", values: Some(NIKON_MENUSETTINGSZ6III_VRMODE_VALUES) },
+    BinDef { index: 838, width: 1, signed: false, name: "BracketSet", values: Some(NIKON_MENUSETTINGSZ6III_BRACKETSET_VALUES) },
+    BinDef { index: 840, width: 1, signed: false, name: "BracketProgram", values: Some(NIKON_MENUSETTINGSZ6III_BRACKETPROGRAM_VALUES) },
+    BinDef { index: 842, width: 1, signed: false, name: "BracketIncrement", values: Some(NIKON_MENUSETTINGSZ6III_BRACKETINCREMENT_VALUES) },
+    BinDef { index: 852, width: 1, signed: false, name: "HDR", values: Some(NIKON_MENUSETTINGSZ6III_HDR_VALUES) },
+    BinDef { index: 858, width: 1, signed: false, name: "SecondarySlotFunction", values: Some(NIKON_MENUSETTINGSZ6III_SECONDARYSLOTFUNCTION_VALUES) },
+    BinDef { index: 864, width: 1, signed: false, name: "HDRLevel", values: Some(NIKON_MENUSETTINGSZ6III_HDRLEVEL_VALUES) },
+    BinDef { index: 868, width: 1, signed: false, name: "Slot2JpgSize", values: Some(NIKON_MENUSETTINGSZ6III_SLOT2JPGSIZE_VALUES) },
+    BinDef { index: 878, width: 1, signed: false, name: "SubjectDetection", values: Some(NIKON_MENUSETTINGSZ6III_SUBJECTDETECTION_VALUES) },
+    BinDef { index: 880, width: 1, signed: false, name: "DynamicAFAreaSize", values: Some(NIKON_MENUSETTINGSZ6III_DYNAMICAFAREASIZE_VALUES) },
+    BinDef { index: 884, width: 1, signed: false, name: "ToneMap", values: Some(NIKON_MENUSETTINGSZ6III_TONEMAP_VALUES) },
+    BinDef { index: 888, width: 1, signed: false, name: "PortraitImpressionBalance", values: Some(NIKON_MENUSETTINGSZ6III_PORTRAITIMPRESSIONBALANCE_VALUES) },
+    BinDef { index: 902, width: 1, signed: false, name: "HighFrequencyFlickerReduction", values: Some(NIKON_MENUSETTINGSZ6III_HIGHFREQUENCYFLICKERREDUCTION_VALUES) },
+    BinDef { index: 904, width: 1, signed: false, name: "PixelShiftShooting", values: Some(NIKON_MENUSETTINGSZ6III_PIXELSHIFTSHOOTING_VALUES) },
+    BinDef { index: 906, width: 1, signed: false, name: "PixelShiftNumberShots", values: Some(NIKON_MENUSETTINGSZ6III_PIXELSHIFTNUMBERSHOTS_VALUES) },
+    BinDef { index: 908, width: 1, signed: false, name: "PixelShiftDelay", values: None },
+    BinDef { index: 910, width: 1, signed: false, name: "PixelShiftInterval", values: None },
+];
 
 pub static NIKON_MENUSETTINGSZ6III_SUBJECTDETECTIONAREAMF_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -21819,6 +23828,49 @@ pub static NIKON_MENUSETTINGSZ7II: phf::Map<u16, TagDef> = phf::phf_map! {
     92u16 => TagDef { name: "ReleaseMode", values: Some(NIKON_MENUSETTINGSZ7II_RELEASEMODE_VALUES) },
 };
 
+/// Nikon::MenuSettingsZ7II ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ7II_BIN: &[BinDef] = &[
+    BinDef { index: 160, width: 4, signed: false, name: "IntervalDurationHours", values: None },
+    BinDef { index: 164, width: 4, signed: false, name: "IntervalDurationMinutes", values: None },
+    BinDef { index: 168, width: 4, signed: false, name: "IntervalDurationSeconds", values: None },
+    BinDef { index: 176, width: 4, signed: false, name: "Intervals", values: None },
+    BinDef { index: 180, width: 4, signed: false, name: "ShotsPerInterval", values: None },
+    BinDef { index: 184, width: 1, signed: false, name: "IntervalExposureSmoothing", values: Some(NIKON_MENUSETTINGSZ7II_INTERVALEXPOSURESMOOTHING_VALUES) },
+    BinDef { index: 186, width: 1, signed: false, name: "IntervalPriority", values: Some(NIKON_MENUSETTINGSZ7II_INTERVALPRIORITY_VALUES) },
+    BinDef { index: 220, width: 1, signed: false, name: "FocusShiftNumberShots", values: None },
+    BinDef { index: 224, width: 1, signed: false, name: "FocusShiftStepWidth", values: None },
+    BinDef { index: 228, width: 1, signed: false, name: "FocusShiftInterval", values: None },
+    BinDef { index: 232, width: 1, signed: false, name: "FocusShiftExposureLock", values: Some(NIKON_MENUSETTINGSZ7II_FOCUSSHIFTEXPOSURELOCK_VALUES) },
+    BinDef { index: 322, width: 1, signed: false, name: "DiffractionCompensation", values: Some(NIKON_MENUSETTINGSZ7II_DIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 323, width: 1, signed: false, name: "AutoDistortionControl", values: Some(NIKON_MENUSETTINGSZ7II_AUTODISTORTIONCONTROL_VALUES) },
+    BinDef { index: 326, width: 1, signed: false, name: "NikonMeteringMode", values: Some(NIKON_MENUSETTINGSZ7II_NIKONMETERINGMODE_VALUES) },
+    BinDef { index: 328, width: 1, signed: false, name: "FlashControlMode", values: Some(NIKON_MENUSETTINGSZ7II_FLASHCONTROLMODE_VALUES) },
+    BinDef { index: 334, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_MENUSETTINGSZ7II_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 338, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 346, width: 1, signed: false, name: "FlashWirelessOption", values: Some(NIKON_MENUSETTINGSZ7II_FLASHWIRELESSOPTION_VALUES) },
+    BinDef { index: 348, width: 1, signed: false, name: "FlashRemoteControl", values: Some(NIKON_MENUSETTINGSZ7II_FLASHREMOTECONTROL_VALUES) },
+    BinDef { index: 352, width: 1, signed: false, name: "FlashMasterControlMode", values: Some(NIKON_MENUSETTINGSZ7II_FLASHMASTERCONTROLMODE_VALUES) },
+    BinDef { index: 354, width: 1, signed: true, name: "FlashMasterCompensation", values: None },
+    BinDef { index: 358, width: 1, signed: false, name: "FlashMasterOutput", values: None },
+    BinDef { index: 502, width: 1, signed: false, name: "MovieFrameSize", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEFRAMESIZE_VALUES) },
+    BinDef { index: 504, width: 1, signed: false, name: "MovieFrameRate", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEFRAMERATE_VALUES) },
+    BinDef { index: 506, width: 1, signed: false, name: "MovieSlowMotion", values: Some(NIKON_MENUSETTINGSZ7II_MOVIESLOWMOTION_VALUES) },
+    BinDef { index: 510, width: 1, signed: false, name: "MovieType", values: Some(NIKON_MENUSETTINGSZ7II_MOVIETYPE_VALUES) },
+    BinDef { index: 516, width: 2, signed: false, name: "MovieISOAutoManualMode", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEISOAUTOMANUALMODE_VALUES) },
+    BinDef { index: 568, width: 1, signed: false, name: "MovieActiveD-Lighting", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEACTIVED_LIGHTING_VALUES) },
+    BinDef { index: 572, width: 1, signed: false, name: "MovieHighISONoiseReduction", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEHIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 574, width: 1, signed: false, name: "MovieVignetteControl", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEVIGNETTECONTROL_VALUES) },
+    BinDef { index: 576, width: 1, signed: false, name: "MovieVignetteControlSameAsPhoto", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEVIGNETTECONTROLSAMEASPHOTO_VALUES) },
+    BinDef { index: 577, width: 1, signed: false, name: "MovieDiffractionCompensation", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEDIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 578, width: 1, signed: false, name: "MovieAutoDistortionControl", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEAUTODISTORTIONCONTROL_VALUES) },
+    BinDef { index: 584, width: 1, signed: false, name: "MovieFocusMode", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEFOCUSMODE_VALUES) },
+    BinDef { index: 590, width: 1, signed: false, name: "MovieVibrationReduction", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEVIBRATIONREDUCTION_VALUES) },
+    BinDef { index: 591, width: 1, signed: false, name: "MovieVibrationReductionSameAsPhoto", values: Some(NIKON_MENUSETTINGSZ7II_MOVIEVIBRATIONREDUCTIONSAMEASPHOTO_VALUES) },
+    BinDef { index: 858, width: 1, signed: false, name: "HDMIOutputN-Log", values: Some(NIKON_MENUSETTINGSZ7II_HDMIOUTPUTN_LOG_VALUES) },
+    BinDef { index: 90, width: 1, signed: false, name: "SingleFrame", values: None },
+    BinDef { index: 92, width: 1, signed: false, name: "ReleaseMode", values: Some(NIKON_MENUSETTINGSZ7II_RELEASEMODE_VALUES) },
+];
+
 pub static NIKON_MENUSETTINGSZ7II_INTERVALEXPOSURESMOOTHING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -22121,6 +24173,73 @@ pub static NIKON_MENUSETTINGSZ8: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Nikon::MenuSettingsZ8 Mask bitfields (ExifTool 0.1-style indices)
 pub static NIKON_MENUSETTINGSZ8_MASKS: &[MaskDef] = &[
     MaskDef { index: 730, mask: 0x1, name: "MovieImageArea", values: Some(NIKON_MENUSETTINGSZ8_MOVIEIMAGEAREA_VALUES) },
+];
+
+/// Nikon::MenuSettingsZ8 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ8_BIN: &[BinDef] = &[
+    BinDef { index: 152, width: 1, signed: false, name: "MultipleExposureMode", values: Some(NIKON_MENUSETTINGSZ8_MULTIPLEEXPOSUREMODE_VALUES) },
+    BinDef { index: 154, width: 1, signed: false, name: "MultiExposureShots", values: None },
+    BinDef { index: 184, width: 4, signed: false, name: "IntervalDurationHours", values: None },
+    BinDef { index: 188, width: 4, signed: false, name: "IntervalDurationMinutes", values: None },
+    BinDef { index: 192, width: 4, signed: false, name: "IntervalDurationSeconds", values: None },
+    BinDef { index: 200, width: 4, signed: false, name: "Intervals", values: None },
+    BinDef { index: 204, width: 4, signed: false, name: "ShotsPerInterval", values: None },
+    BinDef { index: 208, width: 1, signed: false, name: "IntervalExposureSmoothing", values: Some(NIKON_MENUSETTINGSZ8_INTERVALEXPOSURESMOOTHING_VALUES) },
+    BinDef { index: 210, width: 1, signed: false, name: "IntervalPriority", values: Some(NIKON_MENUSETTINGSZ8_INTERVALPRIORITY_VALUES) },
+    BinDef { index: 244, width: 1, signed: false, name: "FocusShiftNumberShots", values: None },
+    BinDef { index: 248, width: 1, signed: false, name: "FocusShiftStepWidth", values: None },
+    BinDef { index: 252, width: 1, signed: false, name: "FocusShiftInterval", values: None },
+    BinDef { index: 256, width: 1, signed: false, name: "FocusShiftExposureLock", values: Some(NIKON_MENUSETTINGSZ8_FOCUSSHIFTEXPOSURELOCK_VALUES) },
+    BinDef { index: 286, width: 1, signed: false, name: "PhotoShootingMenuBank", values: Some(NIKON_MENUSETTINGSZ8_PHOTOSHOOTINGMENUBANK_VALUES) },
+    BinDef { index: 288, width: 1, signed: false, name: "ExtendedMenuBanks", values: Some(NIKON_MENUSETTINGSZ8_EXTENDEDMENUBANKS_VALUES) },
+    BinDef { index: 324, width: 1, signed: false, name: "PhotoShootingMenuBankImageArea", values: Some(NIKON_MENUSETTINGSZ8_PHOTOSHOOTINGMENUBANKIMAGEAREA_VALUES) },
+    BinDef { index: 338, width: 1, signed: false, name: "AutoISO", values: Some(NIKON_MENUSETTINGSZ8_AUTOISO_VALUES) },
+    BinDef { index: 340, width: 2, signed: false, name: "ISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ8_ISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 342, width: 2, signed: false, name: "ISOAutoFlashLimit", values: Some(NIKON_MENUSETTINGSZ8_ISOAUTOFLASHLIMIT_VALUES) },
+    BinDef { index: 350, width: 2, signed: true, name: "ISOAutoShutterTime", values: Some(NIKON_MENUSETTINGSZ8_ISOAUTOSHUTTERTIME_VALUES) },
+    BinDef { index: 432, width: 1, signed: false, name: "MovieVignetteControl", values: Some(NIKON_MENUSETTINGSZ8_MOVIEVIGNETTECONTROL_VALUES) },
+    BinDef { index: 434, width: 1, signed: false, name: "DiffractionCompensation", values: Some(NIKON_MENUSETTINGSZ8_DIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 436, width: 1, signed: false, name: "FlickerReductionShooting", values: Some(NIKON_MENUSETTINGSZ8_FLICKERREDUCTIONSHOOTING_VALUES) },
+    BinDef { index: 440, width: 1, signed: false, name: "FlashControlMode", values: Some(NIKON_MENUSETTINGSZ8_FLASHCONTROLMODE_VALUES) },
+    BinDef { index: 548, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_MENUSETTINGSZ8_AFAREAMODE_VALUES) },
+    BinDef { index: 550, width: 1, signed: false, name: "VRMode", values: Some(NIKON_MENUSETTINGSZ8_VRMODE_VALUES) },
+    BinDef { index: 554, width: 1, signed: false, name: "BracketSet", values: Some(NIKON_MENUSETTINGSZ8_BRACKETSET_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "BracketProgram", values: Some(NIKON_MENUSETTINGSZ8_BRACKETPROGRAM_VALUES) },
+    BinDef { index: 558, width: 1, signed: false, name: "BracketIncrement", values: Some(NIKON_MENUSETTINGSZ8_BRACKETINCREMENT_VALUES) },
+    BinDef { index: 570, width: 1, signed: false, name: "HDR", values: Some(NIKON_MENUSETTINGSZ8_HDR_VALUES) },
+    BinDef { index: 576, width: 1, signed: false, name: "SecondarySlotFunction", values: Some(NIKON_MENUSETTINGSZ8_SECONDARYSLOTFUNCTION_VALUES) },
+    BinDef { index: 582, width: 1, signed: false, name: "HDRLevel", values: Some(NIKON_MENUSETTINGSZ8_HDRLEVEL_VALUES) },
+    BinDef { index: 586, width: 1, signed: false, name: "Slot2JpgSize", values: Some(NIKON_MENUSETTINGSZ8_SLOT2JPGSIZE_VALUES) },
+    BinDef { index: 592, width: 1, signed: false, name: "DXCropAlert", values: Some(NIKON_MENUSETTINGSZ8_DXCROPALERT_VALUES) },
+    BinDef { index: 594, width: 1, signed: false, name: "SubjectDetection", values: Some(NIKON_MENUSETTINGSZ8_SUBJECTDETECTION_VALUES) },
+    BinDef { index: 596, width: 1, signed: false, name: "DynamicAFAreaSize", values: Some(NIKON_MENUSETTINGSZ8_DYNAMICAFAREASIZE_VALUES) },
+    BinDef { index: 618, width: 1, signed: false, name: "ToneMap", values: Some(NIKON_MENUSETTINGSZ8_TONEMAP_VALUES) },
+    BinDef { index: 622, width: 1, signed: false, name: "PortraitImpressionBalance", values: Some(NIKON_MENUSETTINGSZ8_PORTRAITIMPRESSIONBALANCE_VALUES) },
+    BinDef { index: 636, width: 1, signed: false, name: "HighFrequencyFlickerReduction", values: Some(NIKON_MENUSETTINGSZ8_HIGHFREQUENCYFLICKERREDUCTION_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "HighFrameRate", values: Some(NIKON_MENUSETTINGSZ8_HIGHFRAMERATE_VALUES) },
+    BinDef { index: 740, width: 1, signed: false, name: "MovieType", values: Some(NIKON_MENUSETTINGSZ8_MOVIETYPE_VALUES) },
+    BinDef { index: 742, width: 2, signed: false, name: "MovieISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ8_MOVIEISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 744, width: 1, signed: false, name: "MovieISOAutoControlManualMode", values: Some(NIKON_MENUSETTINGSZ8_MOVIEISOAUTOCONTROLMANUALMODE_VALUES) },
+    BinDef { index: 746, width: 2, signed: false, name: "MovieISOAutoManualMode", values: Some(NIKON_MENUSETTINGSZ8_MOVIEISOAUTOMANUALMODE_VALUES) },
+    BinDef { index: 820, width: 1, signed: false, name: "MovieActiveD-Lighting", values: Some(NIKON_MENUSETTINGSZ8_MOVIEACTIVED_LIGHTING_VALUES) },
+    BinDef { index: 822, width: 1, signed: false, name: "MovieHighISONoiseReduction", values: Some(NIKON_MENUSETTINGSZ8_MOVIEHIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 828, width: 1, signed: false, name: "MovieFlickerReduction", values: Some(NIKON_MENUSETTINGSZ8_MOVIEFLICKERREDUCTION_VALUES) },
+    BinDef { index: 830, width: 1, signed: false, name: "MovieMeteringMode", values: Some(NIKON_MENUSETTINGSZ8_MOVIEMETERINGMODE_VALUES) },
+    BinDef { index: 832, width: 1, signed: false, name: "MovieFocusMode", values: Some(NIKON_MENUSETTINGSZ8_MOVIEFOCUSMODE_VALUES) },
+    BinDef { index: 834, width: 1, signed: false, name: "MovieAFAreaMode", values: Some(NIKON_MENUSETTINGSZ8_MOVIEAFAREAMODE_VALUES) },
+    BinDef { index: 836, width: 1, signed: false, name: "MovieVRMode", values: Some(NIKON_MENUSETTINGSZ8_MOVIEVRMODE_VALUES) },
+    BinDef { index: 840, width: 1, signed: false, name: "MovieElectronicVR", values: Some(NIKON_MENUSETTINGSZ8_MOVIEELECTRONICVR_VALUES) },
+    BinDef { index: 842, width: 1, signed: false, name: "MovieSoundRecording", values: Some(NIKON_MENUSETTINGSZ8_MOVIESOUNDRECORDING_VALUES) },
+    BinDef { index: 844, width: 1, signed: false, name: "MicrophoneSensitivity", values: None },
+    BinDef { index: 846, width: 1, signed: false, name: "MicrophoneAttenuator", values: Some(NIKON_MENUSETTINGSZ8_MICROPHONEATTENUATOR_VALUES) },
+    BinDef { index: 848, width: 1, signed: false, name: "MicrophoneFrequencyResponse", values: Some(NIKON_MENUSETTINGSZ8_MICROPHONEFREQUENCYRESPONSE_VALUES) },
+    BinDef { index: 850, width: 1, signed: false, name: "WindNoiseReduction", values: Some(NIKON_MENUSETTINGSZ8_WINDNOISEREDUCTION_VALUES) },
+    BinDef { index: 882, width: 1, signed: false, name: "MovieFrameSize", values: Some(NIKON_MENUSETTINGSZ8_MOVIEFRAMESIZE_VALUES) },
+    BinDef { index: 884, width: 1, signed: false, name: "MovieFrameRate", values: Some(NIKON_MENUSETTINGSZ8_MOVIEFRAMERATE_VALUES) },
+    BinDef { index: 886, width: 1, signed: false, name: "MicrophoneJackPower", values: Some(NIKON_MENUSETTINGSZ8_MICROPHONEJACKPOWER_VALUES) },
+    BinDef { index: 887, width: 1, signed: false, name: "MovieDXCropAlert", values: Some(NIKON_MENUSETTINGSZ8_MOVIEDXCROPALERT_VALUES) },
+    BinDef { index: 888, width: 1, signed: false, name: "MovieSubjectDetection", values: Some(NIKON_MENUSETTINGSZ8_MOVIESUBJECTDETECTION_VALUES) },
+    BinDef { index: 896, width: 1, signed: false, name: "MovieHighResZoom", values: Some(NIKON_MENUSETTINGSZ8_MOVIEHIGHRESZOOM_VALUES) },
 ];
 
 pub static NIKON_MENUSETTINGSZ8_MULTIPLEEXPOSUREMODE_VALUES: &[(i64, &str)] = &[
@@ -22705,6 +24824,60 @@ pub static NIKON_MENUSETTINGSZ8V1: phf::Map<u16, TagDef> = phf::phf_map! {
     1899u16 => TagDef { name: "SensorShield", values: Some(NIKON_MENUSETTINGSZ8V1_SENSORSHIELD_VALUES) },
     943u16 => TagDef { name: "CustomSettingsZ8", values: None },
 };
+
+/// Nikon::MenuSettingsZ8v1 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ8V1_BIN: &[BinDef] = &[
+    BinDef { index: 1684, width: 1, signed: false, name: "TimeZone", values: Some(NIKON_MENUSETTINGSZ8V1_TIMEZONE_VALUES) },
+    BinDef { index: 1690, width: 1, signed: false, name: "MonitorBrightness", values: Some(NIKON_MENUSETTINGSZ8V1_MONITORBRIGHTNESS_VALUES) },
+    BinDef { index: 1698, width: 1, signed: false, name: "Language", values: Some(NIKON_MENUSETTINGSZ8V1_LANGUAGE_VALUES) },
+    BinDef { index: 1712, width: 1, signed: false, name: "AFFineTune", values: Some(NIKON_MENUSETTINGSZ8V1_AFFINETUNE_VALUES) },
+    BinDef { index: 1716, width: 2, signed: false, name: "NonCPULens1FocalLength", values: None },
+    BinDef { index: 1718, width: 2, signed: false, name: "NonCPULens2FocalLength", values: None },
+    BinDef { index: 1720, width: 2, signed: false, name: "NonCPULens3FocalLength", values: None },
+    BinDef { index: 1722, width: 2, signed: false, name: "NonCPULens4FocalLength", values: None },
+    BinDef { index: 1724, width: 2, signed: false, name: "NonCPULens5FocalLength", values: None },
+    BinDef { index: 1726, width: 2, signed: false, name: "NonCPULens6FocalLength", values: None },
+    BinDef { index: 1728, width: 2, signed: false, name: "NonCPULens7FocalLength", values: None },
+    BinDef { index: 1730, width: 2, signed: false, name: "NonCPULens8FocalLength", values: None },
+    BinDef { index: 1732, width: 2, signed: false, name: "NonCPULens9FocalLength", values: None },
+    BinDef { index: 1734, width: 2, signed: false, name: "NonCPULens10FocalLength", values: None },
+    BinDef { index: 1736, width: 2, signed: false, name: "NonCPULens11FocalLength", values: None },
+    BinDef { index: 1738, width: 2, signed: false, name: "NonCPULens12FocalLength", values: None },
+    BinDef { index: 1740, width: 2, signed: false, name: "NonCPULens13FocalLength", values: None },
+    BinDef { index: 1742, width: 2, signed: false, name: "NonCPULens14FocalLength", values: None },
+    BinDef { index: 1744, width: 2, signed: false, name: "NonCPULens15FocalLength", values: None },
+    BinDef { index: 1746, width: 2, signed: false, name: "NonCPULens16FocalLength", values: None },
+    BinDef { index: 1748, width: 2, signed: false, name: "NonCPULens17FocalLength", values: None },
+    BinDef { index: 1750, width: 2, signed: false, name: "NonCPULens18FocalLength", values: None },
+    BinDef { index: 1752, width: 2, signed: false, name: "NonCPULens19FocalLength", values: None },
+    BinDef { index: 1754, width: 2, signed: false, name: "NonCPULens20FocalLength", values: None },
+    BinDef { index: 1756, width: 2, signed: false, name: "NonCPULens1MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS1MAXAPERTURE_VALUES) },
+    BinDef { index: 1758, width: 2, signed: false, name: "NonCPULens2MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS2MAXAPERTURE_VALUES) },
+    BinDef { index: 1760, width: 2, signed: false, name: "NonCPULens3MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS3MAXAPERTURE_VALUES) },
+    BinDef { index: 1762, width: 2, signed: false, name: "NonCPULens4MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS4MAXAPERTURE_VALUES) },
+    BinDef { index: 1764, width: 2, signed: false, name: "NonCPULens5MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS5MAXAPERTURE_VALUES) },
+    BinDef { index: 1766, width: 2, signed: false, name: "NonCPULens6MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS6MAXAPERTURE_VALUES) },
+    BinDef { index: 1768, width: 2, signed: false, name: "NonCPULens7MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS7MAXAPERTURE_VALUES) },
+    BinDef { index: 1770, width: 2, signed: false, name: "NonCPULens8MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS8MAXAPERTURE_VALUES) },
+    BinDef { index: 1772, width: 2, signed: false, name: "NonCPULens9MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS9MAXAPERTURE_VALUES) },
+    BinDef { index: 1774, width: 2, signed: false, name: "NonCPULens10MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS10MAXAPERTURE_VALUES) },
+    BinDef { index: 1776, width: 2, signed: false, name: "NonCPULens11MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS11MAXAPERTURE_VALUES) },
+    BinDef { index: 1778, width: 2, signed: false, name: "NonCPULens12MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS12MAXAPERTURE_VALUES) },
+    BinDef { index: 1780, width: 2, signed: false, name: "NonCPULens13MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS13MAXAPERTURE_VALUES) },
+    BinDef { index: 1782, width: 2, signed: false, name: "NonCPULens14MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS14MAXAPERTURE_VALUES) },
+    BinDef { index: 1784, width: 2, signed: false, name: "NonCPULens15MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS15MAXAPERTURE_VALUES) },
+    BinDef { index: 1786, width: 2, signed: false, name: "NonCPULens16MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS16MAXAPERTURE_VALUES) },
+    BinDef { index: 1788, width: 2, signed: false, name: "NonCPULens17MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS17MAXAPERTURE_VALUES) },
+    BinDef { index: 1790, width: 2, signed: false, name: "NonCPULens18MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS18MAXAPERTURE_VALUES) },
+    BinDef { index: 1792, width: 2, signed: false, name: "NonCPULens19MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS19MAXAPERTURE_VALUES) },
+    BinDef { index: 1794, width: 2, signed: false, name: "NonCPULens20MaxAperture", values: Some(NIKON_MENUSETTINGSZ8V1_NONCPULENS20MAXAPERTURE_VALUES) },
+    BinDef { index: 1808, width: 1, signed: false, name: "HDMIOutputResolution", values: Some(NIKON_MENUSETTINGSZ8V1_HDMIOUTPUTRESOLUTION_VALUES) },
+    BinDef { index: 1826, width: 1, signed: false, name: "AirplaneMode", values: Some(NIKON_MENUSETTINGSZ8V1_AIRPLANEMODE_VALUES) },
+    BinDef { index: 1827, width: 1, signed: false, name: "EmptySlotRelease", values: Some(NIKON_MENUSETTINGSZ8V1_EMPTYSLOTRELEASE_VALUES) },
+    BinDef { index: 1862, width: 1, signed: false, name: "EnergySavingMode", values: Some(NIKON_MENUSETTINGSZ8V1_ENERGYSAVINGMODE_VALUES) },
+    BinDef { index: 1890, width: 1, signed: false, name: "USBPowerDelivery", values: Some(NIKON_MENUSETTINGSZ8V1_USBPOWERDELIVERY_VALUES) },
+    BinDef { index: 1899, width: 1, signed: false, name: "SensorShield", values: Some(NIKON_MENUSETTINGSZ8V1_SENSORSHIELD_VALUES) },
+];
 
 pub static NIKON_MENUSETTINGSZ8V1_TIMEZONE_VALUES: &[(i64, &str)] = &[
     (10, "+05:45 (Kathmandu)"),
@@ -23385,6 +25558,73 @@ pub static NIKON_MENUSETTINGSZ8V2: phf::Map<u16, TagDef> = phf::phf_map! {
     2216u16 => TagDef { name: "ReleaseModeButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ8V2_RELEASEMODEBUTTONPLAYBACKMODE_VALUES) },
     943u16 => TagDef { name: "CustomSettingsZ8", values: None },
 };
+
+/// Nikon::MenuSettingsZ8v2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ8V2_BIN: &[BinDef] = &[
+    BinDef { index: 1698, width: 1, signed: false, name: "Language", values: Some(NIKON_MENUSETTINGSZ8V2_LANGUAGE_VALUES) },
+    BinDef { index: 1700, width: 1, signed: false, name: "TimeZone", values: Some(NIKON_MENUSETTINGSZ8V2_TIMEZONE_VALUES) },
+    BinDef { index: 1706, width: 1, signed: false, name: "MonitorBrightness", values: Some(NIKON_MENUSETTINGSZ8V2_MONITORBRIGHTNESS_VALUES) },
+    BinDef { index: 1728, width: 1, signed: false, name: "AFFineTune", values: Some(NIKON_MENUSETTINGSZ8V2_AFFINETUNE_VALUES) },
+    BinDef { index: 1732, width: 2, signed: false, name: "NonCPULens1FocalLength", values: None },
+    BinDef { index: 1734, width: 2, signed: false, name: "NonCPULens2FocalLength", values: None },
+    BinDef { index: 1736, width: 2, signed: false, name: "NonCPULens3FocalLength", values: None },
+    BinDef { index: 1738, width: 2, signed: false, name: "NonCPULens4FocalLength", values: None },
+    BinDef { index: 1740, width: 2, signed: false, name: "NonCPULens5FocalLength", values: None },
+    BinDef { index: 1742, width: 2, signed: false, name: "NonCPULens6FocalLength", values: None },
+    BinDef { index: 1744, width: 2, signed: false, name: "NonCPULens7FocalLength", values: None },
+    BinDef { index: 1746, width: 2, signed: false, name: "NonCPULens8FocalLength", values: None },
+    BinDef { index: 1748, width: 2, signed: false, name: "NonCPULens9FocalLength", values: None },
+    BinDef { index: 1750, width: 2, signed: false, name: "NonCPULens10FocalLength", values: None },
+    BinDef { index: 1752, width: 2, signed: false, name: "NonCPULens11FocalLength", values: None },
+    BinDef { index: 1754, width: 2, signed: false, name: "NonCPULens12FocalLength", values: None },
+    BinDef { index: 1756, width: 2, signed: false, name: "NonCPULens13FocalLength", values: None },
+    BinDef { index: 1758, width: 2, signed: false, name: "NonCPULens14FocalLength", values: None },
+    BinDef { index: 1760, width: 2, signed: false, name: "NonCPULens15FocalLength", values: None },
+    BinDef { index: 1762, width: 2, signed: false, name: "NonCPULens16FocalLength", values: None },
+    BinDef { index: 1764, width: 2, signed: false, name: "NonCPULens17FocalLength", values: None },
+    BinDef { index: 1766, width: 2, signed: false, name: "NonCPULens18FocalLength", values: None },
+    BinDef { index: 1768, width: 2, signed: false, name: "NonCPULens19FocalLength", values: None },
+    BinDef { index: 1770, width: 2, signed: false, name: "NonCPULens20FocalLength", values: None },
+    BinDef { index: 1812, width: 4, signed: false, name: "NonCPULens1MaxAperture", values: None },
+    BinDef { index: 1816, width: 4, signed: false, name: "NonCPULens2MaxAperture", values: None },
+    BinDef { index: 1820, width: 4, signed: false, name: "NonCPULens3MaxAperture", values: None },
+    BinDef { index: 1824, width: 4, signed: false, name: "NonCPULens4MaxAperture", values: None },
+    BinDef { index: 1828, width: 4, signed: false, name: "NonCPULens5MaxAperture", values: None },
+    BinDef { index: 1832, width: 4, signed: false, name: "NonCPULens6MaxAperture", values: None },
+    BinDef { index: 1836, width: 4, signed: false, name: "NonCPULens7MaxAperture", values: None },
+    BinDef { index: 1840, width: 4, signed: false, name: "NonCPULens8MaxAperture", values: None },
+    BinDef { index: 1844, width: 4, signed: false, name: "NonCPULens9MaxAperture", values: None },
+    BinDef { index: 1848, width: 4, signed: false, name: "NonCPULens10MaxAperture", values: None },
+    BinDef { index: 1852, width: 4, signed: false, name: "NonCPULens11MaxAperture", values: None },
+    BinDef { index: 1856, width: 4, signed: false, name: "NonCPULens12MaxAperture", values: None },
+    BinDef { index: 1860, width: 4, signed: false, name: "NonCPULens13MaxAperture", values: None },
+    BinDef { index: 1864, width: 4, signed: false, name: "NonCPULens14MaxAperture", values: None },
+    BinDef { index: 1868, width: 4, signed: false, name: "NonCPULens15MaxAperture", values: None },
+    BinDef { index: 1872, width: 4, signed: false, name: "NonCPULens16MaxAperture", values: None },
+    BinDef { index: 1876, width: 4, signed: false, name: "NonCPULens17MaxAperture", values: None },
+    BinDef { index: 1880, width: 4, signed: false, name: "NonCPULens18MaxAperture", values: None },
+    BinDef { index: 1884, width: 4, signed: false, name: "NonCPULens19MaxAperture", values: None },
+    BinDef { index: 1888, width: 4, signed: false, name: "NonCPULens20MaxAperture", values: None },
+    BinDef { index: 1904, width: 1, signed: false, name: "HDMIOutputResolution", values: Some(NIKON_MENUSETTINGSZ8V2_HDMIOUTPUTRESOLUTION_VALUES) },
+    BinDef { index: 1922, width: 1, signed: false, name: "AirplaneMode", values: Some(NIKON_MENUSETTINGSZ8V2_AIRPLANEMODE_VALUES) },
+    BinDef { index: 1923, width: 1, signed: false, name: "EmptySlotRelease", values: Some(NIKON_MENUSETTINGSZ8V2_EMPTYSLOTRELEASE_VALUES) },
+    BinDef { index: 1958, width: 1, signed: false, name: "EnergySavingMode", values: Some(NIKON_MENUSETTINGSZ8V2_ENERGYSAVINGMODE_VALUES) },
+    BinDef { index: 1986, width: 1, signed: false, name: "USBPowerDelivery", values: Some(NIKON_MENUSETTINGSZ8V2_USBPOWERDELIVERY_VALUES) },
+    BinDef { index: 1995, width: 1, signed: false, name: "SensorShield", values: Some(NIKON_MENUSETTINGSZ8V2_SENSORSHIELD_VALUES) },
+    BinDef { index: 2046, width: 1, signed: false, name: "PixelShiftShooting", values: Some(NIKON_MENUSETTINGSZ8V2_PIXELSHIFTSHOOTING_VALUES) },
+    BinDef { index: 2048, width: 1, signed: false, name: "PixelShiftNumberShots", values: Some(NIKON_MENUSETTINGSZ8V2_PIXELSHIFTNUMBERSHOTS_VALUES) },
+    BinDef { index: 2050, width: 1, signed: false, name: "PixelShiftDelay", values: Some(NIKON_MENUSETTINGSZ8V2_PIXELSHIFTDELAY_VALUES) },
+    BinDef { index: 2052, width: 1, signed: false, name: "PlaybackButton", values: Some(NIKON_MENUSETTINGSZ8V2_PLAYBACKBUTTON_VALUES) },
+    BinDef { index: 2054, width: 1, signed: false, name: "WBButton", values: Some(NIKON_MENUSETTINGSZ8V2_WBBUTTON_VALUES) },
+    BinDef { index: 2056, width: 1, signed: false, name: "BracketButton", values: Some(NIKON_MENUSETTINGSZ8V2_BRACKETBUTTON_VALUES) },
+    BinDef { index: 2058, width: 1, signed: false, name: "LensFunc1ButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ8V2_LENSFUNC1BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2060, width: 1, signed: false, name: "LensFunc2ButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ8V2_LENSFUNC2BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2062, width: 1, signed: false, name: "PlaybackButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ8V2_PLAYBACKBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2064, width: 1, signed: false, name: "BracketButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ8V2_BRACKETBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2206, width: 1, signed: false, name: "MaximumApertureLV", values: Some(NIKON_MENUSETTINGSZ8V2_MAXIMUMAPERTURELV_VALUES) },
+    BinDef { index: 2208, width: 1, signed: false, name: "ReleaseModeButton", values: Some(NIKON_MENUSETTINGSZ8V2_RELEASEMODEBUTTON_VALUES) },
+    BinDef { index: 2216, width: 1, signed: false, name: "ReleaseModeButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ8V2_RELEASEMODEBUTTONPLAYBACKMODE_VALUES) },
+];
 
 pub static NIKON_MENUSETTINGSZ8V2_LANGUAGE_VALUES: &[(i64, &str)] = &[
     (15, "Portuguese"),
@@ -24582,6 +26822,78 @@ pub static NIKON_MENUSETTINGSZ9_MASKS: &[MaskDef] = &[
     MaskDef { index: 604, mask: 0x1, name: "MovieImageArea", values: Some(NIKON_MENUSETTINGSZ9_MOVIEIMAGEAREA_VALUES) },
 ];
 
+/// Nikon::MenuSettingsZ9 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ9_BIN: &[BinDef] = &[
+    BinDef { index: 140, width: 1, signed: false, name: "MultipleExposureMode", values: Some(NIKON_MENUSETTINGSZ9_MULTIPLEEXPOSUREMODE_VALUES) },
+    BinDef { index: 142, width: 1, signed: false, name: "MultiExposureShots", values: None },
+    BinDef { index: 1426, width: 1, signed: false, name: "Language", values: Some(NIKON_MENUSETTINGSZ9_LANGUAGE_VALUES) },
+    BinDef { index: 1428, width: 1, signed: false, name: "TimeZone", values: Some(NIKON_MENUSETTINGSZ9_TIMEZONE_VALUES) },
+    BinDef { index: 1434, width: 1, signed: false, name: "MonitorBrightness", values: None },
+    BinDef { index: 1456, width: 1, signed: false, name: "AFFineTune", values: Some(NIKON_MENUSETTINGSZ9_AFFINETUNE_VALUES) },
+    BinDef { index: 1552, width: 1, signed: false, name: "HDMIOutputResolution", values: Some(NIKON_MENUSETTINGSZ9_HDMIOUTPUTRESOLUTION_VALUES) },
+    BinDef { index: 1565, width: 1, signed: false, name: "SetClockFromLocationData", values: Some(NIKON_MENUSETTINGSZ9_SETCLOCKFROMLOCATIONDATA_VALUES) },
+    BinDef { index: 1572, width: 1, signed: false, name: "AirplaneMode", values: Some(NIKON_MENUSETTINGSZ9_AIRPLANEMODE_VALUES) },
+    BinDef { index: 1573, width: 1, signed: false, name: "EmptySlotRelease", values: Some(NIKON_MENUSETTINGSZ9_EMPTYSLOTRELEASE_VALUES) },
+    BinDef { index: 1608, width: 1, signed: false, name: "EnergySavingMode", values: Some(NIKON_MENUSETTINGSZ9_ENERGYSAVINGMODE_VALUES) },
+    BinDef { index: 1632, width: 1, signed: false, name: "RecordLocationData", values: Some(NIKON_MENUSETTINGSZ9_RECORDLOCATIONDATA_VALUES) },
+    BinDef { index: 1636, width: 1, signed: false, name: "USBPowerDelivery", values: Some(NIKON_MENUSETTINGSZ9_USBPOWERDELIVERY_VALUES) },
+    BinDef { index: 1645, width: 1, signed: false, name: "SensorShield", values: Some(NIKON_MENUSETTINGSZ9_SENSORSHIELD_VALUES) },
+    BinDef { index: 188, width: 4, signed: false, name: "Intervals", values: None },
+    BinDef { index: 192, width: 4, signed: false, name: "ShotsPerInterval", values: None },
+    BinDef { index: 232, width: 1, signed: false, name: "FocusShiftNumberShots", values: None },
+    BinDef { index: 236, width: 1, signed: false, name: "FocusShiftStepWidth", values: None },
+    BinDef { index: 240, width: 1, signed: false, name: "FocusShiftInterval", values: None },
+    BinDef { index: 244, width: 1, signed: false, name: "FocusShiftExposureLock", values: Some(NIKON_MENUSETTINGSZ9_FOCUSSHIFTEXPOSURELOCK_VALUES) },
+    BinDef { index: 274, width: 1, signed: false, name: "PhotoShootingMenuBank", values: Some(NIKON_MENUSETTINGSZ9_PHOTOSHOOTINGMENUBANK_VALUES) },
+    BinDef { index: 276, width: 1, signed: false, name: "ExtendedMenuBanks", values: Some(NIKON_MENUSETTINGSZ9_EXTENDEDMENUBANKS_VALUES) },
+    BinDef { index: 308, width: 1, signed: false, name: "PhotoShootingMenuBankImageArea", values: Some(NIKON_MENUSETTINGSZ9_PHOTOSHOOTINGMENUBANKIMAGEAREA_VALUES) },
+    BinDef { index: 322, width: 1, signed: false, name: "AutoISO", values: Some(NIKON_MENUSETTINGSZ9_AUTOISO_VALUES) },
+    BinDef { index: 324, width: 2, signed: false, name: "ISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ9_ISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 326, width: 2, signed: false, name: "ISOAutoFlashLimit", values: Some(NIKON_MENUSETTINGSZ9_ISOAUTOFLASHLIMIT_VALUES) },
+    BinDef { index: 334, width: 2, signed: true, name: "ISOAutoShutterTime", values: Some(NIKON_MENUSETTINGSZ9_ISOAUTOSHUTTERTIME_VALUES) },
+    BinDef { index: 416, width: 1, signed: false, name: "MovieVignetteControl", values: Some(NIKON_MENUSETTINGSZ9_MOVIEVIGNETTECONTROL_VALUES) },
+    BinDef { index: 418, width: 1, signed: false, name: "DiffractionCompensation", values: Some(NIKON_MENUSETTINGSZ9_DIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 420, width: 1, signed: false, name: "FlickerReductionShooting", values: Some(NIKON_MENUSETTINGSZ9_FLICKERREDUCTIONSHOOTING_VALUES) },
+    BinDef { index: 424, width: 1, signed: false, name: "FlashControlMode", values: Some(NIKON_MENUSETTINGSZ9_FLASHCONTROLMODE_VALUES) },
+    BinDef { index: 426, width: 1, signed: true, name: "FlashMasterCompensation", values: None },
+    BinDef { index: 430, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_MENUSETTINGSZ9_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 434, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 444, width: 1, signed: false, name: "FlashRemoteControl", values: Some(NIKON_MENUSETTINGSZ9_FLASHREMOTECONTROL_VALUES) },
+    BinDef { index: 456, width: 1, signed: false, name: "FlashWirelessOption", values: Some(NIKON_MENUSETTINGSZ9_FLASHWIRELESSOPTION_VALUES) },
+    BinDef { index: 528, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_MENUSETTINGSZ9_AFAREAMODE_VALUES) },
+    BinDef { index: 530, width: 1, signed: false, name: "VRMode", values: Some(NIKON_MENUSETTINGSZ9_VRMODE_VALUES) },
+    BinDef { index: 534, width: 1, signed: false, name: "BracketSet", values: Some(NIKON_MENUSETTINGSZ9_BRACKETSET_VALUES) },
+    BinDef { index: 536, width: 1, signed: false, name: "BracketProgram", values: Some(NIKON_MENUSETTINGSZ9_BRACKETPROGRAM_VALUES) },
+    BinDef { index: 538, width: 1, signed: false, name: "BracketIncrement", values: Some(NIKON_MENUSETTINGSZ9_BRACKETINCREMENT_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "SecondarySlotFunction", values: Some(NIKON_MENUSETTINGSZ9_SECONDARYSLOTFUNCTION_VALUES) },
+    BinDef { index: 572, width: 1, signed: false, name: "DXCropAlert", values: Some(NIKON_MENUSETTINGSZ9_DXCROPALERT_VALUES) },
+    BinDef { index: 574, width: 1, signed: false, name: "SubjectDetection", values: Some(NIKON_MENUSETTINGSZ9_SUBJECTDETECTION_VALUES) },
+    BinDef { index: 576, width: 1, signed: false, name: "DynamicAFAreaSize", values: Some(NIKON_MENUSETTINGSZ9_DYNAMICAFAREASIZE_VALUES) },
+    BinDef { index: 614, width: 1, signed: false, name: "MovieType", values: Some(NIKON_MENUSETTINGSZ9_MOVIETYPE_VALUES) },
+    BinDef { index: 616, width: 2, signed: false, name: "MovieISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ9_MOVIEISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 618, width: 1, signed: false, name: "MovieISOAutoControlManualMode", values: Some(NIKON_MENUSETTINGSZ9_MOVIEISOAUTOCONTROLMANUALMODE_VALUES) },
+    BinDef { index: 620, width: 2, signed: false, name: "MovieISOAutoManualMode", values: Some(NIKON_MENUSETTINGSZ9_MOVIEISOAUTOMANUALMODE_VALUES) },
+    BinDef { index: 696, width: 1, signed: false, name: "MovieActiveD-Lighting", values: Some(NIKON_MENUSETTINGSZ9_MOVIEACTIVED_LIGHTING_VALUES) },
+    BinDef { index: 698, width: 1, signed: false, name: "MovieHighISONoiseReduction", values: Some(NIKON_MENUSETTINGSZ9_MOVIEHIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 704, width: 1, signed: false, name: "MovieFlickerReduction", values: Some(NIKON_MENUSETTINGSZ9_MOVIEFLICKERREDUCTION_VALUES) },
+    BinDef { index: 706, width: 1, signed: false, name: "MovieMeteringMode", values: Some(NIKON_MENUSETTINGSZ9_MOVIEMETERINGMODE_VALUES) },
+    BinDef { index: 708, width: 1, signed: false, name: "MovieFocusMode", values: Some(NIKON_MENUSETTINGSZ9_MOVIEFOCUSMODE_VALUES) },
+    BinDef { index: 710, width: 1, signed: false, name: "MovieAFAreaMode", values: Some(NIKON_MENUSETTINGSZ9_MOVIEAFAREAMODE_VALUES) },
+    BinDef { index: 712, width: 1, signed: false, name: "MovieVRMode", values: Some(NIKON_MENUSETTINGSZ9_MOVIEVRMODE_VALUES) },
+    BinDef { index: 716, width: 1, signed: false, name: "MovieElectronicVR", values: Some(NIKON_MENUSETTINGSZ9_MOVIEELECTRONICVR_VALUES) },
+    BinDef { index: 718, width: 1, signed: false, name: "MovieSoundRecording", values: Some(NIKON_MENUSETTINGSZ9_MOVIESOUNDRECORDING_VALUES) },
+    BinDef { index: 720, width: 1, signed: false, name: "MicrophoneSensitivity", values: None },
+    BinDef { index: 722, width: 1, signed: false, name: "MicrophoneAttenuator", values: Some(NIKON_MENUSETTINGSZ9_MICROPHONEATTENUATOR_VALUES) },
+    BinDef { index: 724, width: 1, signed: false, name: "MicrophoneFrequencyResponse", values: Some(NIKON_MENUSETTINGSZ9_MICROPHONEFREQUENCYRESPONSE_VALUES) },
+    BinDef { index: 726, width: 1, signed: false, name: "WindNoiseReduction", values: Some(NIKON_MENUSETTINGSZ9_WINDNOISEREDUCTION_VALUES) },
+    BinDef { index: 748, width: 1, signed: false, name: "MovieToneMap", values: Some(NIKON_MENUSETTINGSZ9_MOVIETONEMAP_VALUES) },
+    BinDef { index: 754, width: 1, signed: false, name: "MovieFrameSize", values: Some(NIKON_MENUSETTINGSZ9_MOVIEFRAMESIZE_VALUES) },
+    BinDef { index: 756, width: 1, signed: false, name: "MovieFrameRate", values: Some(NIKON_MENUSETTINGSZ9_MOVIEFRAMERATE_VALUES) },
+    BinDef { index: 762, width: 1, signed: false, name: "MicrophoneJackPower", values: Some(NIKON_MENUSETTINGSZ9_MICROPHONEJACKPOWER_VALUES) },
+    BinDef { index: 763, width: 1, signed: false, name: "MovieDXCropAlert", values: Some(NIKON_MENUSETTINGSZ9_MOVIEDXCROPALERT_VALUES) },
+    BinDef { index: 764, width: 1, signed: false, name: "MovieSubjectDetection", values: Some(NIKON_MENUSETTINGSZ9_MOVIESUBJECTDETECTION_VALUES) },
+];
+
 pub static NIKON_MENUSETTINGSZ9_MULTIPLEEXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -25271,6 +27583,82 @@ pub static NIKON_MENUSETTINGSZ9V3: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Nikon::MenuSettingsZ9v3 Mask bitfields (ExifTool 0.1-style indices)
 pub static NIKON_MENUSETTINGSZ9V3_MASKS: &[MaskDef] = &[
     MaskDef { index: 646, mask: 0x1, name: "MovieImageArea", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEIMAGEAREA_VALUES) },
+];
+
+/// Nikon::MenuSettingsZ9v3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ9V3_BIN: &[BinDef] = &[
+    BinDef { index: 1474, width: 1, signed: false, name: "Language", values: Some(NIKON_MENUSETTINGSZ9V3_LANGUAGE_VALUES) },
+    BinDef { index: 1476, width: 1, signed: false, name: "TimeZone", values: Some(NIKON_MENUSETTINGSZ9V3_TIMEZONE_VALUES) },
+    BinDef { index: 1482, width: 1, signed: false, name: "MonitorBrightness", values: Some(NIKON_MENUSETTINGSZ9V3_MONITORBRIGHTNESS_VALUES) },
+    BinDef { index: 1504, width: 1, signed: false, name: "AFFineTune", values: Some(NIKON_MENUSETTINGSZ9V3_AFFINETUNE_VALUES) },
+    BinDef { index: 154, width: 1, signed: false, name: "MultipleExposureMode", values: Some(NIKON_MENUSETTINGSZ9V3_MULTIPLEEXPOSUREMODE_VALUES) },
+    BinDef { index: 156, width: 1, signed: false, name: "MultiExposureShots", values: None },
+    BinDef { index: 1600, width: 1, signed: false, name: "HDMIOutputResolution", values: Some(NIKON_MENUSETTINGSZ9V3_HDMIOUTPUTRESOLUTION_VALUES) },
+    BinDef { index: 1613, width: 1, signed: false, name: "SetClockFromLocationData", values: Some(NIKON_MENUSETTINGSZ9V3_SETCLOCKFROMLOCATIONDATA_VALUES) },
+    BinDef { index: 1620, width: 1, signed: false, name: "AirplaneMode", values: Some(NIKON_MENUSETTINGSZ9V3_AIRPLANEMODE_VALUES) },
+    BinDef { index: 1621, width: 1, signed: false, name: "EmptySlotRelease", values: Some(NIKON_MENUSETTINGSZ9V3_EMPTYSLOTRELEASE_VALUES) },
+    BinDef { index: 1656, width: 1, signed: false, name: "EnergySavingMode", values: Some(NIKON_MENUSETTINGSZ9V3_ENERGYSAVINGMODE_VALUES) },
+    BinDef { index: 1680, width: 1, signed: false, name: "RecordLocationData", values: Some(NIKON_MENUSETTINGSZ9V3_RECORDLOCATIONDATA_VALUES) },
+    BinDef { index: 1684, width: 1, signed: false, name: "USBPowerDelivery", values: Some(NIKON_MENUSETTINGSZ9V3_USBPOWERDELIVERY_VALUES) },
+    BinDef { index: 1693, width: 1, signed: false, name: "SensorShield", values: Some(NIKON_MENUSETTINGSZ9V3_SENSORSHIELD_VALUES) },
+    BinDef { index: 1754, width: 1, signed: false, name: "FocusShiftAutoReset", values: Some(NIKON_MENUSETTINGSZ9V3_FOCUSSHIFTAUTORESET_VALUES) },
+    BinDef { index: 1810, width: 1, signed: false, name: "PreReleaseBurstLength", values: Some(NIKON_MENUSETTINGSZ9V3_PRERELEASEBURSTLENGTH_VALUES) },
+    BinDef { index: 1812, width: 1, signed: false, name: "PostReleaseBurstLength", values: Some(NIKON_MENUSETTINGSZ9V3_POSTRELEASEBURSTLENGTH_VALUES) },
+    BinDef { index: 204, width: 4, signed: false, name: "Intervals", values: None },
+    BinDef { index: 208, width: 4, signed: false, name: "ShotsPerInterval", values: None },
+    BinDef { index: 248, width: 1, signed: false, name: "FocusShiftNumberShots", values: None },
+    BinDef { index: 252, width: 1, signed: false, name: "FocusShiftStepWidth", values: None },
+    BinDef { index: 256, width: 1, signed: false, name: "FocusShiftInterval", values: None },
+    BinDef { index: 260, width: 1, signed: false, name: "FocusShiftExposureLock", values: Some(NIKON_MENUSETTINGSZ9V3_FOCUSSHIFTEXPOSURELOCK_VALUES) },
+    BinDef { index: 290, width: 1, signed: false, name: "PhotoShootingMenuBank", values: Some(NIKON_MENUSETTINGSZ9V3_PHOTOSHOOTINGMENUBANK_VALUES) },
+    BinDef { index: 292, width: 1, signed: false, name: "ExtendedMenuBanks", values: Some(NIKON_MENUSETTINGSZ9V3_EXTENDEDMENUBANKS_VALUES) },
+    BinDef { index: 328, width: 1, signed: false, name: "PhotoShootingMenuBankImageArea", values: Some(NIKON_MENUSETTINGSZ9V3_PHOTOSHOOTINGMENUBANKIMAGEAREA_VALUES) },
+    BinDef { index: 342, width: 1, signed: false, name: "AutoISO", values: Some(NIKON_MENUSETTINGSZ9V3_AUTOISO_VALUES) },
+    BinDef { index: 344, width: 2, signed: false, name: "ISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ9V3_ISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 346, width: 2, signed: false, name: "ISOAutoFlashLimit", values: Some(NIKON_MENUSETTINGSZ9V3_ISOAUTOFLASHLIMIT_VALUES) },
+    BinDef { index: 354, width: 2, signed: true, name: "ISOAutoShutterTime", values: Some(NIKON_MENUSETTINGSZ9V3_ISOAUTOSHUTTERTIME_VALUES) },
+    BinDef { index: 436, width: 1, signed: false, name: "MovieVignetteControl", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEVIGNETTECONTROL_VALUES) },
+    BinDef { index: 438, width: 1, signed: false, name: "DiffractionCompensation", values: Some(NIKON_MENUSETTINGSZ9V3_DIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 440, width: 1, signed: false, name: "FlickerReductionShooting", values: Some(NIKON_MENUSETTINGSZ9V3_FLICKERREDUCTIONSHOOTING_VALUES) },
+    BinDef { index: 444, width: 1, signed: false, name: "FlashControlMode", values: Some(NIKON_MENUSETTINGSZ9V3_FLASHCONTROLMODE_VALUES) },
+    BinDef { index: 446, width: 1, signed: true, name: "FlashMasterCompensation", values: None },
+    BinDef { index: 450, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_MENUSETTINGSZ9V3_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 454, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 548, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_MENUSETTINGSZ9V3_AFAREAMODE_VALUES) },
+    BinDef { index: 550, width: 1, signed: false, name: "VRMode", values: Some(NIKON_MENUSETTINGSZ9V3_VRMODE_VALUES) },
+    BinDef { index: 554, width: 1, signed: false, name: "BracketSet", values: Some(NIKON_MENUSETTINGSZ9V3_BRACKETSET_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "BracketProgram", values: Some(NIKON_MENUSETTINGSZ9V3_BRACKETPROGRAM_VALUES) },
+    BinDef { index: 558, width: 1, signed: false, name: "BracketIncrement", values: Some(NIKON_MENUSETTINGSZ9V3_BRACKETINCREMENT_VALUES) },
+    BinDef { index: 576, width: 1, signed: false, name: "SecondarySlotFunction", values: Some(NIKON_MENUSETTINGSZ9V3_SECONDARYSLOTFUNCTION_VALUES) },
+    BinDef { index: 592, width: 1, signed: false, name: "DXCropAlert", values: Some(NIKON_MENUSETTINGSZ9V3_DXCROPALERT_VALUES) },
+    BinDef { index: 594, width: 1, signed: false, name: "SubjectDetection", values: Some(NIKON_MENUSETTINGSZ9V3_SUBJECTDETECTION_VALUES) },
+    BinDef { index: 596, width: 1, signed: false, name: "DynamicAFAreaSize", values: Some(NIKON_MENUSETTINGSZ9V3_DYNAMICAFAREASIZE_VALUES) },
+    BinDef { index: 636, width: 1, signed: false, name: "HighFrequencyFlickerReduction", values: Some(NIKON_MENUSETTINGSZ9V3_HIGHFREQUENCYFLICKERREDUCTION_VALUES) },
+    BinDef { index: 656, width: 1, signed: false, name: "MovieType", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIETYPE_VALUES) },
+    BinDef { index: 658, width: 2, signed: false, name: "MovieISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 660, width: 1, signed: false, name: "MovieISOAutoControlManualMode", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEISOAUTOCONTROLMANUALMODE_VALUES) },
+    BinDef { index: 662, width: 2, signed: false, name: "MovieISOAutoManualMode", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEISOAUTOMANUALMODE_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "HighFrameRate", values: Some(NIKON_MENUSETTINGSZ9V3_HIGHFRAMERATE_VALUES) },
+    BinDef { index: 736, width: 1, signed: false, name: "MovieActiveD-Lighting", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEACTIVED_LIGHTING_VALUES) },
+    BinDef { index: 738, width: 1, signed: false, name: "MovieHighISONoiseReduction", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEHIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 744, width: 1, signed: false, name: "MovieFlickerReduction", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEFLICKERREDUCTION_VALUES) },
+    BinDef { index: 746, width: 1, signed: false, name: "MovieMeteringMode", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEMETERINGMODE_VALUES) },
+    BinDef { index: 748, width: 1, signed: false, name: "MovieFocusMode", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEFOCUSMODE_VALUES) },
+    BinDef { index: 750, width: 1, signed: false, name: "MovieAFAreaMode", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEAFAREAMODE_VALUES) },
+    BinDef { index: 752, width: 1, signed: false, name: "MovieVRMode", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEVRMODE_VALUES) },
+    BinDef { index: 756, width: 1, signed: false, name: "MovieElectronicVR", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEELECTRONICVR_VALUES) },
+    BinDef { index: 758, width: 1, signed: false, name: "MovieSoundRecording", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIESOUNDRECORDING_VALUES) },
+    BinDef { index: 760, width: 1, signed: false, name: "MicrophoneSensitivity", values: None },
+    BinDef { index: 762, width: 1, signed: false, name: "MicrophoneAttenuator", values: Some(NIKON_MENUSETTINGSZ9V3_MICROPHONEATTENUATOR_VALUES) },
+    BinDef { index: 764, width: 1, signed: false, name: "MicrophoneFrequencyResponse", values: Some(NIKON_MENUSETTINGSZ9V3_MICROPHONEFREQUENCYRESPONSE_VALUES) },
+    BinDef { index: 766, width: 1, signed: false, name: "WindNoiseReduction", values: Some(NIKON_MENUSETTINGSZ9V3_WINDNOISEREDUCTION_VALUES) },
+    BinDef { index: 788, width: 1, signed: false, name: "MovieToneMap", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIETONEMAP_VALUES) },
+    BinDef { index: 794, width: 1, signed: false, name: "MovieFrameSize", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEFRAMESIZE_VALUES) },
+    BinDef { index: 796, width: 1, signed: false, name: "MovieFrameRate", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEFRAMERATE_VALUES) },
+    BinDef { index: 802, width: 1, signed: false, name: "MicrophoneJackPower", values: Some(NIKON_MENUSETTINGSZ9V3_MICROPHONEJACKPOWER_VALUES) },
+    BinDef { index: 803, width: 1, signed: false, name: "MovieDXCropAlert", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEDXCROPALERT_VALUES) },
+    BinDef { index: 804, width: 1, signed: false, name: "MovieSubjectDetection", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIESUBJECTDETECTION_VALUES) },
+    BinDef { index: 812, width: 1, signed: false, name: "MovieHighResZoom", values: Some(NIKON_MENUSETTINGSZ9V3_MOVIEHIGHRESZOOM_VALUES) },
 ];
 
 pub static NIKON_MENUSETTINGSZ9V3_LANGUAGE_VALUES: &[(i64, &str)] = &[
@@ -26067,6 +28455,142 @@ pub static NIKON_MENUSETTINGSZ9V4: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Nikon::MenuSettingsZ9v4 Mask bitfields (ExifTool 0.1-style indices)
 pub static NIKON_MENUSETTINGSZ9V4_MASKS: &[MaskDef] = &[
     MaskDef { index: 646, mask: 0x1, name: "MovieImageArea", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEIMAGEAREA_VALUES) },
+];
+
+/// Nikon::MenuSettingsZ9v4 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MENUSETTINGSZ9V4_BIN: &[BinDef] = &[
+    BinDef { index: 1498, width: 1, signed: false, name: "Language", values: Some(NIKON_MENUSETTINGSZ9V4_LANGUAGE_VALUES) },
+    BinDef { index: 1500, width: 1, signed: false, name: "TimeZone", values: Some(NIKON_MENUSETTINGSZ9V4_TIMEZONE_VALUES) },
+    BinDef { index: 1506, width: 1, signed: false, name: "MonitorBrightness", values: Some(NIKON_MENUSETTINGSZ9V4_MONITORBRIGHTNESS_VALUES) },
+    BinDef { index: 1528, width: 1, signed: false, name: "AFFineTune", values: Some(NIKON_MENUSETTINGSZ9V4_AFFINETUNE_VALUES) },
+    BinDef { index: 1532, width: 2, signed: true, name: "NonCPULens1FocalLength", values: None },
+    BinDef { index: 1536, width: 2, signed: true, name: "NonCPULens2FocalLength", values: None },
+    BinDef { index: 154, width: 1, signed: false, name: "MultipleExposureMode", values: Some(NIKON_MENUSETTINGSZ9V4_MULTIPLEEXPOSUREMODE_VALUES) },
+    BinDef { index: 1540, width: 2, signed: true, name: "NonCPULens3FocalLength", values: None },
+    BinDef { index: 1544, width: 2, signed: true, name: "NonCPULens4FocalLength", values: None },
+    BinDef { index: 1548, width: 2, signed: true, name: "NonCPULens5FocalLength", values: None },
+    BinDef { index: 1552, width: 2, signed: true, name: "NonCPULens6FocalLength", values: None },
+    BinDef { index: 1556, width: 2, signed: true, name: "NonCPULens7FocalLength", values: None },
+    BinDef { index: 156, width: 1, signed: false, name: "MultiExposureShots", values: None },
+    BinDef { index: 1560, width: 2, signed: true, name: "NonCPULens8FocalLength", values: None },
+    BinDef { index: 1564, width: 2, signed: true, name: "NonCPULens9FocalLength", values: None },
+    BinDef { index: 1568, width: 2, signed: true, name: "NonCPULens10FocalLength", values: None },
+    BinDef { index: 1572, width: 2, signed: true, name: "NonCPULens11FocalLength", values: None },
+    BinDef { index: 1576, width: 2, signed: true, name: "NonCPULens12FocalLength", values: None },
+    BinDef { index: 1580, width: 2, signed: true, name: "NonCPULens13FocalLength", values: None },
+    BinDef { index: 1584, width: 2, signed: true, name: "NonCPULens14FocalLength", values: None },
+    BinDef { index: 1588, width: 2, signed: true, name: "NonCPULens15FocalLength", values: None },
+    BinDef { index: 1592, width: 2, signed: true, name: "NonCPULens16FocalLength", values: None },
+    BinDef { index: 1596, width: 2, signed: true, name: "NonCPULens17FocalLength", values: None },
+    BinDef { index: 1600, width: 2, signed: true, name: "NonCPULens18FocalLength", values: None },
+    BinDef { index: 1604, width: 2, signed: true, name: "NonCPULens19FocalLength", values: None },
+    BinDef { index: 1608, width: 2, signed: true, name: "NonCPULens20FocalLength", values: None },
+    BinDef { index: 1612, width: 2, signed: true, name: "NonCPULens1MaxAperture", values: None },
+    BinDef { index: 1616, width: 2, signed: true, name: "NonCPULens2MaxAperture", values: None },
+    BinDef { index: 1620, width: 2, signed: true, name: "NonCPULens3MaxAperture", values: None },
+    BinDef { index: 1624, width: 2, signed: true, name: "NonCPULens4MaxAperture", values: None },
+    BinDef { index: 1628, width: 2, signed: true, name: "NonCPULens5MaxAperture", values: None },
+    BinDef { index: 1632, width: 2, signed: true, name: "NonCPULens6MaxAperture", values: None },
+    BinDef { index: 1636, width: 2, signed: true, name: "NonCPULens7MaxAperture", values: None },
+    BinDef { index: 1640, width: 2, signed: true, name: "NonCPULens8MaxAperture", values: None },
+    BinDef { index: 1644, width: 2, signed: true, name: "NonCPULens9MaxAperture", values: None },
+    BinDef { index: 1648, width: 2, signed: true, name: "NonCPULens10MaxAperture", values: None },
+    BinDef { index: 1652, width: 2, signed: true, name: "NonCPULens11MaxAperture", values: None },
+    BinDef { index: 1656, width: 2, signed: true, name: "NonCPULens12MaxAperture", values: None },
+    BinDef { index: 1660, width: 2, signed: true, name: "NonCPULens13MaxAperture", values: None },
+    BinDef { index: 1664, width: 2, signed: true, name: "NonCPULens14MaxAperture", values: None },
+    BinDef { index: 1668, width: 2, signed: true, name: "NonCPULens15MaxAperture", values: None },
+    BinDef { index: 1672, width: 2, signed: true, name: "NonCPULens16MaxAperture", values: None },
+    BinDef { index: 1676, width: 2, signed: true, name: "NonCPULens17MaxAperture", values: None },
+    BinDef { index: 1680, width: 2, signed: true, name: "NonCPULens18MaxAperture", values: None },
+    BinDef { index: 1684, width: 2, signed: true, name: "NonCPULens19MaxAperture", values: None },
+    BinDef { index: 1688, width: 2, signed: true, name: "NonCPULens20MaxAperture", values: None },
+    BinDef { index: 1704, width: 1, signed: false, name: "HDMIOutputResolution", values: Some(NIKON_MENUSETTINGSZ9V4_HDMIOUTPUTRESOLUTION_VALUES) },
+    BinDef { index: 1717, width: 1, signed: false, name: "SetClockFromLocationData", values: Some(NIKON_MENUSETTINGSZ9V4_SETCLOCKFROMLOCATIONDATA_VALUES) },
+    BinDef { index: 1724, width: 1, signed: false, name: "AirplaneMode", values: Some(NIKON_MENUSETTINGSZ9V4_AIRPLANEMODE_VALUES) },
+    BinDef { index: 1725, width: 1, signed: false, name: "EmptySlotRelease", values: Some(NIKON_MENUSETTINGSZ9V4_EMPTYSLOTRELEASE_VALUES) },
+    BinDef { index: 1760, width: 1, signed: false, name: "EnergySavingMode", values: Some(NIKON_MENUSETTINGSZ9V4_ENERGYSAVINGMODE_VALUES) },
+    BinDef { index: 1784, width: 1, signed: false, name: "RecordLocationData", values: Some(NIKON_MENUSETTINGSZ9V4_RECORDLOCATIONDATA_VALUES) },
+    BinDef { index: 1788, width: 1, signed: false, name: "USBPowerDelivery", values: Some(NIKON_MENUSETTINGSZ9V4_USBPOWERDELIVERY_VALUES) },
+    BinDef { index: 1797, width: 1, signed: false, name: "SensorShield", values: Some(NIKON_MENUSETTINGSZ9V4_SENSORSHIELD_VALUES) },
+    BinDef { index: 1862, width: 1, signed: false, name: "AutoCapturePreset", values: Some(NIKON_MENUSETTINGSZ9V4_AUTOCAPTUREPRESET_VALUES) },
+    BinDef { index: 1864, width: 1, signed: false, name: "FocusShiftAutoReset", values: Some(NIKON_MENUSETTINGSZ9V4_FOCUSSHIFTAUTORESET_VALUES) },
+    BinDef { index: 1922, width: 1, signed: false, name: "PreReleaseBurstLength", values: Some(NIKON_MENUSETTINGSZ9V4_PRERELEASEBURSTLENGTH_VALUES) },
+    BinDef { index: 1924, width: 1, signed: false, name: "PostReleaseBurstLength", values: Some(NIKON_MENUSETTINGSZ9V4_POSTRELEASEBURSTLENGTH_VALUES) },
+    BinDef { index: 1938, width: 1, signed: false, name: "VerticalISOButton", values: Some(NIKON_MENUSETTINGSZ9V4_VERTICALISOBUTTON_VALUES) },
+    BinDef { index: 1940, width: 1, signed: false, name: "ExposureCompensationButton", values: Some(NIKON_MENUSETTINGSZ9V4_EXPOSURECOMPENSATIONBUTTON_VALUES) },
+    BinDef { index: 1942, width: 1, signed: false, name: "ISOButton", values: Some(NIKON_MENUSETTINGSZ9V4_ISOBUTTON_VALUES) },
+    BinDef { index: 2002, width: 1, signed: false, name: "ViewModeShowEffectsOfSettings", values: Some(NIKON_MENUSETTINGSZ9V4_VIEWMODESHOWEFFECTSOFSETTINGS_VALUES) },
+    BinDef { index: 2004, width: 1, signed: false, name: "DispButton", values: Some(NIKON_MENUSETTINGSZ9V4_DISPBUTTON_VALUES) },
+    BinDef { index: 204, width: 4, signed: false, name: "Intervals", values: None },
+    BinDef { index: 2052, width: 1, signed: false, name: "CommandDialFrameAdvanceZoom", values: Some(NIKON_MENUSETTINGSZ9V4_COMMANDDIALFRAMEADVANCEZOOM_VALUES) },
+    BinDef { index: 2054, width: 1, signed: false, name: "SubCommandDialFrameAdvanceZoom", values: Some(NIKON_MENUSETTINGSZ9V4_SUBCOMMANDDIALFRAMEADVANCEZOOM_VALUES) },
+    BinDef { index: 2056, width: 1, signed: false, name: "PlaybackButton", values: Some(NIKON_MENUSETTINGSZ9V4_PLAYBACKBUTTON_VALUES) },
+    BinDef { index: 2058, width: 1, signed: false, name: "WBButton", values: Some(NIKON_MENUSETTINGSZ9V4_WBBUTTON_VALUES) },
+    BinDef { index: 2060, width: 1, signed: false, name: "BracketButton", values: Some(NIKON_MENUSETTINGSZ9V4_BRACKETBUTTON_VALUES) },
+    BinDef { index: 2062, width: 1, signed: false, name: "FlashModeButton", values: Some(NIKON_MENUSETTINGSZ9V4_FLASHMODEBUTTON_VALUES) },
+    BinDef { index: 2064, width: 1, signed: false, name: "LensFunc1ButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ9V4_LENSFUNC1BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2066, width: 1, signed: false, name: "LensFunc2ButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ9V4_LENSFUNC2BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2068, width: 1, signed: false, name: "PlaybackButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ9V4_PLAYBACKBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2070, width: 1, signed: false, name: "BracketButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ9V4_BRACKETBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 2072, width: 1, signed: false, name: "FlashModeButtonPlaybackMode", values: Some(NIKON_MENUSETTINGSZ9V4_FLASHMODEBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 208, width: 4, signed: false, name: "ShotsPerInterval", values: None },
+    BinDef { index: 248, width: 1, signed: false, name: "FocusShiftNumberShots", values: None },
+    BinDef { index: 252, width: 1, signed: false, name: "FocusShiftStepWidth", values: None },
+    BinDef { index: 256, width: 1, signed: false, name: "FocusShiftInterval", values: None },
+    BinDef { index: 260, width: 1, signed: false, name: "FocusShiftExposureLock", values: Some(NIKON_MENUSETTINGSZ9V4_FOCUSSHIFTEXPOSURELOCK_VALUES) },
+    BinDef { index: 290, width: 1, signed: false, name: "PhotoShootingMenuBank", values: Some(NIKON_MENUSETTINGSZ9V4_PHOTOSHOOTINGMENUBANK_VALUES) },
+    BinDef { index: 292, width: 1, signed: false, name: "ExtendedMenuBanks", values: Some(NIKON_MENUSETTINGSZ9V4_EXTENDEDMENUBANKS_VALUES) },
+    BinDef { index: 328, width: 1, signed: false, name: "PhotoShootingMenuBankImageArea", values: Some(NIKON_MENUSETTINGSZ9V4_PHOTOSHOOTINGMENUBANKIMAGEAREA_VALUES) },
+    BinDef { index: 342, width: 1, signed: false, name: "AutoISO", values: Some(NIKON_MENUSETTINGSZ9V4_AUTOISO_VALUES) },
+    BinDef { index: 344, width: 2, signed: false, name: "ISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ9V4_ISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 346, width: 2, signed: false, name: "ISOAutoFlashLimit", values: Some(NIKON_MENUSETTINGSZ9V4_ISOAUTOFLASHLIMIT_VALUES) },
+    BinDef { index: 354, width: 2, signed: true, name: "ISOAutoShutterTime", values: Some(NIKON_MENUSETTINGSZ9V4_ISOAUTOSHUTTERTIME_VALUES) },
+    BinDef { index: 436, width: 1, signed: false, name: "MovieVignetteControl", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEVIGNETTECONTROL_VALUES) },
+    BinDef { index: 438, width: 1, signed: false, name: "DiffractionCompensation", values: Some(NIKON_MENUSETTINGSZ9V4_DIFFRACTIONCOMPENSATION_VALUES) },
+    BinDef { index: 440, width: 1, signed: false, name: "FlickerReductionShooting", values: Some(NIKON_MENUSETTINGSZ9V4_FLICKERREDUCTIONSHOOTING_VALUES) },
+    BinDef { index: 444, width: 1, signed: false, name: "FlashControlMode", values: Some(NIKON_MENUSETTINGSZ9V4_FLASHCONTROLMODE_VALUES) },
+    BinDef { index: 446, width: 1, signed: true, name: "FlashMasterCompensation", values: None },
+    BinDef { index: 450, width: 1, signed: false, name: "FlashGNDistance", values: Some(NIKON_MENUSETTINGSZ9V4_FLASHGNDISTANCE_VALUES) },
+    BinDef { index: 454, width: 1, signed: false, name: "FlashOutput", values: None },
+    BinDef { index: 548, width: 1, signed: false, name: "AFAreaMode", values: Some(NIKON_MENUSETTINGSZ9V4_AFAREAMODE_VALUES) },
+    BinDef { index: 550, width: 1, signed: false, name: "VRMode", values: Some(NIKON_MENUSETTINGSZ9V4_VRMODE_VALUES) },
+    BinDef { index: 554, width: 1, signed: false, name: "BracketSet", values: Some(NIKON_MENUSETTINGSZ9V4_BRACKETSET_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "BracketProgram", values: Some(NIKON_MENUSETTINGSZ9V4_BRACKETPROGRAM_VALUES) },
+    BinDef { index: 558, width: 1, signed: false, name: "BracketIncrement", values: Some(NIKON_MENUSETTINGSZ9V4_BRACKETINCREMENT_VALUES) },
+    BinDef { index: 570, width: 1, signed: false, name: "HDR", values: Some(NIKON_MENUSETTINGSZ9V4_HDR_VALUES) },
+    BinDef { index: 576, width: 1, signed: false, name: "SecondarySlotFunction", values: Some(NIKON_MENUSETTINGSZ9V4_SECONDARYSLOTFUNCTION_VALUES) },
+    BinDef { index: 582, width: 1, signed: false, name: "HDRLevel", values: Some(NIKON_MENUSETTINGSZ9V4_HDRLEVEL_VALUES) },
+    BinDef { index: 586, width: 1, signed: false, name: "Slot2JpgSize", values: Some(NIKON_MENUSETTINGSZ9V4_SLOT2JPGSIZE_VALUES) },
+    BinDef { index: 592, width: 1, signed: false, name: "DXCropAlert", values: Some(NIKON_MENUSETTINGSZ9V4_DXCROPALERT_VALUES) },
+    BinDef { index: 594, width: 1, signed: false, name: "SubjectDetection", values: Some(NIKON_MENUSETTINGSZ9V4_SUBJECTDETECTION_VALUES) },
+    BinDef { index: 596, width: 1, signed: false, name: "DynamicAFAreaSize", values: Some(NIKON_MENUSETTINGSZ9V4_DYNAMICAFAREASIZE_VALUES) },
+    BinDef { index: 636, width: 1, signed: false, name: "HighFrequencyFlickerReduction", values: Some(NIKON_MENUSETTINGSZ9V4_HIGHFREQUENCYFLICKERREDUCTION_VALUES) },
+    BinDef { index: 656, width: 1, signed: false, name: "MovieType", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIETYPE_VALUES) },
+    BinDef { index: 658, width: 2, signed: false, name: "MovieISOAutoHiLimit", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEISOAUTOHILIMIT_VALUES) },
+    BinDef { index: 660, width: 1, signed: false, name: "MovieISOAutoControlManualMode", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEISOAUTOCONTROLMANUALMODE_VALUES) },
+    BinDef { index: 662, width: 2, signed: false, name: "MovieISOAutoManualMode", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEISOAUTOMANUALMODE_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "HighFrameRate", values: Some(NIKON_MENUSETTINGSZ9V4_HIGHFRAMERATE_VALUES) },
+    BinDef { index: 736, width: 1, signed: false, name: "MovieActiveD-Lighting", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEACTIVED_LIGHTING_VALUES) },
+    BinDef { index: 738, width: 1, signed: false, name: "MovieHighISONoiseReduction", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEHIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 744, width: 1, signed: false, name: "MovieFlickerReduction", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEFLICKERREDUCTION_VALUES) },
+    BinDef { index: 746, width: 1, signed: false, name: "MovieMeteringMode", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEMETERINGMODE_VALUES) },
+    BinDef { index: 748, width: 1, signed: false, name: "MovieFocusMode", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEFOCUSMODE_VALUES) },
+    BinDef { index: 750, width: 1, signed: false, name: "MovieAFAreaMode", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEAFAREAMODE_VALUES) },
+    BinDef { index: 752, width: 1, signed: false, name: "MovieVRMode", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEVRMODE_VALUES) },
+    BinDef { index: 756, width: 1, signed: false, name: "MovieElectronicVR", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEELECTRONICVR_VALUES) },
+    BinDef { index: 758, width: 1, signed: false, name: "MovieSoundRecording", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIESOUNDRECORDING_VALUES) },
+    BinDef { index: 760, width: 1, signed: false, name: "MicrophoneSensitivity", values: None },
+    BinDef { index: 762, width: 1, signed: false, name: "MicrophoneAttenuator", values: Some(NIKON_MENUSETTINGSZ9V4_MICROPHONEATTENUATOR_VALUES) },
+    BinDef { index: 764, width: 1, signed: false, name: "MicrophoneFrequencyResponse", values: Some(NIKON_MENUSETTINGSZ9V4_MICROPHONEFREQUENCYRESPONSE_VALUES) },
+    BinDef { index: 766, width: 1, signed: false, name: "WindNoiseReduction", values: Some(NIKON_MENUSETTINGSZ9V4_WINDNOISEREDUCTION_VALUES) },
+    BinDef { index: 788, width: 1, signed: false, name: "MovieToneMap", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIETONEMAP_VALUES) },
+    BinDef { index: 794, width: 1, signed: false, name: "MovieFrameSize", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEFRAMESIZE_VALUES) },
+    BinDef { index: 796, width: 1, signed: false, name: "MovieFrameRate", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEFRAMERATE_VALUES) },
+    BinDef { index: 802, width: 1, signed: false, name: "MicrophoneJackPower", values: Some(NIKON_MENUSETTINGSZ9V4_MICROPHONEJACKPOWER_VALUES) },
+    BinDef { index: 803, width: 1, signed: false, name: "MovieDXCropAlert", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEDXCROPALERT_VALUES) },
+    BinDef { index: 804, width: 1, signed: false, name: "MovieSubjectDetection", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIESUBJECTDETECTION_VALUES) },
+    BinDef { index: 812, width: 1, signed: false, name: "MovieHighResZoom", values: Some(NIKON_MENUSETTINGSZ9V4_MOVIEHIGHRESZOOM_VALUES) },
 ];
 
 pub static NIKON_MENUSETTINGSZ9V4_LANGUAGE_VALUES: &[(i64, &str)] = &[
@@ -28240,6 +30764,12 @@ pub static NIKON_MULTIEXPOSURE: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "MultiExposureAutoGain", values: Some(NIKON_MULTIEXPOSURE_MULTIEXPOSUREAUTOGAIN_VALUES) },
 };
 
+/// Nikon::MultiExposure ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MULTIEXPOSURE_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "MultiExposureMode", values: Some(NIKON_MULTIEXPOSURE_MULTIEXPOSUREMODE_VALUES) },
+    BinDef { index: 3, width: 4, signed: false, name: "MultiExposureAutoGain", values: Some(NIKON_MULTIEXPOSURE_MULTIEXPOSUREAUTOGAIN_VALUES) },
+];
+
 pub static NIKON_MULTIEXPOSURE_MULTIEXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "Multiple Exposure"),
@@ -28258,6 +30788,12 @@ pub static NIKON_MULTIEXPOSURE2: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "MultiExposureMode", values: Some(NIKON_MULTIEXPOSURE2_MULTIEXPOSUREMODE_VALUES) },
     3u16 => TagDef { name: "MultiExposureOverlayMode", values: Some(NIKON_MULTIEXPOSURE2_MULTIEXPOSUREOVERLAYMODE_VALUES) },
 };
+
+/// Nikon::MultiExposure2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_MULTIEXPOSURE2_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "MultiExposureMode", values: Some(NIKON_MULTIEXPOSURE2_MULTIEXPOSUREMODE_VALUES) },
+    BinDef { index: 3, width: 4, signed: false, name: "MultiExposureOverlayMode", values: Some(NIKON_MULTIEXPOSURE2_MULTIEXPOSUREOVERLAYMODE_VALUES) },
+];
 
 pub static NIKON_MULTIEXPOSURE2_MULTIEXPOSUREMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -28285,6 +30821,14 @@ pub static NIKON_OFFSET13INFOZ9: phf::Map<u16, TagDef> = phf::phf_map! {
     3050u16 => TagDef { name: "AFAreaInitialWidth", values: None },
     3051u16 => TagDef { name: "AFAreaInitialHeight", values: None },
 };
+
+/// Nikon::Offset13InfoZ9 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_OFFSET13INFOZ9_BIN: &[BinDef] = &[
+    BinDef { index: 3048, width: 1, signed: true, name: "AFAreaInitialXPosition", values: None },
+    BinDef { index: 3049, width: 1, signed: true, name: "AFAreaInitialYPosition", values: None },
+    BinDef { index: 3050, width: 1, signed: false, name: "AFAreaInitialWidth", values: None },
+    BinDef { index: 3051, width: 1, signed: false, name: "AFAreaInitialHeight", values: None },
+];
 
 /// Nikon::OrientationInfo tags
 pub static NIKON_ORIENTATIONINFO: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -28326,6 +30870,20 @@ pub static NIKON_PICTURECONTROL: phf::Map<u16, TagDef> = phf::phf_map! {
     56u16 => TagDef { name: "ToningEffect", values: Some(NIKON_PICTURECONTROL_TONINGEFFECT_VALUES) },
     57u16 => TagDef { name: "ToningSaturation", values: None },
 };
+
+/// Nikon::PictureControl ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_PICTURECONTROL_BIN: &[BinDef] = &[
+    BinDef { index: 48, width: 1, signed: false, name: "PictureControlAdjust", values: Some(NIKON_PICTURECONTROL_PICTURECONTROLADJUST_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "PictureControlQuickAdjust", values: None },
+    BinDef { index: 50, width: 1, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 51, width: 1, signed: false, name: "Contrast", values: None },
+    BinDef { index: 52, width: 1, signed: false, name: "Brightness", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "Saturation", values: None },
+    BinDef { index: 54, width: 1, signed: false, name: "HueAdjustment", values: None },
+    BinDef { index: 55, width: 1, signed: false, name: "FilterEffect", values: Some(NIKON_PICTURECONTROL_FILTEREFFECT_VALUES) },
+    BinDef { index: 56, width: 1, signed: false, name: "ToningEffect", values: Some(NIKON_PICTURECONTROL_TONINGEFFECT_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "ToningSaturation", values: None },
+];
 
 pub static NIKON_PICTURECONTROL_PICTURECONTROLADJUST_VALUES: &[(i64, &str)] = &[
     (0, "Default Settings"),
@@ -28374,6 +30932,21 @@ pub static NIKON_PICTURECONTROL2: phf::Map<u16, TagDef> = phf::phf_map! {
     65u16 => TagDef { name: "ToningSaturation", values: None },
 };
 
+/// Nikon::PictureControl2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_PICTURECONTROL2_BIN: &[BinDef] = &[
+    BinDef { index: 48, width: 1, signed: false, name: "PictureControlAdjust", values: Some(NIKON_PICTURECONTROL2_PICTURECONTROLADJUST_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "PictureControlQuickAdjust", values: None },
+    BinDef { index: 51, width: 1, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 53, width: 1, signed: false, name: "Clarity", values: None },
+    BinDef { index: 55, width: 1, signed: false, name: "Contrast", values: None },
+    BinDef { index: 57, width: 1, signed: false, name: "Brightness", values: None },
+    BinDef { index: 59, width: 1, signed: false, name: "Saturation", values: None },
+    BinDef { index: 61, width: 1, signed: false, name: "Hue", values: None },
+    BinDef { index: 63, width: 1, signed: false, name: "FilterEffect", values: Some(NIKON_PICTURECONTROL2_FILTEREFFECT_VALUES) },
+    BinDef { index: 64, width: 1, signed: false, name: "ToningEffect", values: Some(NIKON_PICTURECONTROL2_TONINGEFFECT_VALUES) },
+    BinDef { index: 65, width: 1, signed: false, name: "ToningSaturation", values: None },
+];
+
 pub static NIKON_PICTURECONTROL2_PICTURECONTROLADJUST_VALUES: &[(i64, &str)] = &[
     (0, "Default Settings"),
     (1, "Quick Adjust"),
@@ -28421,6 +30994,22 @@ pub static NIKON_PICTURECONTROL3: phf::Map<u16, TagDef> = phf::phf_map! {
     73u16 => TagDef { name: "ToningSaturation", values: None },
     8u16 => TagDef { name: "PictureControlName", values: None },
 };
+
+/// Nikon::PictureControl3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_PICTURECONTROL3_BIN: &[BinDef] = &[
+    BinDef { index: 54, width: 1, signed: false, name: "PictureControlAdjust", values: Some(NIKON_PICTURECONTROL3_PICTURECONTROLADJUST_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "PictureControlQuickAdjust", values: None },
+    BinDef { index: 57, width: 1, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 59, width: 1, signed: false, name: "MidRangeSharpness", values: None },
+    BinDef { index: 61, width: 1, signed: false, name: "Clarity", values: None },
+    BinDef { index: 63, width: 1, signed: false, name: "Contrast", values: None },
+    BinDef { index: 65, width: 1, signed: false, name: "Brightness", values: None },
+    BinDef { index: 67, width: 1, signed: false, name: "Saturation", values: None },
+    BinDef { index: 69, width: 1, signed: false, name: "Hue", values: None },
+    BinDef { index: 71, width: 1, signed: false, name: "FilterEffect", values: Some(NIKON_PICTURECONTROL3_FILTEREFFECT_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "ToningEffect", values: Some(NIKON_PICTURECONTROL3_TONINGEFFECT_VALUES) },
+    BinDef { index: 73, width: 1, signed: false, name: "ToningSaturation", values: None },
+];
 
 pub static NIKON_PICTURECONTROL3_PICTURECONTROLADJUST_VALUES: &[(i64, &str)] = &[
     (0, "Default Settings"),
@@ -28560,11 +31149,21 @@ pub static NIKON_ROC: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "DigitalROC", values: None },
 };
 
+/// Nikon::ROC ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_ROC_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "DigitalROC", values: None },
+];
+
 /// Nikon::RetouchInfo tags
 pub static NIKON_RETOUCHINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "RetouchInfoVersion", values: None },
     5u16 => TagDef { name: "RetouchNEFProcessing", values: Some(NIKON_RETOUCHINFO_RETOUCHNEFPROCESSING_VALUES) },
 };
+
+/// Nikon::RetouchInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_RETOUCHINFO_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 1, signed: true, name: "RetouchNEFProcessing", values: Some(NIKON_RETOUCHINFO_RETOUCHNEFPROCESSING_VALUES) },
+];
 
 pub static NIKON_RETOUCHINFO_RETOUCHNEFPROCESSING_VALUES: &[(i64, &str)] = &[
     (-1, "Off"),
@@ -28583,6 +31182,12 @@ pub static NIKON_ROTATIONINFOD500: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static NIKON_ROTATIONINFOD500_MASKS: &[MaskDef] = &[
     MaskDef { index: 1330, mask: 0x1, name: "FlickerReductionIndicator", values: Some(NIKON_ROTATIONINFOD500_FLICKERREDUCTIONINDICATOR_VALUES) },
     MaskDef { index: 26, mask: 0x3, name: "Rotation", values: Some(NIKON_ROTATIONINFOD500_ROTATION_VALUES) },
+];
+
+/// Nikon::RotationInfoD500 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_ROTATIONINFOD500_BIN: &[BinDef] = &[
+    BinDef { index: 32, width: 1, signed: false, name: "Interval", values: None },
+    BinDef { index: 36, width: 1, signed: false, name: "IntervalFrame", values: None },
 ];
 
 pub static NIKON_ROTATIONINFOD500_FLICKERREDUCTIONINDICATOR_VALUES: &[(i64, &str)] = &[
@@ -28625,6 +31230,13 @@ pub static NIKON_SEQINFOD6: phf::Map<u16, TagDef> = phf::phf_map! {
     43u16 => TagDef { name: "ImageArea", values: Some(NIKON_SEQINFOD6_IMAGEAREA_VALUES) },
 };
 
+/// Nikon::SeqInfoD6 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SEQINFOD6_BIN: &[BinDef] = &[
+    BinDef { index: 36, width: 2, signed: false, name: "IntervalShooting", values: None },
+    BinDef { index: 40, width: 2, signed: false, name: "IntervalFrame", values: None },
+    BinDef { index: 43, width: 1, signed: false, name: "ImageArea", values: Some(NIKON_SEQINFOD6_IMAGEAREA_VALUES) },
+];
+
 pub static NIKON_SEQINFOD6_IMAGEAREA_VALUES: &[(i64, &str)] = &[
     (0, "FX (36x24)"),
     (1, "DX (24x16)"),
@@ -28640,6 +31252,13 @@ pub static NIKON_SEQINFOZ9: phf::Map<u16, TagDef> = phf::phf_map! {
     40u16 => TagDef { name: "IntervalShooting", values: None },
     42u16 => TagDef { name: "IntervalFrame", values: None },
 };
+
+/// Nikon::SeqInfoZ9 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SEQINFOZ9_BIN: &[BinDef] = &[
+    BinDef { index: 32, width: 1, signed: false, name: "FocusShiftShooting", values: None },
+    BinDef { index: 40, width: 2, signed: false, name: "IntervalShooting", values: None },
+    BinDef { index: 42, width: 2, signed: false, name: "IntervalFrame", values: None },
+];
 
 /// Nikon::SettingsInfoD810 tags
 pub static NIKON_SETTINGSINFOD810: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -28800,6 +31419,18 @@ pub static NIKON_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     589u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Nikon::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 102, width: 1, signed: false, name: "VR_0x66", values: Some(NIKON_SHOTINFO_VR_0X66_VALUES) },
+    BinDef { index: 106, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 110, width: 4, signed: false, name: "DeletedImageCount", values: None },
+    BinDef { index: 117, width: 1, signed: false, name: "VibrationReduction", values: Some(NIKON_SHOTINFO_VIBRATIONREDUCTION_VALUES) },
+    BinDef { index: 130, width: 1, signed: false, name: "VibrationReduction", values: Some(NIKON_SHOTINFO_VIBRATIONREDUCTION_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "DistortionControl", values: Some(NIKON_SHOTINFO_DISTORTIONCONTROL_VALUES) },
+    BinDef { index: 430, width: 1, signed: false, name: "VibrationReduction", values: Some(NIKON_SHOTINFO_VIBRATIONREDUCTION_VALUES) },
+    BinDef { index: 589, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 pub static NIKON_SHOTINFO_VR_0X66_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On (normal)"),
@@ -28827,6 +31458,12 @@ pub static NIKON_SHOTINFOD300S: phf::Map<u16, TagDef> = phf::phf_map! {
     804u16 => TagDef { name: "CustomSettingsD300S", values: None },
 };
 
+/// Nikon::ShotInfoD300S ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD300S_BIN: &[BinDef] = &[
+    BinDef { index: 613, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 646, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Nikon::ShotInfoD300a tags
 pub static NIKON_SHOTINFOD300A: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ShotInfoVersion", values: None },
@@ -28835,6 +31472,13 @@ pub static NIKON_SHOTINFOD300A: phf::Map<u16, TagDef> = phf::phf_map! {
     721u16 => TagDef { name: "AFFineTuneAdj", values: Some(NIKON_SHOTINFOD300A_AFFINETUNEADJ_VALUES) },
     790u16 => TagDef { name: "CustomSettingsD300", values: None },
 };
+
+/// Nikon::ShotInfoD300a ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD300A_BIN: &[BinDef] = &[
+    BinDef { index: 604, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 633, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 721, width: 2, signed: false, name: "AFFineTuneAdj", values: Some(NIKON_SHOTINFOD300A_AFFINETUNEADJ_VALUES) },
+];
 
 pub static NIKON_SHOTINFOD300A_AFFINETUNEADJ_VALUES: &[(i64, &str)] = &[
     (0, "0"),
@@ -28889,6 +31533,13 @@ pub static NIKON_SHOTINFOD300B: phf::Map<u16, TagDef> = phf::phf_map! {
     732u16 => TagDef { name: "AFFineTuneAdj", values: Some(NIKON_SHOTINFOD300B_AFFINETUNEADJ_VALUES) },
     802u16 => TagDef { name: "CustomSettingsD300", values: None },
 };
+
+/// Nikon::ShotInfoD300b ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD300B_BIN: &[BinDef] = &[
+    BinDef { index: 613, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 644, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 732, width: 2, signed: false, name: "AFFineTuneAdj", values: Some(NIKON_SHOTINFOD300B_AFFINETUNEADJ_VALUES) },
+];
 
 pub static NIKON_SHOTINFOD300B_AFFINETUNEADJ_VALUES: &[(i64, &str)] = &[
     (0, "0"),
@@ -28949,6 +31600,13 @@ pub static NIKON_SHOTINFOD3S_MASKS: &[MaskDef] = &[
     MaskDef { index: 671, mask: 0x40, name: "JPGCompression", values: Some(NIKON_SHOTINFOD3S_JPGCOMPRESSION_VALUES) },
 ];
 
+/// Nikon::ShotInfoD3S ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD3S_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: false, name: "ImageArea", values: Some(NIKON_SHOTINFOD3S_IMAGEAREA_VALUES) },
+    BinDef { index: 545, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 578, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 pub static NIKON_SHOTINFOD3S_IMAGEAREA_VALUES: &[(i64, &str)] = &[
     (0, "FX (36x24)"),
     (1, "DX (24x16)"),
@@ -28970,6 +31628,12 @@ pub static NIKON_SHOTINFOD3X: phf::Map<u16, TagDef> = phf::phf_map! {
     779u16 => TagDef { name: "CustomSettingsD3X", values: None },
 };
 
+/// Nikon::ShotInfoD3X ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD3X_BIN: &[BinDef] = &[
+    BinDef { index: 605, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 640, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Nikon::ShotInfoD3a tags
 pub static NIKON_SHOTINFOD3A: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ShotInfoVersion", values: None },
@@ -28982,6 +31646,12 @@ pub static NIKON_SHOTINFOD3A: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static NIKON_SHOTINFOD3A_MASKS: &[MaskDef] = &[
     MaskDef { index: 723, mask: 0x18, name: "NikonImageSize", values: Some(NIKON_SHOTINFOD3A_NIKONIMAGESIZE_VALUES) },
     MaskDef { index: 723, mask: 0x7, name: "ImageQuality", values: Some(NIKON_SHOTINFOD3A_IMAGEQUALITY_VALUES) },
+];
+
+/// Nikon::ShotInfoD3a ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD3A_BIN: &[BinDef] = &[
+    BinDef { index: 598, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 630, width: 4, signed: false, name: "ShutterCount", values: None },
 ];
 
 pub static NIKON_SHOTINFOD3A_NIKONIMAGESIZE_VALUES: &[(i64, &str)] = &[
@@ -29017,6 +31687,15 @@ pub static NIKON_SHOTINFOD3B: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static NIKON_SHOTINFOD3B_MASKS: &[MaskDef] = &[
     MaskDef { index: 732, mask: 0x18, name: "NikonImageSize", values: Some(NIKON_SHOTINFOD3B_NIKONIMAGESIZE_VALUES) },
     MaskDef { index: 732, mask: 0x7, name: "ImageQuality", values: Some(NIKON_SHOTINFOD3B_IMAGEQUALITY_VALUES) },
+];
+
+/// Nikon::ShotInfoD3b ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD3B_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: false, name: "ImageArea", values: Some(NIKON_SHOTINFOD3B_IMAGEAREA_VALUES) },
+    BinDef { index: 605, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 637, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 639, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 650, width: 1, signed: false, name: "PreFlashReturnStrength", values: None },
 ];
 
 pub static NIKON_SHOTINFOD3B_IMAGEAREA_VALUES: &[(i64, &str)] = &[
@@ -29059,6 +31738,11 @@ pub static NIKON_SHOTINFOD40: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Nikon::ShotInfoD40 Mask bitfields (ExifTool 0.1-style indices)
 pub static NIKON_SHOTINFOD40_MASKS: &[MaskDef] = &[
     MaskDef { index: 586, mask: 0x8, name: "VibrationReduction", values: Some(NIKON_SHOTINFOD40_VIBRATIONREDUCTION_VALUES) },
+];
+
+/// Nikon::ShotInfoD40 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD40_BIN: &[BinDef] = &[
+    BinDef { index: 582, width: 4, signed: false, name: "ShutterCount", values: None },
 ];
 
 pub static NIKON_SHOTINFOD40_VIBRATIONREDUCTION_VALUES: &[(i64, &str)] = &[
@@ -29311,6 +31995,12 @@ pub static NIKON_SHOTINFOD5000: phf::Map<u16, TagDef> = phf::phf_map! {
     888u16 => TagDef { name: "CustomSettingsD5000", values: None },
 };
 
+/// Nikon::ShotInfoD5000 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD5000_BIN: &[BinDef] = &[
+    BinDef { index: 693, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 726, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Nikon::ShotInfoD5100 tags
 pub static NIKON_SHOTINFOD5100: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ShotInfoVersion", values: None },
@@ -29319,6 +32009,11 @@ pub static NIKON_SHOTINFOD5100: phf::Map<u16, TagDef> = phf::phf_map! {
     801u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Nikon::ShotInfoD5100 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD5100_BIN: &[BinDef] = &[
+    BinDef { index: 801, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Nikon::ShotInfoD5200 tags
 pub static NIKON_SHOTINFOD5200: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ShotInfoVersion", values: None },
@@ -29326,6 +32021,11 @@ pub static NIKON_SHOTINFOD5200: phf::Map<u16, TagDef> = phf::phf_map! {
     3285u16 => TagDef { name: "CustomSettingsD5200", values: None },
     4u16 => TagDef { name: "FirmwareVersion", values: None },
 };
+
+/// Nikon::ShotInfoD5200 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD5200_BIN: &[BinDef] = &[
+    BinDef { index: 3032, width: 4, signed: false, name: "ShutterCount", values: None },
+];
 
 /// Nikon::ShotInfoD6 tags
 pub static NIKON_SHOTINFOD6: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -29353,6 +32053,12 @@ pub static NIKON_SHOTINFOD700: phf::Map<u16, TagDef> = phf::phf_map! {
     804u16 => TagDef { name: "CustomSettingsD700", values: None },
 };
 
+/// Nikon::ShotInfoD700 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD700_BIN: &[BinDef] = &[
+    BinDef { index: 613, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 647, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Nikon::ShotInfoD7000 tags
 pub static NIKON_SHOTINFOD7000: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ShotInfoVersion", values: None },
@@ -29360,6 +32066,11 @@ pub static NIKON_SHOTINFOD7000: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "FirmwareVersion", values: None },
     800u16 => TagDef { name: "ShutterCount", values: None },
 };
+
+/// Nikon::ShotInfoD7000 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD7000_BIN: &[BinDef] = &[
+    BinDef { index: 800, width: 4, signed: false, name: "ShutterCount", values: None },
+];
 
 /// Nikon::ShotInfoD7500 tags
 pub static NIKON_SHOTINFOD7500: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -29390,6 +32101,11 @@ pub static NIKON_SHOTINFOD80_MASKS: &[MaskDef] = &[
     MaskDef { index: 590, mask: 0xe0, name: "FlashFired", values: None },
     MaskDef { index: 708, mask: 0xf0, name: "NikonImageSize", values: Some(NIKON_SHOTINFOD80_NIKONIMAGESIZE_VALUES) },
     MaskDef { index: 708, mask: 0xf, name: "ImageQuality", values: Some(NIKON_SHOTINFOD80_IMAGEQUALITY_VALUES) },
+];
+
+/// Nikon::ShotInfoD80 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD80_BIN: &[BinDef] = &[
+    BinDef { index: 586, width: 4, signed: false, name: "ShutterCount", values: None },
 ];
 
 pub static NIKON_SHOTINFOD80_ROTATION_VALUES: &[(i64, &str)] = &[
@@ -29434,6 +32150,17 @@ pub static NIKON_SHOTINFOD800: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "FirmwareVersion", values: None },
 };
 
+/// Nikon::ShotInfoD800 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD800_BIN: &[BinDef] = &[
+    BinDef { index: 1216, width: 1, signed: false, name: "RepeatingFlashOutputExternal", values: None },
+    BinDef { index: 1218, width: 1, signed: false, name: "RepeatingFlashRateExternal", values: None },
+    BinDef { index: 1219, width: 1, signed: false, name: "RepeatingFlashCountExternal", values: None },
+    BinDef { index: 1234, width: 1, signed: true, name: "FlashExposureComp2", values: None },
+    BinDef { index: 1242, width: 1, signed: false, name: "RepeatingFlashRateBuilt-in", values: None },
+    BinDef { index: 1243, width: 1, signed: false, name: "RepeatingFlashCountBuilt-in", values: None },
+    BinDef { index: 1531, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Nikon::ShotInfoD810 tags
 pub static NIKON_SHOTINFOD810: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ShotInfoVersion", values: None },
@@ -29463,6 +32190,12 @@ pub static NIKON_SHOTINFOD90: phf::Map<u16, TagDef> = phf::phf_map! {
     725u16 => TagDef { name: "ShutterCount", values: None },
     884u16 => TagDef { name: "CustomSettingsD90", values: None },
 };
+
+/// Nikon::ShotInfoD90 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_SHOTINFOD90_BIN: &[BinDef] = &[
+    BinDef { index: 693, width: 1, signed: false, name: "ISO2", values: None },
+    BinDef { index: 725, width: 4, signed: false, name: "ShutterCount", values: None },
+];
 
 /// Nikon::ShotInfoZ6III tags
 pub static NIKON_SHOTINFOZ6III: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -29534,6 +32267,13 @@ pub static NIKON_VRINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "VRType", values: Some(NIKON_VRINFO_VRTYPE_VALUES) },
 };
 
+/// Nikon::VRInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_VRINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "VibrationReduction", values: Some(NIKON_VRINFO_VIBRATIONREDUCTION_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "VRMode", values: Some(NIKON_VRINFO_VRMODE_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "VRType", values: Some(NIKON_VRINFO_VRTYPE_VALUES) },
+];
+
 pub static NIKON_VRINFO_VIBRATIONREDUCTION_VALUES: &[(i64, &str)] = &[
     (0, "n/a"),
     (1, "On"),
@@ -29566,6 +32306,13 @@ pub static NIKON_WORLDTIME: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "DateDisplayFormat", values: Some(NIKON_WORLDTIME_DATEDISPLAYFORMAT_VALUES) },
 };
 
+/// Nikon::WorldTime ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKON_WORLDTIME_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "TimeZone", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "DaylightSavings", values: Some(NIKON_WORLDTIME_DAYLIGHTSAVINGS_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "DateDisplayFormat", values: Some(NIKON_WORLDTIME_DATEDISPLAYFORMAT_VALUES) },
+];
+
 pub static NIKON_WORLDTIME_DAYLIGHTSAVINGS_VALUES: &[(i64, &str)] = &[
     (0, "No"),
     (1, "Yes"),
@@ -29583,6 +32330,11 @@ pub static NIKONCAPTURE_BRIGHTNESS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "EnhanceDarkTones", values: Some(NIKONCAPTURE_BRIGHTNESS_ENHANCEDARKTONES_VALUES) },
 };
 
+/// NikonCapture::Brightness ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_BRIGHTNESS_BIN: &[BinDef] = &[
+    BinDef { index: 8, width: 1, signed: false, name: "EnhanceDarkTones", values: Some(NIKONCAPTURE_BRIGHTNESS_ENHANCEDARKTONES_VALUES) },
+];
+
 pub static NIKONCAPTURE_BRIGHTNESS_ENHANCEDARKTONES_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -29593,6 +32345,12 @@ pub static NIKONCAPTURE_COLORBOOST: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ColorBoostType", values: Some(NIKONCAPTURE_COLORBOOST_COLORBOOSTTYPE_VALUES) },
     1u16 => TagDef { name: "ColorBoostLevel", values: None },
 };
+
+/// NikonCapture::ColorBoost ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_COLORBOOST_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "ColorBoostType", values: Some(NIKONCAPTURE_COLORBOOST_COLORBOOSTTYPE_VALUES) },
+    BinDef { index: 1, width: 4, signed: false, name: "ColorBoostLevel", values: None },
+];
 
 pub static NIKONCAPTURE_COLORBOOST_COLORBOOSTTYPE_VALUES: &[(i64, &str)] = &[
     (0, "Nature"),
@@ -29623,6 +32381,13 @@ pub static NIKONCAPTURE_EXPOSURE: phf::Map<u16, TagDef> = phf::phf_map! {
     36u16 => TagDef { name: "ActiveD-Lighting", values: Some(NIKONCAPTURE_EXPOSURE_ACTIVED_LIGHTING_VALUES) },
     37u16 => TagDef { name: "ActiveD-LightingMode", values: Some(NIKONCAPTURE_EXPOSURE_ACTIVED_LIGHTINGMODE_VALUES) },
 };
+
+/// NikonCapture::Exposure ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_EXPOSURE_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "ExposureAdj", values: None },
+    BinDef { index: 36, width: 1, signed: false, name: "ActiveD-Lighting", values: Some(NIKONCAPTURE_EXPOSURE_ACTIVED_LIGHTING_VALUES) },
+    BinDef { index: 37, width: 1, signed: false, name: "ActiveD-LightingMode", values: Some(NIKONCAPTURE_EXPOSURE_ACTIVED_LIGHTINGMODE_VALUES) },
+];
 
 pub static NIKONCAPTURE_EXPOSURE_ACTIVED_LIGHTING_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -29752,6 +32517,19 @@ pub static NIKONCAPTURE_NOISEREDUCTION: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "NoiseReductionIntensity", values: None },
 };
 
+/// NikonCapture::NoiseReduction ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_NOISEREDUCTION_BIN: &[BinDef] = &[
+    BinDef { index: 13, width: 4, signed: false, name: "NoiseReductionSharpness", values: None },
+    BinDef { index: 17, width: 2, signed: false, name: "NoiseReductionMethod", values: Some(NIKONCAPTURE_NOISEREDUCTION_NOISEREDUCTIONMETHOD_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "ColorMoireReduction", values: Some(NIKONCAPTURE_NOISEREDUCTION_COLORMOIREREDUCTION_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "NoiseReduction", values: Some(NIKONCAPTURE_NOISEREDUCTION_NOISEREDUCTION_VALUES) },
+    BinDef { index: 24, width: 4, signed: false, name: "ColorNoiseReductionIntensity", values: None },
+    BinDef { index: 28, width: 4, signed: false, name: "ColorNoiseReductionSharpness", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "EdgeNoiseReduction", values: Some(NIKONCAPTURE_NOISEREDUCTION_EDGENOISEREDUCTION_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "ColorMoireReductionMode", values: Some(NIKONCAPTURE_NOISEREDUCTION_COLORMOIREREDUCTIONMODE_VALUES) },
+    BinDef { index: 9, width: 4, signed: false, name: "NoiseReductionIntensity", values: None },
+];
+
 pub static NIKONCAPTURE_NOISEREDUCTION_NOISEREDUCTIONMETHOD_VALUES: &[(i64, &str)] = &[
     (0, "Faster"),
     (1, "Better Quality"),
@@ -29788,6 +32566,14 @@ pub static NIKONCAPTURE_PHOTOEFFECTS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "PhotoEffectsBlue", values: None },
 };
 
+/// NikonCapture::PhotoEffects ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_PHOTOEFFECTS_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "PhotoEffectsType", values: Some(NIKONCAPTURE_PHOTOEFFECTS_PHOTOEFFECTSTYPE_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "PhotoEffectsRed", values: None },
+    BinDef { index: 6, width: 2, signed: true, name: "PhotoEffectsGreen", values: None },
+    BinDef { index: 8, width: 2, signed: true, name: "PhotoEffectsBlue", values: None },
+];
+
 pub static NIKONCAPTURE_PHOTOEFFECTS_PHOTOEFFECTSTYPE_VALUES: &[(i64, &str)] = &[
     (0, "None"),
     (1, "B&W"),
@@ -29807,6 +32593,17 @@ pub static NIKONCAPTURE_PICTURECTRL: phf::Map<u16, TagDef> = phf::phf_map! {
     47u16 => TagDef { name: "HueAdj", values: None },
 };
 
+/// NikonCapture::PictureCtrl ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_PICTURECTRL_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "PictureControlActive", values: Some(NIKONCAPTURE_PICTURECTRL_PICTURECONTROLACTIVE_VALUES) },
+    BinDef { index: 42, width: 1, signed: false, name: "QuickAdjust", values: None },
+    BinDef { index: 43, width: 1, signed: false, name: "SharpeningAdj", values: None },
+    BinDef { index: 44, width: 1, signed: false, name: "ContrastAdj", values: None },
+    BinDef { index: 45, width: 1, signed: false, name: "BrightnessAdj", values: None },
+    BinDef { index: 46, width: 1, signed: false, name: "SaturationAdj", values: None },
+    BinDef { index: 47, width: 1, signed: false, name: "HueAdj", values: None },
+];
+
 pub static NIKONCAPTURE_PICTURECTRL_PICTURECONTROLACTIVE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -29816,6 +32613,11 @@ pub static NIKONCAPTURE_PICTURECTRL_PICTURECONTROLACTIVE_VALUES: &[(i64, &str)] 
 pub static NIKONCAPTURE_REDEYEDATA: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "RedEyeCorrection", values: Some(NIKONCAPTURE_REDEYEDATA_REDEYECORRECTION_VALUES) },
 };
+
+/// NikonCapture::RedEyeData ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_REDEYEDATA_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "RedEyeCorrection", values: Some(NIKONCAPTURE_REDEYEDATA_REDEYECORRECTION_VALUES) },
+];
 
 pub static NIKONCAPTURE_REDEYEDATA_REDEYECORRECTION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -29838,6 +32640,22 @@ pub static NIKONCAPTURE_UNSHARPDATA: phf::Map<u16, TagDef> = phf::phf_map! {
     77u16 => TagDef { name: "Unsharp3Intensity", values: None },
     79u16 => TagDef { name: "Unsharp3HaloWidth", values: None },
 };
+
+/// NikonCapture::UnsharpData ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_UNSHARPDATA_BIN: &[BinDef] = &[
+    BinDef { index: 100, width: 2, signed: false, name: "Unsharp4Color", values: Some(NIKONCAPTURE_UNSHARPDATA_UNSHARP4COLOR_VALUES) },
+    BinDef { index: 104, width: 2, signed: false, name: "Unsharp4Intensity", values: None },
+    BinDef { index: 106, width: 2, signed: false, name: "Unsharp4HaloWidth", values: None },
+    BinDef { index: 19, width: 2, signed: false, name: "Unsharp1Color", values: Some(NIKONCAPTURE_UNSHARPDATA_UNSHARP1COLOR_VALUES) },
+    BinDef { index: 23, width: 2, signed: false, name: "Unsharp1Intensity", values: None },
+    BinDef { index: 25, width: 2, signed: false, name: "Unsharp1HaloWidth", values: None },
+    BinDef { index: 46, width: 2, signed: false, name: "Unsharp2Color", values: Some(NIKONCAPTURE_UNSHARPDATA_UNSHARP2COLOR_VALUES) },
+    BinDef { index: 50, width: 2, signed: false, name: "Unsharp2Intensity", values: None },
+    BinDef { index: 52, width: 2, signed: false, name: "Unsharp2HaloWidth", values: None },
+    BinDef { index: 73, width: 2, signed: false, name: "Unsharp3Color", values: Some(NIKONCAPTURE_UNSHARPDATA_UNSHARP3COLOR_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "Unsharp3Intensity", values: None },
+    BinDef { index: 79, width: 2, signed: false, name: "Unsharp3HaloWidth", values: None },
+];
 
 pub static NIKONCAPTURE_UNSHARPDATA_UNSHARP4COLOR_VALUES: &[(i64, &str)] = &[
     (0, "RGB"),
@@ -29888,6 +32706,14 @@ pub static NIKONCAPTURE_WBADJDATA: phf::Map<u16, TagDef> = phf::phf_map! {
     37u16 => TagDef { name: "WBAdjTint", values: None },
     8u16 => TagDef { name: "WBAdjBlueBalance", values: None },
 };
+
+/// NikonCapture::WBAdjData ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCAPTURE_WBADJDATA_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: false, name: "WBAdjMode", values: Some(NIKONCAPTURE_WBADJDATA_WBADJMODE_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "WBAdjLighting", values: Some(NIKONCAPTURE_WBADJDATA_WBADJLIGHTING_VALUES) },
+    BinDef { index: 24, width: 2, signed: false, name: "WBAdjTemperature", values: None },
+    BinDef { index: 37, width: 4, signed: true, name: "WBAdjTint", values: None },
+];
 
 pub static NIKONCAPTURE_WBADJDATA_WBADJMODE_VALUES: &[(i64, &str)] = &[
     (1, "Use Gray Point"),
@@ -30006,6 +32832,11 @@ pub static NIKONCUSTOM_SETTINGSD3_MASKS: &[MaskDef] = &[
     MaskDef { index: 9, mask: 0x30, name: "MultiSelectorPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSD3_MULTISELECTORPLAYBACKMODE_VALUES) },
     MaskDef { index: 9, mask: 0xc, name: "InitialZoomSetting", values: Some(NIKONCUSTOM_SETTINGSD3_INITIALZOOMSETTING_VALUES) },
     MaskDef { index: 9, mask: 0x1, name: "MultiSelector", values: Some(NIKONCUSTOM_SETTINGSD3_MULTISELECTOR_VALUES) },
+];
+
+/// NikonCustom::SettingsD3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSD3_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "MaxContinuousRelease", values: None },
 ];
 
 pub static NIKONCUSTOM_SETTINGSD3_CUSTOMSETTINGSBANK_VALUES: &[(i64, &str)] = &[
@@ -30602,6 +33433,11 @@ pub static NIKONCUSTOM_SETTINGSD4_MASKS: &[MaskDef] = &[
     MaskDef { index: 8, mask: 0xf, name: "FineTuneOptMatrixMetering", values: None },
     MaskDef { index: 9, mask: 0xf0, name: "FineTuneOptCenterWeighted", values: None },
     MaskDef { index: 9, mask: 0xf, name: "FineTuneOptSpotMetering", values: None },
+];
+
+/// NikonCustom::SettingsD4 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSD4_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 1, signed: false, name: "MaxContinuousRelease", values: None },
 ];
 
 pub static NIKONCUSTOM_SETTINGSD4_CUSTOMSETTINGSBANK_VALUES: &[(i64, &str)] = &[
@@ -31283,6 +34119,11 @@ pub static NIKONCUSTOM_SETTINGSD40_MASKS: &[MaskDef] = &[
     MaskDef { index: 6, mask: 0x3, name: "Metering", values: Some(NIKONCUSTOM_SETTINGSD40_METERING_VALUES) },
     MaskDef { index: 8, mask: 0x10, name: "InternalFlash", values: Some(NIKONCUSTOM_SETTINGSD40_INTERNALFLASH_VALUES) },
     MaskDef { index: 8, mask: 0x7, name: "ManualFlashOutput", values: None },
+];
+
+/// NikonCustom::SettingsD40 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSD40_BIN: &[BinDef] = &[
+    BinDef { index: 9, width: 1, signed: true, name: "FlashLevel", values: None },
 ];
 
 pub static NIKONCUSTOM_SETTINGSD40_BEEP_VALUES: &[(i64, &str)] = &[
@@ -33899,6 +36740,11 @@ pub static NIKONCUSTOM_SETTINGSD700_MASKS: &[MaskDef] = &[
     MaskDef { index: 9, mask: 0x7, name: "ImageReviewTime", values: Some(NIKONCUSTOM_SETTINGSD700_IMAGEREVIEWTIME_VALUES) },
 ];
 
+/// NikonCustom::SettingsD700 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSD700_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 1, signed: false, name: "MaxContinuousRelease", values: None },
+];
+
 pub static NIKONCUSTOM_SETTINGSD700_CUSTOMSETTINGSBANK_VALUES: &[(i64, &str)] = &[
     (0, "A"),
     (1, "B"),
@@ -34398,6 +37244,11 @@ pub static NIKONCUSTOM_SETTINGSD7000_MASKS: &[MaskDef] = &[
     MaskDef { index: 6, mask: 0x40, name: "ExposureControlStep", values: Some(NIKONCUSTOM_SETTINGSD7000_EXPOSURECONTROLSTEP_VALUES) },
     MaskDef { index: 6, mask: 0x10, name: "ISOSensitivityStep", values: Some(NIKONCUSTOM_SETTINGSD7000_ISOSENSITIVITYSTEP_VALUES) },
     MaskDef { index: 7, mask: 0xe0, name: "CenterWeightedAreaSize", values: Some(NIKONCUSTOM_SETTINGSD7000_CENTERWEIGHTEDAREASIZE_VALUES) },
+];
+
+/// NikonCustom::SettingsD7000 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSD7000_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "MaxContinuousRelease", values: None },
 ];
 
 pub static NIKONCUSTOM_SETTINGSD7000_AF_CPRIORITYSELECTION_VALUES: &[(i64, &str)] = &[
@@ -37174,6 +40025,106 @@ pub static NIKONCUSTOM_SETTINGSZ6III: phf::Map<u16, TagDef> = phf::phf_map! {
     99u16 => TagDef { name: "AutoBracketModeM", values: Some(NIKONCUSTOM_SETTINGSZ6III_AUTOBRACKETMODEM_VALUES) },
 };
 
+/// NikonCustom::SettingsZ6III ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSZ6III_BIN: &[BinDef] = &[
+    BinDef { index: 101, width: 1, signed: false, name: "AutoBracketOrder", values: Some(NIKONCUSTOM_SETTINGSZ6III_AUTOBRACKETORDER_VALUES) },
+    BinDef { index: 103, width: 1, signed: false, name: "Func1Button", values: Some(NIKONCUSTOM_SETTINGSZ6III_FUNC1BUTTON_VALUES) },
+    BinDef { index: 11, width: 1, signed: false, name: "AFPointSel", values: Some(NIKONCUSTOM_SETTINGSZ6III_AFPOINTSEL_VALUES) },
+    BinDef { index: 119, width: 1, signed: false, name: "Func2Button", values: Some(NIKONCUSTOM_SETTINGSZ6III_FUNC2BUTTON_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "StoreByOrientation", values: Some(NIKONCUSTOM_SETTINGSZ6III_STOREBYORIENTATION_VALUES) },
+    BinDef { index: 135, width: 1, signed: false, name: "AFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ6III_AFONBUTTON_VALUES) },
+    BinDef { index: 147, width: 1, signed: false, name: "SubSelector", values: Some(NIKONCUSTOM_SETTINGSZ6III_SUBSELECTOR_VALUES) },
+    BinDef { index: 15, width: 1, signed: false, name: "AFActivation", values: Some(NIKONCUSTOM_SETTINGSZ6III_AFACTIVATION_VALUES) },
+    BinDef { index: 159, width: 1, signed: false, name: "AssignMovieRecordButton", values: Some(NIKONCUSTOM_SETTINGSZ6III_ASSIGNMOVIERECORDBUTTON_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "AF-OnOutOfFocusRelease", values: Some(NIKONCUSTOM_SETTINGSZ6III_AF_ONOUTOFFOCUSRELEASE_VALUES) },
+    BinDef { index: 163, width: 1, signed: false, name: "LensFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ6III_LENSFUNC1BUTTON_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "LimitAF-AreaModeSelPinpoint", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAF_AREAMODESELPINPOINT_VALUES) },
+    BinDef { index: 171, width: 1, signed: false, name: "LensFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ6III_LENSFUNC2BUTTON_VALUES) },
+    BinDef { index: 177, width: 1, signed: false, name: "LensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ6III_LENSCONTROLRING_VALUES) },
+    BinDef { index: 179, width: 1, signed: false, name: "MultiSelectorShootMode", values: Some(NIKONCUSTOM_SETTINGSZ6III_MULTISELECTORSHOOTMODE_VALUES) },
+    BinDef { index: 183, width: 1, signed: false, name: "MultiSelectorPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ6III_MULTISELECTORPLAYBACKMODE_VALUES) },
+    BinDef { index: 187, width: 1, signed: false, name: "ShutterSpeedLock", values: Some(NIKONCUSTOM_SETTINGSZ6III_SHUTTERSPEEDLOCK_VALUES) },
+    BinDef { index: 188, width: 1, signed: false, name: "ApertureLock", values: Some(NIKONCUSTOM_SETTINGSZ6III_APERTURELOCK_VALUES) },
+    BinDef { index: 189, width: 1, signed: false, name: "CmdDialsReverseRotExposureComp", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_S", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAF_AREAMODESELWIDEAF_S_VALUES) },
+    BinDef { index: 190, width: 1, signed: false, name: "CmdDialsReverseRotation", values: Some(NIKONCUSTOM_SETTINGSZ6III_CMDDIALSREVERSEROTATION_VALUES) },
+    BinDef { index: 195, width: 1, signed: false, name: "UseDialWithoutHold", values: Some(NIKONCUSTOM_SETTINGSZ6III_USEDIALWITHOUTHOLD_VALUES) },
+    BinDef { index: 197, width: 1, signed: false, name: "ReverseIndicators", values: Some(NIKONCUSTOM_SETTINGSZ6III_REVERSEINDICATORS_VALUES) },
+    BinDef { index: 199, width: 1, signed: false, name: "MovieFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIEFUNC1BUTTON_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_L", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAF_AREAMODESELWIDEAF_L_VALUES) },
+    BinDef { index: 205, width: 1, signed: false, name: "MovieFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIEFUNC2BUTTON_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "LimitAFAreaModeSelAuto", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAFAREAMODESELAUTO_VALUES) },
+    BinDef { index: 211, width: 1, signed: false, name: "MovieAF-OnButton", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIEAF_ONBUTTON_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "FocusPointWrap", values: Some(NIKONCUSTOM_SETTINGSZ6III_FOCUSPOINTWRAP_VALUES) },
+    BinDef { index: 223, width: 1, signed: false, name: "MovieLensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIELENSCONTROLRING_VALUES) },
+    BinDef { index: 225, width: 1, signed: false, name: "MovieMultiSelector", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIEMULTISELECTOR_VALUES) },
+    BinDef { index: 229, width: 1, signed: false, name: "MovieAFSpeed", values: None },
+    BinDef { index: 23, width: 1, signed: false, name: "ManualFocusPointIllumination", values: Some(NIKONCUSTOM_SETTINGSZ6III_MANUALFOCUSPOINTILLUMINATION_VALUES) },
+    BinDef { index: 231, width: 1, signed: false, name: "MovieAFSpeedApply", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIEAFSPEEDAPPLY_VALUES) },
+    BinDef { index: 233, width: 1, signed: false, name: "MovieAFTrackingSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIEAFTRACKINGSENSITIVITY_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "DynamicAreaAFAssist", values: Some(NIKONCUSTOM_SETTINGSZ6III_DYNAMICAREAAFASSIST_VALUES) },
+    BinDef { index: 241, width: 1, signed: false, name: "LCDIllumination", values: Some(NIKONCUSTOM_SETTINGSZ6III_LCDILLUMINATION_VALUES) },
+    BinDef { index: 242, width: 1, signed: false, name: "ExtendedShutterSpeeds", values: Some(NIKONCUSTOM_SETTINGSZ6III_EXTENDEDSHUTTERSPEEDS_VALUES) },
+    BinDef { index: 245, width: 1, signed: false, name: "FocusPointPersistence", values: Some(NIKONCUSTOM_SETTINGSZ6III_FOCUSPOINTPERSISTENCE_VALUES) },
+    BinDef { index: 257, width: 1, signed: false, name: "FlashBurstPriority", values: Some(NIKONCUSTOM_SETTINGSZ6III_FLASHBURSTPRIORITY_VALUES) },
+    BinDef { index: 26, width: 1, signed: false, name: "AF-AssistIlluminator", values: Some(NIKONCUSTOM_SETTINGSZ6III_AF_ASSISTILLUMINATOR_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "ManualFocusRingInAFMode", values: Some(NIKONCUSTOM_SETTINGSZ6III_MANUALFOCUSRINGINAFMODE_VALUES) },
+    BinDef { index: 29, width: 1, signed: false, name: "ExposureControlStepSize", values: Some(NIKONCUSTOM_SETTINGSZ6III_EXPOSURECONTROLSTEPSIZE_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "AF-CPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ6III_AF_CPRIORITYSELECTION_VALUES) },
+    BinDef { index: 31, width: 1, signed: false, name: "EasyExposureCompensation", values: Some(NIKONCUSTOM_SETTINGSZ6III_EASYEXPOSURECOMPENSATION_VALUES) },
+    BinDef { index: 319, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_S", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAF_AREAMODESELDYNAMIC_S_VALUES) },
+    BinDef { index: 320, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_M", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAF_AREAMODESELDYNAMIC_M_VALUES) },
+    BinDef { index: 321, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_L", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAF_AREAMODESELDYNAMIC_L_VALUES) },
+    BinDef { index: 323, width: 1, signed: false, name: "LimitAF-AreaModeSel3DTracking", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITAF_AREAMODESEL3DTRACKING_VALUES) },
+    BinDef { index: 325, width: 1, signed: false, name: "PlaybackFlickUp", values: Some(NIKONCUSTOM_SETTINGSZ6III_PLAYBACKFLICKUP_VALUES) },
+    BinDef { index: 329, width: 1, signed: false, name: "PlaybackFlickDown", values: Some(NIKONCUSTOM_SETTINGSZ6III_PLAYBACKFLICKDOWN_VALUES) },
+    BinDef { index: 33, width: 1, signed: false, name: "CenterWeightedAreaSize", values: Some(NIKONCUSTOM_SETTINGSZ6III_CENTERWEIGHTEDAREASIZE_VALUES) },
+    BinDef { index: 333, width: 1, signed: false, name: "ISOStepSize", values: Some(NIKONCUSTOM_SETTINGSZ6III_ISOSTEPSIZE_VALUES) },
+    BinDef { index: 340, width: 1, signed: false, name: "TouchFn", values: Some(NIKONCUSTOM_SETTINGSZ6III_TOUCHFN_VALUES) },
+    BinDef { index: 341, width: 1, signed: false, name: "TouchFnRole", values: Some(NIKONCUSTOM_SETTINGSZ6III_TOUCHFNROLE_VALUES) },
+    BinDef { index: 345, width: 1, signed: false, name: "TouchFnAreaWide", values: Some(NIKONCUSTOM_SETTINGSZ6III_TOUCHFNAREAWIDE_VALUES) },
+    BinDef { index: 347, width: 1, signed: false, name: "TouchFnAreaTall", values: Some(NIKONCUSTOM_SETTINGSZ6III_TOUCHFNAREATALL_VALUES) },
+    BinDef { index: 35, width: 1, signed: true, name: "FineTuneOptMatrixMetering", values: None },
+    BinDef { index: 350, width: 1, signed: false, name: "EVFImageFrame", values: Some(NIKONCUSTOM_SETTINGSZ6III_EVFIMAGEFRAME_VALUES) },
+    BinDef { index: 351, width: 1, signed: false, name: "EVFGrid", values: Some(NIKONCUSTOM_SETTINGSZ6III_EVFGRID_VALUES) },
+    BinDef { index: 353, width: 1, signed: false, name: "VirtualHorizonStyle", values: Some(NIKONCUSTOM_SETTINGSZ6III_VIRTUALHORIZONSTYLE_VALUES) },
+    BinDef { index: 37, width: 1, signed: true, name: "FineTuneOptCenterWeighted", values: None },
+    BinDef { index: 39, width: 1, signed: true, name: "FineTuneOptSpotMetering", values: None },
+    BinDef { index: 41, width: 1, signed: true, name: "FineTuneOptHighlightWeighted", values: None },
+    BinDef { index: 415, width: 1, signed: false, name: "Func1ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ6III_FUNC1BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 417, width: 1, signed: false, name: "Func2ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ6III_FUNC2BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 43, width: 1, signed: false, name: "ShutterReleaseButtonAE-L", values: Some(NIKONCUSTOM_SETTINGSZ6III_SHUTTERRELEASEBUTTONAE_L_VALUES) },
+    BinDef { index: 431, width: 1, signed: false, name: "MovieRecordButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ6III_MOVIERECORDBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "SelfTimerTime", values: Some(NIKONCUSTOM_SETTINGSZ6III_SELFTIMERTIME_VALUES) },
+    BinDef { index: 463, width: 1, signed: false, name: "ControlRingResponse", values: Some(NIKONCUSTOM_SETTINGSZ6III_CONTROLRINGRESPONSE_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "SelfTimerShotCount", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AF-SPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ6III_AF_SPRIORITYSELECTION_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "SelfTimerShotInterval", values: Some(NIKONCUSTOM_SETTINGSZ6III_SELFTIMERSHOTINTERVAL_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "PlaybackMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ6III_PLAYBACKMONITOROFFTIME_VALUES) },
+    BinDef { index: 559, width: 1, signed: false, name: "FocusPeakingDisplay", values: Some(NIKONCUSTOM_SETTINGSZ6III_FOCUSPEAKINGDISPLAY_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "MenuMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ6III_MENUMONITOROFFTIME_VALUES) },
+    BinDef { index: 59, width: 1, signed: false, name: "ImageReviewMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ6III_IMAGEREVIEWMONITOROFFTIME_VALUES) },
+    BinDef { index: 61, width: 1, signed: false, name: "ShootingInfoMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ6III_SHOOTINGINFOMONITOROFFTIME_VALUES) },
+    BinDef { index: 63, width: 1, signed: false, name: "CLModeShootingSpeed", values: None },
+    BinDef { index: 65, width: 2, signed: true, name: "MaxContinuousRelease", values: None },
+    BinDef { index: 69, width: 1, signed: false, name: "SyncReleaseMode", values: Some(NIKONCUSTOM_SETTINGSZ6III_SYNCRELEASEMODE_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "BlockShotAFResponse", values: Some(NIKONCUSTOM_SETTINGSZ6III_BLOCKSHOTAFRESPONSE_VALUES) },
+    BinDef { index: 75, width: 1, signed: false, name: "LimitSelectableImageAreaDX", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITSELECTABLEIMAGEAREADX_VALUES) },
+    BinDef { index: 76, width: 1, signed: false, name: "LimitSelectableImageArea1To1", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITSELECTABLEIMAGEAREA1TO1_VALUES) },
+    BinDef { index: 77, width: 1, signed: false, name: "LimitSelectableImageArea16To9", values: Some(NIKONCUSTOM_SETTINGSZ6III_LIMITSELECTABLEIMAGEAREA16TO9_VALUES) },
+    BinDef { index: 78, width: 1, signed: false, name: "FileNumberSequence", values: Some(NIKONCUSTOM_SETTINGSZ6III_FILENUMBERSEQUENCE_VALUES) },
+    BinDef { index: 81, width: 1, signed: false, name: "FocusPeakingLevel", values: Some(NIKONCUSTOM_SETTINGSZ6III_FOCUSPEAKINGLEVEL_VALUES) },
+    BinDef { index: 83, width: 1, signed: false, name: "FocusPeakingHighlightColor", values: Some(NIKONCUSTOM_SETTINGSZ6III_FOCUSPEAKINGHIGHLIGHTCOLOR_VALUES) },
+    BinDef { index: 85, width: 1, signed: false, name: "ContinuousModeDisplay", values: Some(NIKONCUSTOM_SETTINGSZ6III_CONTINUOUSMODEDISPLAY_VALUES) },
+    BinDef { index: 87, width: 1, signed: false, name: "FlashSyncSpeed", values: Some(NIKONCUSTOM_SETTINGSZ6III_FLASHSYNCSPEED_VALUES) },
+    BinDef { index: 89, width: 1, signed: false, name: "HighSpeedSync", values: Some(NIKONCUSTOM_SETTINGSZ6III_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 91, width: 1, signed: false, name: "FlashShutterSpeed", values: Some(NIKONCUSTOM_SETTINGSZ6III_FLASHSHUTTERSPEED_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "FlashExposureCompArea", values: Some(NIKONCUSTOM_SETTINGSZ6III_FLASHEXPOSURECOMPAREA_VALUES) },
+    BinDef { index: 95, width: 1, signed: false, name: "AutoFlashISOSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ6III_AUTOFLASHISOSENSITIVITY_VALUES) },
+    BinDef { index: 97, width: 1, signed: false, name: "ModelingFlash", values: Some(NIKONCUSTOM_SETTINGSZ6III_MODELINGFLASH_VALUES) },
+    BinDef { index: 99, width: 1, signed: false, name: "AutoBracketModeM", values: Some(NIKONCUSTOM_SETTINGSZ6III_AUTOBRACKETMODEM_VALUES) },
+];
+
 pub static NIKONCUSTOM_SETTINGSZ6III_AUTOBRACKETORDER_VALUES: &[(i64, &str)] = &[
     (0, "0,-,+"),
     (1, "-,0,+"),
@@ -39374,6 +42325,135 @@ pub static NIKONCUSTOM_SETTINGSZ8: phf::Map<u16, TagDef> = phf::phf_map! {
     97u16 => TagDef { name: "AutoBracketOrder", values: Some(NIKONCUSTOM_SETTINGSZ8_AUTOBRACKETORDER_VALUES) },
     99u16 => TagDef { name: "Func1Button", values: Some(NIKONCUSTOM_SETTINGSZ8_FUNC1BUTTON_VALUES) },
 };
+
+/// NikonCustom::SettingsZ8 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSZ8_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "AFPointSel", values: Some(NIKONCUSTOM_SETTINGSZ8_AFPOINTSEL_VALUES) },
+    BinDef { index: 115, width: 1, signed: false, name: "Func2Button", values: Some(NIKONCUSTOM_SETTINGSZ8_FUNC2BUTTON_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "StoreByOrientation", values: Some(NIKONCUSTOM_SETTINGSZ8_STOREBYORIENTATION_VALUES) },
+    BinDef { index: 131, width: 1, signed: false, name: "AFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ8_AFONBUTTON_VALUES) },
+    BinDef { index: 143, width: 1, signed: false, name: "SubSelector", values: Some(NIKONCUSTOM_SETTINGSZ8_SUBSELECTOR_VALUES) },
+    BinDef { index: 15, width: 1, signed: false, name: "AFActivation", values: Some(NIKONCUSTOM_SETTINGSZ8_AFACTIVATION_VALUES) },
+    BinDef { index: 155, width: 1, signed: false, name: "AssignMovieRecordButton", values: Some(NIKONCUSTOM_SETTINGSZ8_ASSIGNMOVIERECORDBUTTON_VALUES) },
+    BinDef { index: 159, width: 1, signed: false, name: "LensFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ8_LENSFUNC1BUTTON_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "AF-OnOutOfFocusRelease", values: Some(NIKONCUSTOM_SETTINGSZ8_AF_ONOUTOFFOCUSRELEASE_VALUES) },
+    BinDef { index: 167, width: 1, signed: false, name: "LensFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ8_LENSFUNC2BUTTON_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "LimitAF-AreaModeSelPinpoint", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAF_AREAMODESELPINPOINT_VALUES) },
+    BinDef { index: 173, width: 1, signed: false, name: "LensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ8_LENSCONTROLRING_VALUES) },
+    BinDef { index: 175, width: 1, signed: false, name: "MultiSelectorShootMode", values: Some(NIKONCUSTOM_SETTINGSZ8_MULTISELECTORSHOOTMODE_VALUES) },
+    BinDef { index: 179, width: 1, signed: false, name: "MultiSelectorPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_MULTISELECTORPLAYBACKMODE_VALUES) },
+    BinDef { index: 183, width: 1, signed: false, name: "ShutterSpeedLock", values: Some(NIKONCUSTOM_SETTINGSZ8_SHUTTERSPEEDLOCK_VALUES) },
+    BinDef { index: 184, width: 1, signed: false, name: "ApertureLock", values: Some(NIKONCUSTOM_SETTINGSZ8_APERTURELOCK_VALUES) },
+    BinDef { index: 185, width: 1, signed: false, name: "CmdDialsReverseRotExposureComp", values: None },
+    BinDef { index: 186, width: 1, signed: false, name: "CmdDialsReverseRotation", values: Some(NIKONCUSTOM_SETTINGSZ8_CMDDIALSREVERSEROTATION_VALUES) },
+    BinDef { index: 19, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_S", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAF_AREAMODESELWIDEAF_S_VALUES) },
+    BinDef { index: 191, width: 1, signed: false, name: "UseDialWithoutHold", values: Some(NIKONCUSTOM_SETTINGSZ8_USEDIALWITHOUTHOLD_VALUES) },
+    BinDef { index: 193, width: 1, signed: false, name: "ReverseIndicators", values: Some(NIKONCUSTOM_SETTINGSZ8_REVERSEINDICATORS_VALUES) },
+    BinDef { index: 195, width: 1, signed: false, name: "MovieFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEFUNC1BUTTON_VALUES) },
+    BinDef { index: 199, width: 1, signed: false, name: "MovieFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEFUNC2BUTTON_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_L", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAF_AREAMODESELWIDEAF_L_VALUES) },
+    BinDef { index: 203, width: 1, signed: false, name: "MovieAF-OnButton", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEAF_ONBUTTON_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "LimitAFAreaModeSelAuto", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAFAREAMODESELAUTO_VALUES) },
+    BinDef { index: 215, width: 1, signed: false, name: "MovieLensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIELENSCONTROLRING_VALUES) },
+    BinDef { index: 217, width: 1, signed: false, name: "MovieMultiSelector", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEMULTISELECTOR_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "FocusPointWrap", values: Some(NIKONCUSTOM_SETTINGSZ8_FOCUSPOINTWRAP_VALUES) },
+    BinDef { index: 221, width: 1, signed: false, name: "MovieAFSpeed", values: None },
+    BinDef { index: 223, width: 1, signed: false, name: "MovieAFSpeedApply", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEAFSPEEDAPPLY_VALUES) },
+    BinDef { index: 225, width: 1, signed: false, name: "MovieAFTrackingSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEAFTRACKINGSENSITIVITY_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "ManualFocusPointIllumination", values: Some(NIKONCUSTOM_SETTINGSZ8_MANUALFOCUSPOINTILLUMINATION_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "DynamicAreaAFAssist", values: Some(NIKONCUSTOM_SETTINGSZ8_DYNAMICAREAAFASSIST_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "AF-AssistIlluminator", values: Some(NIKONCUSTOM_SETTINGSZ8_AF_ASSISTILLUMINATOR_VALUES) },
+    BinDef { index: 257, width: 1, signed: false, name: "LCDIllumination", values: Some(NIKONCUSTOM_SETTINGSZ8_LCDILLUMINATION_VALUES) },
+    BinDef { index: 258, width: 1, signed: false, name: "ExtendedShutterSpeeds", values: Some(NIKONCUSTOM_SETTINGSZ8_EXTENDEDSHUTTERSPEEDS_VALUES) },
+    BinDef { index: 259, width: 1, signed: false, name: "SubjectMotion", values: Some(NIKONCUSTOM_SETTINGSZ8_SUBJECTMOTION_VALUES) },
+    BinDef { index: 26, width: 1, signed: false, name: "ManualFocusRingInAFMode", values: Some(NIKONCUSTOM_SETTINGSZ8_MANUALFOCUSRINGINAFMODE_VALUES) },
+    BinDef { index: 261, width: 1, signed: false, name: "FocusPointPersistence", values: Some(NIKONCUSTOM_SETTINGSZ8_FOCUSPOINTPERSISTENCE_VALUES) },
+    BinDef { index: 263, width: 1, signed: false, name: "AutoFocusModeRestrictions", values: Some(NIKONCUSTOM_SETTINGSZ8_AUTOFOCUSMODERESTRICTIONS_VALUES) },
+    BinDef { index: 267, width: 1, signed: false, name: "CHModeShootingSpeed", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "ExposureControlStepSize", values: Some(NIKONCUSTOM_SETTINGSZ8_EXPOSURECONTROLSTEPSIZE_VALUES) },
+    BinDef { index: 273, width: 1, signed: false, name: "FlashBurstPriority", values: Some(NIKONCUSTOM_SETTINGSZ8_FLASHBURSTPRIORITY_VALUES) },
+    BinDef { index: 281, width: 1, signed: false, name: "Func3Button", values: Some(NIKONCUSTOM_SETTINGSZ8_FUNC3BUTTON_VALUES) },
+    BinDef { index: 29, width: 1, signed: false, name: "EasyExposureCompensation", values: Some(NIKONCUSTOM_SETTINGSZ8_EASYEXPOSURECOMPENSATION_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "AF-CPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ8_AF_CPRIORITYSELECTION_VALUES) },
+    BinDef { index: 31, width: 1, signed: false, name: "CenterWeightedAreaSize", values: Some(NIKONCUSTOM_SETTINGSZ8_CENTERWEIGHTEDAREASIZE_VALUES) },
+    BinDef { index: 33, width: 1, signed: true, name: "FineTuneOptMatrixMetering", values: None },
+    BinDef { index: 335, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_S", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAF_AREAMODESELDYNAMIC_S_VALUES) },
+    BinDef { index: 336, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_M", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAF_AREAMODESELDYNAMIC_M_VALUES) },
+    BinDef { index: 337, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_L", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAF_AREAMODESELDYNAMIC_L_VALUES) },
+    BinDef { index: 339, width: 1, signed: false, name: "LimitAF-AreaModeSel3DTracking", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITAF_AREAMODESEL3DTRACKING_VALUES) },
+    BinDef { index: 341, width: 1, signed: false, name: "PlaybackFlickUp", values: Some(NIKONCUSTOM_SETTINGSZ8_PLAYBACKFLICKUP_VALUES) },
+    BinDef { index: 345, width: 1, signed: false, name: "PlaybackFlickDown", values: Some(NIKONCUSTOM_SETTINGSZ8_PLAYBACKFLICKDOWN_VALUES) },
+    BinDef { index: 349, width: 1, signed: false, name: "ISOStepSize", values: Some(NIKONCUSTOM_SETTINGSZ8_ISOSTEPSIZE_VALUES) },
+    BinDef { index: 35, width: 1, signed: true, name: "FineTuneOptCenterWeighted", values: None },
+    BinDef { index: 355, width: 1, signed: false, name: "ReverseFocusRing", values: Some(NIKONCUSTOM_SETTINGSZ8_REVERSEFOCUSRING_VALUES) },
+    BinDef { index: 356, width: 1, signed: false, name: "EVFImageFrame", values: Some(NIKONCUSTOM_SETTINGSZ8_EVFIMAGEFRAME_VALUES) },
+    BinDef { index: 357, width: 1, signed: false, name: "EVFGrid", values: Some(NIKONCUSTOM_SETTINGSZ8_EVFGRID_VALUES) },
+    BinDef { index: 359, width: 1, signed: false, name: "VirtualHorizonStyle", values: Some(NIKONCUSTOM_SETTINGSZ8_VIRTUALHORIZONSTYLE_VALUES) },
+    BinDef { index: 37, width: 1, signed: true, name: "FineTuneOptSpotMetering", values: None },
+    BinDef { index: 39, width: 1, signed: true, name: "FineTuneOptHighlightWeighted", values: None },
+    BinDef { index: 41, width: 1, signed: false, name: "ShutterReleaseButtonAE-L", values: Some(NIKONCUSTOM_SETTINGSZ8_SHUTTERRELEASEBUTTONAE_L_VALUES) },
+    BinDef { index: 421, width: 1, signed: false, name: "Func1ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_FUNC1BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 423, width: 1, signed: false, name: "Func2ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_FUNC2BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 43, width: 1, signed: false, name: "SelfTimerTime", values: Some(NIKONCUSTOM_SETTINGSZ8_SELFTIMERTIME_VALUES) },
+    BinDef { index: 437, width: 1, signed: false, name: "MovieRecordButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIERECORDBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "SelfTimerShotCount", values: None },
+    BinDef { index: 453, width: 1, signed: false, name: "WBButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_WBBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 459, width: 1, signed: false, name: "CommandDialPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_COMMANDDIALPLAYBACKMODE_VALUES) },
+    BinDef { index: 461, width: 1, signed: false, name: "CommandDialVideoPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_COMMANDDIALVIDEOPLAYBACKMODE_VALUES) },
+    BinDef { index: 463, width: 1, signed: false, name: "SubCommandDialPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_SUBCOMMANDDIALPLAYBACKMODE_VALUES) },
+    BinDef { index: 465, width: 1, signed: false, name: "SubCommandDialVideoPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ8_SUBCOMMANDDIALVIDEOPLAYBACKMODE_VALUES) },
+    BinDef { index: 467, width: 1, signed: false, name: "FocusPointLock", values: Some(NIKONCUSTOM_SETTINGSZ8_FOCUSPOINTLOCK_VALUES) },
+    BinDef { index: 469, width: 1, signed: false, name: "ControlRingResponse", values: Some(NIKONCUSTOM_SETTINGSZ8_CONTROLRINGRESPONSE_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "SelfTimerShotInterval", values: Some(NIKONCUSTOM_SETTINGSZ8_SELFTIMERSHOTINTERVAL_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "AF-SPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ8_AF_SPRIORITYSELECTION_VALUES) },
+    BinDef { index: 51, width: 1, signed: false, name: "PlaybackMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ8_PLAYBACKMONITOROFFTIME_VALUES) },
+    BinDef { index: 529, width: 1, signed: false, name: "ZebraPatternToneRange", values: Some(NIKONCUSTOM_SETTINGSZ8_ZEBRAPATTERNTONERANGE_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "MenuMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ8_MENUMONITOROFFTIME_VALUES) },
+    BinDef { index: 531, width: 1, signed: false, name: "MovieZebraPattern", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEZEBRAPATTERN_VALUES) },
+    BinDef { index: 533, width: 1, signed: false, name: "MovieHighlightDisplayThreshold", values: None },
+    BinDef { index: 535, width: 1, signed: false, name: "MovieMidtoneDisplayValue", values: None },
+    BinDef { index: 537, width: 1, signed: false, name: "MovieMidtoneDisplayRange", values: None },
+    BinDef { index: 541, width: 1, signed: false, name: "MovieEVFGrid", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEEVFGRID_VALUES) },
+    BinDef { index: 549, width: 1, signed: false, name: "MovieShutterSpeedLock", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIESHUTTERSPEEDLOCK_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "ShootingInfoMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ8_SHOOTINGINFOMONITOROFFTIME_VALUES) },
+    BinDef { index: 550, width: 1, signed: false, name: "MovieFocusPointLock", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEFOCUSPOINTLOCK_VALUES) },
+    BinDef { index: 563, width: 1, signed: false, name: "MatrixMetering", values: Some(NIKONCUSTOM_SETTINGSZ8_MATRIXMETERING_VALUES) },
+    BinDef { index: 564, width: 1, signed: false, name: "AF-CFocusDisplay", values: Some(NIKONCUSTOM_SETTINGSZ8_AF_CFOCUSDISPLAY_VALUES) },
+    BinDef { index: 565, width: 1, signed: false, name: "FocusPeakingDisplay", values: Some(NIKONCUSTOM_SETTINGSZ8_FOCUSPEAKINGDISPLAY_VALUES) },
+    BinDef { index: 567, width: 1, signed: false, name: "KeepExposure", values: Some(NIKONCUSTOM_SETTINGSZ8_KEEPEXPOSURE_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "ImageReviewMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ8_IMAGEREVIEWMONITOROFFTIME_VALUES) },
+    BinDef { index: 585, width: 1, signed: false, name: "StarlightView", values: Some(NIKONCUSTOM_SETTINGSZ8_STARLIGHTVIEW_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "EVFWarmDisplayMode", values: Some(NIKONCUSTOM_SETTINGSZ8_EVFWARMDISPLAYMODE_VALUES) },
+    BinDef { index: 589, width: 1, signed: true, name: "EVFWarmDisplayBrightness", values: None },
+    BinDef { index: 59, width: 1, signed: false, name: "CLModeShootingSpeed", values: None },
+    BinDef { index: 591, width: 1, signed: false, name: "EVFReleaseIndicator", values: Some(NIKONCUSTOM_SETTINGSZ8_EVFRELEASEINDICATOR_VALUES) },
+    BinDef { index: 601, width: 1, signed: false, name: "MovieApertureLock", values: Some(NIKONCUSTOM_SETTINGSZ8_MOVIEAPERTURELOCK_VALUES) },
+    BinDef { index: 607, width: 1, signed: false, name: "FlickAdvanceDirection", values: Some(NIKONCUSTOM_SETTINGSZ8_FLICKADVANCEDIRECTION_VALUES) },
+    BinDef { index: 61, width: 2, signed: true, name: "MaxContinuousRelease", values: None },
+    BinDef { index: 647, width: 1, signed: false, name: "PreReleaseBurstLength", values: Some(NIKONCUSTOM_SETTINGSZ8_PRERELEASEBURSTLENGTH_VALUES) },
+    BinDef { index: 649, width: 1, signed: false, name: "PostReleaseBurstLength", values: Some(NIKONCUSTOM_SETTINGSZ8_POSTRELEASEBURSTLENGTH_VALUES) },
+    BinDef { index: 65, width: 1, signed: false, name: "SyncReleaseMode", values: Some(NIKONCUSTOM_SETTINGSZ8_SYNCRELEASEMODE_VALUES) },
+    BinDef { index: 681, width: 1, signed: false, name: "ViewModeShowEffectsOfSettings", values: Some(NIKONCUSTOM_SETTINGSZ8_VIEWMODESHOWEFFECTSOFSETTINGS_VALUES) },
+    BinDef { index: 683, width: 1, signed: false, name: "DispButton", values: Some(NIKONCUSTOM_SETTINGSZ8_DISPBUTTON_VALUES) },
+    BinDef { index: 69, width: 1, signed: false, name: "LimitSelectableImageAreaDX", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITSELECTABLEIMAGEAREADX_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "BlockShotAFResponse", values: Some(NIKONCUSTOM_SETTINGSZ8_BLOCKSHOTAFRESPONSE_VALUES) },
+    BinDef { index: 70, width: 1, signed: false, name: "LimitSelectableImageArea1To1", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITSELECTABLEIMAGEAREA1TO1_VALUES) },
+    BinDef { index: 71, width: 1, signed: false, name: "LimitSelectableImageArea16To9", values: Some(NIKONCUSTOM_SETTINGSZ8_LIMITSELECTABLEIMAGEAREA16TO9_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "FileNumberSequence", values: Some(NIKONCUSTOM_SETTINGSZ8_FILENUMBERSEQUENCE_VALUES) },
+    BinDef { index: 73, width: 1, signed: false, name: "FocusPeakingLevel", values: Some(NIKONCUSTOM_SETTINGSZ8_FOCUSPEAKINGLEVEL_VALUES) },
+    BinDef { index: 75, width: 1, signed: false, name: "FocusPeakingHighlightColor", values: Some(NIKONCUSTOM_SETTINGSZ8_FOCUSPEAKINGHIGHLIGHTCOLOR_VALUES) },
+    BinDef { index: 753, width: 2, signed: false, name: "ExposureDelay", values: None },
+    BinDef { index: 81, width: 1, signed: false, name: "ContinuousModeDisplay", values: Some(NIKONCUSTOM_SETTINGSZ8_CONTINUOUSMODEDISPLAY_VALUES) },
+    BinDef { index: 83, width: 1, signed: false, name: "FlashSyncSpeed", values: Some(NIKONCUSTOM_SETTINGSZ8_FLASHSYNCSPEED_VALUES) },
+    BinDef { index: 85, width: 1, signed: false, name: "HighSpeedSync", values: Some(NIKONCUSTOM_SETTINGSZ8_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 87, width: 1, signed: false, name: "FlashShutterSpeed", values: Some(NIKONCUSTOM_SETTINGSZ8_FLASHSHUTTERSPEED_VALUES) },
+    BinDef { index: 89, width: 1, signed: false, name: "FlashExposureCompArea", values: Some(NIKONCUSTOM_SETTINGSZ8_FLASHEXPOSURECOMPAREA_VALUES) },
+    BinDef { index: 91, width: 1, signed: false, name: "AutoFlashISOSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ8_AUTOFLASHISOSENSITIVITY_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "ModelingFlash", values: Some(NIKONCUSTOM_SETTINGSZ8_MODELINGFLASH_VALUES) },
+    BinDef { index: 95, width: 1, signed: false, name: "AutoBracketModeM", values: Some(NIKONCUSTOM_SETTINGSZ8_AUTOBRACKETMODEM_VALUES) },
+    BinDef { index: 97, width: 1, signed: false, name: "AutoBracketOrder", values: Some(NIKONCUSTOM_SETTINGSZ8_AUTOBRACKETORDER_VALUES) },
+    BinDef { index: 99, width: 1, signed: false, name: "Func1Button", values: Some(NIKONCUSTOM_SETTINGSZ8_FUNC1BUTTON_VALUES) },
+];
 
 pub static NIKONCUSTOM_SETTINGSZ8_CUSTOMSETTINGSBANK_VALUES: &[(i64, &str)] = &[
     (0, "A"),
@@ -42238,6 +45318,145 @@ pub static NIKONCUSTOM_SETTINGSZ9_MASKS: &[MaskDef] = &[
     MaskDef { index: 269, mask: 0x10, name: "LimitReleaseModeSelC30", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITRELEASEMODESELC30_VALUES) },
     MaskDef { index: 269, mask: 0x40, name: "LimitReleaseModeSelC120", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITRELEASEMODESELC120_VALUES) },
     MaskDef { index: 269, mask: 0x80, name: "LimitReleaseModeSelSelf", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITRELEASEMODESELSELF_VALUES) },
+];
+
+/// NikonCustom::SettingsZ9 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSZ9_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "AFPointSel", values: Some(NIKONCUSTOM_SETTINGSZ9_AFPOINTSEL_VALUES) },
+    BinDef { index: 115, width: 1, signed: false, name: "Func2Button", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC2BUTTON_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "StoreByOrientation", values: Some(NIKONCUSTOM_SETTINGSZ9_STOREBYORIENTATION_VALUES) },
+    BinDef { index: 131, width: 1, signed: false, name: "AFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ9_AFONBUTTON_VALUES) },
+    BinDef { index: 143, width: 1, signed: false, name: "SubSelector", values: Some(NIKONCUSTOM_SETTINGSZ9_SUBSELECTOR_VALUES) },
+    BinDef { index: 15, width: 1, signed: false, name: "AFActivation", values: Some(NIKONCUSTOM_SETTINGSZ9_AFACTIVATION_VALUES) },
+    BinDef { index: 155, width: 1, signed: false, name: "AssignMovieRecordButton", values: Some(NIKONCUSTOM_SETTINGSZ9_ASSIGNMOVIERECORDBUTTON_VALUES) },
+    BinDef { index: 159, width: 1, signed: false, name: "LensFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ9_LENSFUNC1BUTTON_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "AF-OnOutOfFocusRelease", values: Some(NIKONCUSTOM_SETTINGSZ9_AF_ONOUTOFFOCUSRELEASE_VALUES) },
+    BinDef { index: 167, width: 1, signed: false, name: "LensFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ9_LENSFUNC2BUTTON_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "LimitAF-AreaModeSelPinpoint", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAF_AREAMODESELPINPOINT_VALUES) },
+    BinDef { index: 173, width: 1, signed: false, name: "LensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ9_LENSCONTROLRING_VALUES) },
+    BinDef { index: 175, width: 1, signed: false, name: "MultiSelectorShootMode", values: Some(NIKONCUSTOM_SETTINGSZ9_MULTISELECTORSHOOTMODE_VALUES) },
+    BinDef { index: 179, width: 1, signed: false, name: "MultiSelectorPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_MULTISELECTORPLAYBACKMODE_VALUES) },
+    BinDef { index: 183, width: 1, signed: false, name: "ShutterSpeedLock", values: Some(NIKONCUSTOM_SETTINGSZ9_SHUTTERSPEEDLOCK_VALUES) },
+    BinDef { index: 184, width: 1, signed: false, name: "ApertureLock", values: Some(NIKONCUSTOM_SETTINGSZ9_APERTURELOCK_VALUES) },
+    BinDef { index: 185, width: 1, signed: false, name: "CmdDialsReverseRotExposureComp", values: None },
+    BinDef { index: 186, width: 1, signed: false, name: "CmdDialsReverseRotation", values: Some(NIKONCUSTOM_SETTINGSZ9_CMDDIALSREVERSEROTATION_VALUES) },
+    BinDef { index: 19, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_S", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAF_AREAMODESELWIDEAF_S_VALUES) },
+    BinDef { index: 191, width: 1, signed: false, name: "UseDialWithoutHold", values: Some(NIKONCUSTOM_SETTINGSZ9_USEDIALWITHOUTHOLD_VALUES) },
+    BinDef { index: 193, width: 1, signed: false, name: "ReverseIndicators", values: Some(NIKONCUSTOM_SETTINGSZ9_REVERSEINDICATORS_VALUES) },
+    BinDef { index: 195, width: 1, signed: false, name: "MovieFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEFUNC1BUTTON_VALUES) },
+    BinDef { index: 199, width: 1, signed: false, name: "MovieFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEFUNC2BUTTON_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_L", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAF_AREAMODESELWIDEAF_L_VALUES) },
+    BinDef { index: 203, width: 1, signed: false, name: "MovieAF-OnButton", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEAF_ONBUTTON_VALUES) },
+    BinDef { index: 207, width: 1, signed: false, name: "MovieMultiSelector", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEMULTISELECTOR_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "LimitAFAreaModeSelAuto", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAFAREAMODESELAUTO_VALUES) },
+    BinDef { index: 215, width: 1, signed: false, name: "MovieLensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIELENSCONTROLRING_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "FocusPointWrap", values: Some(NIKONCUSTOM_SETTINGSZ9_FOCUSPOINTWRAP_VALUES) },
+    BinDef { index: 221, width: 1, signed: false, name: "MovieAFSpeed", values: None },
+    BinDef { index: 223, width: 1, signed: false, name: "MovieAFSpeedApply", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEAFSPEEDAPPLY_VALUES) },
+    BinDef { index: 225, width: 1, signed: false, name: "MovieAFTrackingSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEAFTRACKINGSENSITIVITY_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "ManualFocusPointIllumination", values: Some(NIKONCUSTOM_SETTINGSZ9_MANUALFOCUSPOINTILLUMINATION_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "DynamicAreaAFAssist", values: Some(NIKONCUSTOM_SETTINGSZ9_DYNAMICAREAAFASSIST_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "AF-AssistIlluminator", values: Some(NIKONCUSTOM_SETTINGSZ9_AF_ASSISTILLUMINATOR_VALUES) },
+    BinDef { index: 257, width: 1, signed: false, name: "LCDIllumination", values: Some(NIKONCUSTOM_SETTINGSZ9_LCDILLUMINATION_VALUES) },
+    BinDef { index: 258, width: 1, signed: false, name: "ExtendedShutterSpeeds", values: Some(NIKONCUSTOM_SETTINGSZ9_EXTENDEDSHUTTERSPEEDS_VALUES) },
+    BinDef { index: 259, width: 1, signed: false, name: "SubjectMotion", values: Some(NIKONCUSTOM_SETTINGSZ9_SUBJECTMOTION_VALUES) },
+    BinDef { index: 26, width: 1, signed: false, name: "ManualFocusRingInAFMode", values: Some(NIKONCUSTOM_SETTINGSZ9_MANUALFOCUSRINGINAFMODE_VALUES) },
+    BinDef { index: 261, width: 1, signed: false, name: "FocusPointPersistence", values: Some(NIKONCUSTOM_SETTINGSZ9_FOCUSPOINTPERSISTENCE_VALUES) },
+    BinDef { index: 263, width: 1, signed: false, name: "AutoFocusModeRestrictions", values: Some(NIKONCUSTOM_SETTINGSZ9_AUTOFOCUSMODERESTRICTIONS_VALUES) },
+    BinDef { index: 267, width: 1, signed: false, name: "CHModeShootingSpeed", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "ExposureControlStepSize", values: Some(NIKONCUSTOM_SETTINGSZ9_EXPOSURECONTROLSTEPSIZE_VALUES) },
+    BinDef { index: 273, width: 1, signed: false, name: "FlashBurstPriority", values: Some(NIKONCUSTOM_SETTINGSZ9_FLASHBURSTPRIORITY_VALUES) },
+    BinDef { index: 277, width: 1, signed: false, name: "VerticalFuncButton", values: Some(NIKONCUSTOM_SETTINGSZ9_VERTICALFUNCBUTTON_VALUES) },
+    BinDef { index: 281, width: 1, signed: false, name: "Func3Button", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC3BUTTON_VALUES) },
+    BinDef { index: 285, width: 1, signed: false, name: "VerticalAFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ9_VERTICALAFONBUTTON_VALUES) },
+    BinDef { index: 29, width: 1, signed: false, name: "EasyExposureCompensation", values: Some(NIKONCUSTOM_SETTINGSZ9_EASYEXPOSURECOMPENSATION_VALUES) },
+    BinDef { index: 293, width: 1, signed: false, name: "VerticalMultiSelectorPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_VERTICALMULTISELECTORPLAYBACKMODE_VALUES) },
+    BinDef { index: 295, width: 1, signed: false, name: "MovieFunc3Button", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEFUNC3BUTTON_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "AF-CPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ9_AF_CPRIORITYSELECTION_VALUES) },
+    BinDef { index: 31, width: 1, signed: false, name: "CenterWeightedAreaSize", values: Some(NIKONCUSTOM_SETTINGSZ9_CENTERWEIGHTEDAREASIZE_VALUES) },
+    BinDef { index: 33, width: 1, signed: true, name: "FineTuneOptMatrixMetering", values: None },
+    BinDef { index: 335, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_S", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAF_AREAMODESELDYNAMIC_S_VALUES) },
+    BinDef { index: 336, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_M", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAF_AREAMODESELDYNAMIC_M_VALUES) },
+    BinDef { index: 337, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_L", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAF_AREAMODESELDYNAMIC_L_VALUES) },
+    BinDef { index: 339, width: 1, signed: false, name: "LimitAF-AreaModeSel3DTracking", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITAF_AREAMODESEL3DTRACKING_VALUES) },
+    BinDef { index: 341, width: 1, signed: false, name: "PlaybackFlickUp", values: Some(NIKONCUSTOM_SETTINGSZ9_PLAYBACKFLICKUP_VALUES) },
+    BinDef { index: 345, width: 1, signed: false, name: "PlaybackFlickDown", values: Some(NIKONCUSTOM_SETTINGSZ9_PLAYBACKFLICKDOWN_VALUES) },
+    BinDef { index: 349, width: 1, signed: false, name: "ISOStepSize", values: Some(NIKONCUSTOM_SETTINGSZ9_ISOSTEPSIZE_VALUES) },
+    BinDef { index: 35, width: 1, signed: true, name: "FineTuneOptCenterWeighted", values: None },
+    BinDef { index: 355, width: 1, signed: false, name: "ReverseFocusRing", values: Some(NIKONCUSTOM_SETTINGSZ9_REVERSEFOCUSRING_VALUES) },
+    BinDef { index: 356, width: 1, signed: false, name: "EVFImageFrame", values: Some(NIKONCUSTOM_SETTINGSZ9_EVFIMAGEFRAME_VALUES) },
+    BinDef { index: 357, width: 1, signed: false, name: "EVFGrid", values: Some(NIKONCUSTOM_SETTINGSZ9_EVFGRID_VALUES) },
+    BinDef { index: 359, width: 1, signed: false, name: "VirtualHorizonStyle", values: Some(NIKONCUSTOM_SETTINGSZ9_VIRTUALHORIZONSTYLE_VALUES) },
+    BinDef { index: 37, width: 1, signed: true, name: "FineTuneOptSpotMetering", values: None },
+    BinDef { index: 373, width: 1, signed: false, name: "Func4Button", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC4BUTTON_VALUES) },
+    BinDef { index: 379, width: 1, signed: false, name: "AudioButton", values: Some(NIKONCUSTOM_SETTINGSZ9_AUDIOBUTTON_VALUES) },
+    BinDef { index: 381, width: 1, signed: false, name: "QualityButton", values: Some(NIKONCUSTOM_SETTINGSZ9_QUALITYBUTTON_VALUES) },
+    BinDef { index: 39, width: 1, signed: true, name: "FineTuneOptHighlightWeighted", values: None },
+    BinDef { index: 399, width: 1, signed: false, name: "VerticalMultiSelector", values: Some(NIKONCUSTOM_SETTINGSZ9_VERTICALMULTISELECTOR_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "ShutterReleaseButtonAE-L", values: Some(NIKONCUSTOM_SETTINGSZ9_SHUTTERRELEASEBUTTONAE_L_VALUES) },
+    BinDef { index: 421, width: 1, signed: false, name: "Func1ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC1BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 423, width: 1, signed: false, name: "Func2ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC2BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 425, width: 1, signed: false, name: "Func3ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC3BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 43, width: 1, signed: false, name: "SelfTimerTime", values: Some(NIKONCUSTOM_SETTINGSZ9_SELFTIMERTIME_VALUES) },
+    BinDef { index: 431, width: 1, signed: false, name: "Func4ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC4BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 437, width: 1, signed: false, name: "MovieRecordButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIERECORDBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 439, width: 1, signed: false, name: "VerticalFuncButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_VERTICALFUNCBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 441, width: 1, signed: false, name: "AudioButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_AUDIOBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 447, width: 1, signed: false, name: "QualityButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_QUALITYBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "SelfTimerShotCount", values: None },
+    BinDef { index: 453, width: 1, signed: false, name: "WhiteBalanceButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_WHITEBALANCEBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 459, width: 1, signed: false, name: "CommandDialPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_COMMANDDIALPLAYBACKMODE_VALUES) },
+    BinDef { index: 463, width: 1, signed: false, name: "SubCommandDialPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9_SUBCOMMANDDIALPLAYBACKMODE_VALUES) },
+    BinDef { index: 467, width: 1, signed: false, name: "FocusPointLock", values: Some(NIKONCUSTOM_SETTINGSZ9_FOCUSPOINTLOCK_VALUES) },
+    BinDef { index: 469, width: 1, signed: false, name: "ControlRingResponse", values: Some(NIKONCUSTOM_SETTINGSZ9_CONTROLRINGRESPONSE_VALUES) },
+    BinDef { index: 481, width: 1, signed: false, name: "VerticalMovieFuncButton", values: Some(NIKONCUSTOM_SETTINGSZ9_VERTICALMOVIEFUNCBUTTON_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "SelfTimerShotInterval", values: Some(NIKONCUSTOM_SETTINGSZ9_SELFTIMERSHOTINTERVAL_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "AF-SPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ9_AF_SPRIORITYSELECTION_VALUES) },
+    BinDef { index: 505, width: 1, signed: false, name: "VerticalMovieAFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ9_VERTICALMOVIEAFONBUTTON_VALUES) },
+    BinDef { index: 51, width: 1, signed: false, name: "PlaybackMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9_PLAYBACKMONITOROFFTIME_VALUES) },
+    BinDef { index: 515, width: 1, signed: false, name: "MovieAFAreaMode", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEAFAREAMODE_VALUES) },
+    BinDef { index: 527, width: 1, signed: false, name: "HDMIViewAssist", values: Some(NIKONCUSTOM_SETTINGSZ9_HDMIVIEWASSIST_VALUES) },
+    BinDef { index: 529, width: 1, signed: false, name: "ZebraPatternToneRange", values: Some(NIKONCUSTOM_SETTINGSZ9_ZEBRAPATTERNTONERANGE_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "MenuMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9_MENUMONITOROFFTIME_VALUES) },
+    BinDef { index: 531, width: 1, signed: false, name: "MovieZebraPattern", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEZEBRAPATTERN_VALUES) },
+    BinDef { index: 533, width: 1, signed: false, name: "MovieHighlightDisplayThreshold", values: None },
+    BinDef { index: 535, width: 1, signed: false, name: "MovieMidtoneDisplayValue", values: None },
+    BinDef { index: 537, width: 1, signed: false, name: "MovieMidtoneDisplayRange", values: None },
+    BinDef { index: 541, width: 1, signed: false, name: "MovieEVFGrid", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEEVFGRID_VALUES) },
+    BinDef { index: 549, width: 1, signed: false, name: "MovieShutterSpeedLock", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIESHUTTERSPEEDLOCK_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "ShootingInfoMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9_SHOOTINGINFOMONITOROFFTIME_VALUES) },
+    BinDef { index: 550, width: 1, signed: false, name: "MovieFocusPointLock", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEFOCUSPOINTLOCK_VALUES) },
+    BinDef { index: 563, width: 1, signed: false, name: "MatrixMetering", values: Some(NIKONCUSTOM_SETTINGSZ9_MATRIXMETERING_VALUES) },
+    BinDef { index: 564, width: 1, signed: false, name: "AF-CFocusDisplay", values: Some(NIKONCUSTOM_SETTINGSZ9_AF_CFOCUSDISPLAY_VALUES) },
+    BinDef { index: 565, width: 1, signed: false, name: "FocusPeakingDisplay", values: Some(NIKONCUSTOM_SETTINGSZ9_FOCUSPEAKINGDISPLAY_VALUES) },
+    BinDef { index: 567, width: 1, signed: false, name: "KeepExposure", values: Some(NIKONCUSTOM_SETTINGSZ9_KEEPEXPOSURE_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "ImageReviewMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9_IMAGEREVIEWMONITOROFFTIME_VALUES) },
+    BinDef { index: 585, width: 1, signed: false, name: "StarlightView", values: Some(NIKONCUSTOM_SETTINGSZ9_STARLIGHTVIEW_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "EVFWarmDisplayMode", values: Some(NIKONCUSTOM_SETTINGSZ9_EVFWARMDISPLAYMODE_VALUES) },
+    BinDef { index: 589, width: 1, signed: true, name: "EVFWarmDisplayBrightness", values: None },
+    BinDef { index: 59, width: 1, signed: false, name: "CLModeShootingSpeed", values: None },
+    BinDef { index: 591, width: 1, signed: false, name: "EVFReleaseIndicator", values: Some(NIKONCUSTOM_SETTINGSZ9_EVFRELEASEINDICATOR_VALUES) },
+    BinDef { index: 601, width: 1, signed: false, name: "MovieApertureLock", values: Some(NIKONCUSTOM_SETTINGSZ9_MOVIEAPERTURELOCK_VALUES) },
+    BinDef { index: 607, width: 1, signed: false, name: "FlickAdvanceDirection", values: Some(NIKONCUSTOM_SETTINGSZ9_FLICKADVANCEDIRECTION_VALUES) },
+    BinDef { index: 61, width: 2, signed: true, name: "MaxContinuousRelease", values: None },
+    BinDef { index: 65, width: 1, signed: false, name: "SyncReleaseMode", values: Some(NIKONCUSTOM_SETTINGSZ9_SYNCRELEASEMODE_VALUES) },
+    BinDef { index: 69, width: 1, signed: false, name: "LimitSelectableImageAreaDX", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITSELECTABLEIMAGEAREADX_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "BlockShotAFResponse", values: Some(NIKONCUSTOM_SETTINGSZ9_BLOCKSHOTAFRESPONSE_VALUES) },
+    BinDef { index: 70, width: 1, signed: false, name: "LimitSelectableImageArea1To1", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITSELECTABLEIMAGEAREA1TO1_VALUES) },
+    BinDef { index: 71, width: 1, signed: false, name: "LimitSelectableImageArea16To9", values: Some(NIKONCUSTOM_SETTINGSZ9_LIMITSELECTABLEIMAGEAREA16TO9_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "FileNumberSequence", values: Some(NIKONCUSTOM_SETTINGSZ9_FILENUMBERSEQUENCE_VALUES) },
+    BinDef { index: 73, width: 1, signed: false, name: "FocusPeakingLevel", values: Some(NIKONCUSTOM_SETTINGSZ9_FOCUSPEAKINGLEVEL_VALUES) },
+    BinDef { index: 75, width: 1, signed: false, name: "FocusPeakingHighlightColor", values: Some(NIKONCUSTOM_SETTINGSZ9_FOCUSPEAKINGHIGHLIGHTCOLOR_VALUES) },
+    BinDef { index: 81, width: 1, signed: false, name: "ContinuousModeDisplay", values: Some(NIKONCUSTOM_SETTINGSZ9_CONTINUOUSMODEDISPLAY_VALUES) },
+    BinDef { index: 83, width: 1, signed: false, name: "FlashSyncSpeed", values: Some(NIKONCUSTOM_SETTINGSZ9_FLASHSYNCSPEED_VALUES) },
+    BinDef { index: 85, width: 1, signed: false, name: "HighSpeedSync", values: Some(NIKONCUSTOM_SETTINGSZ9_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 87, width: 1, signed: false, name: "FlashShutterSpeed", values: Some(NIKONCUSTOM_SETTINGSZ9_FLASHSHUTTERSPEED_VALUES) },
+    BinDef { index: 89, width: 1, signed: false, name: "FlashExposureCompArea", values: Some(NIKONCUSTOM_SETTINGSZ9_FLASHEXPOSURECOMPAREA_VALUES) },
+    BinDef { index: 91, width: 1, signed: false, name: "AutoFlashISOSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ9_AUTOFLASHISOSENSITIVITY_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "ModelingFlash", values: Some(NIKONCUSTOM_SETTINGSZ9_MODELINGFLASH_VALUES) },
+    BinDef { index: 95, width: 1, signed: false, name: "AutoBracketModeM", values: Some(NIKONCUSTOM_SETTINGSZ9_AUTOBRACKETMODEM_VALUES) },
+    BinDef { index: 97, width: 1, signed: false, name: "AutoBracketOrder", values: Some(NIKONCUSTOM_SETTINGSZ9_AUTOBRACKETORDER_VALUES) },
+    BinDef { index: 99, width: 1, signed: false, name: "Func1Button", values: Some(NIKONCUSTOM_SETTINGSZ9_FUNC1BUTTON_VALUES) },
 ];
 
 pub static NIKONCUSTOM_SETTINGSZ9_CUSTOMSETTINGSBANK_VALUES: &[(i64, &str)] = &[
@@ -46651,6 +49870,146 @@ pub static NIKONCUSTOM_SETTINGSZ9V4_MASKS: &[MaskDef] = &[
     MaskDef { index: 293, mask: 0x10, name: "LimitReleaseModeSelC30", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITRELEASEMODESELC30_VALUES) },
     MaskDef { index: 293, mask: 0x40, name: "LimitReleaseModeSelC120", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITRELEASEMODESELC120_VALUES) },
     MaskDef { index: 293, mask: 0x80, name: "LimitReleaseModeSelSelf", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITRELEASEMODESELSELF_VALUES) },
+];
+
+/// NikonCustom::SettingsZ9v4 ProcessBinaryData integers (table FORMAT or int8u)
+pub static NIKONCUSTOM_SETTINGSZ9V4_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "AFPointSel", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AFPOINTSEL_VALUES) },
+    BinDef { index: 115, width: 1, signed: false, name: "Func2Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC2BUTTON_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "StoreByOrientation", values: Some(NIKONCUSTOM_SETTINGSZ9V4_STOREBYORIENTATION_VALUES) },
+    BinDef { index: 131, width: 1, signed: false, name: "AFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AFONBUTTON_VALUES) },
+    BinDef { index: 143, width: 1, signed: false, name: "SubSelector", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SUBSELECTOR_VALUES) },
+    BinDef { index: 15, width: 1, signed: false, name: "AFActivation", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AFACTIVATION_VALUES) },
+    BinDef { index: 155, width: 1, signed: false, name: "AssignMovieRecordButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_ASSIGNMOVIERECORDBUTTON_VALUES) },
+    BinDef { index: 159, width: 1, signed: false, name: "LensFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LENSFUNC1BUTTON_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "AF-OnOutOfFocusRelease", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AF_ONOUTOFFOCUSRELEASE_VALUES) },
+    BinDef { index: 167, width: 1, signed: false, name: "LensFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LENSFUNC2BUTTON_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "LimitAF-AreaModeSelPinpoint", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAF_AREAMODESELPINPOINT_VALUES) },
+    BinDef { index: 173, width: 1, signed: false, name: "LensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LENSCONTROLRING_VALUES) },
+    BinDef { index: 175, width: 1, signed: false, name: "MultiSelectorShootMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MULTISELECTORSHOOTMODE_VALUES) },
+    BinDef { index: 179, width: 1, signed: false, name: "MultiSelectorPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MULTISELECTORPLAYBACKMODE_VALUES) },
+    BinDef { index: 183, width: 1, signed: false, name: "ShutterSpeedLock", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SHUTTERSPEEDLOCK_VALUES) },
+    BinDef { index: 184, width: 1, signed: false, name: "ApertureLock", values: Some(NIKONCUSTOM_SETTINGSZ9V4_APERTURELOCK_VALUES) },
+    BinDef { index: 185, width: 1, signed: false, name: "CmdDialsReverseRotExposureComp", values: None },
+    BinDef { index: 186, width: 1, signed: false, name: "CmdDialsReverseRotation", values: Some(NIKONCUSTOM_SETTINGSZ9V4_CMDDIALSREVERSEROTATION_VALUES) },
+    BinDef { index: 19, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_S", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAF_AREAMODESELWIDEAF_S_VALUES) },
+    BinDef { index: 191, width: 1, signed: false, name: "UseDialWithoutHold", values: Some(NIKONCUSTOM_SETTINGSZ9V4_USEDIALWITHOUTHOLD_VALUES) },
+    BinDef { index: 193, width: 1, signed: false, name: "ReverseIndicators", values: Some(NIKONCUSTOM_SETTINGSZ9V4_REVERSEINDICATORS_VALUES) },
+    BinDef { index: 195, width: 1, signed: false, name: "MovieFunc1Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEFUNC1BUTTON_VALUES) },
+    BinDef { index: 199, width: 1, signed: false, name: "MovieFunc2Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEFUNC2BUTTON_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "LimitAF-AreaModeSelWideAF_L", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAF_AREAMODESELWIDEAF_L_VALUES) },
+    BinDef { index: 203, width: 1, signed: false, name: "MovieAF-OnButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEAF_ONBUTTON_VALUES) },
+    BinDef { index: 207, width: 1, signed: false, name: "MovieMultiSelector", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEMULTISELECTOR_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "LimitAFAreaModeSelAuto", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAFAREAMODESELAUTO_VALUES) },
+    BinDef { index: 215, width: 1, signed: false, name: "MovieLensControlRing", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIELENSCONTROLRING_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "FocusPointWrap", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FOCUSPOINTWRAP_VALUES) },
+    BinDef { index: 221, width: 1, signed: false, name: "MovieAFSpeed", values: None },
+    BinDef { index: 223, width: 1, signed: false, name: "MovieAFSpeedApply", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEAFSPEEDAPPLY_VALUES) },
+    BinDef { index: 225, width: 1, signed: false, name: "MovieAFTrackingSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEAFTRACKINGSENSITIVITY_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "ManualFocusPointIllumination", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MANUALFOCUSPOINTILLUMINATION_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "DynamicAreaAFAssist", values: Some(NIKONCUSTOM_SETTINGSZ9V4_DYNAMICAREAAFASSIST_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "AF-AssistIlluminator", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AF_ASSISTILLUMINATOR_VALUES) },
+    BinDef { index: 26, width: 1, signed: false, name: "ManualFocusRingInAFMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MANUALFOCUSRINGINAFMODE_VALUES) },
+    BinDef { index: 27, width: 1, signed: false, name: "ExposureControlStepSize", values: Some(NIKONCUSTOM_SETTINGSZ9V4_EXPOSURECONTROLSTEPSIZE_VALUES) },
+    BinDef { index: 279, width: 1, signed: false, name: "LCDIllumination", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LCDILLUMINATION_VALUES) },
+    BinDef { index: 280, width: 1, signed: false, name: "ExtendedShutterSpeeds", values: Some(NIKONCUSTOM_SETTINGSZ9V4_EXTENDEDSHUTTERSPEEDS_VALUES) },
+    BinDef { index: 281, width: 1, signed: false, name: "SubjectMotion", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SUBJECTMOTION_VALUES) },
+    BinDef { index: 283, width: 1, signed: false, name: "FocusPointPersistence", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FOCUSPOINTPERSISTENCE_VALUES) },
+    BinDef { index: 285, width: 1, signed: false, name: "AutoFocusModeRestrictions", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AUTOFOCUSMODERESTRICTIONS_VALUES) },
+    BinDef { index: 289, width: 1, signed: false, name: "CHModeShootingSpeed", values: None },
+    BinDef { index: 29, width: 1, signed: false, name: "EasyExposureCompensation", values: Some(NIKONCUSTOM_SETTINGSZ9V4_EASYEXPOSURECOMPENSATION_VALUES) },
+    BinDef { index: 297, width: 1, signed: false, name: "FlashBurstPriority", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FLASHBURSTPRIORITY_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "AF-CPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AF_CPRIORITYSELECTION_VALUES) },
+    BinDef { index: 301, width: 1, signed: false, name: "VerticalFuncButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VERTICALFUNCBUTTON_VALUES) },
+    BinDef { index: 305, width: 1, signed: false, name: "Func3Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC3BUTTON_VALUES) },
+    BinDef { index: 309, width: 1, signed: false, name: "VerticalAFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VERTICALAFONBUTTON_VALUES) },
+    BinDef { index: 31, width: 1, signed: false, name: "CenterWeightedAreaSize", values: Some(NIKONCUSTOM_SETTINGSZ9V4_CENTERWEIGHTEDAREASIZE_VALUES) },
+    BinDef { index: 317, width: 1, signed: false, name: "VerticalMultiSelectorPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VERTICALMULTISELECTORPLAYBACKMODE_VALUES) },
+    BinDef { index: 319, width: 1, signed: false, name: "MovieFunc3Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEFUNC3BUTTON_VALUES) },
+    BinDef { index: 33, width: 1, signed: true, name: "FineTuneOptMatrixMetering", values: None },
+    BinDef { index: 35, width: 1, signed: true, name: "FineTuneOptCenterWeighted", values: None },
+    BinDef { index: 359, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_S", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAF_AREAMODESELDYNAMIC_S_VALUES) },
+    BinDef { index: 360, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_M", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAF_AREAMODESELDYNAMIC_M_VALUES) },
+    BinDef { index: 361, width: 1, signed: false, name: "LimitAF-AreaModeSelDynamic_L", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAF_AREAMODESELDYNAMIC_L_VALUES) },
+    BinDef { index: 363, width: 1, signed: false, name: "LimitAF-AreaModeSel3DTracking", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITAF_AREAMODESEL3DTRACKING_VALUES) },
+    BinDef { index: 365, width: 1, signed: false, name: "PlaybackFlickUp", values: Some(NIKONCUSTOM_SETTINGSZ9V4_PLAYBACKFLICKUP_VALUES) },
+    BinDef { index: 369, width: 1, signed: false, name: "PlaybackFlickDown", values: Some(NIKONCUSTOM_SETTINGSZ9V4_PLAYBACKFLICKDOWN_VALUES) },
+    BinDef { index: 37, width: 1, signed: true, name: "FineTuneOptSpotMetering", values: None },
+    BinDef { index: 373, width: 1, signed: false, name: "ISOStepSize", values: Some(NIKONCUSTOM_SETTINGSZ9V4_ISOSTEPSIZE_VALUES) },
+    BinDef { index: 379, width: 1, signed: false, name: "ReverseFocusRing", values: Some(NIKONCUSTOM_SETTINGSZ9V4_REVERSEFOCUSRING_VALUES) },
+    BinDef { index: 380, width: 1, signed: false, name: "EVFImageFrame", values: Some(NIKONCUSTOM_SETTINGSZ9V4_EVFIMAGEFRAME_VALUES) },
+    BinDef { index: 381, width: 1, signed: false, name: "EVFGrid", values: Some(NIKONCUSTOM_SETTINGSZ9V4_EVFGRID_VALUES) },
+    BinDef { index: 383, width: 1, signed: false, name: "VirtualHorizonStyle", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VIRTUALHORIZONSTYLE_VALUES) },
+    BinDef { index: 39, width: 1, signed: true, name: "FineTuneOptHighlightWeighted", values: None },
+    BinDef { index: 397, width: 1, signed: false, name: "Func4Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC4BUTTON_VALUES) },
+    BinDef { index: 403, width: 1, signed: false, name: "AudioButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AUDIOBUTTON_VALUES) },
+    BinDef { index: 405, width: 1, signed: false, name: "QualityButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_QUALITYBUTTON_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "ShutterReleaseButtonAE-L", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SHUTTERRELEASEBUTTONAE_L_VALUES) },
+    BinDef { index: 423, width: 1, signed: false, name: "VerticalMultiSelector", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VERTICALMULTISELECTOR_VALUES) },
+    BinDef { index: 43, width: 1, signed: false, name: "SelfTimerTime", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SELFTIMERTIME_VALUES) },
+    BinDef { index: 445, width: 1, signed: false, name: "Func1ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC1BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 447, width: 1, signed: false, name: "Func2ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC2BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 449, width: 1, signed: false, name: "Func3ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC3BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "SelfTimerShotCount", values: None },
+    BinDef { index: 455, width: 1, signed: false, name: "Func4ButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC4BUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 461, width: 1, signed: false, name: "MovieRecordButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIERECORDBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 463, width: 1, signed: false, name: "VerticalFuncButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VERTICALFUNCBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 465, width: 1, signed: false, name: "AudioButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AUDIOBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 471, width: 1, signed: false, name: "QualityButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_QUALITYBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 477, width: 1, signed: false, name: "WhiteBalanceButtonPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_WHITEBALANCEBUTTONPLAYBACKMODE_VALUES) },
+    BinDef { index: 483, width: 1, signed: false, name: "CommandDialPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_COMMANDDIALPLAYBACKMODE_VALUES) },
+    BinDef { index: 485, width: 1, signed: false, name: "CommandDialVideoPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_COMMANDDIALVIDEOPLAYBACKMODE_VALUES) },
+    BinDef { index: 487, width: 1, signed: false, name: "SubCommandDialPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SUBCOMMANDDIALPLAYBACKMODE_VALUES) },
+    BinDef { index: 489, width: 1, signed: false, name: "SubCommandDialVideoPlaybackMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SUBCOMMANDDIALVIDEOPLAYBACKMODE_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "SelfTimerShotInterval", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SELFTIMERSHOTINTERVAL_VALUES) },
+    BinDef { index: 491, width: 1, signed: false, name: "FocusPointLock", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FOCUSPOINTLOCK_VALUES) },
+    BinDef { index: 493, width: 1, signed: false, name: "ControlRingResponse", values: Some(NIKONCUSTOM_SETTINGSZ9V4_CONTROLRINGRESPONSE_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "AF-SPrioritySelection", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AF_SPRIORITYSELECTION_VALUES) },
+    BinDef { index: 505, width: 1, signed: false, name: "VerticalMovieFuncButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VERTICALMOVIEFUNCBUTTON_VALUES) },
+    BinDef { index: 51, width: 1, signed: false, name: "PlaybackMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9V4_PLAYBACKMONITOROFFTIME_VALUES) },
+    BinDef { index: 529, width: 1, signed: false, name: "VerticalMovieAFOnButton", values: Some(NIKONCUSTOM_SETTINGSZ9V4_VERTICALMOVIEAFONBUTTON_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "MenuMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MENUMONITOROFFTIME_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "ShootingInfoMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SHOOTINGINFOMONITOROFFTIME_VALUES) },
+    BinDef { index: 551, width: 1, signed: false, name: "HDMIViewAssist", values: Some(NIKONCUSTOM_SETTINGSZ9V4_HDMIVIEWASSIST_VALUES) },
+    BinDef { index: 553, width: 1, signed: false, name: "ZebraPatternToneRange", values: Some(NIKONCUSTOM_SETTINGSZ9V4_ZEBRAPATTERNTONERANGE_VALUES) },
+    BinDef { index: 555, width: 1, signed: false, name: "MovieZebraPattern", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEZEBRAPATTERN_VALUES) },
+    BinDef { index: 557, width: 1, signed: false, name: "MovieHighlightDisplayThreshold", values: None },
+    BinDef { index: 559, width: 1, signed: false, name: "MovieMidtoneDisplayValue", values: None },
+    BinDef { index: 561, width: 1, signed: false, name: "MovieMidtoneDisplayRange", values: None },
+    BinDef { index: 565, width: 1, signed: false, name: "MovieEVFGrid", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEEVFGRID_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "ImageReviewMonitorOffTime", values: Some(NIKONCUSTOM_SETTINGSZ9V4_IMAGEREVIEWMONITOROFFTIME_VALUES) },
+    BinDef { index: 573, width: 1, signed: false, name: "MovieShutterSpeedLock", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIESHUTTERSPEEDLOCK_VALUES) },
+    BinDef { index: 574, width: 1, signed: false, name: "MovieFocusPointLock", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEFOCUSPOINTLOCK_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "MatrixMetering", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MATRIXMETERING_VALUES) },
+    BinDef { index: 588, width: 1, signed: false, name: "AF-CFocusDisplay", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AF_CFOCUSDISPLAY_VALUES) },
+    BinDef { index: 589, width: 1, signed: false, name: "FocusPeakingDisplay", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FOCUSPEAKINGDISPLAY_VALUES) },
+    BinDef { index: 59, width: 1, signed: false, name: "CLModeShootingSpeed", values: None },
+    BinDef { index: 591, width: 1, signed: false, name: "KeepExposure", values: Some(NIKONCUSTOM_SETTINGSZ9V4_KEEPEXPOSURE_VALUES) },
+    BinDef { index: 609, width: 1, signed: false, name: "StarlightView", values: Some(NIKONCUSTOM_SETTINGSZ9V4_STARLIGHTVIEW_VALUES) },
+    BinDef { index: 61, width: 2, signed: true, name: "MaxContinuousRelease", values: None },
+    BinDef { index: 611, width: 1, signed: false, name: "EVFWarmDisplayMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_EVFWARMDISPLAYMODE_VALUES) },
+    BinDef { index: 613, width: 1, signed: true, name: "EVFWarmDisplayBrightness", values: None },
+    BinDef { index: 615, width: 1, signed: false, name: "EVFReleaseIndicator", values: Some(NIKONCUSTOM_SETTINGSZ9V4_EVFRELEASEINDICATOR_VALUES) },
+    BinDef { index: 625, width: 1, signed: false, name: "MovieApertureLock", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MOVIEAPERTURELOCK_VALUES) },
+    BinDef { index: 631, width: 1, signed: false, name: "FlickAdvanceDirection", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FLICKADVANCEDIRECTION_VALUES) },
+    BinDef { index: 65, width: 1, signed: false, name: "SyncReleaseMode", values: Some(NIKONCUSTOM_SETTINGSZ9V4_SYNCRELEASEMODE_VALUES) },
+    BinDef { index: 69, width: 1, signed: false, name: "LimitSelectableImageAreaDX", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITSELECTABLEIMAGEAREADX_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "BlockShotAFResponse", values: Some(NIKONCUSTOM_SETTINGSZ9V4_BLOCKSHOTAFRESPONSE_VALUES) },
+    BinDef { index: 70, width: 1, signed: false, name: "LimitSelectableImageArea1To1", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITSELECTABLEIMAGEAREA1TO1_VALUES) },
+    BinDef { index: 71, width: 1, signed: false, name: "LimitSelectableImageArea16To9", values: Some(NIKONCUSTOM_SETTINGSZ9V4_LIMITSELECTABLEIMAGEAREA16TO9_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "FileNumberSequence", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FILENUMBERSEQUENCE_VALUES) },
+    BinDef { index: 73, width: 1, signed: false, name: "FocusPeakingLevel", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FOCUSPEAKINGLEVEL_VALUES) },
+    BinDef { index: 75, width: 1, signed: false, name: "FocusPeakingHighlightColor", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FOCUSPEAKINGHIGHLIGHTCOLOR_VALUES) },
+    BinDef { index: 81, width: 1, signed: false, name: "ContinuousModeDisplay", values: Some(NIKONCUSTOM_SETTINGSZ9V4_CONTINUOUSMODEDISPLAY_VALUES) },
+    BinDef { index: 83, width: 1, signed: false, name: "FlashSyncSpeed", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FLASHSYNCSPEED_VALUES) },
+    BinDef { index: 85, width: 1, signed: false, name: "HighSpeedSync", values: Some(NIKONCUSTOM_SETTINGSZ9V4_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 87, width: 1, signed: false, name: "FlashShutterSpeed", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FLASHSHUTTERSPEED_VALUES) },
+    BinDef { index: 89, width: 1, signed: false, name: "FlashExposureCompArea", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FLASHEXPOSURECOMPAREA_VALUES) },
+    BinDef { index: 91, width: 1, signed: false, name: "AutoFlashISOSensitivity", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AUTOFLASHISOSENSITIVITY_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "ModelingFlash", values: Some(NIKONCUSTOM_SETTINGSZ9V4_MODELINGFLASH_VALUES) },
+    BinDef { index: 95, width: 1, signed: false, name: "AutoBracketModeM", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AUTOBRACKETMODEM_VALUES) },
+    BinDef { index: 97, width: 1, signed: false, name: "AutoBracketOrder", values: Some(NIKONCUSTOM_SETTINGSZ9V4_AUTOBRACKETORDER_VALUES) },
+    BinDef { index: 99, width: 1, signed: false, name: "Func1Button", values: Some(NIKONCUSTOM_SETTINGSZ9V4_FUNC1BUTTON_VALUES) },
 ];
 
 pub static NIKONCUSTOM_SETTINGSZ9V4_CUSTOMSETTINGSBANK_VALUES: &[(i64, &str)] = &[
@@ -52758,6 +56117,12 @@ pub static NINTENDO_CAMERAINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "TimeStamp", values: None },
 };
 
+/// Nintendo::CameraInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static NINTENDO_CAMERAINFO_BIN: &[BinDef] = &[
+    BinDef { index: 48, width: 2, signed: false, name: "Category", values: Some(NINTENDO_CAMERAINFO_CATEGORY_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "TimeStamp", values: None },
+];
+
 pub static NINTENDO_CAMERAINFO_CATEGORY_VALUES: &[(i64, &str)] = &[
     (0, "(none)"),
     (16384, "Woman"),
@@ -52774,6 +56139,11 @@ pub static NINTENDO_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static OLYMPUS_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1580u16 => TagDef { name: "CAFSensitivity", values: None },
 };
+
+/// Olympus::AFInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static OLYMPUS_AFINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1580, width: 1, signed: true, name: "CAFSensitivity", values: None },
+];
 
 /// Olympus::AFTargetInfo tags
 pub static OLYMPUS_AFTARGETINFO: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -53744,6 +57114,11 @@ pub static OLYMPUS_SUBJECTDETECTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "SubjectDetectDetail", values: None },
 };
 
+/// Olympus::SubjectDetectInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static OLYMPUS_SUBJECTDETECTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "SubjectDetectStatus", values: Some(OLYMPUS_SUBJECTDETECTINFO_SUBJECTDETECTSTATUS_VALUES) },
+];
+
 pub static OLYMPUS_SUBJECTDETECTINFO_SUBJECTDETECTSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "No Data"),
     (257, "Subject and L1 Detail Detected"),
@@ -53759,6 +57134,11 @@ pub static OLYMPUS_SUBJECTDETECTINFO_SUBJECTDETECTSTATUS_VALUES: &[(i64, &str)] 
 pub static PANASONIC_DATA1: phf::Map<u16, TagDef> = phf::phf_map! {
     22u16 => TagDef { name: "LensType", values: Some(PANASONIC_DATA1_LENSTYPE_VALUES) },
 };
+
+/// Panasonic::Data1 ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_DATA1_BIN: &[BinDef] = &[
+    BinDef { index: 22, width: 4, signed: false, name: "LensType", values: Some(PANASONIC_DATA1_LENSTYPE_VALUES) },
+];
 
 pub static PANASONIC_DATA1_LENSTYPE_VALUES: &[(i64, &str)] = &[
     (1, "Elmarit-M 21mm f/2.8"),
@@ -53815,6 +57195,11 @@ pub static PANASONIC_FACEDETINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "Face3Position", values: None },
 };
 
+/// Panasonic::FaceDetInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_FACEDETINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "NumFacePositions", values: None },
+];
+
 /// Panasonic::FaceRecInfo tags
 pub static PANASONIC_FACERECINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FacesRecognized", values: None },
@@ -53829,11 +57214,22 @@ pub static PANASONIC_FACERECINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "RecognizedFace2Age", values: None },
 };
 
+/// Panasonic::FaceRecInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_FACERECINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "FacesRecognized", values: None },
+];
+
 /// Panasonic::FocusInfo tags
 pub static PANASONIC_FOCUSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FocusDistance", values: None },
     1u16 => TagDef { name: "FocalLength", values: None },
 };
+
+/// Panasonic::FocusInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_FOCUSINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "FocusDistance", values: None },
+    BinDef { index: 1, width: 2, signed: false, name: "FocalLength", values: None },
+];
 
 /// Panasonic::Leica2 tags
 pub static PANASONIC_LEICA2: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -54749,6 +58145,11 @@ pub static PANASONIC_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FileIndex", values: None },
 };
 
+/// Panasonic::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "FileIndex", values: None },
+];
+
 /// Panasonic::Subdir tags
 pub static PANASONIC_SUBDIR: phf::Map<u16, TagDef> = phf::phf_map! {
     12298u16 => TagDef { name: "Contrast", values: Some(PANASONIC_SUBDIR_CONTRAST_VALUES) },
@@ -54876,6 +58277,11 @@ pub static PANASONIC_TIMEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "PanasonicDateTime", values: None },
     16u16 => TagDef { name: "TimeLapseShotNumber", values: None },
 };
+
+/// Panasonic::TimeInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_TIMEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 4, signed: false, name: "TimeLapseShotNumber", values: None },
+];
 
 /// Panasonic::Type2 tags
 pub static PANASONIC_TYPE2: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -55007,6 +58413,25 @@ pub static PENTAX_AEINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 13, mask: 0xf, name: "AEMeteringMode2", values: Some(PENTAX_AEINFO_AEMETERINGMODE2_VALUES) },
 ];
 
+/// Pentax::AEInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "AEExposureTime", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "AEAperture", values: None },
+    BinDef { index: 10, width: 1, signed: false, name: "AEMaxAperture2", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "AEMinAperture", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "AEMeteringMode", values: Some(PENTAX_AEINFO_AEMETERINGMODE_VALUES) },
+    BinDef { index: 14, width: 1, signed: true, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "AE_ISO", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "LevelIndicator", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "AEXv", values: None },
+    BinDef { index: 4, width: 1, signed: true, name: "AEBXv", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AEMinExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "AEProgramMode", values: Some(PENTAX_AEINFO_AEPROGRAMMODE_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "AEFlags", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "AEApertureSteps", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "AEMaxAperture", values: None },
+];
+
 pub static PENTAX_AEINFO_AEMETERINGMODE_VALUES: &[(i64, &str)] = &[
     (0, "Multi-segment"),
 ];
@@ -55076,6 +58501,22 @@ pub static PENTAX_AEINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "AEError", values: None },
 };
 
+/// Pentax::AEInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AEINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "AEApertureSteps", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "SceneMode", values: Some(PENTAX_AEINFO2_SCENEMODE_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "AEMaxAperture", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "AEMaxAperture2", values: None },
+    BinDef { index: 18, width: 1, signed: false, name: "AEMinAperture", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "AEMinExposureTime", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "AEExposureTime", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "AEAperture", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "AE_ISO", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AEXv", values: None },
+    BinDef { index: 6, width: 1, signed: true, name: "AEBXv", values: None },
+    BinDef { index: 8, width: 1, signed: true, name: "AEError", values: None },
+];
+
 pub static PENTAX_AEINFO2_SCENEMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "HDR"),
@@ -55113,6 +58554,17 @@ pub static PENTAX_AEINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
     31u16 => TagDef { name: "AEMinExposureTime", values: None },
 };
 
+/// Pentax::AEInfo3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AEINFO3_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: false, name: "AEExposureTime", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "AEAperture", values: None },
+    BinDef { index: 18, width: 1, signed: false, name: "AE_ISO", values: None },
+    BinDef { index: 28, width: 1, signed: false, name: "AEMaxAperture", values: None },
+    BinDef { index: 29, width: 1, signed: false, name: "AEMaxAperture2", values: None },
+    BinDef { index: 30, width: 1, signed: false, name: "AEMinAperture", values: None },
+    BinDef { index: 31, width: 1, signed: false, name: "AEMinExposureTime", values: None },
+];
+
 /// Pentax::AFInfo tags
 pub static PENTAX_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AFPointsUnknown1", values: Some(PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES) },
@@ -55136,6 +58588,20 @@ pub static PENTAX_AFINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 545, mask: 0x3, name: "AFCHold", values: Some(PENTAX_AFINFO_AFCHOLD_VALUES) },
     MaskDef { index: 545, mask: 0xc, name: "AFCPointTracking", values: Some(PENTAX_AFINFO_AFCPOINTTRACKING_VALUES) },
     MaskDef { index: 545, mask: 0x70, name: "AFCSensitivity", values: None },
+];
+
+/// Pentax::AFInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AFINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "AFPointsUnknown1", values: Some(PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES) },
+    BinDef { index: 11, width: 1, signed: false, name: "AFPointsInFocus", values: Some(PENTAX_AFINFO_AFPOINTSINFOCUS_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "AFPointsUnknown2", values: Some(PENTAX_AFINFO_AFPOINTSUNKNOWN2_VALUES) },
+    BinDef { index: 2400, width: 1, signed: false, name: "SubjectRecognition", values: Some(PENTAX_AFINFO_SUBJECTRECOGNITION_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFPredictor", values: None },
+    BinDef { index: 506, width: 1, signed: false, name: "LiveView", values: Some(PENTAX_AFINFO_LIVEVIEW_VALUES) },
+    BinDef { index: 509, width: 1, signed: false, name: "AFHold", values: Some(PENTAX_AFINFO_AFHOLD_VALUES) },
+    BinDef { index: 543, width: 1, signed: false, name: "FirstFrameActionInAFC", values: Some(PENTAX_AFINFO_FIRSTFRAMEACTIONINAFC_VALUES) },
+    BinDef { index: 544, width: 1, signed: false, name: "ActionInAFCCont", values: Some(PENTAX_AFINFO_ACTIONINAFCCONT_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "AFIntegrationTime", values: None },
 ];
 
 pub static PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES: &[(i64, &str)] = &[
@@ -55230,6 +58696,13 @@ pub static PENTAX_AFINFOK3III_MASKS: &[MaskDef] = &[
     MaskDef { index: 7, mask: 0x0, name: "AFAreas", values: None },
 ];
 
+/// Pentax::AFInfoK3III ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AFINFOK3III_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: false, name: "AFSelectionMode", values: Some(PENTAX_AFINFOK3III_AFSELECTIONMODE_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "MaxNumAFPoints", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "NumAFPoints", values: None },
+];
+
 pub static PENTAX_AFINFOK3III_AFMODE_VALUES: &[(i64, &str)] = &[
     (0, "Phase Detect"),
     (2, "Contrast Detect"),
@@ -55272,11 +58745,22 @@ pub static PENTAX_AFPOINTINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 4, mask: 0x0, name: "AFPointsSpecial", values: None },
 ];
 
+/// Pentax::AFPointInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AFPOINTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "NumAFPoints", values: None },
+];
+
 /// Pentax::AWBInfo tags
 pub static PENTAX_AWBINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "WhiteBalanceAutoAdjustment", values: Some(PENTAX_AWBINFO_WHITEBALANCEAUTOADJUSTMENT_VALUES) },
     1u16 => TagDef { name: "TungstenAWB", values: Some(PENTAX_AWBINFO_TUNGSTENAWB_VALUES) },
 };
+
+/// Pentax::AWBInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AWBINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "WhiteBalanceAutoAdjustment", values: Some(PENTAX_AWBINFO_WHITEBALANCEAUTOADJUSTMENT_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "TungstenAWB", values: Some(PENTAX_AWBINFO_TUNGSTENAWB_VALUES) },
+];
 
 pub static PENTAX_AWBINFO_WHITEBALANCEAUTOADJUSTMENT_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -55307,6 +58791,19 @@ pub static PENTAX_BATTERYINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0xf0, name: "PowerAvailable", values: None },
     MaskDef { index: 1, mask: 0xf0, name: "BodyBatteryState", values: Some(PENTAX_BATTERYINFO_BODYBATTERYSTATE_VALUES) },
     MaskDef { index: 1, mask: 0xf, name: "GripBatteryState", values: Some(PENTAX_BATTERYINFO_GRIPBATTERYSTATE_VALUES) },
+];
+
+/// Pentax::BatteryInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_BATTERYINFO_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: false, name: "GripBatteryState", values: Some(PENTAX_BATTERYINFO_GRIPBATTERYSTATE_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "GripBatteryPercent", values: None },
+    BinDef { index: 18, width: 4, signed: false, name: "GripBatteryVoltage", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "BodyBatteryADNoLoad", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "BodyBatteryADLoad", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "GripBatteryADNoLoad", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "GripBatteryADLoad", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "BodyBatteryVoltage3", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "BodyBatteryVoltage4", values: None },
 ];
 
 pub static PENTAX_BATTERYINFO_POWERSOURCE_VALUES: &[(i64, &str)] = &[
@@ -55342,12 +58839,23 @@ pub static PENTAX_CAFPOINTINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 2, mask: 0x0, name: "CAFPointsSelected", values: None },
 ];
 
+/// Pentax::CAFPointInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_CAFPOINTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "NumCAFPoints", values: None },
+];
+
 /// Pentax::CameraInfo tags
 pub static PENTAX_CAMERAINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "PentaxModelID", values: Some(PENTAX_CAMERAINFO_PENTAXMODELID_VALUES) },
     1u16 => TagDef { name: "ManufactureDate", values: None },
     2u16 => TagDef { name: "ProductionCode", values: None },
 };
+
+/// Pentax::CameraInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_CAMERAINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "PentaxModelID", values: Some(PENTAX_CAMERAINFO_PENTAXMODELID_VALUES) },
+    BinDef { index: 1, width: 4, signed: false, name: "ManufactureDate", values: None },
+];
 
 pub static PENTAX_CAMERAINFO_PENTAXMODELID_VALUES: &[(i64, &str)] = &[
     (13, "Optio 330/430"),
@@ -55539,6 +59047,21 @@ pub static PENTAX_CAMERASETTINGS_MASKS: &[MaskDef] = &[
     MaskDef { index: 2, mask: 0xf, name: "MeteringMode2", values: Some(PENTAX_CAMERASETTINGS_METERINGMODE2_VALUES) },
     MaskDef { index: 3, mask: 0xf0, name: "AFPointMode", values: Some(PENTAX_CAMERASETTINGS_AFPOINTMODE_VALUES) },
     MaskDef { index: 3, mask: 0xf, name: "FocusMode2", values: Some(PENTAX_CAMERASETTINGS_FOCUSMODE2_VALUES) },
+];
+
+/// Pentax::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "PictureMode2", values: Some(PENTAX_CAMERASETTINGS_PICTUREMODE2_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "RawAndJpgRecording", values: Some(PENTAX_CAMERASETTINGS_RAWANDJPGRECORDING_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "TvExposureTimeSetting", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "AvApertureSetting", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "SvISOSetting", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "BaseExposureCompensation", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "AFPointSelected2", values: Some(PENTAX_CAMERASETTINGS_AFPOINTSELECTED2_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISOFloor", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "DriveMode2", values: Some(PENTAX_CAMERASETTINGS_DRIVEMODE2_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "ExposureBracketStepSize", values: Some(PENTAX_CAMERASETTINGS_EXPOSUREBRACKETSTEPSIZE_VALUES) },
+    BinDef { index: 9, width: 1, signed: false, name: "BracketShotNumber", values: Some(PENTAX_CAMERASETTINGS_BRACKETSHOTNUMBER_VALUES) },
 ];
 
 pub static PENTAX_CAMERASETTINGS_PICTUREMODE2_VALUES: &[(i64, &str)] = &[
@@ -55741,12 +59264,25 @@ pub static PENTAX_COLORINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     17u16 => TagDef { name: "WBShiftGM", values: None },
 };
 
+/// Pentax::ColorInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_COLORINFO_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: true, name: "WBShiftAB", values: None },
+    BinDef { index: 17, width: 1, signed: true, name: "WBShiftGM", values: None },
+];
+
 /// Pentax::EVStepInfo tags
 pub static PENTAX_EVSTEPINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "EVSteps", values: Some(PENTAX_EVSTEPINFO_EVSTEPS_VALUES) },
     1u16 => TagDef { name: "SensitivitySteps", values: Some(PENTAX_EVSTEPINFO_SENSITIVITYSTEPS_VALUES) },
     3u16 => TagDef { name: "LiveView", values: Some(PENTAX_EVSTEPINFO_LIVEVIEW_VALUES) },
 };
+
+/// Pentax::EVStepInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_EVSTEPINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "EVSteps", values: Some(PENTAX_EVSTEPINFO_EVSTEPS_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "SensitivitySteps", values: Some(PENTAX_EVSTEPINFO_SENSITIVITYSTEPS_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "LiveView", values: Some(PENTAX_EVSTEPINFO_LIVEVIEW_VALUES) },
+];
 
 pub static PENTAX_EVSTEPINFO_EVSTEPS_VALUES: &[(i64, &str)] = &[
     (0, "1/2 EV Steps"),
@@ -55768,6 +59304,11 @@ pub static PENTAX_FACEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FacesDetected", values: None },
     2u16 => TagDef { name: "FacePosition", values: None },
 };
+
+/// Pentax::FaceInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FACEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "FacesDetected", values: None },
+];
 
 /// Pentax::FaceInfoK3III tags
 pub static PENTAX_FACEINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -55840,6 +59381,12 @@ pub static PENTAX_FACEINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Pentax::FaceInfoK3III Mask bitfields (ExifTool 0.1-style indices)
 pub static PENTAX_FACEINFOK3III_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0x0, name: "FaceInfoK3III", values: None },
+];
+
+/// Pentax::FaceInfoK3III ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FACEINFOK3III_BIN: &[BinDef] = &[
+    BinDef { index: 6, width: 4, signed: false, name: "FacesDetectedA", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "FacesDetectedB", values: None },
 ];
 
 /// Pentax::FacePos tags
@@ -55939,6 +59486,12 @@ pub static PENTAX_FILTERINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     73u16 => TagDef { name: "DigitalFilter05", values: Some(PENTAX_FILTERINFO_DIGITALFILTER05_VALUES) },
     90u16 => TagDef { name: "DigitalFilter06", values: Some(PENTAX_FILTERINFO_DIGITALFILTER06_VALUES) },
 };
+
+/// Pentax::FilterInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FILTERINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "SourceDirectoryIndex", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "SourceFileIndex", values: None },
+];
 
 pub static PENTAX_FILTERINFO_DIGITALFILTER07_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -56515,6 +60068,16 @@ pub static PENTAX_FLASHINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 24, mask: 0x1f, name: "ExternalFlashGuideNumber", values: None },
 ];
 
+/// Pentax::FlashInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FLASHINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "FlashStatus", values: Some(PENTAX_FLASHINFO_FLASHSTATUS_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "InternalFlashMode", values: Some(PENTAX_FLASHINFO_INTERNALFLASHMODE_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "ExternalFlashMode", values: Some(PENTAX_FLASHINFO_EXTERNALFLASHMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "ExternalFlashExposureComp", values: Some(PENTAX_FLASHINFO_EXTERNALFLASHEXPOSURECOMP_VALUES) },
+    BinDef { index: 26, width: 1, signed: false, name: "ExternalFlashBounce", values: Some(PENTAX_FLASHINFO_EXTERNALFLASHBOUNCE_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "InternalFlashStrength", values: None },
+];
+
 pub static PENTAX_FLASHINFO_FLASHSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "Off (1)"),
@@ -56612,6 +60175,14 @@ pub static PENTAX_LENSCORR: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "DiffractionCorrection", values: Some(PENTAX_LENSCORR_DIFFRACTIONCORRECTION_VALUES) },
 };
 
+/// Pentax::LensCorr ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LENSCORR_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "DistortionCorrection", values: Some(PENTAX_LENSCORR_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "ChromaticAberrationCorrection", values: Some(PENTAX_LENSCORR_CHROMATICABERRATIONCORRECTION_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "PeripheralIlluminationCorr", values: Some(PENTAX_LENSCORR_PERIPHERALILLUMINATIONCORR_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "DiffractionCorrection", values: Some(PENTAX_LENSCORR_DIFFRACTIONCORRECTION_VALUES) },
+];
+
 pub static PENTAX_LENSCORR_DISTORTIONCORRECTION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -56662,6 +60233,23 @@ pub static PENTAX_LENSDATA_MASKS: &[MaskDef] = &[
     MaskDef { index: 14, mask: 0x7f, name: "MaxAperture", values: None },
     MaskDef { index: 3, mask: 0xf8, name: "MinFocusDistance", values: Some(PENTAX_LENSDATA_MINFOCUSDISTANCE_VALUES) },
     MaskDef { index: 3, mask: 0x7, name: "FocusRangeIndex", values: Some(PENTAX_LENSDATA_FOCUSRANGEINDEX_VALUES) },
+];
+
+/// Pentax::LensData ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LENSDATA_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "LensKind", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "LC10", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "LC11", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "LC12", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "LC14", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "LC15", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "LC1", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "LC3", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "LC4", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "LC5", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "LC6", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "LC7", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "LensFocalLength", values: None },
 ];
 
 pub static PENTAX_LENSDATA_AUTOAPERTURE_VALUES: &[(i64, &str)] = &[
@@ -56753,6 +60341,11 @@ pub static PENTAX_LENSREC: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "ExtenderStatus", values: Some(PENTAX_LENSREC_EXTENDERSTATUS_VALUES) },
 };
 
+/// Pentax::LensRec ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LENSREC_BIN: &[BinDef] = &[
+    BinDef { index: 3, width: 1, signed: false, name: "ExtenderStatus", values: Some(PENTAX_LENSREC_EXTENDERSTATUS_VALUES) },
+];
+
 pub static PENTAX_LENSREC_EXTENDERSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "Not attached"),
     (1, "Attached"),
@@ -56772,6 +60365,15 @@ pub static PENTAX_LEVELINFO: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static PENTAX_LEVELINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0xf, name: "LevelOrientation", values: Some(PENTAX_LEVELINFO_LEVELORIENTATION_VALUES) },
     MaskDef { index: 0, mask: 0xf0, name: "CompositionAdjust", values: Some(PENTAX_LEVELINFO_COMPOSITIONADJUST_VALUES) },
+];
+
+/// Pentax::LevelInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LEVELINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: true, name: "RollAngle", values: None },
+    BinDef { index: 2, width: 1, signed: true, name: "PitchAngle", values: None },
+    BinDef { index: 5, width: 1, signed: true, name: "CompositionAdjustX", values: None },
+    BinDef { index: 6, width: 1, signed: true, name: "CompositionAdjustY", values: None },
+    BinDef { index: 7, width: 1, signed: true, name: "CompositionAdjustRotation", values: None },
 ];
 
 pub static PENTAX_LEVELINFO_LEVELORIENTATION_VALUES: &[(i64, &str)] = &[
@@ -56801,6 +60403,13 @@ pub static PENTAX_LEVELINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "RollAngle", values: None },
     5u16 => TagDef { name: "PitchAngle", values: None },
 };
+
+/// Pentax::LevelInfoK3III ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LEVELINFOK3III_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: true, name: "CameraOrientation", values: Some(PENTAX_LEVELINFOK3III_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "RollAngle", values: None },
+    BinDef { index: 5, width: 2, signed: true, name: "PitchAngle", values: None },
+];
 
 pub static PENTAX_LEVELINFOK3III_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
@@ -57659,6 +61268,11 @@ pub static PENTAX_PIXELSHIFTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "PixelShiftResolution", values: Some(PENTAX_PIXELSHIFTINFO_PIXELSHIFTRESOLUTION_VALUES) },
 };
 
+/// Pentax::PixelShiftInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_PIXELSHIFTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "PixelShiftResolution", values: Some(PENTAX_PIXELSHIFTINFO_PIXELSHIFTRESOLUTION_VALUES) },
+];
+
 pub static PENTAX_PIXELSHIFTINFO_PIXELSHIFTRESOLUTION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -57676,6 +61290,14 @@ pub static PENTAX_SRINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "SRHalfPressTime", values: None },
     3u16 => TagDef { name: "SRFocalLength", values: None },
 };
+
+/// Pentax::SRInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_SRINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SRResult", values: Some(PENTAX_SRINFO_SRRESULT_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "ShakeReduction", values: Some(PENTAX_SRINFO_SHAKEREDUCTION_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "SRHalfPressTime", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "SRFocalLength", values: None },
+];
 
 pub static PENTAX_SRINFO_SRRESULT_VALUES: &[(i64, &str)] = &[
     (0, "Not stabilized"),
@@ -57700,6 +61322,12 @@ pub static PENTAX_SRINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "ShakeReduction", values: Some(PENTAX_SRINFO2_SHAKEREDUCTION_VALUES) },
 };
 
+/// Pentax::SRInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_SRINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SRResult", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "ShakeReduction", values: Some(PENTAX_SRINFO2_SHAKEREDUCTION_VALUES) },
+];
+
 pub static PENTAX_SRINFO2_SHAKEREDUCTION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -57720,6 +61348,11 @@ pub static PENTAX_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "CameraOrientation", values: Some(PENTAX_SHOTINFO_CAMERAORIENTATION_VALUES) },
 };
 
+/// Pentax::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "CameraOrientation", values: Some(PENTAX_SHOTINFO_CAMERAORIENTATION_VALUES) },
+];
+
 pub static PENTAX_SHOTINFO_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (16, "Horizontal (normal)"),
     (32, "Rotate 180"),
@@ -57739,6 +61372,16 @@ pub static PENTAX_TEMPINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     42u16 => TagDef { name: "SensorTemperature", values: None },
 };
 
+/// Pentax::TempInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_TEMPINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "ShotNumber", values: None },
+    BinDef { index: 12, width: 2, signed: true, name: "SensorTemperature", values: None },
+    BinDef { index: 14, width: 2, signed: true, name: "SensorTemperature2", values: None },
+    BinDef { index: 20, width: 2, signed: true, name: "CameraTemperature4", values: None },
+    BinDef { index: 22, width: 2, signed: true, name: "CameraTemperature5", values: None },
+    BinDef { index: 42, width: 2, signed: true, name: "SensorTemperature", values: None },
+];
+
 /// Pentax::TimeInfo tags
 pub static PENTAX_TIMEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "HometownCity", values: Some(PENTAX_TIMEINFO_HOMETOWNCITY_VALUES) },
@@ -57750,6 +61393,12 @@ pub static PENTAX_TIMEINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0x1, name: "WorldTimeLocation", values: Some(PENTAX_TIMEINFO_WORLDTIMELOCATION_VALUES) },
     MaskDef { index: 0, mask: 0x2, name: "HometownDST", values: Some(PENTAX_TIMEINFO_HOMETOWNDST_VALUES) },
     MaskDef { index: 0, mask: 0x4, name: "DestinationDST", values: Some(PENTAX_TIMEINFO_DESTINATIONDST_VALUES) },
+];
+
+/// Pentax::TimeInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_TIMEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 1, signed: false, name: "HometownCity", values: Some(PENTAX_TIMEINFO_HOMETOWNCITY_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "DestinationCity", values: Some(PENTAX_TIMEINFO_DESTINATIONCITY_VALUES) },
 ];
 
 pub static PENTAX_TIMEINFO_WORLDTIMELOCATION_VALUES: &[(i64, &str)] = &[
@@ -58261,6 +61910,11 @@ pub static PHOTOSHOP_PRINTSCALEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "PrintPosition", values: None },
 };
 
+/// Photoshop::PrintScaleInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PHOTOSHOP_PRINTSCALEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "PrintStyle", values: Some(PHOTOSHOP_PRINTSCALEINFO_PRINTSTYLE_VALUES) },
+];
+
 pub static PHOTOSHOP_PRINTSCALEINFO_PRINTSTYLE_VALUES: &[(i64, &str)] = &[
     (0, "Centered"),
     (1, "Size to Fit"),
@@ -58274,6 +61928,14 @@ pub static PHOTOSHOP_RESOLUTION: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "YResolution", values: None },
     6u16 => TagDef { name: "DisplayedUnitsY", values: Some(PHOTOSHOP_RESOLUTION_DISPLAYEDUNITSY_VALUES) },
 };
+
+/// Photoshop::Resolution ProcessBinaryData integers (table FORMAT or int8u)
+pub static PHOTOSHOP_RESOLUTION_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "XResolution", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "DisplayedUnitsX", values: Some(PHOTOSHOP_RESOLUTION_DISPLAYEDUNITSX_VALUES) },
+    BinDef { index: 4, width: 4, signed: false, name: "YResolution", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "DisplayedUnitsY", values: Some(PHOTOSHOP_RESOLUTION_DISPLAYEDUNITSY_VALUES) },
+];
 
 pub static PHOTOSHOP_RESOLUTION_DISPLAYEDUNITSX_VALUES: &[(i64, &str)] = &[
     (1, "inches"),
@@ -58298,6 +61960,11 @@ pub static PHOTOSHOP_VERSIONINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "ReaderName", values: None },
 };
 
+/// Photoshop::VersionInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PHOTOSHOP_VERSIONINFO_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "HasRealMergedData", values: Some(PHOTOSHOP_VERSIONINFO_HASREALMERGEDDATA_VALUES) },
+];
+
 pub static PHOTOSHOP_VERSIONINFO_HASREALMERGEDDATA_VALUES: &[(i64, &str)] = &[
     (0, "No"),
     (1, "Yes"),
@@ -58320,6 +61987,16 @@ pub static RECONYX_HYPERFIRE: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "Sequence", values: None },
     9u16 => TagDef { name: "EventNumber", values: None },
 };
+
+/// Reconyx::HyperFire ProcessBinaryData integers (table FORMAT or int8u)
+pub static RECONYX_HYPERFIRE_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "MakerNoteVersion", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "MoonPhase", values: Some(RECONYX_HYPERFIRE_MOONPHASE_VALUES) },
+    BinDef { index: 19, width: 2, signed: true, name: "AmbientTemperatureFahrenheit", values: None },
+    BinDef { index: 20, width: 2, signed: true, name: "AmbientTemperature", values: None },
+    BinDef { index: 40, width: 2, signed: false, name: "InfraredIlluminator", values: Some(RECONYX_HYPERFIRE_INFRAREDILLUMINATOR_VALUES) },
+    BinDef { index: 42, width: 2, signed: false, name: "BatteryVoltage", values: None },
+];
 
 pub static RECONYX_HYPERFIRE_MOONPHASE_VALUES: &[(i64, &str)] = &[
     (0, "New"),
@@ -58366,6 +62043,27 @@ pub static RECONYX_HYPERFIRE2: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "MotionSensitivity", values: None },
     98u16 => TagDef { name: "BatteryVoltage", values: None },
 };
+
+/// Reconyx::HyperFire2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static RECONYX_HYPERFIRE2_BIN: &[BinDef] = &[
+    BinDef { index: 100, width: 2, signed: false, name: "BatteryVoltageAvg", values: None },
+    BinDef { index: 102, width: 2, signed: false, name: "BatteryType", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "FileNumber", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "DirectoryNumber", values: None },
+    BinDef { index: 74, width: 2, signed: false, name: "DayOfWeek", values: Some(RECONYX_HYPERFIRE2_DAYOFWEEK_VALUES) },
+    BinDef { index: 76, width: 2, signed: false, name: "MoonPhase", values: Some(RECONYX_HYPERFIRE2_MOONPHASE_VALUES) },
+    BinDef { index: 78, width: 2, signed: true, name: "AmbientTemperatureFahrenheit", values: None },
+    BinDef { index: 80, width: 2, signed: true, name: "AmbientTemperature", values: None },
+    BinDef { index: 82, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 84, width: 2, signed: false, name: "Brightness", values: None },
+    BinDef { index: 86, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 88, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 90, width: 2, signed: false, name: "Flash", values: Some(RECONYX_HYPERFIRE2_FLASH_VALUES) },
+    BinDef { index: 92, width: 2, signed: false, name: "AmbientInfrared", values: None },
+    BinDef { index: 94, width: 2, signed: false, name: "AmbientLight", values: None },
+    BinDef { index: 96, width: 2, signed: false, name: "MotionSensitivity", values: None },
+    BinDef { index: 98, width: 2, signed: false, name: "BatteryVoltage", values: None },
+];
 
 pub static RECONYX_HYPERFIRE2_DAYOFWEEK_VALUES: &[(i64, &str)] = &[
     (0, "Sunday"),
@@ -58420,6 +62118,27 @@ pub static RECONYX_HYPERFIRE4K: phf::Map<u16, TagDef> = phf::phf_map! {
     79u16 => TagDef { name: "BatteryType", values: Some(RECONYX_HYPERFIRE4K_BATTERYTYPE_VALUES) },
     81u16 => TagDef { name: "UserLabel", values: None },
 };
+
+/// Reconyx::HyperFire4K ProcessBinaryData integers (table FORMAT or int8u)
+pub static RECONYX_HYPERFIRE4K_BIN: &[BinDef] = &[
+    BinDef { index: 147, width: 2, signed: false, name: "DirectoryNumber", values: None },
+    BinDef { index: 149, width: 2, signed: false, name: "FileNumber", values: None },
+    BinDef { index: 43, width: 4, signed: false, name: "EventNumber", values: None },
+    BinDef { index: 54, width: 1, signed: false, name: "DayOfWeek", values: Some(RECONYX_HYPERFIRE4K_DAYOFWEEK_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "MoonPhase", values: Some(RECONYX_HYPERFIRE4K_MOONPHASE_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "AmbientTemperatureFahrenheit", values: None },
+    BinDef { index: 58, width: 2, signed: true, name: "AmbientTemperature", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 62, width: 2, signed: false, name: "Brightness", values: None },
+    BinDef { index: 64, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 66, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 68, width: 1, signed: false, name: "Flash", values: Some(RECONYX_HYPERFIRE4K_FLASH_VALUES) },
+    BinDef { index: 69, width: 4, signed: false, name: "AmbientLight", values: None },
+    BinDef { index: 73, width: 2, signed: false, name: "MotionSensitivity", values: None },
+    BinDef { index: 75, width: 2, signed: false, name: "BatteryVoltage", values: None },
+    BinDef { index: 77, width: 2, signed: false, name: "BatteryVoltageAvg", values: None },
+    BinDef { index: 79, width: 2, signed: false, name: "BatteryType", values: Some(RECONYX_HYPERFIRE4K_BATTERYTYPE_VALUES) },
+];
 
 pub static RECONYX_HYPERFIRE4K_DAYOFWEEK_VALUES: &[(i64, &str)] = &[
     (1, "Sunday"),
@@ -58488,6 +62207,28 @@ pub static RECONYX_MICROFIRE: phf::Map<u16, TagDef> = phf::phf_map! {
     98u16 => TagDef { name: "Contrast", values: None },
 };
 
+/// Reconyx::MicroFire ProcessBinaryData integers (table FORMAT or int8u)
+pub static RECONYX_MICROFIRE_BIN: &[BinDef] = &[
+    BinDef { index: 100, width: 2, signed: false, name: "Brightness", values: None },
+    BinDef { index: 102, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 104, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 106, width: 1, signed: false, name: "Flash", values: Some(RECONYX_MICROFIRE_FLASH_VALUES) },
+    BinDef { index: 108, width: 2, signed: false, name: "AmbientInfrared", values: None },
+    BinDef { index: 110, width: 2, signed: false, name: "AmbientLight", values: None },
+    BinDef { index: 112, width: 2, signed: false, name: "MotionSensitivity", values: None },
+    BinDef { index: 114, width: 2, signed: false, name: "BatteryVoltage", values: None },
+    BinDef { index: 116, width: 2, signed: false, name: "BatteryType", values: Some(RECONYX_MICROFIRE_BATTERYTYPE_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "FileNumber", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "DirectoryNumber", values: None },
+    BinDef { index: 58, width: 2, signed: false, name: "BluetoothFirmwareDate", values: None },
+    BinDef { index: 66, width: 2, signed: false, name: "WifiFirmwareDate", values: None },
+    BinDef { index: 90, width: 2, signed: false, name: "DayOfWeek", values: Some(RECONYX_MICROFIRE_DAYOFWEEK_VALUES) },
+    BinDef { index: 92, width: 2, signed: false, name: "MoonPhase", values: Some(RECONYX_MICROFIRE_MOONPHASE_VALUES) },
+    BinDef { index: 94, width: 2, signed: true, name: "AmbientTemperatureFahrenheit", values: None },
+    BinDef { index: 96, width: 2, signed: true, name: "AmbientTemperature", values: None },
+    BinDef { index: 98, width: 2, signed: false, name: "Contrast", values: None },
+];
+
 pub static RECONYX_MICROFIRE_FLASH_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -58541,6 +62282,17 @@ pub static RECONYX_ULTRAFIRE: phf::Map<u16, TagDef> = phf::phf_map! {
     90u16 => TagDef { name: "UserLabel", values: None },
 };
 
+/// Reconyx::UltraFire ProcessBinaryData integers (table FORMAT or int8u)
+pub static RECONYX_ULTRAFIRE_BIN: &[BinDef] = &[
+    BinDef { index: 55, width: 4, signed: false, name: "EventNumber", values: None },
+    BinDef { index: 66, width: 1, signed: false, name: "DayOfWeek", values: Some(RECONYX_ULTRAFIRE_DAYOFWEEK_VALUES) },
+    BinDef { index: 67, width: 1, signed: false, name: "MoonPhase", values: Some(RECONYX_ULTRAFIRE_MOONPHASE_VALUES) },
+    BinDef { index: 68, width: 2, signed: true, name: "AmbientTemperatureFahrenheit", values: None },
+    BinDef { index: 70, width: 2, signed: true, name: "AmbientTemperature", values: None },
+    BinDef { index: 72, width: 1, signed: false, name: "Illumination", values: Some(RECONYX_ULTRAFIRE_ILLUMINATION_VALUES) },
+    BinDef { index: 73, width: 2, signed: false, name: "BatteryVoltage", values: None },
+];
+
 pub static RECONYX_ULTRAFIRE_DAYOFWEEK_VALUES: &[(i64, &str)] = &[
     (0, "Sunday"),
     (1, "Monday"),
@@ -58581,6 +62333,11 @@ pub static RICOH_FACEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     272u16 => TagDef { name: "Face8Position", values: None },
 };
 
+/// Ricoh::FaceInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static RICOH_FACEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 181, width: 1, signed: false, name: "FacesDetected", values: None },
+];
+
 /// Ricoh::FirmwareInfo tags
 pub static RICOH_FIRMWAREINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FirmwareRevision", values: None },
@@ -58601,6 +62358,20 @@ pub static RICOH_IMAGEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     40u16 => TagDef { name: "Saturation", values: Some(RICOH_IMAGEINFO_SATURATION_VALUES) },
     6u16 => TagDef { name: "RicohDate", values: None },
 };
+
+/// Ricoh::ImageInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static RICOH_IMAGEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "RicohImageWidth", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "RicohImageHeight", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "PreviewImageStart", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "PreviewImageLength", values: None },
+    BinDef { index: 32, width: 1, signed: false, name: "FlashMode", values: Some(RICOH_IMAGEINFO_FLASHMODE_VALUES) },
+    BinDef { index: 33, width: 1, signed: false, name: "Macro", values: Some(RICOH_IMAGEINFO_MACRO_VALUES) },
+    BinDef { index: 34, width: 1, signed: false, name: "Sharpness", values: Some(RICOH_IMAGEINFO_SHARPNESS_VALUES) },
+    BinDef { index: 38, width: 1, signed: false, name: "WhiteBalance", values: Some(RICOH_IMAGEINFO_WHITEBALANCE_VALUES) },
+    BinDef { index: 39, width: 1, signed: false, name: "ISOSetting", values: Some(RICOH_IMAGEINFO_ISOSETTING_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "Saturation", values: Some(RICOH_IMAGEINFO_SATURATION_VALUES) },
+];
 
 pub static RICOH_IMAGEINFO_FLASHMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -58911,6 +62682,12 @@ pub static SAMSUNG_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "PreviewImageLength", values: None },
 };
 
+/// Samsung::Main ProcessBinaryData integers (table FORMAT or int8u)
+pub static SAMSUNG_MAIN_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 4, signed: false, name: "PreviewImageStart", values: None },
+    BinDef { index: 3, width: 4, signed: false, name: "PreviewImageLength", values: None },
+];
+
 /// Samsung::OrientationInfo tags
 pub static SAMSUNG_ORIENTATIONINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "YawAngle", values: None },
@@ -58925,6 +62702,14 @@ pub static SAMSUNG_PICTUREWIZARD: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "PictureWizardSharpness", values: None },
     4u16 => TagDef { name: "PictureWizardContrast", values: None },
 };
+
+/// Samsung::PictureWizard ProcessBinaryData integers (table FORMAT or int8u)
+pub static SAMSUNG_PICTUREWIZARD_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "PictureWizardMode", values: Some(SAMSUNG_PICTUREWIZARD_PICTUREWIZARDMODE_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "PictureWizardSaturation", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "PictureWizardSharpness", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "PictureWizardContrast", values: None },
+];
 
 pub static SAMSUNG_PICTUREWIZARD_PICTUREWIZARDMODE_VALUES: &[(i64, &str)] = &[
     (0, "Standard"),
@@ -59580,6 +63365,28 @@ pub static SONY_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     9u16 => TagDef { name: "AFPointAtShutterRelease", values: Some(SONY_AFINFO_AFPOINTATSHUTTERRELEASE_VALUES) },
 };
 
+/// Sony::AFInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_AFINFO_AFAREAMODE_VALUES) },
+    BinDef { index: 11, width: 1, signed: false, name: "FocusMode", values: Some(SONY_AFINFO_FOCUSMODE_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "AFType", values: Some(SONY_AFINFO_AFTYPE_VALUES) },
+    BinDef { index: 366, width: 4, signed: false, name: "AFPointsUsed", values: Some(SONY_AFINFO_AFPOINTSUSED_VALUES) },
+    BinDef { index: 381, width: 1, signed: true, name: "AFMicroAdj", values: None },
+    BinDef { index: 382, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_AFINFO_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_AFINFO_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "FocusMode", values: Some(SONY_AFINFO_FOCUSMODE_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "AFPoint", values: Some(SONY_AFINFO_AFPOINT_VALUES) },
+    BinDef { index: 56, width: 1, signed: false, name: "AFPointInFocus", values: Some(SONY_AFINFO_AFPOINTINFOCUS_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "AFPointAtShutterRelease", values: Some(SONY_AFINFO_AFPOINTATSHUTTERRELEASE_VALUES) },
+    BinDef { index: 58, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_AFINFO_AFAREAMODE_VALUES) },
+    BinDef { index: 59, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_AFINFO_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 67, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_AFINFO_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "AFPoint", values: Some(SONY_AFINFO_AFPOINT_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "AFPointInFocus", values: Some(SONY_AFINFO_AFPOINTINFOCUS_VALUES) },
+    BinDef { index: 80, width: 1, signed: true, name: "AFMicroAdj", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "AFPointAtShutterRelease", values: Some(SONY_AFINFO_AFPOINTATSHUTTERRELEASE_VALUES) },
+];
+
 pub static SONY_AFINFO_AFAREAMODE_VALUES: &[(i64, &str)] = &[
     (0, "Wide"),
     (1, "Spot"),
@@ -59966,6 +63773,28 @@ pub static SONY_AFSTATUS15: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "AFStatusTopHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSTOPHORIZONTAL_VALUES) },
 };
 
+/// Sony::AFStatus15 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFSTATUS15_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "AFStatusUpper-left", values: Some(SONY_AFSTATUS15_AFSTATUSUPPER_LEFT_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatusNearRight", values: Some(SONY_AFSTATUS15_AFSTATUSNEARRIGHT_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatusNearLeft", values: Some(SONY_AFSTATUS15_AFSTATUSNEARLEFT_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatusBottomHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSBOTTOMHORIZONTAL_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatusTopVertical", values: Some(SONY_AFSTATUS15_AFSTATUSTOPVERTICAL_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_AFSTATUS15_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 20, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_AFSTATUS15_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 22, width: 2, signed: true, name: "AFStatusBottomVertical", values: Some(SONY_AFSTATUS15_AFSTATUSBOTTOMVERTICAL_VALUES) },
+    BinDef { index: 24, width: 2, signed: true, name: "AFStatusFarRight", values: Some(SONY_AFSTATUS15_AFSTATUSFARRIGHT_VALUES) },
+    BinDef { index: 26, width: 2, signed: true, name: "AFStatusUpper-right", values: Some(SONY_AFSTATUS15_AFSTATUSUPPER_RIGHT_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_AFSTATUS15_AFSTATUSRIGHT_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatusLower-right", values: Some(SONY_AFSTATUS15_AFSTATUSLOWER_RIGHT_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatusUpper-middle", values: Some(SONY_AFSTATUS15_AFSTATUSUPPER_MIDDLE_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatusLower-middle", values: Some(SONY_AFSTATUS15_AFSTATUSLOWER_MIDDLE_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusLower-left", values: Some(SONY_AFSTATUS15_AFSTATUSLOWER_LEFT_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatusFarLeft", values: Some(SONY_AFSTATUS15_AFSTATUSFARLEFT_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatusTopHorizontal", values: Some(SONY_AFSTATUS15_AFSTATUSTOPHORIZONTAL_VALUES) },
+];
+
 pub static SONY_AFSTATUS15_AFSTATUSUPPER_LEFT_VALUES: &[(i64, &str)] = &[
     (-32768, "Out of Focus"),
     (0, "In Focus"),
@@ -60089,6 +63918,40 @@ pub static SONY_AFSTATUS19: phf::Map<u16, TagDef> = phf::phf_map! {
     6u16 => TagDef { name: "AFStatusLeftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLEFTHORIZONTAL_VALUES) },
     8u16 => TagDef { name: "AFStatusLowerFarLeft", values: Some(SONY_AFSTATUS19_AFSTATUSLOWERFARLEFT_VALUES) },
 };
+
+/// Sony::AFStatus19 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFSTATUS19_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "AFStatusUpperFarLeft", values: Some(SONY_AFSTATUS19_AFSTATUSUPPERFARLEFT_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatusLower-leftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_LEFTHORIZONTAL_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatusUpper-leftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_LEFTVERTICAL_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatusLeftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSLEFTVERTICAL_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatusLower-leftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_LEFTVERTICAL_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatusFarLeftVertical", values: Some(SONY_AFSTATUS19_AFSTATUSFARLEFTVERTICAL_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatusUpper-leftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_LEFTHORIZONTAL_VALUES) },
+    BinDef { index: 20, width: 2, signed: true, name: "AFStatusTopHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSTOPHORIZONTAL_VALUES) },
+    BinDef { index: 22, width: 2, signed: true, name: "AFStatusNearRight", values: Some(SONY_AFSTATUS19_AFSTATUSNEARRIGHT_VALUES) },
+    BinDef { index: 24, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 26, width: 2, signed: true, name: "AFStatusNearLeft", values: Some(SONY_AFSTATUS19_AFSTATUSNEARLEFT_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "AFStatusBottomHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSBOTTOMHORIZONTAL_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatusTopVertical", values: Some(SONY_AFSTATUS19_AFSTATUSTOPVERTICAL_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatusUpper-middle", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_MIDDLE_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_AFSTATUS19_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 36, width: 2, signed: true, name: "AFStatusLower-middle", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_MIDDLE_VALUES) },
+    BinDef { index: 38, width: 2, signed: true, name: "AFStatusBottomVertical", values: Some(SONY_AFSTATUS19_AFSTATUSBOTTOMVERTICAL_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatusFarLeftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSFARLEFTHORIZONTAL_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "AFStatusUpperFarRight", values: Some(SONY_AFSTATUS19_AFSTATUSUPPERFARRIGHT_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "AFStatusUpper-rightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_RIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 44, width: 2, signed: true, name: "AFStatusFarRightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSFARRIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "AFStatusRightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSRIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 48, width: 2, signed: true, name: "AFStatusLowerFarRight", values: Some(SONY_AFSTATUS19_AFSTATUSLOWERFARRIGHT_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "AFStatusLower-rightHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_RIGHTHORIZONTAL_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "AFStatusFarRightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSFARRIGHTVERTICAL_VALUES) },
+    BinDef { index: 54, width: 2, signed: true, name: "AFStatusUpper-rightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSUPPER_RIGHTVERTICAL_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "AFStatusRightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSRIGHTVERTICAL_VALUES) },
+    BinDef { index: 58, width: 2, signed: true, name: "AFStatusLower-rightVertical", values: Some(SONY_AFSTATUS19_AFSTATUSLOWER_RIGHTVERTICAL_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatusLeftHorizontal", values: Some(SONY_AFSTATUS19_AFSTATUSLEFTHORIZONTAL_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatusLowerFarLeft", values: Some(SONY_AFSTATUS19_AFSTATUSLOWERFARLEFT_VALUES) },
+];
 
 pub static SONY_AFSTATUS19_AFSTATUSUPPERFARLEFT_VALUES: &[(i64, &str)] = &[
     (-32768, "Out of Focus"),
@@ -60338,6 +64201,105 @@ pub static SONY_AFSTATUS79: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "AFStatus_48_H7", values: Some(SONY_AFSTATUS79_AFSTATUS_48_H7_VALUES) },
     98u16 => TagDef { name: "AFStatus_49_I7", values: Some(SONY_AFSTATUS79_AFSTATUS_49_I7_VALUES) },
 };
+
+/// Sony::AFStatus79 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_AFSTATUS79_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "AFStatus_00_B4", values: Some(SONY_AFSTATUS79_AFSTATUS_00_B4_VALUES) },
+    BinDef { index: 10, width: 2, signed: true, name: "AFStatus_05_G4", values: Some(SONY_AFSTATUS79_AFSTATUS_05_G4_VALUES) },
+    BinDef { index: 100, width: 2, signed: true, name: "AFStatus_50_A6", values: Some(SONY_AFSTATUS79_AFSTATUS_50_A6_VALUES) },
+    BinDef { index: 102, width: 2, signed: true, name: "AFStatus_51_B6", values: Some(SONY_AFSTATUS79_AFSTATUS_51_B6_VALUES) },
+    BinDef { index: 104, width: 2, signed: true, name: "AFStatus_52_C6", values: Some(SONY_AFSTATUS79_AFSTATUS_52_C6_VALUES) },
+    BinDef { index: 106, width: 2, signed: true, name: "AFStatus_53_D6", values: Some(SONY_AFSTATUS79_AFSTATUS_53_D6_VALUES) },
+    BinDef { index: 108, width: 2, signed: true, name: "AFStatus_54_E6_Center", values: Some(SONY_AFSTATUS79_AFSTATUS_54_E6_CENTER_VALUES) },
+    BinDef { index: 110, width: 2, signed: true, name: "AFStatus_55_F6", values: Some(SONY_AFSTATUS79_AFSTATUS_55_F6_VALUES) },
+    BinDef { index: 112, width: 2, signed: true, name: "AFStatus_56_G6", values: Some(SONY_AFSTATUS79_AFSTATUS_56_G6_VALUES) },
+    BinDef { index: 114, width: 2, signed: true, name: "AFStatus_57_H6", values: Some(SONY_AFSTATUS79_AFSTATUS_57_H6_VALUES) },
+    BinDef { index: 116, width: 2, signed: true, name: "AFStatus_58_I6", values: Some(SONY_AFSTATUS79_AFSTATUS_58_I6_VALUES) },
+    BinDef { index: 118, width: 2, signed: true, name: "AFStatus_59_A5", values: Some(SONY_AFSTATUS79_AFSTATUS_59_A5_VALUES) },
+    BinDef { index: 12, width: 2, signed: true, name: "AFStatus_06_H4", values: Some(SONY_AFSTATUS79_AFSTATUS_06_H4_VALUES) },
+    BinDef { index: 120, width: 2, signed: true, name: "AFStatus_60_B5", values: Some(SONY_AFSTATUS79_AFSTATUS_60_B5_VALUES) },
+    BinDef { index: 122, width: 2, signed: true, name: "AFStatus_61_C5", values: Some(SONY_AFSTATUS79_AFSTATUS_61_C5_VALUES) },
+    BinDef { index: 124, width: 2, signed: true, name: "AFStatus_62_D5", values: Some(SONY_AFSTATUS79_AFSTATUS_62_D5_VALUES) },
+    BinDef { index: 126, width: 2, signed: true, name: "AFStatus_63_E5", values: Some(SONY_AFSTATUS79_AFSTATUS_63_E5_VALUES) },
+    BinDef { index: 128, width: 2, signed: true, name: "AFStatus_64_F5", values: Some(SONY_AFSTATUS79_AFSTATUS_64_F5_VALUES) },
+    BinDef { index: 130, width: 2, signed: true, name: "AFStatus_65_G5", values: Some(SONY_AFSTATUS79_AFSTATUS_65_G5_VALUES) },
+    BinDef { index: 132, width: 2, signed: true, name: "AFStatus_66_H5", values: Some(SONY_AFSTATUS79_AFSTATUS_66_H5_VALUES) },
+    BinDef { index: 134, width: 2, signed: true, name: "AFStatus_67_I5", values: Some(SONY_AFSTATUS79_AFSTATUS_67_I5_VALUES) },
+    BinDef { index: 136, width: 2, signed: true, name: "AFStatus_68_C11", values: Some(SONY_AFSTATUS79_AFSTATUS_68_C11_VALUES) },
+    BinDef { index: 138, width: 2, signed: true, name: "AFStatus_69_D11", values: Some(SONY_AFSTATUS79_AFSTATUS_69_D11_VALUES) },
+    BinDef { index: 14, width: 2, signed: true, name: "AFStatus_07_B3", values: Some(SONY_AFSTATUS79_AFSTATUS_07_B3_VALUES) },
+    BinDef { index: 140, width: 2, signed: true, name: "AFStatus_70_E11", values: Some(SONY_AFSTATUS79_AFSTATUS_70_E11_VALUES) },
+    BinDef { index: 142, width: 2, signed: true, name: "AFStatus_71_F11", values: Some(SONY_AFSTATUS79_AFSTATUS_71_F11_VALUES) },
+    BinDef { index: 144, width: 2, signed: true, name: "AFStatus_72_G11", values: Some(SONY_AFSTATUS79_AFSTATUS_72_G11_VALUES) },
+    BinDef { index: 146, width: 2, signed: true, name: "AFStatus_73_B10", values: Some(SONY_AFSTATUS79_AFSTATUS_73_B10_VALUES) },
+    BinDef { index: 148, width: 2, signed: true, name: "AFStatus_74_C10", values: Some(SONY_AFSTATUS79_AFSTATUS_74_C10_VALUES) },
+    BinDef { index: 150, width: 2, signed: true, name: "AFStatus_75_D10", values: Some(SONY_AFSTATUS79_AFSTATUS_75_D10_VALUES) },
+    BinDef { index: 152, width: 2, signed: true, name: "AFStatus_76_E10", values: Some(SONY_AFSTATUS79_AFSTATUS_76_E10_VALUES) },
+    BinDef { index: 154, width: 2, signed: true, name: "AFStatus_77_F10", values: Some(SONY_AFSTATUS79_AFSTATUS_77_F10_VALUES) },
+    BinDef { index: 156, width: 2, signed: true, name: "AFStatus_78_G10", values: Some(SONY_AFSTATUS79_AFSTATUS_78_G10_VALUES) },
+    BinDef { index: 158, width: 2, signed: true, name: "AFStatus_79_H10", values: Some(SONY_AFSTATUS79_AFSTATUS_79_H10_VALUES) },
+    BinDef { index: 16, width: 2, signed: true, name: "AFStatus_08_C3", values: Some(SONY_AFSTATUS79_AFSTATUS_08_C3_VALUES) },
+    BinDef { index: 160, width: 2, signed: true, name: "AFStatus_80_B9", values: Some(SONY_AFSTATUS79_AFSTATUS_80_B9_VALUES) },
+    BinDef { index: 162, width: 2, signed: true, name: "AFStatus_81_C9", values: Some(SONY_AFSTATUS79_AFSTATUS_81_C9_VALUES) },
+    BinDef { index: 164, width: 2, signed: true, name: "AFStatus_82_D9", values: Some(SONY_AFSTATUS79_AFSTATUS_82_D9_VALUES) },
+    BinDef { index: 166, width: 2, signed: true, name: "AFStatus_83_E9", values: Some(SONY_AFSTATUS79_AFSTATUS_83_E9_VALUES) },
+    BinDef { index: 168, width: 2, signed: true, name: "AFStatus_84_F9", values: Some(SONY_AFSTATUS79_AFSTATUS_84_F9_VALUES) },
+    BinDef { index: 170, width: 2, signed: true, name: "AFStatus_85_G9", values: Some(SONY_AFSTATUS79_AFSTATUS_85_G9_VALUES) },
+    BinDef { index: 172, width: 2, signed: true, name: "AFStatus_86_H9", values: Some(SONY_AFSTATUS79_AFSTATUS_86_H9_VALUES) },
+    BinDef { index: 174, width: 2, signed: true, name: "AFStatus_87_B8", values: Some(SONY_AFSTATUS79_AFSTATUS_87_B8_VALUES) },
+    BinDef { index: 176, width: 2, signed: true, name: "AFStatus_88_C8", values: Some(SONY_AFSTATUS79_AFSTATUS_88_C8_VALUES) },
+    BinDef { index: 178, width: 2, signed: true, name: "AFStatus_89_D8", values: Some(SONY_AFSTATUS79_AFSTATUS_89_D8_VALUES) },
+    BinDef { index: 18, width: 2, signed: true, name: "AFStatus_09_D3", values: Some(SONY_AFSTATUS79_AFSTATUS_09_D3_VALUES) },
+    BinDef { index: 180, width: 2, signed: true, name: "AFStatus_90_E8", values: Some(SONY_AFSTATUS79_AFSTATUS_90_E8_VALUES) },
+    BinDef { index: 182, width: 2, signed: true, name: "AFStatus_91_F8", values: Some(SONY_AFSTATUS79_AFSTATUS_91_F8_VALUES) },
+    BinDef { index: 184, width: 2, signed: true, name: "AFStatus_92_G8", values: Some(SONY_AFSTATUS79_AFSTATUS_92_G8_VALUES) },
+    BinDef { index: 186, width: 2, signed: true, name: "AFStatus_93_H8", values: Some(SONY_AFSTATUS79_AFSTATUS_93_H8_VALUES) },
+    BinDef { index: 188, width: 2, signed: true, name: "AFStatus_94_E6_Center_F2-8", values: Some(SONY_AFSTATUS79_AFSTATUS_94_E6_CENTER_F2_8_VALUES) },
+    BinDef { index: 2, width: 2, signed: true, name: "AFStatus_01_C4", values: Some(SONY_AFSTATUS79_AFSTATUS_01_C4_VALUES) },
+    BinDef { index: 20, width: 2, signed: true, name: "AFStatus_10_E3", values: Some(SONY_AFSTATUS79_AFSTATUS_10_E3_VALUES) },
+    BinDef { index: 22, width: 2, signed: true, name: "AFStatus_11_F3", values: Some(SONY_AFSTATUS79_AFSTATUS_11_F3_VALUES) },
+    BinDef { index: 24, width: 2, signed: true, name: "AFStatus_12_G3", values: Some(SONY_AFSTATUS79_AFSTATUS_12_G3_VALUES) },
+    BinDef { index: 26, width: 2, signed: true, name: "AFStatus_13_H3", values: Some(SONY_AFSTATUS79_AFSTATUS_13_H3_VALUES) },
+    BinDef { index: 28, width: 2, signed: true, name: "AFStatus_14_B2", values: Some(SONY_AFSTATUS79_AFSTATUS_14_B2_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatus_15_C2", values: Some(SONY_AFSTATUS79_AFSTATUS_15_C2_VALUES) },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatus_16_D2", values: Some(SONY_AFSTATUS79_AFSTATUS_16_D2_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatus_17_E2", values: Some(SONY_AFSTATUS79_AFSTATUS_17_E2_VALUES) },
+    BinDef { index: 36, width: 2, signed: true, name: "AFStatus_18_F2", values: Some(SONY_AFSTATUS79_AFSTATUS_18_F2_VALUES) },
+    BinDef { index: 38, width: 2, signed: true, name: "AFStatus_19_G2", values: Some(SONY_AFSTATUS79_AFSTATUS_19_G2_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFStatus_02_D4", values: Some(SONY_AFSTATUS79_AFSTATUS_02_D4_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "AFStatus_20_H2", values: Some(SONY_AFSTATUS79_AFSTATUS_20_H2_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "AFStatus_21_C1", values: Some(SONY_AFSTATUS79_AFSTATUS_21_C1_VALUES) },
+    BinDef { index: 44, width: 2, signed: true, name: "AFStatus_22_D1", values: Some(SONY_AFSTATUS79_AFSTATUS_22_D1_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "AFStatus_23_E1", values: Some(SONY_AFSTATUS79_AFSTATUS_23_E1_VALUES) },
+    BinDef { index: 48, width: 2, signed: true, name: "AFStatus_24_F1", values: Some(SONY_AFSTATUS79_AFSTATUS_24_F1_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "AFStatus_25_G1", values: Some(SONY_AFSTATUS79_AFSTATUS_25_G1_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "AFStatus_26_A7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_26_A7_VERTICAL_VALUES) },
+    BinDef { index: 54, width: 2, signed: true, name: "AFStatus_27_A6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_27_A6_VERTICAL_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "AFStatus_28_A5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_28_A5_VERTICAL_VALUES) },
+    BinDef { index: 58, width: 2, signed: true, name: "AFStatus_29_C7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_29_C7_VERTICAL_VALUES) },
+    BinDef { index: 6, width: 2, signed: true, name: "AFStatus_03_E4", values: Some(SONY_AFSTATUS79_AFSTATUS_03_E4_VALUES) },
+    BinDef { index: 60, width: 2, signed: true, name: "AFStatus_30_C6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_30_C6_VERTICAL_VALUES) },
+    BinDef { index: 62, width: 2, signed: true, name: "AFStatus_31_C5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_31_C5_VERTICAL_VALUES) },
+    BinDef { index: 64, width: 2, signed: true, name: "AFStatus_32_E7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_32_E7_VERTICAL_VALUES) },
+    BinDef { index: 66, width: 2, signed: true, name: "AFStatus_33_E6_Center_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_33_E6_CENTER_VERTICAL_VALUES) },
+    BinDef { index: 68, width: 2, signed: true, name: "AFStatus_34_E5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_34_E5_VERTICAL_VALUES) },
+    BinDef { index: 70, width: 2, signed: true, name: "AFStatus_35_G7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_35_G7_VERTICAL_VALUES) },
+    BinDef { index: 72, width: 2, signed: true, name: "AFStatus_36_G6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_36_G6_VERTICAL_VALUES) },
+    BinDef { index: 74, width: 2, signed: true, name: "AFStatus_37_G5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_37_G5_VERTICAL_VALUES) },
+    BinDef { index: 76, width: 2, signed: true, name: "AFStatus_38_I7_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_38_I7_VERTICAL_VALUES) },
+    BinDef { index: 78, width: 2, signed: true, name: "AFStatus_39_I6_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_39_I6_VERTICAL_VALUES) },
+    BinDef { index: 8, width: 2, signed: true, name: "AFStatus_04_F4", values: Some(SONY_AFSTATUS79_AFSTATUS_04_F4_VALUES) },
+    BinDef { index: 80, width: 2, signed: true, name: "AFStatus_40_I5_Vertical", values: Some(SONY_AFSTATUS79_AFSTATUS_40_I5_VERTICAL_VALUES) },
+    BinDef { index: 82, width: 2, signed: true, name: "AFStatus_41_A7", values: Some(SONY_AFSTATUS79_AFSTATUS_41_A7_VALUES) },
+    BinDef { index: 84, width: 2, signed: true, name: "AFStatus_42_B7", values: Some(SONY_AFSTATUS79_AFSTATUS_42_B7_VALUES) },
+    BinDef { index: 86, width: 2, signed: true, name: "AFStatus_43_C7", values: Some(SONY_AFSTATUS79_AFSTATUS_43_C7_VALUES) },
+    BinDef { index: 88, width: 2, signed: true, name: "AFStatus_44_D7", values: Some(SONY_AFSTATUS79_AFSTATUS_44_D7_VALUES) },
+    BinDef { index: 90, width: 2, signed: true, name: "AFStatus_45_E7", values: Some(SONY_AFSTATUS79_AFSTATUS_45_E7_VALUES) },
+    BinDef { index: 92, width: 2, signed: true, name: "AFStatus_46_F7", values: Some(SONY_AFSTATUS79_AFSTATUS_46_F7_VALUES) },
+    BinDef { index: 94, width: 2, signed: true, name: "AFStatus_47_G7", values: Some(SONY_AFSTATUS79_AFSTATUS_47_G7_VALUES) },
+    BinDef { index: 96, width: 2, signed: true, name: "AFStatus_48_H7", values: Some(SONY_AFSTATUS79_AFSTATUS_48_H7_VALUES) },
+    BinDef { index: 98, width: 2, signed: true, name: "AFStatus_49_I7", values: Some(SONY_AFSTATUS79_AFSTATUS_49_I7_VALUES) },
+];
 
 pub static SONY_AFSTATUS79_AFSTATUS_00_B4_VALUES: &[(i64, &str)] = &[
     (-32768, "Out of Focus"),
@@ -60854,6 +64816,38 @@ pub static SONY_CAMERAINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 305, mask: 0x7f, name: "AFMicroAdjRegisteredLenses", values: None },
 ];
 
+/// Sony::CameraInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERAINFO_BIN: &[BinDef] = &[
+    BinDef { index: 20, width: 1, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERAINFO_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO_AFPOINT_VALUES) },
+    BinDef { index: 30, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 304, width: 1, signed: false, name: "AFMicroAdjValue", values: None },
+    BinDef { index: 32, width: 2, signed: true, name: "AFStatusUpper-left", values: Some(SONY_CAMERAINFO_AFSTATUSUPPER_LEFT_VALUES) },
+    BinDef { index: 34, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_CAMERAINFO_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 36, width: 2, signed: true, name: "AFStatusLower-left", values: Some(SONY_CAMERAINFO_AFSTATUSLOWER_LEFT_VALUES) },
+    BinDef { index: 38, width: 2, signed: true, name: "AFStatusFarLeft", values: Some(SONY_CAMERAINFO_AFSTATUSFARLEFT_VALUES) },
+    BinDef { index: 40, width: 2, signed: true, name: "AFStatusBottomAssist-left", values: Some(SONY_CAMERAINFO_AFSTATUSBOTTOMASSIST_LEFT_VALUES) },
+    BinDef { index: 42, width: 2, signed: true, name: "AFStatusBottom", values: Some(SONY_CAMERAINFO_AFSTATUSBOTTOM_VALUES) },
+    BinDef { index: 44, width: 2, signed: true, name: "AFStatusBottomAssist-right", values: Some(SONY_CAMERAINFO_AFSTATUSBOTTOMASSIST_RIGHT_VALUES) },
+    BinDef { index: 46, width: 2, signed: true, name: "AFStatusCenter-7", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_7_VALUES) },
+    BinDef { index: 48, width: 2, signed: true, name: "AFStatusCenter-horizontal", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_HORIZONTAL_VALUES) },
+    BinDef { index: 50, width: 2, signed: true, name: "AFStatusCenter-9", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_9_VALUES) },
+    BinDef { index: 52, width: 2, signed: true, name: "AFStatusCenter-10", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_10_VALUES) },
+    BinDef { index: 54, width: 2, signed: true, name: "AFStatusCenter-11", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_11_VALUES) },
+    BinDef { index: 56, width: 2, signed: true, name: "AFStatusCenter-12", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_12_VALUES) },
+    BinDef { index: 58, width: 2, signed: true, name: "AFStatusCenter-vertical", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_VERTICAL_VALUES) },
+    BinDef { index: 60, width: 2, signed: true, name: "AFStatusCenter-14", values: Some(SONY_CAMERAINFO_AFSTATUSCENTER_14_VALUES) },
+    BinDef { index: 62, width: 2, signed: true, name: "AFStatusTopAssist-left", values: Some(SONY_CAMERAINFO_AFSTATUSTOPASSIST_LEFT_VALUES) },
+    BinDef { index: 64, width: 2, signed: true, name: "AFStatusTop", values: Some(SONY_CAMERAINFO_AFSTATUSTOP_VALUES) },
+    BinDef { index: 66, width: 2, signed: true, name: "AFStatusTopAssist-right", values: Some(SONY_CAMERAINFO_AFSTATUSTOPASSIST_RIGHT_VALUES) },
+    BinDef { index: 68, width: 2, signed: true, name: "AFStatusFarRight", values: Some(SONY_CAMERAINFO_AFSTATUSFARRIGHT_VALUES) },
+    BinDef { index: 70, width: 2, signed: true, name: "AFStatusUpper-right", values: Some(SONY_CAMERAINFO_AFSTATUSUPPER_RIGHT_VALUES) },
+    BinDef { index: 72, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_CAMERAINFO_AFSTATUSRIGHT_VALUES) },
+    BinDef { index: 74, width: 2, signed: true, name: "AFStatusLower-right", values: Some(SONY_CAMERAINFO_AFSTATUSLOWER_RIGHT_VALUES) },
+    BinDef { index: 76, width: 2, signed: true, name: "AFStatusCenterF2-8", values: Some(SONY_CAMERAINFO_AFSTATUSCENTERF2_8_VALUES) },
+];
+
 pub static SONY_CAMERAINFO_FOCUSMODESETTING_VALUES: &[(i64, &str)] = &[
     (0, "Manual"),
     (1, "AF-S"),
@@ -61048,6 +65042,25 @@ pub static SONY_CAMERAINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     49u16 => TagDef { name: "AFStatusRight", values: Some(SONY_CAMERAINFO2_AFSTATUSRIGHT_VALUES) },
 };
 
+/// Sony::CameraInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERAINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 20, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO2_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERAINFO2_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO2_AFPOINT_VALUES) },
+    BinDef { index: 27, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO2_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 29, width: 2, signed: true, name: "AFStatusTop-right", values: Some(SONY_CAMERAINFO2_AFSTATUSTOP_RIGHT_VALUES) },
+    BinDef { index: 31, width: 2, signed: true, name: "AFStatusBottom-right", values: Some(SONY_CAMERAINFO2_AFSTATUSBOTTOM_RIGHT_VALUES) },
+    BinDef { index: 33, width: 2, signed: true, name: "AFStatusBottom", values: Some(SONY_CAMERAINFO2_AFSTATUSBOTTOM_VALUES) },
+    BinDef { index: 35, width: 2, signed: true, name: "AFStatusMiddleHorizontal", values: Some(SONY_CAMERAINFO2_AFSTATUSMIDDLEHORIZONTAL_VALUES) },
+    BinDef { index: 37, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_CAMERAINFO2_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 39, width: 2, signed: true, name: "AFStatusTop", values: Some(SONY_CAMERAINFO2_AFSTATUSTOP_VALUES) },
+    BinDef { index: 41, width: 2, signed: true, name: "AFStatusTop-left", values: Some(SONY_CAMERAINFO2_AFSTATUSTOP_LEFT_VALUES) },
+    BinDef { index: 43, width: 2, signed: true, name: "AFStatusBottom-left", values: Some(SONY_CAMERAINFO2_AFSTATUSBOTTOM_LEFT_VALUES) },
+    BinDef { index: 45, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_CAMERAINFO2_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 47, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_CAMERAINFO2_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 49, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_CAMERAINFO2_AFSTATUSRIGHT_VALUES) },
+];
+
 pub static SONY_CAMERAINFO2_AFPOINTSELECTED_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
     (1, "Center"),
@@ -61164,6 +65177,29 @@ pub static SONY_CAMERAINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
     47u16 => TagDef { name: "AFStatusCenterHorizontal", values: Some(SONY_CAMERAINFO3_AFSTATUSCENTERHORIZONTAL_VALUES) },
     49u16 => TagDef { name: "AFStatusRight", values: Some(SONY_CAMERAINFO3_AFSTATUSRIGHT_VALUES) },
 };
+
+/// Sony::CameraInfo3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERAINFO3_BIN: &[BinDef] = &[
+    BinDef { index: 14, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "FocalLengthTeleZoom", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO3_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "FocusMode", values: Some(SONY_CAMERAINFO3_FOCUSMODE_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO3_AFPOINT_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "FocusStatus", values: Some(SONY_CAMERAINFO3_FOCUSSTATUS_VALUES) },
+    BinDef { index: 27, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO3_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 28, width: 1, signed: false, name: "AFPointSelected", values: Some(SONY_CAMERAINFO3_AFPOINTSELECTED_VALUES) },
+    BinDef { index: 29, width: 1, signed: false, name: "FocusMode", values: Some(SONY_CAMERAINFO3_FOCUSMODE_VALUES) },
+    BinDef { index: 31, width: 2, signed: true, name: "AFStatusBottom-right", values: Some(SONY_CAMERAINFO3_AFSTATUSBOTTOM_RIGHT_VALUES) },
+    BinDef { index: 32, width: 1, signed: false, name: "AFPoint", values: Some(SONY_CAMERAINFO3_AFPOINT_VALUES) },
+    BinDef { index: 33, width: 2, signed: true, name: "AFStatusActiveSensor", values: Some(SONY_CAMERAINFO3_AFSTATUSACTIVESENSOR_VALUES) },
+    BinDef { index: 37, width: 2, signed: true, name: "AFStatusCenterVertical", values: Some(SONY_CAMERAINFO3_AFSTATUSCENTERVERTICAL_VALUES) },
+    BinDef { index: 39, width: 2, signed: true, name: "AFStatusTop", values: Some(SONY_CAMERAINFO3_AFSTATUSTOP_VALUES) },
+    BinDef { index: 41, width: 2, signed: true, name: "AFStatusTop-left", values: Some(SONY_CAMERAINFO3_AFSTATUSTOP_LEFT_VALUES) },
+    BinDef { index: 43, width: 2, signed: true, name: "AFStatusBottom-left", values: Some(SONY_CAMERAINFO3_AFSTATUSBOTTOM_LEFT_VALUES) },
+    BinDef { index: 45, width: 2, signed: true, name: "AFStatusLeft", values: Some(SONY_CAMERAINFO3_AFSTATUSLEFT_VALUES) },
+    BinDef { index: 47, width: 2, signed: true, name: "AFStatusCenterHorizontal", values: Some(SONY_CAMERAINFO3_AFSTATUSCENTERHORIZONTAL_VALUES) },
+    BinDef { index: 49, width: 2, signed: true, name: "AFStatusRight", values: Some(SONY_CAMERAINFO3_AFSTATUSRIGHT_VALUES) },
+];
 
 pub static SONY_CAMERAINFO3_AFPOINTSELECTED_VALUES: &[(i64, &str)] = &[
     (0, "Auto"),
@@ -61313,6 +65349,62 @@ pub static SONY_CAMERASETTINGS_MASKS: &[MaskDef] = &[
     MaskDef { index: 154, mask: 0x3ff, name: "FolderNumber", values: None },
     MaskDef { index: 155, mask: 0x3fff, name: "ImageNumber", values: None },
     MaskDef { index: 4, mask: 0xff, name: "DriveMode", values: Some(SONY_CAMERASETTINGS_DRIVEMODE_VALUES) },
+];
+
+/// Sony::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 1, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 106, width: 2, signed: false, name: "RedEyeReduction", values: Some(SONY_CAMERASETTINGS_REDEYEREDUCTION_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "ColorTemperatureCustom", values: None },
+    BinDef { index: 13, width: 2, signed: false, name: "ColorCompensationFilterCustom", values: None },
+    BinDef { index: 15, width: 2, signed: false, name: "WhiteBalance", values: Some(SONY_CAMERASETTINGS_WHITEBALANCE_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERASETTINGS_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 17, width: 2, signed: false, name: "AFAreaMode", values: Some(SONY_CAMERASETTINGS_AFAREAMODE_VALUES) },
+    BinDef { index: 18, width: 2, signed: false, name: "AFPointSetting", values: Some(SONY_CAMERASETTINGS_AFPOINTSETTING_VALUES) },
+    BinDef { index: 19, width: 2, signed: false, name: "FlashMode", values: Some(SONY_CAMERASETTINGS_FLASHMODE_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "HighSpeedSync", values: Some(SONY_CAMERASETTINGS_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 21, width: 2, signed: false, name: "MeteringMode", values: Some(SONY_CAMERASETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 22, width: 2, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_CAMERASETTINGS_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "DynamicRangeOptimizerLevel", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "CreativeStyle", values: Some(SONY_CAMERASETTINGS_CREATIVESTYLE_VALUES) },
+    BinDef { index: 27, width: 2, signed: false, name: "ColorSpace", values: Some(SONY_CAMERASETTINGS_COLORSPACE_VALUES) },
+    BinDef { index: 28, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 29, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "ExposureCompensationSet", values: None },
+    BinDef { index: 30, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 31, width: 2, signed: false, name: "ZoneMatchingValue", values: None },
+    BinDef { index: 34, width: 2, signed: false, name: "Brightness", values: None },
+    BinDef { index: 35, width: 2, signed: false, name: "FlashControl", values: Some(SONY_CAMERASETTINGS_FLASHCONTROL_VALUES) },
+    BinDef { index: 40, width: 2, signed: false, name: "PrioritySetupShutterRelease", values: Some(SONY_CAMERASETTINGS_PRIORITYSETUPSHUTTERRELEASE_VALUES) },
+    BinDef { index: 41, width: 2, signed: false, name: "AFIlluminator", values: Some(SONY_CAMERASETTINGS_AFILLUMINATOR_VALUES) },
+    BinDef { index: 42, width: 2, signed: false, name: "AFWithShutter", values: Some(SONY_CAMERASETTINGS_AFWITHSHUTTER_VALUES) },
+    BinDef { index: 43, width: 2, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_CAMERASETTINGS_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 44, width: 2, signed: false, name: "HighISONoiseReduction", values: Some(SONY_CAMERASETTINGS_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 45, width: 2, signed: false, name: "ImageStyle", values: Some(SONY_CAMERASETTINGS_IMAGESTYLE_VALUES) },
+    BinDef { index: 46, width: 2, signed: false, name: "FocusModeSwitch", values: Some(SONY_CAMERASETTINGS_FOCUSMODESWITCH_VALUES) },
+    BinDef { index: 47, width: 2, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 48, width: 2, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_CAMERASETTINGS_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "WhiteBalanceFineTune", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "ExposureProgram", values: Some(SONY_CAMERASETTINGS_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "ImageStabilizationSetting", values: Some(SONY_CAMERASETTINGS_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 62, width: 2, signed: false, name: "FlashAction", values: Some(SONY_CAMERASETTINGS_FLASHACTION_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "Rotation", values: Some(SONY_CAMERASETTINGS_ROTATION_VALUES) },
+    BinDef { index: 64, width: 2, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS_AELOCK_VALUES) },
+    BinDef { index: 7, width: 2, signed: false, name: "ColorTemperatureSet", values: None },
+    BinDef { index: 76, width: 2, signed: false, name: "FlashAction2", values: Some(SONY_CAMERASETTINGS_FLASHACTION2_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "FocusMode", values: Some(SONY_CAMERASETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 8, width: 2, signed: false, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 80, width: 2, signed: false, name: "BatteryState", values: Some(SONY_CAMERASETTINGS_BATTERYSTATE_VALUES) },
+    BinDef { index: 81, width: 2, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 83, width: 2, signed: false, name: "FocusStatus", values: Some(SONY_CAMERASETTINGS_FOCUSSTATUS_VALUES) },
+    BinDef { index: 84, width: 2, signed: false, name: "SonyImageSize", values: Some(SONY_CAMERASETTINGS_SONYIMAGESIZE_VALUES) },
+    BinDef { index: 85, width: 2, signed: false, name: "AspectRatio", values: Some(SONY_CAMERASETTINGS_ASPECTRATIO_VALUES) },
+    BinDef { index: 86, width: 2, signed: false, name: "Quality", values: Some(SONY_CAMERASETTINGS_QUALITY_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "ExposureLevelIncrements", values: Some(SONY_CAMERASETTINGS_EXPOSURELEVELINCREMENTS_VALUES) },
 ];
 
 pub static SONY_CAMERASETTINGS_REDEYEREDUCTION_VALUES: &[(i64, &str)] = &[
@@ -61649,6 +65741,52 @@ pub static SONY_CAMERASETTINGS2_MASKS: &[MaskDef] = &[
     MaskDef { index: 126, mask: 0xff, name: "DriveMode", values: Some(SONY_CAMERASETTINGS2_DRIVEMODE_VALUES) },
 ];
 
+/// Sony::CameraSettings2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERASETTINGS2_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 1, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 11, width: 2, signed: false, name: "ColorTemperatureCustom", values: None },
+    BinDef { index: 12, width: 2, signed: false, name: "ColorCompensationFilterCustom", values: None },
+    BinDef { index: 127, width: 2, signed: false, name: "FlashMode", values: Some(SONY_CAMERASETTINGS2_FLASHMODE_VALUES) },
+    BinDef { index: 131, width: 2, signed: false, name: "ColorSpace", values: Some(SONY_CAMERASETTINGS2_COLORSPACE_VALUES) },
+    BinDef { index: 14, width: 2, signed: false, name: "WhiteBalance", values: Some(SONY_CAMERASETTINGS2_WHITEBALANCE_VALUES) },
+    BinDef { index: 15, width: 2, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERASETTINGS2_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 16, width: 2, signed: false, name: "AFAreaMode", values: Some(SONY_CAMERASETTINGS2_AFAREAMODE_VALUES) },
+    BinDef { index: 17, width: 2, signed: false, name: "AFPointSetting", values: Some(SONY_CAMERASETTINGS2_AFPOINTSETTING_VALUES) },
+    BinDef { index: 18, width: 2, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 19, width: 2, signed: false, name: "MeteringMode", values: Some(SONY_CAMERASETTINGS2_METERINGMODE_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "HighSpeedSync", values: Some(SONY_CAMERASETTINGS2_HIGHSPEEDSYNC_VALUES) },
+    BinDef { index: 20, width: 2, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 22, width: 2, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_CAMERASETTINGS2_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 24, width: 2, signed: false, name: "CreativeStyle", values: Some(SONY_CAMERASETTINGS2_CREATIVESTYLE_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "Sharpness", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "Contrast", values: None },
+    BinDef { index: 27, width: 2, signed: false, name: "Saturation", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "ExposureCompensationSet", values: None },
+    BinDef { index: 31, width: 2, signed: false, name: "FlashControl", values: Some(SONY_CAMERASETTINGS2_FLASHCONTROL_VALUES) },
+    BinDef { index: 37, width: 2, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_CAMERASETTINGS2_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 38, width: 2, signed: false, name: "HighISONoiseReduction", values: Some(SONY_CAMERASETTINGS2_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 39, width: 2, signed: false, name: "ImageStyle", values: Some(SONY_CAMERASETTINGS2_IMAGESTYLE_VALUES) },
+    BinDef { index: 4, width: 2, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_CAMERASETTINGS2_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 40, width: 2, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 41, width: 2, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 5, width: 2, signed: false, name: "WhiteBalanceFineTune", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "ColorTemperatureSet", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "ExposureProgram", values: Some(SONY_CAMERASETTINGS2_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 61, width: 2, signed: false, name: "ImageStabilizationSetting", values: Some(SONY_CAMERASETTINGS2_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 62, width: 2, signed: false, name: "FlashAction", values: Some(SONY_CAMERASETTINGS2_FLASHACTION_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "Rotation", values: Some(SONY_CAMERASETTINGS2_ROTATION_VALUES) },
+    BinDef { index: 64, width: 2, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS2_AELOCK_VALUES) },
+    BinDef { index: 7, width: 2, signed: false, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 76, width: 2, signed: false, name: "FlashAction2", values: Some(SONY_CAMERASETTINGS2_FLASHACTION2_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "FocusMode", values: Some(SONY_CAMERASETTINGS2_FOCUSMODE_VALUES) },
+    BinDef { index: 83, width: 2, signed: false, name: "FocusStatus", values: Some(SONY_CAMERASETTINGS2_FOCUSSTATUS_VALUES) },
+    BinDef { index: 84, width: 2, signed: false, name: "SonyImageSize", values: Some(SONY_CAMERASETTINGS2_SONYIMAGESIZE_VALUES) },
+    BinDef { index: 85, width: 2, signed: false, name: "AspectRatio", values: Some(SONY_CAMERASETTINGS2_ASPECTRATIO_VALUES) },
+    BinDef { index: 86, width: 2, signed: false, name: "Quality", values: Some(SONY_CAMERASETTINGS2_QUALITY_VALUES) },
+    BinDef { index: 88, width: 2, signed: false, name: "ExposureLevelIncrements", values: Some(SONY_CAMERASETTINGS2_EXPOSURELEVELINCREMENTS_VALUES) },
+];
+
 pub static SONY_CAMERASETTINGS2_DRIVEMODE_VALUES: &[(i64, &str)] = &[
     (1, "Single Frame"),
     (10, "Remote Commander"),
@@ -61949,6 +66087,70 @@ pub static SONY_CAMERASETTINGS3_MASKS: &[MaskDef] = &[
     MaskDef { index: 276, mask: 0x3fff, name: "ImageNumber", values: None },
     MaskDef { index: 788, mask: 0x3fff, name: "ImageNumber", values: None },
     MaskDef { index: 790, mask: 0x3ff, name: "FolderNumber", values: None },
+];
+
+/// Sony::CameraSettings3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_CAMERASETTINGS3_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "ShutterSpeedSetting", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "ApertureSetting", values: None },
+    BinDef { index: 10, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_CAMERASETTINGS3_ASPECTRATIO_VALUES) },
+    BinDef { index: 1008, width: 2, signed: false, name: "LensE-mountVersion", values: None },
+    BinDef { index: 1011, width: 2, signed: false, name: "LensFirmwareVersion", values: None },
+    BinDef { index: 1015, width: 2, signed: false, name: "LensType2", values: Some(SONY_CAMERASETTINGS3_LENSTYPE2_VALUES) },
+    BinDef { index: 11, width: 1, signed: false, name: "Quality", values: Some(SONY_CAMERASETTINGS3_QUALITY_VALUES) },
+    BinDef { index: 12, width: 1, signed: false, name: "DynamicRangeOptimizerSetting", values: Some(SONY_CAMERASETTINGS3_DYNAMICRANGEOPTIMIZERSETTING_VALUES) },
+    BinDef { index: 131, width: 1, signed: false, name: "AFButtonPressed", values: Some(SONY_CAMERASETTINGS3_AFBUTTONPRESSED_VALUES) },
+    BinDef { index: 132, width: 1, signed: false, name: "LiveViewMetering", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWMETERING_VALUES) },
+    BinDef { index: 133, width: 1, signed: false, name: "ViewingMode2", values: Some(SONY_CAMERASETTINGS3_VIEWINGMODE2_VALUES) },
+    BinDef { index: 134, width: 1, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS3_AELOCK_VALUES) },
+    BinDef { index: 135, width: 1, signed: false, name: "FlashStatusBuilt-in", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSBUILT_IN_VALUES) },
+    BinDef { index: 136, width: 1, signed: false, name: "FlashStatusExternal", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSEXTERNAL_VALUES) },
+    BinDef { index: 139, width: 1, signed: false, name: "LiveViewFocusMode", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWFOCUSMODE_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "ColorSpace", values: Some(SONY_CAMERASETTINGS3_COLORSPACE_VALUES) },
+    BinDef { index: 15, width: 1, signed: false, name: "CreativeStyleSetting", values: Some(SONY_CAMERASETTINGS3_CREATIVESTYLESETTING_VALUES) },
+    BinDef { index: 153, width: 1, signed: false, name: "LensMount", values: Some(SONY_CAMERASETTINGS3_LENSMOUNT_VALUES) },
+    BinDef { index: 16, width: 1, signed: true, name: "ContrastSetting", values: None },
+    BinDef { index: 17, width: 1, signed: true, name: "SaturationSetting", values: None },
+    BinDef { index: 18, width: 1, signed: true, name: "SharpnessSetting", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "ISOSetting", values: Some(SONY_CAMERASETTINGS3_ISOSETTING_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_CAMERASETTINGS3_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "ColorTemperatureSetting", values: None },
+    BinDef { index: 24, width: 1, signed: true, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 268, width: 1, signed: false, name: "SequenceNumber", values: Some(SONY_CAMERASETTINGS3_SEQUENCENUMBER_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "ExposureCompensationSet", values: None },
+    BinDef { index: 32, width: 1, signed: false, name: "FlashMode", values: Some(SONY_CAMERASETTINGS3_FLASHMODE_VALUES) },
+    BinDef { index: 33, width: 1, signed: false, name: "FlashControl", values: Some(SONY_CAMERASETTINGS3_FLASHCONTROL_VALUES) },
+    BinDef { index: 35, width: 1, signed: false, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 36, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_CAMERASETTINGS3_AFAREAMODE_VALUES) },
+    BinDef { index: 37, width: 1, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_CAMERASETTINGS3_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 38, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(SONY_CAMERASETTINGS3_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 39, width: 1, signed: false, name: "SmileShutterMode", values: Some(SONY_CAMERASETTINGS3_SMILESHUTTERMODE_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "DriveModeSetting", values: Some(SONY_CAMERASETTINGS3_DRIVEMODESETTING_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "RedEyeReduction", values: Some(SONY_CAMERASETTINGS3_REDEYEREDUCTION_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_CAMERASETTINGS3_HDRSETTING_VALUES) },
+    BinDef { index: 46, width: 1, signed: false, name: "HDRLevel", values: Some(SONY_CAMERASETTINGS3_HDRLEVEL_VALUES) },
+    BinDef { index: 47, width: 1, signed: false, name: "ViewingMode", values: Some(SONY_CAMERASETTINGS3_VIEWINGMODE_VALUES) },
+    BinDef { index: 48, width: 1, signed: false, name: "FaceDetection", values: Some(SONY_CAMERASETTINGS3_FACEDETECTION_VALUES) },
+    BinDef { index: 49, width: 1, signed: false, name: "SmileShutter", values: Some(SONY_CAMERASETTINGS3_SMILESHUTTER_VALUES) },
+    BinDef { index: 5, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_CAMERASETTINGS3_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 50, width: 1, signed: false, name: "SweepPanoramaSize", values: Some(SONY_CAMERASETTINGS3_SWEEPPANORAMASIZE_VALUES) },
+    BinDef { index: 51, width: 1, signed: false, name: "SweepPanoramaDirection", values: Some(SONY_CAMERASETTINGS3_SWEEPPANORAMADIRECTION_VALUES) },
+    BinDef { index: 512, width: 4, signed: false, name: "ShotNumberSincePowerUp2", values: None },
+    BinDef { index: 52, width: 1, signed: false, name: "DriveMode", values: Some(SONY_CAMERASETTINGS3_DRIVEMODE_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "MultiFrameNoiseReduction", values: Some(SONY_CAMERASETTINGS3_MULTIFRAMENOISEREDUCTION_VALUES) },
+    BinDef { index: 54, width: 1, signed: false, name: "LiveViewAFSetting", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWAFSETTING_VALUES) },
+    BinDef { index: 56, width: 1, signed: false, name: "PanoramaSize3D", values: Some(SONY_CAMERASETTINGS3_PANORAMASIZE3D_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "FocusModeSetting", values: Some(SONY_CAMERASETTINGS3_FOCUSMODESETTING_VALUES) },
+    BinDef { index: 643, width: 1, signed: false, name: "AFButtonPressed", values: Some(SONY_CAMERASETTINGS3_AFBUTTONPRESSED_VALUES) },
+    BinDef { index: 644, width: 1, signed: false, name: "LiveViewMetering", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWMETERING_VALUES) },
+    BinDef { index: 645, width: 1, signed: false, name: "ViewingMode2", values: Some(SONY_CAMERASETTINGS3_VIEWINGMODE2_VALUES) },
+    BinDef { index: 646, width: 1, signed: false, name: "AELock", values: Some(SONY_CAMERASETTINGS3_AELOCK_VALUES) },
+    BinDef { index: 647, width: 1, signed: false, name: "FlashStatusBuilt-in", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSBUILT_IN_VALUES) },
+    BinDef { index: 648, width: 1, signed: false, name: "FlashStatusExternal", values: Some(SONY_CAMERASETTINGS3_FLASHSTATUSEXTERNAL_VALUES) },
+    BinDef { index: 651, width: 1, signed: false, name: "LiveViewFocusMode", values: Some(SONY_CAMERASETTINGS3_LIVEVIEWFOCUSMODE_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_CAMERASETTINGS3_METERINGMODE_VALUES) },
+    BinDef { index: 780, width: 1, signed: false, name: "SequenceNumber", values: Some(SONY_CAMERASETTINGS3_SEQUENCENUMBER_VALUES) },
+    BinDef { index: 9, width: 1, signed: false, name: "SonyImageSize", values: Some(SONY_CAMERASETTINGS3_SONYIMAGESIZE_VALUES) },
 ];
 
 pub static SONY_CAMERASETTINGS3_ASPECTRATIO_VALUES: &[(i64, &str)] = &[
@@ -62595,6 +66797,13 @@ pub static SONY_EXTRAINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "BatteryVoltage", values: None },
 };
 
+/// Sony::ExtraInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_EXTRAINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "BatteryTemperature", values: None },
+    BinDef { index: 10, width: 1, signed: false, name: "ImageStabilization2", values: Some(SONY_EXTRAINFO_IMAGESTABILIZATION2_VALUES) },
+    BinDef { index: 12, width: 1, signed: false, name: "BatteryLevel", values: None },
+];
+
 pub static SONY_EXTRAINFO_IMAGESTABILIZATION2_VALUES: &[(i64, &str)] = &[
     (191, "On (191)"),
     (207, "On (207)"),
@@ -62608,6 +66817,12 @@ pub static SONY_EXTRAINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     18u16 => TagDef { name: "ImageStabilization", values: Some(SONY_EXTRAINFO2_IMAGESTABILIZATION_VALUES) },
     4u16 => TagDef { name: "BatteryLevel", values: None },
 };
+
+/// Sony::ExtraInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_EXTRAINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 18, width: 1, signed: false, name: "ImageStabilization", values: Some(SONY_EXTRAINFO2_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "BatteryLevel", values: None },
+];
 
 pub static SONY_EXTRAINFO2_IMAGESTABILIZATION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -62630,6 +66845,18 @@ pub static SONY_EXTRAINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Sony::ExtraInfo3 Mask bitfields (ExifTool 0.1-style indices)
 pub static SONY_EXTRAINFO3_MASKS: &[MaskDef] = &[
     MaskDef { index: 24, mask: 0x30, name: "CameraOrientation", values: Some(SONY_EXTRAINFO3_CAMERAORIENTATION_VALUES) },
+];
+
+/// Sony::ExtraInfo3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_EXTRAINFO3_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "BatteryUnknown", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "ImageStabilization", values: Some(SONY_EXTRAINFO3_IMAGESTABILIZATION_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "BatteryTemperature", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "BatteryState", values: Some(SONY_EXTRAINFO3_BATTERYSTATE_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "MemoryCardConfiguration", values: Some(SONY_EXTRAINFO3_MEMORYCARDCONFIGURATION_VALUES) },
+    BinDef { index: 4, width: 1, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "BatteryVoltage1", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "BatteryVoltage2", values: None },
 ];
 
 pub static SONY_EXTRAINFO3_IMAGESTABILIZATION_VALUES: &[(i64, &str)] = &[
@@ -62671,6 +66898,11 @@ pub static SONY_FACEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     36u16 => TagDef { name: "Face8Position", values: None },
     6u16 => TagDef { name: "Face2Position", values: None },
 };
+
+/// Sony::FaceInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_FACEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: true, name: "FacesDetected", values: Some(SONY_FACEINFO_FACESDETECTED_VALUES) },
+];
 
 pub static SONY_FACEINFO_FACESDETECTED_VALUES: &[(i64, &str)] = &[
     (-1, "n/a"),
@@ -62719,6 +66951,13 @@ pub static SONY_FACEINFOA: phf::Map<u16, TagDef> = phf::phf_map! {
     91u16 => TagDef { name: "Face1Position", values: None },
 };
 
+/// Sony::FaceInfoA ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_FACEINFOA_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "FaceTest2", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "FacesDetected", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "FaceTest8", values: None },
+];
+
 /// Sony::FocusInfo tags
 pub static SONY_FOCUSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     109u16 => TagDef { name: "ISOSetting", values: None },
@@ -62739,6 +66978,26 @@ pub static SONY_FOCUSINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     63u16 => TagDef { name: "ExposureProgram", values: Some(SONY_FOCUSINFO_EXPOSUREPROGRAM_VALUES) },
     65u16 => TagDef { name: "CreativeStyle", values: Some(SONY_FOCUSINFO_CREATIVESTYLE_VALUES) },
 };
+
+/// Sony::FocusInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_FOCUSINFO_BIN: &[BinDef] = &[
+    BinDef { index: 109, width: 1, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 111, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 119, width: 1, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "DriveMode2", values: Some(SONY_FOCUSINFO_DRIVEMODE2_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "Rotation", values: Some(SONY_FOCUSINFO_ROTATION_VALUES) },
+    BinDef { index: 20, width: 1, signed: false, name: "ImageStabilizationSetting", values: Some(SONY_FOCUSINFO_IMAGESTABILIZATIONSETTING_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "DynamicRangeOptimizerMode", values: Some(SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERMODE_VALUES) },
+    BinDef { index: 2118, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 2491, width: 1, signed: false, name: "FocusPosition", values: None },
+    BinDef { index: 43, width: 1, signed: false, name: "BracketShotNumber", values: None },
+    BinDef { index: 44, width: 1, signed: false, name: "WhiteBalanceBracketing", values: Some(SONY_FOCUSINFO_WHITEBALANCEBRACKETING_VALUES) },
+    BinDef { index: 45, width: 1, signed: false, name: "BracketShotNumber2", values: None },
+    BinDef { index: 46, width: 1, signed: false, name: "DynamicRangeOptimizerBracket", values: Some(SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERBRACKET_VALUES) },
+    BinDef { index: 47, width: 1, signed: false, name: "ExposureBracketShotNumber", values: None },
+    BinDef { index: 63, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_FOCUSINFO_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 65, width: 1, signed: false, name: "CreativeStyle", values: Some(SONY_FOCUSINFO_CREATIVESTYLE_VALUES) },
+];
 
 pub static SONY_FOCUSINFO_DYNAMICRANGEOPTIMIZERMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -62820,12 +67079,24 @@ pub static SONY_HIDDENINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "HiddenDataLength", values: None },
 };
 
+/// Sony::HiddenInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_HIDDENINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 4, signed: false, name: "HiddenDataLength", values: None },
+];
+
 /// Sony::ISOInfo tags
 pub static SONY_ISOINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "ISOSetting", values: None },
     2u16 => TagDef { name: "ISOAutoMin", values: None },
     4u16 => TagDef { name: "ISOAutoMax", values: None },
 };
+
+/// Sony::ISOInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_ISOINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "ISOAutoMin", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "ISOAutoMax", values: None },
+];
 
 /// Sony::Main tags
 pub static SONY_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -63818,10 +68089,22 @@ pub static SONY_MOREINFO0201: phf::Map<u16, TagDef> = phf::phf_map! {
     330u16 => TagDef { name: "ShutterCount", values: None },
 };
 
+/// Sony::MoreInfo0201 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_MOREINFO0201_BIN: &[BinDef] = &[
+    BinDef { index: 283, width: 4, signed: false, name: "ImageCount", values: None },
+    BinDef { index: 293, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 330, width: 4, signed: false, name: "ShutterCount", values: None },
+];
+
 /// Sony::MoreInfo0401 tags
 pub static SONY_MOREINFO0401: phf::Map<u16, TagDef> = phf::phf_map! {
     1102u16 => TagDef { name: "ShotNumberSincePowerUp", values: None },
 };
+
+/// Sony::MoreInfo0401 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_MOREINFO0401_BIN: &[BinDef] = &[
+    BinDef { index: 1102, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+];
 
 /// Sony::MoreSettings tags
 pub static SONY_MORESETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -63872,6 +68155,55 @@ pub static SONY_MORESETTINGS: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ContrastSetting", values: None },
     9u16 => TagDef { name: "SaturationSetting", values: None },
 };
+
+/// Sony::MoreSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_MORESETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "DriveMode2", values: Some(SONY_MORESETTINGS_DRIVEMODE2_VALUES) },
+    BinDef { index: 10, width: 1, signed: true, name: "SharpnessSetting", values: None },
+    BinDef { index: 119, width: 1, signed: false, name: "FlashAction2", values: Some(SONY_MORESETTINGS_FLASHACTION2_VALUES) },
+    BinDef { index: 120, width: 1, signed: false, name: "FlashActionExternal", values: Some(SONY_MORESETTINGS_FLASHACTIONEXTERNAL_VALUES) },
+    BinDef { index: 124, width: 1, signed: false, name: "FlashActionExternal", values: Some(SONY_MORESETTINGS_FLASHACTIONEXTERNAL_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "WhiteBalanceSetting", values: Some(SONY_MORESETTINGS_WHITEBALANCESETTING_VALUES) },
+    BinDef { index: 130, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_MORESETTINGS_FLASHSTATUS_VALUES) },
+    BinDef { index: 134, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_MORESETTINGS_FLASHSTATUS_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "ColorTemperatureSetting", values: None },
+    BinDef { index: 15, width: 1, signed: true, name: "ColorCompensationFilterSet", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "FlashMode", values: Some(SONY_MORESETTINGS_FLASHMODE_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_MORESETTINGS_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(SONY_MORESETTINGS_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 19, width: 1, signed: false, name: "FocusMode", values: Some(SONY_MORESETTINGS_FOCUSMODE_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_MORESETTINGS_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 21, width: 1, signed: false, name: "MultiFrameNoiseReduction", values: Some(SONY_MORESETTINGS_MULTIFRAMENOISEREDUCTION_VALUES) },
+    BinDef { index: 22, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_MORESETTINGS_HDRSETTING_VALUES) },
+    BinDef { index: 23, width: 1, signed: false, name: "HDRLevel", values: Some(SONY_MORESETTINGS_HDRLEVEL_VALUES) },
+    BinDef { index: 24, width: 1, signed: false, name: "ViewingMode", values: Some(SONY_MORESETTINGS_VIEWINGMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "FaceDetection", values: Some(SONY_MORESETTINGS_FACEDETECTION_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_MORESETTINGS_METERINGMODE_VALUES) },
+    BinDef { index: 30, width: 1, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 31, width: 1, signed: false, name: "ISO", values: None },
+    BinDef { index: 32, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 33, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 34, width: 1, signed: false, name: "FNumber", values: None },
+    BinDef { index: 35, width: 1, signed: false, name: "FocalLength2", values: None },
+    BinDef { index: 36, width: 2, signed: true, name: "ExposureCompensation2", values: None },
+    BinDef { index: 37, width: 1, signed: false, name: "FocalLength2", values: None },
+    BinDef { index: 38, width: 2, signed: true, name: "FlashExposureCompSet2", values: None },
+    BinDef { index: 39, width: 1, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "DynamicRangeOptimizerSetting", values: Some(SONY_MORESETTINGS_DYNAMICRANGEOPTIMIZERSETTING_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "Orientation2", values: Some(SONY_MORESETTINGS_ORIENTATION2_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "FocusPosition2", values: None },
+    BinDef { index: 42, width: 1, signed: false, name: "FlashAction", values: Some(SONY_MORESETTINGS_FLASHACTION_VALUES) },
+    BinDef { index: 43, width: 1, signed: false, name: "FocusPosition2", values: None },
+    BinDef { index: 44, width: 1, signed: false, name: "FocusMode2", values: Some(SONY_MORESETTINGS_FOCUSMODE2_VALUES) },
+    BinDef { index: 46, width: 1, signed: false, name: "FocusMode2", values: Some(SONY_MORESETTINGS_FOCUSMODE2_VALUES) },
+    BinDef { index: 47, width: 1, signed: false, name: "FocusPosition2", values: None },
+    BinDef { index: 48, width: 1, signed: false, name: "FlashAction", values: Some(SONY_MORESETTINGS_FLASHACTION_VALUES) },
+    BinDef { index: 50, width: 1, signed: false, name: "FocusMode2", values: Some(SONY_MORESETTINGS_FOCUSMODE2_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ColorSpace", values: Some(SONY_MORESETTINGS_COLORSPACE_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "CreativeStyleSetting", values: Some(SONY_MORESETTINGS_CREATIVESTYLESETTING_VALUES) },
+    BinDef { index: 8, width: 1, signed: true, name: "ContrastSetting", values: None },
+    BinDef { index: 9, width: 1, signed: true, name: "SaturationSetting", values: None },
+];
 
 pub static SONY_MORESETTINGS_DRIVEMODE2_VALUES: &[(i64, &str)] = &[
     (113, "Continuous Bracketing 0.3 EV"),
@@ -64106,6 +68438,11 @@ pub static SONY_PANORAMA: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "PanoramaDirection", values: Some(SONY_PANORAMA_PANORAMADIRECTION_VALUES) },
 };
 
+/// Sony::Panorama ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_PANORAMA_BIN: &[BinDef] = &[
+    BinDef { index: 3, width: 4, signed: false, name: "PanoramaDirection", values: Some(SONY_PANORAMA_PANORAMADIRECTION_VALUES) },
+];
+
 pub static SONY_PANORAMA_PANORAMADIRECTION_VALUES: &[(i64, &str)] = &[
     (0, "Left or Up"),
     (1, "Right or Down"),
@@ -64140,6 +68477,16 @@ pub static SONY_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     94u16 => TagDef { name: "FaceInfo2", values: None },
 };
 
+/// Sony::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 26, width: 2, signed: false, name: "SonyImageHeight", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "SonyImageWidth", values: None },
+    BinDef { index: 48, width: 2, signed: false, name: "FacesDetected", values: None },
+    BinDef { index: 50, width: 2, signed: false, name: "FaceInfoLength", values: None },
+    BinDef { index: 72, width: 1, signed: false, name: "FaceInfo1", values: None },
+    BinDef { index: 94, width: 1, signed: false, name: "FaceInfo2", values: None },
+];
+
 /// Sony::Tag2010a tags
 pub static SONY_TAG2010A: phf::Map<u16, TagDef> = phf::phf_map! {
     1200u16 => TagDef { name: "MeterInfo", values: None },
@@ -64160,6 +68507,25 @@ pub static SONY_TAG2010A: phf::Map<u16, TagDef> = phf::phf_map! {
     4469u16 => TagDef { name: "ExposureProgram", values: Some(SONY_TAG2010A_EXPOSUREPROGRAM_VALUES) },
     4476u16 => TagDef { name: "WB_RGBLevels", values: None },
 };
+
+/// Sony::Tag2010a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010A_BIN: &[BinDef] = &[
+    BinDef { index: 4392, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010A_RELEASEMODE3_VALUES) },
+    BinDef { index: 4396, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010A_RELEASEMODE2_VALUES) },
+    BinDef { index: 4404, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010A_SELFTIMER_VALUES) },
+    BinDef { index: 4408, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010A_FLASHMODE_VALUES) },
+    BinDef { index: 4414, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4416, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4420, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010A_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4424, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010A_HDRSETTING_VALUES) },
+    BinDef { index: 4428, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4446, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010A_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4447, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010A_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4451, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010A_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4464, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010A_QUALITY2_VALUES) },
+    BinDef { index: 4468, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010A_METERINGMODE_VALUES) },
+    BinDef { index: 4469, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010A_EXPOSUREPROGRAM_VALUES) },
+];
 
 pub static SONY_TAG2010A_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -64359,6 +68725,30 @@ pub static SONY_TAG2010B: phf::Map<u16, TagDef> = phf::phf_map! {
     804u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010B_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
 
+/// Sony::Tag2010b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010B_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4392, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010B_RELEASEMODE3_VALUES) },
+    BinDef { index: 4396, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010B_RELEASEMODE2_VALUES) },
+    BinDef { index: 4404, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010B_SELFTIMER_VALUES) },
+    BinDef { index: 4408, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010B_FLASHMODE_VALUES) },
+    BinDef { index: 4414, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4416, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4420, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010B_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4424, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010B_HDRSETTING_VALUES) },
+    BinDef { index: 4428, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4450, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010B_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4451, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010B_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4455, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010B_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4468, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010B_QUALITY2_VALUES) },
+    BinDef { index: 4472, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010B_METERINGMODE_VALUES) },
+    BinDef { index: 4473, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010B_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4632, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010B_RELEASEMODE2_VALUES) },
+    BinDef { index: 804, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010B_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
+
 pub static SONY_TAG2010B_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -64557,6 +68947,31 @@ pub static SONY_TAG2010C: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG2010C_RELEASEMODE2_VALUES) },
 };
 
+/// Sony::Tag2010c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010C_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4356, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010C_RELEASEMODE3_VALUES) },
+    BinDef { index: 4360, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010C_RELEASEMODE2_VALUES) },
+    BinDef { index: 4368, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010C_SELFTIMER_VALUES) },
+    BinDef { index: 4372, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010C_FLASHMODE_VALUES) },
+    BinDef { index: 4378, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4380, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4384, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010C_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4388, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010C_HDRSETTING_VALUES) },
+    BinDef { index: 4392, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4414, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010C_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4415, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010C_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4419, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010C_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4432, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010C_QUALITY2_VALUES) },
+    BinDef { index: 4436, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010C_METERINGMODE_VALUES) },
+    BinDef { index: 4437, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010C_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4596, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 512, width: 1, signed: false, name: "DigitalZoomRatio", values: None },
+    BinDef { index: 768, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010C_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010C_RELEASEMODE2_VALUES) },
+];
+
 pub static SONY_TAG2010C_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -64751,6 +69166,28 @@ pub static SONY_TAG2010D: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG2010D_RELEASEMODE2_VALUES) },
     892u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010D_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
+
+/// Sony::Tag2010d ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010D_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4480, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010D_RELEASEMODE3_VALUES) },
+    BinDef { index: 4484, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010D_RELEASEMODE2_VALUES) },
+    BinDef { index: 4492, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010D_SELFTIMER_VALUES) },
+    BinDef { index: 4496, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010D_FLASHMODE_VALUES) },
+    BinDef { index: 4502, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4504, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4508, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010D_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4512, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010D_HDRSETTING_VALUES) },
+    BinDef { index: 4538, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010D_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4539, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010D_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4543, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010D_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4560, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010D_METERINGMODE_VALUES) },
+    BinDef { index: 4561, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010D_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4720, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010D_RELEASEMODE2_VALUES) },
+    BinDef { index: 892, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010D_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
 
 pub static SONY_TAG2010D_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -64957,6 +69394,44 @@ pub static SONY_TAG2010E: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG2010E_RELEASEMODE2_VALUES) },
     808u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010E_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
+
+/// Sony::Tag2010e ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010E_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 4444, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010E_RELEASEMODE3_VALUES) },
+    BinDef { index: 4448, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010E_RELEASEMODE2_VALUES) },
+    BinDef { index: 4456, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010E_SELFTIMER_VALUES) },
+    BinDef { index: 4460, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010E_FLASHMODE_VALUES) },
+    BinDef { index: 4466, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4468, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4472, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010E_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4476, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010E_HDRSETTING_VALUES) },
+    BinDef { index: 4480, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4502, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010E_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4503, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010E_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4507, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010E_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4520, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010E_QUALITY2_VALUES) },
+    BinDef { index: 4524, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010E_METERINGMODE_VALUES) },
+    BinDef { index: 4525, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010E_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4692, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 4696, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 4728, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 4730, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 4732, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 4736, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 540, width: 1, signed: false, name: "DigitalZoomRatio", values: None },
+    BinDef { index: 6289, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010E_LENSFORMAT_VALUES) },
+    BinDef { index: 6290, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010E_LENSMOUNT_VALUES) },
+    BinDef { index: 6291, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010E_LENSTYPE2_VALUES) },
+    BinDef { index: 6294, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010E_LENSTYPE_VALUES) },
+    BinDef { index: 6296, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010E_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6297, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010E_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6444, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010E_ASPECTRATIO_VALUES) },
+    BinDef { index: 6792, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010E_ASPECTRATIO_VALUES) },
+    BinDef { index: 8, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010E_RELEASEMODE2_VALUES) },
+    BinDef { index: 808, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010E_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
 
 pub static SONY_TAG2010E_RELEASEMODE3_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -65715,6 +70190,32 @@ pub static SONY_TAG2010F: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010F_DYNAMICRANGEOPTIMIZER_VALUES) },
 };
 
+/// Sony::Tag2010f ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010F_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010F_RELEASEMODE2_VALUES) },
+    BinDef { index: 4116, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010F_RELEASEMODE3_VALUES) },
+    BinDef { index: 4120, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010F_RELEASEMODE2_VALUES) },
+    BinDef { index: 4128, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010F_SELFTIMER_VALUES) },
+    BinDef { index: 4132, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010F_FLASHMODE_VALUES) },
+    BinDef { index: 4138, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 4140, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 4144, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010F_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 4148, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010F_HDRSETTING_VALUES) },
+    BinDef { index: 4152, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 4174, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010F_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4175, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010F_PICTUREPROFILE_VALUES) },
+    BinDef { index: 4179, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010F_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 4192, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010F_QUALITY2_VALUES) },
+    BinDef { index: 4196, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010F_METERINGMODE_VALUES) },
+    BinDef { index: 4197, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010F_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 4404, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 4406, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 4408, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 4412, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 6444, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010F_ASPECTRATIO_VALUES) },
+    BinDef { index: 80, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010F_DYNAMICRANGEOPTIMIZER_VALUES) },
+];
+
 pub static SONY_TAG2010F_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -65927,6 +70428,38 @@ pub static SONY_TAG2010G: phf::Map<u16, TagDef> = phf::phf_map! {
     836u16 => TagDef { name: "SonyISO", values: None },
     904u16 => TagDef { name: "MeterInfo", values: None },
 };
+
+/// Sony::Tag2010g ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010G_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010G_RELEASEMODE2_VALUES) },
+    BinDef { index: 524, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010G_RELEASEMODE3_VALUES) },
+    BinDef { index: 528, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010G_RELEASEMODE2_VALUES) },
+    BinDef { index: 536, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010G_SELFTIMER_VALUES) },
+    BinDef { index: 540, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010G_FLASHMODE_VALUES) },
+    BinDef { index: 546, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 548, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 552, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010G_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010G_HDRSETTING_VALUES) },
+    BinDef { index: 560, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 582, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010G_PICTUREPROFILE_VALUES) },
+    BinDef { index: 583, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010G_PICTUREPROFILE_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010G_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 600, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010G_QUALITY2_VALUES) },
+    BinDef { index: 604, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010G_METERINGMODE_VALUES) },
+    BinDef { index: 605, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010G_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 6333, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010G_LENSFORMAT_VALUES) },
+    BinDef { index: 6334, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010G_LENSMOUNT_VALUES) },
+    BinDef { index: 6335, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010G_LENSTYPE2_VALUES) },
+    BinDef { index: 6338, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010G_LENSTYPE_VALUES) },
+    BinDef { index: 6340, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010G_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6341, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010G_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6488, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010G_ASPECTRATIO_VALUES) },
+    BinDef { index: 80, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010G_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 812, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 814, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 816, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 836, width: 2, signed: false, name: "SonyISO", values: None },
+];
 
 pub static SONY_TAG2010G_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -66693,6 +71226,38 @@ pub static SONY_TAG2010H: phf::Map<u16, TagDef> = phf::phf_map! {
     920u16 => TagDef { name: "MeterInfo", values: None },
 };
 
+/// Sony::Tag2010h ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010H_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010H_RELEASEMODE2_VALUES) },
+    BinDef { index: 524, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010H_RELEASEMODE3_VALUES) },
+    BinDef { index: 528, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010H_RELEASEMODE2_VALUES) },
+    BinDef { index: 536, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010H_SELFTIMER_VALUES) },
+    BinDef { index: 540, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010H_FLASHMODE_VALUES) },
+    BinDef { index: 546, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 548, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 552, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010H_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 556, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010H_HDRSETTING_VALUES) },
+    BinDef { index: 560, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 582, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010H_PICTUREPROFILE_VALUES) },
+    BinDef { index: 583, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010H_PICTUREPROFILE_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010H_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 600, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010H_QUALITY2_VALUES) },
+    BinDef { index: 604, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010H_METERINGMODE_VALUES) },
+    BinDef { index: 605, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010H_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 6381, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010H_LENSFORMAT_VALUES) },
+    BinDef { index: 6382, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010H_LENSMOUNT_VALUES) },
+    BinDef { index: 6383, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010H_LENSTYPE2_VALUES) },
+    BinDef { index: 6386, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010H_LENSTYPE_VALUES) },
+    BinDef { index: 6388, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010H_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6389, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010H_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6444, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010H_ASPECTRATIO_VALUES) },
+    BinDef { index: 80, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010H_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 812, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 814, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 816, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 838, width: 2, signed: false, name: "SonyISO", values: None },
+];
+
 pub static SONY_TAG2010H_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -67457,6 +72022,38 @@ pub static SONY_TAG2010I: phf::Map<u16, TagDef> = phf::phf_map! {
     877u16 => TagDef { name: "MeterInfo", values: None },
 };
 
+/// Sony::Tag2010i ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG2010I_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010I_RELEASEMODE2_VALUES) },
+    BinDef { index: 516, width: 1, signed: false, name: "ReleaseMode3", values: Some(SONY_TAG2010I_RELEASEMODE3_VALUES) },
+    BinDef { index: 520, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG2010I_RELEASEMODE2_VALUES) },
+    BinDef { index: 528, width: 1, signed: false, name: "SelfTimer", values: Some(SONY_TAG2010I_SELFTIMER_VALUES) },
+    BinDef { index: 529, width: 1, signed: false, name: "FlashMode", values: Some(SONY_TAG2010I_FLASHMODE_VALUES) },
+    BinDef { index: 535, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 537, width: 2, signed: false, name: "BrightnessValue", values: None },
+    BinDef { index: 539, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010I_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 543, width: 1, signed: false, name: "HDRSetting", values: Some(SONY_TAG2010I_HDRSETTING_VALUES) },
+    BinDef { index: 547, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 567, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010I_PICTUREPROFILE_VALUES) },
+    BinDef { index: 568, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG2010I_PICTUREPROFILE_VALUES) },
+    BinDef { index: 572, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG2010I_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 583, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG2010I_QUALITY2_VALUES) },
+    BinDef { index: 587, width: 1, signed: false, name: "MeteringMode", values: Some(SONY_TAG2010I_METERINGMODE_VALUES) },
+    BinDef { index: 588, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG2010I_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 6129, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG2010I_LENSFORMAT_VALUES) },
+    BinDef { index: 6130, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG2010I_LENSMOUNT_VALUES) },
+    BinDef { index: 6131, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG2010I_LENSTYPE2_VALUES) },
+    BinDef { index: 6134, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG2010I_LENSTYPE_VALUES) },
+    BinDef { index: 6136, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG2010I_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 6137, width: 1, signed: false, name: "DistortionCorrParamsNumber", values: Some(SONY_TAG2010I_DISTORTIONCORRPARAMSNUMBER_VALUES) },
+    BinDef { index: 6284, width: 1, signed: false, name: "AspectRatio", values: Some(SONY_TAG2010I_ASPECTRATIO_VALUES) },
+    BinDef { index: 778, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 78, width: 1, signed: false, name: "DynamicRangeOptimizer", values: Some(SONY_TAG2010I_DYNAMICRANGEOPTIMIZER_VALUES) },
+    BinDef { index: 780, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 782, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 800, width: 2, signed: false, name: "SonyISO", values: None },
+];
+
 pub static SONY_TAG2010I_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -68207,6 +72804,11 @@ pub static SONY_TAG202A: phf::Map<u16, TagDef> = phf::phf_map! {
     62u16 => TagDef { name: "FocalPlaneAFPointLocation15", values: None },
 };
 
+/// Sony::Tag202a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG202A_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "FocalPlaneAFPointsUsed", values: None },
+];
+
 /// Sony::Tag900b tags
 pub static SONY_TAG900B: phf::Map<u16, TagDef> = phf::phf_map! {
     189u16 => TagDef { name: "FaceDetection", values: Some(SONY_TAG900B_FACEDETECTION_VALUES) },
@@ -68257,6 +72859,28 @@ pub static SONY_TAG9050A: phf::Map<u16, TagDef> = phf::phf_map! {
     76u16 => TagDef { name: "ShutterCount2", values: None },
     81u16 => TagDef { name: "SonyDateTime2", values: None },
 };
+
+/// Sony::Tag9050a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050A_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SonyMaxAperture", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "SonyMinAperture", values: None },
+    BinDef { index: 103, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050A_RELEASEMODE2_VALUES) },
+    BinDef { index: 261, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9050A_LENSMOUNT_VALUES) },
+    BinDef { index: 262, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9050A_LENSFORMAT_VALUES) },
+    BinDef { index: 263, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9050A_LENSTYPE2_VALUES) },
+    BinDef { index: 265, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9050A_LENSTYPE_VALUES) },
+    BinDef { index: 267, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9050A_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 276, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050A_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 416, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 426, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 445, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 49, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_TAG9050A_FLASHSTATUS_VALUES) },
+    BinDef { index: 50, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 58, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 63, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050A_RELEASEMODE2_VALUES) },
+    BinDef { index: 76, width: 4, signed: false, name: "ShutterCount2", values: None },
+];
 
 pub static SONY_TAG9050A_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -68882,6 +73506,35 @@ pub static SONY_TAG9050B: phf::Map<u16, TagDef> = phf::phf_map! {
     97u16 => TagDef { name: "SonyTimeMinSec", values: None },
 };
 
+/// Sony::Tag9050b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050B_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SonyMaxAperture", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "SonyMinAperture", values: None },
+    BinDef { index: 107, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 109, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 115, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 261, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9050B_LENSMOUNT_VALUES) },
+    BinDef { index: 262, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9050B_LENSFORMAT_VALUES) },
+    BinDef { index: 263, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9050B_LENSTYPE2_VALUES) },
+    BinDef { index: 265, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9050B_LENSTYPE_VALUES) },
+    BinDef { index: 267, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9050B_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 276, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 415, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 459, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 461, width: 4, signed: false, name: "ShutterCount3", values: None },
+    BinDef { index: 491, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 494, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 538, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9050B_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_TAG9050B_FLASHSTATUS_VALUES) },
+    BinDef { index: 58, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 75, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050B_RELEASEMODE2_VALUES) },
+    BinDef { index: 80, width: 4, signed: false, name: "ShutterCount2", values: None },
+    BinDef { index: 82, width: 4, signed: false, name: "ShutterCount2", values: None },
+    BinDef { index: 88, width: 4, signed: false, name: "ShutterCount2", values: None },
+];
+
 pub static SONY_TAG9050B_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -69485,6 +74138,19 @@ pub static SONY_TAG9050C: phf::Map<u16, TagDef> = phf::phf_map! {
     80u16 => TagDef { name: "ShutterCount2", values: None },
 };
 
+/// Sony::Tag9050c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050C_BIN: &[BinDef] = &[
+    BinDef { index: 102, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 104, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 107, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050C_RELEASEMODE2_VALUES) },
+    BinDef { index: 57, width: 1, signed: false, name: "FlashStatus", values: Some(SONY_TAG9050C_FLASHSTATUS_VALUES) },
+    BinDef { index: 58, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 70, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 72, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 75, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050C_RELEASEMODE2_VALUES) },
+    BinDef { index: 80, width: 4, signed: false, name: "ShutterCount2", values: None },
+];
+
 pub static SONY_TAG9050C_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -69530,6 +74196,14 @@ pub static SONY_TAG9050D: phf::Map<u16, TagDef> = phf::phf_map! {
     56u16 => TagDef { name: "InternalSerialNumber", values: None },
 };
 
+/// Sony::Tag9050d ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9050D_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 4, signed: false, name: "ShutterCount", values: None },
+    BinDef { index: 26, width: 2, signed: false, name: "SonyExposureTime", values: None },
+    BinDef { index: 28, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 31, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9050D_RELEASEMODE2_VALUES) },
+];
+
 pub static SONY_TAG9050D_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
     (1, "Continuous"),
@@ -69569,6 +74243,20 @@ pub static SONY_TAG9400A: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "SequenceImageNumber", values: None },
     82u16 => TagDef { name: "ModelReleaseYear", values: None },
 };
+
+/// Sony::Tag9400a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9400A_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9400A_RELEASEMODE2_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "DigitalZoom", values: Some(SONY_TAG9400A_DIGITALZOOM_VALUES) },
+    BinDef { index: 26, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+    BinDef { index: 34, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400A_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 40, width: 1, signed: false, name: "CameraOrientation", values: Some(SONY_TAG9400A_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG9400A_QUALITY2_VALUES) },
+    BinDef { index: 68, width: 2, signed: false, name: "SonyImageHeight", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 82, width: 1, signed: false, name: "ModelReleaseYear", values: None },
+];
 
 pub static SONY_TAG9400A_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -69641,6 +74329,20 @@ pub static SONY_TAG9400B: phf::Map<u16, TagDef> = phf::phf_map! {
     70u16 => TagDef { name: "ModelReleaseYear", values: None },
     8u16 => TagDef { name: "SequenceImageNumber", values: None },
 };
+
+/// Sony::Tag9400b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9400B_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9400B_RELEASEMODE2_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "DigitalZoom", values: Some(SONY_TAG9400B_DIGITALZOOM_VALUES) },
+    BinDef { index: 22, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+    BinDef { index: 30, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400B_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 36, width: 1, signed: false, name: "CameraOrientation", values: Some(SONY_TAG9400B_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 37, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG9400B_QUALITY2_VALUES) },
+    BinDef { index: 63, width: 2, signed: false, name: "SonyImageHeight", values: None },
+    BinDef { index: 70, width: 1, signed: false, name: "ModelReleaseYear", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+];
 
 pub static SONY_TAG9400B_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -69715,6 +74417,22 @@ pub static SONY_TAG9400C: phf::Map<u16, TagDef> = phf::phf_map! {
     83u16 => TagDef { name: "ModelReleaseYear", values: None },
     9u16 => TagDef { name: "ReleaseMode2", values: Some(SONY_TAG9400C_RELEASEMODE2_VALUES) },
 };
+
+/// Sony::Tag9400c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9400C_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 4, signed: false, name: "ShotNumberSincePowerUp", values: None },
+    BinDef { index: 18, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 22, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400C_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 26, width: 4, signed: false, name: "SequenceFileNumber", values: None },
+    BinDef { index: 30, width: 1, signed: false, name: "SequenceLength", values: Some(SONY_TAG9400C_SEQUENCELENGTH_VALUES) },
+    BinDef { index: 307, width: 1, signed: false, name: "ShutterType", values: Some(SONY_TAG9400C_SHUTTERTYPE_VALUES) },
+    BinDef { index: 313, width: 1, signed: false, name: "ShutterType", values: Some(SONY_TAG9400C_SHUTTERTYPE_VALUES) },
+    BinDef { index: 319, width: 1, signed: false, name: "ShutterType", values: Some(SONY_TAG9400C_SHUTTERTYPE_VALUES) },
+    BinDef { index: 41, width: 1, signed: false, name: "CameraOrientation", values: Some(SONY_TAG9400C_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 42, width: 1, signed: false, name: "Quality2", values: Some(SONY_TAG9400C_QUALITY2_VALUES) },
+    BinDef { index: 83, width: 1, signed: false, name: "ModelReleaseYear", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9400C_RELEASEMODE2_VALUES) },
+];
 
 pub static SONY_TAG9400C_SEQUENCELENGTH_VALUES: &[(i64, &str)] = &[
     (0, "Continuous"),
@@ -69802,6 +74520,11 @@ pub static SONY_TAG9401: phf::Map<u16, TagDef> = phf::phf_map! {
     994u16 => TagDef { name: "ISOInfo", values: None },
 };
 
+/// Sony::Tag9401 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9401_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "Ver9401", values: None },
+];
+
 /// Sony::Tag9402 tags
 pub static SONY_TAG9402: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "TempTest1", values: None },
@@ -69814,6 +74537,14 @@ pub static SONY_TAG9402: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Sony::Tag9402 Mask bitfields (ExifTool 0.1-style indices)
 pub static SONY_TAG9402_MASKS: &[MaskDef] = &[
     MaskDef { index: 22, mask: 0x7f, name: "FocusMode", values: Some(SONY_TAG9402_FOCUSMODE_VALUES) },
+];
+
+/// Sony::Tag9402 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9402_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 1, signed: false, name: "TempTest1", values: None },
+    BinDef { index: 23, width: 1, signed: false, name: "AFAreaMode", values: Some(SONY_TAG9402_AFAREAMODE_VALUES) },
+    BinDef { index: 4, width: 1, signed: true, name: "AmbientTemperature", values: None },
+    BinDef { index: 45, width: 1, signed: false, name: "FocusPosition2", values: None },
 ];
 
 pub static SONY_TAG9402_FOCUSMODE_VALUES: &[(i64, &str)] = &[
@@ -69846,12 +74577,25 @@ pub static SONY_TAG9403: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "CameraTemperature", values: None },
 };
 
+/// Sony::Tag9403 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9403_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 1, signed: false, name: "TempTest2", values: None },
+    BinDef { index: 5, width: 1, signed: true, name: "CameraTemperature", values: None },
+];
+
 /// Sony::Tag9404a tags
 pub static SONY_TAG9404A: phf::Map<u16, TagDef> = phf::phf_map! {
     11u16 => TagDef { name: "ExposureProgram", values: Some(SONY_TAG9404A_EXPOSUREPROGRAM_VALUES) },
     13u16 => TagDef { name: "IntelligentAuto", values: Some(SONY_TAG9404A_INTELLIGENTAUTO_VALUES) },
     25u16 => TagDef { name: "LensZoomPosition", values: None },
 };
+
+/// Sony::Tag9404a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9404A_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9404A_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "IntelligentAuto", values: Some(SONY_TAG9404A_INTELLIGENTAUTO_VALUES) },
+    BinDef { index: 25, width: 2, signed: false, name: "LensZoomPosition", values: None },
+];
 
 pub static SONY_TAG9404A_EXPOSUREPROGRAM_VALUES: &[(i64, &str)] = &[
     (0, "Program AE"),
@@ -69902,6 +74646,14 @@ pub static SONY_TAG9404B: phf::Map<u16, TagDef> = phf::phf_map! {
     32u16 => TagDef { name: "FocusPosition2", values: None },
 };
 
+/// Sony::Tag9404b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9404B_BIN: &[BinDef] = &[
+    BinDef { index: 12, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9404B_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 14, width: 1, signed: false, name: "IntelligentAuto", values: Some(SONY_TAG9404B_INTELLIGENTAUTO_VALUES) },
+    BinDef { index: 30, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 32, width: 1, signed: false, name: "FocusPosition2", values: None },
+];
+
 pub static SONY_TAG9404B_EXPOSUREPROGRAM_VALUES: &[(i64, &str)] = &[
     (0, "Program AE"),
     (1, "Aperture-priority AE"),
@@ -69948,6 +74700,12 @@ pub static SONY_TAG9404C: phf::Map<u16, TagDef> = phf::phf_map! {
     11u16 => TagDef { name: "ExposureProgram", values: Some(SONY_TAG9404C_EXPOSUREPROGRAM_VALUES) },
     13u16 => TagDef { name: "IntelligentAuto", values: Some(SONY_TAG9404C_INTELLIGENTAUTO_VALUES) },
 };
+
+/// Sony::Tag9404c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9404C_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9404C_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "IntelligentAuto", values: Some(SONY_TAG9404C_INTELLIGENTAUTO_VALUES) },
+];
 
 pub static SONY_TAG9404C_EXPOSUREPROGRAM_VALUES: &[(i64, &str)] = &[
     (0, "Program AE"),
@@ -70002,6 +74760,16 @@ pub static SONY_TAG9405A: phf::Map<u16, TagDef> = phf::phf_map! {
     1642u16 => TagDef { name: "ChromaticAberrationCorrParams", values: None },
     1738u16 => TagDef { name: "DistortionCorrParams", values: None },
 };
+
+/// Sony::Tag9405a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9405A_BIN: &[BinDef] = &[
+    BinDef { index: 1536, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9405A_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 1537, width: 1, signed: false, name: "DistortionCorrection", values: Some(SONY_TAG9405A_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 1539, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9405A_LENSFORMAT_VALUES) },
+    BinDef { index: 1540, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9405A_LENSMOUNT_VALUES) },
+    BinDef { index: 1541, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9405A_LENSTYPE2_VALUES) },
+    BinDef { index: 1544, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9405A_LENSTYPE_VALUES) },
+];
 
 pub static SONY_TAG9405A_DISTORTIONCORRPARAMSPRESENT_VALUES: &[(i64, &str)] = &[
     (0, "No"),
@@ -70593,6 +75361,35 @@ pub static SONY_TAG9405B: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "LensType2", values: Some(SONY_TAG9405B_LENSTYPE2_VALUES) },
     98u16 => TagDef { name: "LensType", values: Some(SONY_TAG9405B_LENSTYPE_VALUES) },
 };
+
+/// Sony::Tag9405b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9405B_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "SonyExposureTime2", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "SonyFNumber", values: None },
+    BinDef { index: 22, width: 2, signed: false, name: "SonyMaxApertureValue", values: None },
+    BinDef { index: 36, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 52, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9405B_RELEASEMODE2_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "BaseISO", values: None },
+    BinDef { index: 62, width: 2, signed: false, name: "SonyImageWidthMax", values: None },
+    BinDef { index: 64, width: 2, signed: false, name: "SonyImageHeightMax", values: None },
+    BinDef { index: 66, width: 1, signed: false, name: "HighISONoiseReduction", values: Some(SONY_TAG9405B_HIGHISONOISEREDUCTION_VALUES) },
+    BinDef { index: 68, width: 1, signed: false, name: "LongExposureNoiseReduction", values: Some(SONY_TAG9405B_LONGEXPOSURENOISEREDUCTION_VALUES) },
+    BinDef { index: 70, width: 1, signed: false, name: "PictureEffect2", values: Some(SONY_TAG9405B_PICTUREEFFECT2_VALUES) },
+    BinDef { index: 72, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9405B_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 74, width: 1, signed: false, name: "CreativeStyle", values: Some(SONY_TAG9405B_CREATIVESTYLE_VALUES) },
+    BinDef { index: 82, width: 1, signed: true, name: "Sharpness", values: None },
+    BinDef { index: 834, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 846, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 858, width: 2, signed: false, name: "LensZoomPosition", values: None },
+    BinDef { index: 90, width: 1, signed: false, name: "DistortionCorrParamsPresent", values: Some(SONY_TAG9405B_DISTORTIONCORRPARAMSPRESENT_VALUES) },
+    BinDef { index: 91, width: 1, signed: false, name: "DistortionCorrection", values: Some(SONY_TAG9405B_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9405B_LENSFORMAT_VALUES) },
+    BinDef { index: 94, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9405B_LENSMOUNT_VALUES) },
+    BinDef { index: 96, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9405B_LENSTYPE2_VALUES) },
+    BinDef { index: 98, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9405B_LENSTYPE_VALUES) },
+];
 
 pub static SONY_TAG9405B_RELEASEMODE2_VALUES: &[(i64, &str)] = &[
     (0, "Normal"),
@@ -71265,6 +76062,14 @@ pub static SONY_TAG9406: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "BatteryLevelGrip2", values: None },
 };
 
+/// Sony::Tag9406 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9406_BIN: &[BinDef] = &[
+    BinDef { index: 5, width: 1, signed: false, name: "BatteryTemperature", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "BatteryLevelGrip1", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "BatteryLevelGrip2", values: None },
+];
+
 /// Sony::Tag9406b tags
 pub static SONY_TAG9406B: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "Battery2", values: None },
@@ -71274,10 +76079,24 @@ pub static SONY_TAG9406B: phf::Map<u16, TagDef> = phf::phf_map! {
     7u16 => TagDef { name: "BatteryLevel2", values: None },
 };
 
+/// Sony::Tag9406b ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9406B_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "Battery2", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "BatteryStatus1", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "BatteryLevel", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "BatteryStatus2", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "BatteryLevel2", values: None },
+];
+
 /// Sony::Tag940a tags
 pub static SONY_TAG940A: phf::Map<u16, TagDef> = phf::phf_map! {
     4u16 => TagDef { name: "AFPointsSelected", values: Some(SONY_TAG940A_AFPOINTSSELECTED_VALUES) },
 };
+
+/// Sony::Tag940a ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG940A_BIN: &[BinDef] = &[
+    BinDef { index: 4, width: 4, signed: false, name: "AFPointsSelected", values: Some(SONY_TAG940A_AFPOINTSSELECTED_VALUES) },
+];
 
 pub static SONY_TAG940A_AFPOINTSSELECTED_VALUES: &[(i64, &str)] = &[
     (0, "(none)"),
@@ -71297,6 +76116,15 @@ pub static SONY_TAG940C: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "LensMount2", values: Some(SONY_TAG940C_LENSMOUNT2_VALUES) },
     9u16 => TagDef { name: "LensType3", values: Some(SONY_TAG940C_LENSTYPE3_VALUES) },
 };
+
+/// Sony::Tag940c ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG940C_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 2, signed: false, name: "CameraE-mountVersion", values: None },
+    BinDef { index: 13, width: 2, signed: false, name: "LensE-mountVersion", values: None },
+    BinDef { index: 20, width: 2, signed: false, name: "LensFirmwareVersion", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "LensMount2", values: Some(SONY_TAG940C_LENSMOUNT2_VALUES) },
+    BinDef { index: 9, width: 2, signed: false, name: "LensType3", values: Some(SONY_TAG940C_LENSTYPE3_VALUES) },
+];
 
 pub static SONY_TAG940C_LENSMOUNT2_VALUES: &[(i64, &str)] = &[
     (0, "Unknown"),
@@ -71596,6 +76424,12 @@ pub static SONY_TAG940E: phf::Map<u16, TagDef> = phf::phf_map! {
     6664u16 => TagDef { name: "TiffMeteringImage", values: None },
 };
 
+/// Sony::Tag940e ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG940E_BIN: &[BinDef] = &[
+    BinDef { index: 6662, width: 1, signed: false, name: "TiffMeteringImageWidth", values: None },
+    BinDef { index: 6663, width: 1, signed: false, name: "TiffMeteringImageHeight", values: None },
+];
+
 /// Sony::Tag9416 tags
 pub static SONY_TAG9416: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "Tag9416_0000", values: None },
@@ -71635,6 +76469,34 @@ pub static SONY_TAG9416: phf::Map<u16, TagDef> = phf::phf_map! {
     77u16 => TagDef { name: "LensType", values: Some(SONY_TAG9416_LENSTYPE_VALUES) },
     79u16 => TagDef { name: "DistortionCorrParams", values: None },
 };
+
+/// Sony::Tag9416 ProcessBinaryData integers (table FORMAT or int8u)
+pub static SONY_TAG9416_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "Tag9416_0000", values: None },
+    BinDef { index: 10, width: 2, signed: false, name: "SonyExposureTime2", values: None },
+    BinDef { index: 112, width: 1, signed: false, name: "PictureProfile", values: Some(SONY_TAG9416_PICTUREPROFILE_VALUES) },
+    BinDef { index: 113, width: 2, signed: false, name: "FocalLength", values: None },
+    BinDef { index: 115, width: 2, signed: false, name: "MinFocalLength", values: None },
+    BinDef { index: 117, width: 2, signed: false, name: "MaxFocalLength", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "SonyFNumber2", values: None },
+    BinDef { index: 18, width: 2, signed: false, name: "SonyMaxApertureValue", values: None },
+    BinDef { index: 1866, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 1871, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 2229, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 2231, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 2277, width: 1, signed: false, name: "APS-CSizeCapture", values: Some(SONY_TAG9416_APS_CSIZECAPTURE_VALUES) },
+    BinDef { index: 29, width: 4, signed: false, name: "SequenceImageNumber", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "SonyISO", values: None },
+    BinDef { index: 43, width: 1, signed: false, name: "ReleaseMode2", values: Some(SONY_TAG9416_RELEASEMODE2_VALUES) },
+    BinDef { index: 53, width: 1, signed: false, name: "ExposureProgram", values: Some(SONY_TAG9416_EXPOSUREPROGRAM_VALUES) },
+    BinDef { index: 55, width: 1, signed: false, name: "CreativeStyle", values: Some(SONY_TAG9416_CREATIVESTYLE_VALUES) },
+    BinDef { index: 6, width: 2, signed: false, name: "StopsAboveBaseISO", values: None },
+    BinDef { index: 72, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9416_LENSMOUNT_VALUES) },
+    BinDef { index: 73, width: 1, signed: false, name: "LensFormat", values: Some(SONY_TAG9416_LENSFORMAT_VALUES) },
+    BinDef { index: 74, width: 1, signed: false, name: "LensMount", values: Some(SONY_TAG9416_LENSMOUNT_VALUES) },
+    BinDef { index: 75, width: 2, signed: false, name: "LensType2", values: Some(SONY_TAG9416_LENSTYPE2_VALUES) },
+    BinDef { index: 77, width: 2, signed: false, name: "LensType", values: Some(SONY_TAG9416_LENSTYPE_VALUES) },
+];
 
 pub static SONY_TAG9416_PICTUREPROFILE_VALUES: &[(i64, &str)] = &[
     (0, "Gamma Still - Standard/Neutral (PP2)"),

@@ -724,6 +724,108 @@ fn parse_custom_settings_masks(blob: &[u8], masks: &[nikon::MaskDef], g: &mut At
     }
 }
 
+fn parse_bin_fields(blob: &[u8], fields: &[nikon::BinDef], order: ByteOrder, g: &mut Attrs) {
+    for f in fields {
+        let i = f.index as usize;
+        let w = f.width as usize;
+        if i + w > blob.len() {
+            continue;
+        }
+        let attr = if f.signed {
+            let signed = match (w, order) {
+                (1, _) => i32::from(blob[i] as i8),
+                (2, ByteOrder::LittleEndian) => {
+                    i32::from(i16::from_le_bytes([blob[i], blob[i + 1]]))
+                }
+                (2, ByteOrder::BigEndian) => i32::from(i16::from_be_bytes([blob[i], blob[i + 1]])),
+                (4, ByteOrder::LittleEndian) => {
+                    i32::from_le_bytes([blob[i], blob[i + 1], blob[i + 2], blob[i + 3]])
+                }
+                (4, ByteOrder::BigEndian) => {
+                    i32::from_be_bytes([blob[i], blob[i + 1], blob[i + 2], blob[i + 3]])
+                }
+                _ => continue,
+            };
+            print_or_int(signed, f.values)
+        } else {
+            let raw = match (w, order) {
+                (1, _) => u32::from(blob[i]),
+                (2, ByteOrder::LittleEndian) => {
+                    u32::from(u16::from_le_bytes([blob[i], blob[i + 1]]))
+                }
+                (2, ByteOrder::BigEndian) => u32::from(u16::from_be_bytes([blob[i], blob[i + 1]])),
+                (4, ByteOrder::LittleEndian) => {
+                    u32::from_le_bytes([blob[i], blob[i + 1], blob[i + 2], blob[i + 3]])
+                }
+                (4, ByteOrder::BigEndian) => {
+                    u32::from_be_bytes([blob[i], blob[i + 1], blob[i + 2], blob[i + 3]])
+                }
+                _ => continue,
+            };
+            print_or_uint(raw, f.values)
+        };
+        g.set(f.name, attr);
+    }
+}
+
+fn print_or_uint(raw: u32, values: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+    if let Some(values) = values {
+        values
+            .iter()
+            .find(|(k, _)| *k == i64::from(raw))
+            .map(|(_, v)| AttrValue::Str((*v).to_string()))
+            .unwrap_or(AttrValue::UInt(raw))
+    } else {
+        AttrValue::UInt(raw)
+    }
+}
+
+fn print_or_int(raw: i32, values: Option<&'static [(i64, &'static str)]>) -> AttrValue {
+    if let Some(values) = values {
+        values
+            .iter()
+            .find(|(k, _)| *k == i64::from(raw))
+            .map(|(_, v)| AttrValue::Str((*v).to_string()))
+            .unwrap_or(AttrValue::Int(raw))
+    } else {
+        AttrValue::Int(raw)
+    }
+}
+
+fn overlay_bin_fields(
+    blob: &mut [u8],
+    fields: &[nikon::BinDef],
+    order: ByteOrder,
+    g: &Attrs,
+) -> bool {
+    let mut changed = false;
+    for f in fields {
+        let Some(val) = g.get(f.name) else {
+            continue;
+        };
+        let Some(n) = mask_num(val, f.values) else {
+            continue;
+        };
+        let i = f.index as usize;
+        let w = f.width as usize;
+        if i + w > blob.len() {
+            continue;
+        }
+        match (w, order) {
+            (1, _) => blob[i] = n as u8,
+            (2, ByteOrder::LittleEndian) => {
+                blob[i..i + 2].copy_from_slice(&(n as u16).to_le_bytes())
+            }
+            (2, ByteOrder::BigEndian) => blob[i..i + 2].copy_from_slice(&(n as u16).to_be_bytes()),
+            (4, ByteOrder::LittleEndian) => blob[i..i + 4].copy_from_slice(&n.to_le_bytes()),
+            (4, ByteOrder::BigEndian) => blob[i..i + 4].copy_from_slice(&n.to_be_bytes()),
+            _ => continue,
+        }
+        changed = true;
+    }
+    changed
+}
+
 pub(crate) fn overlay_custom_settings_masks(
     blob: &mut [u8],
     masks: &[nikon::MaskDef],
@@ -768,12 +870,15 @@ fn custom_dir_end(dir: &nikon::ShotInfoCustomDir, start: usize, len: usize) -> O
         return None;
     }
     let end = if dir.size == 0 {
-        let max = dir
+        let mut max = dir
             .masks
             .iter()
             .map(|m| m.index as usize)
             .max()
             .unwrap_or(0);
+        for f in dir.fields {
+            max = max.max(f.index as usize + usize::from(f.width).saturating_sub(1));
+        }
         start.saturating_add(max + 1)
     } else {
         start.saturating_add(dir.size as usize)
@@ -797,7 +902,7 @@ fn for_each_custom_dir(
         return;
     }
     for dir in nikon::NIKON_SHOTINFO_CUSTOM_DIRS {
-        if dir.shot_info_table != table || dir.masks.is_empty() {
+        if dir.shot_info_table != table || (dir.masks.is_empty() && dir.fields.is_empty()) {
             continue;
         }
         let start = base.saturating_add(dir.offset as usize);
@@ -833,6 +938,7 @@ fn parse_custom_settings_tree(payload: &[u8], table: &str, order: ByteOrder, att
     let mut visit = |dir: &nikon::ShotInfoCustomDir, start: usize, end: usize| {
         let blob = &payload[start..end];
         let mut g = Attrs::new();
+        parse_bin_fields(blob, dir.fields, order, &mut g);
         parse_custom_settings_masks(blob, dir.masks, &mut g);
         if dir.group == "CustomSettingsD40" && blob.len() > 9 {
             if let Some(def) = nikon::NIKONCUSTOM_SETTINGSD40.get(&9) {
@@ -859,6 +965,9 @@ pub(crate) fn overlay_custom_settings_tree(
         let Some((_, g)) = groups.iter().find(|(name, _)| name == dir.group) else {
             continue;
         };
+        if overlay_bin_fields(&mut payload[start..end], dir.fields, order, g) {
+            changed = true;
+        }
         if overlay_custom_settings_masks(&mut payload[start..end], dir.masks, g) {
             changed = true;
         }

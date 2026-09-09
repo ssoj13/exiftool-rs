@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Kodak::Main tags
 pub static KODAK_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "KodakModel", values: None },
@@ -55,6 +65,40 @@ pub static KODAK_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     96u16 => TagDef { name: "ISO", values: None },
     98u16 => TagDef { name: "TotalZoom", values: None },
 };
+
+/// Kodak::Main ProcessBinaryData integers (table FORMAT or int8u)
+pub static KODAK_MAIN_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "BurstMode", values: Some(KODAK_MAIN_BURSTMODE_VALUES) },
+    BinDef { index: 100, width: 2, signed: false, name: "DateTimeStamp", values: None },
+    BinDef { index: 102, width: 2, signed: false, name: "ColorMode", values: Some(KODAK_MAIN_COLORMODE_VALUES) },
+    BinDef { index: 104, width: 2, signed: false, name: "DigitalZoom", values: None },
+    BinDef { index: 107, width: 1, signed: true, name: "Sharpness", values: Some(KODAK_MAIN_SHARPNESS_VALUES) },
+    BinDef { index: 12, width: 2, signed: false, name: "KodakImageWidth", values: None },
+    BinDef { index: 14, width: 2, signed: false, name: "KodakImageHeight", values: None },
+    BinDef { index: 16, width: 2, signed: false, name: "YearCreated", values: None },
+    BinDef { index: 24, width: 2, signed: false, name: "BurstMode2", values: None },
+    BinDef { index: 27, width: 1, signed: false, name: "ShutterMode", values: Some(KODAK_MAIN_SHUTTERMODE_VALUES) },
+    BinDef { index: 28, width: 1, signed: false, name: "MeteringMode", values: Some(KODAK_MAIN_METERINGMODE_VALUES) },
+    BinDef { index: 30, width: 2, signed: false, name: "FNumber", values: None },
+    BinDef { index: 32, width: 4, signed: false, name: "ExposureTime", values: None },
+    BinDef { index: 36, width: 2, signed: true, name: "ExposureCompensation", values: None },
+    BinDef { index: 38, width: 2, signed: false, name: "VariousModes", values: None },
+    BinDef { index: 40, width: 4, signed: false, name: "Distance1", values: None },
+    BinDef { index: 44, width: 4, signed: false, name: "Distance2", values: None },
+    BinDef { index: 48, width: 4, signed: false, name: "Distance3", values: None },
+    BinDef { index: 52, width: 4, signed: false, name: "Distance4", values: None },
+    BinDef { index: 56, width: 1, signed: false, name: "FocusMode", values: Some(KODAK_MAIN_FOCUSMODE_VALUES) },
+    BinDef { index: 58, width: 2, signed: false, name: "VariousModes2", values: None },
+    BinDef { index: 60, width: 2, signed: false, name: "PanoramaMode", values: None },
+    BinDef { index: 62, width: 2, signed: false, name: "SubjectDistance", values: None },
+    BinDef { index: 64, width: 1, signed: false, name: "WhiteBalance", values: Some(KODAK_MAIN_WHITEBALANCE_VALUES) },
+    BinDef { index: 9, width: 1, signed: false, name: "Quality", values: Some(KODAK_MAIN_QUALITY_VALUES) },
+    BinDef { index: 92, width: 1, signed: false, name: "FlashMode", values: Some(KODAK_MAIN_FLASHMODE_VALUES) },
+    BinDef { index: 93, width: 1, signed: false, name: "FlashFired", values: Some(KODAK_MAIN_FLASHFIRED_VALUES) },
+    BinDef { index: 94, width: 2, signed: false, name: "ISOSetting", values: None },
+    BinDef { index: 96, width: 2, signed: false, name: "ISO", values: None },
+    BinDef { index: 98, width: 2, signed: false, name: "TotalZoom", values: None },
+];
 
 pub static KODAK_MAIN_BURSTMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),

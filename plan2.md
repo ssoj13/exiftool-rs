@@ -29,9 +29,9 @@ No `path = "C:/projects/..."` for sibling git repos.
 
 ## Still open
 
-1. MakerNotes field write: parser-table overlay for IFD vendors, nested Olympus/Pentax IFDs, Canon/Sony/Nikon index blobs, Canon AFInfo2/FocalLength/HDRInfo/VignettingCorr2, FujiFilm AFCSettings including AF-C Mask slices, Sony Tag9405a bytes + int16s CorrParams, Kodak KDK Main scalars plus ValueConv (FNumber, ExposureTime, dates, ExposureCompensation). NikonCustom ShotInfo `undef[N]` bitfields and `CustomSettingsOffset` / Z `MenuOffset` chains (`Start => $val`) overlay from generated Mask. Still blob-copy: Z Settings tables that have no Mask (integer indices only), other brands.
+1. MakerNotes field write: parser-table overlay for IFD vendors, nested Olympus/Pentax IFDs, Canon/Sony/Nikon index blobs, Canon AFInfo2/FocalLength/HDRInfo/VignettingCorr2, FujiFilm AFCSettings including AF-C Mask slices, Sony Tag9405a bytes + int16s CorrParams, Kodak KDK Main scalars plus ValueConv (FNumber, ExposureTime, dates, ExposureCompensation). NikonCustom ShotInfo `undef[N]` Mask bitfields, ProcessBinaryData integer indices (`_BIN`, table FORMAT or int8u), and `CustomSettingsOffset` / Z `MenuOffset` chains (`Start => $val`). Still blob-copy: other brands.
 2. ~~CR3 write.~~ Done: `Cr3Writer` (CMT1/2/4, XMP UUID, CTBO, stco/co64; CMT3 blob).
-3. Remaining MakerNotes: Z Settings without Mask; other brands stay out of scope unless asked.
+3. Remaining MakerNotes: other brands stay out of scope unless asked.
 
 ## Out of scope unless asked
 

@@ -380,6 +380,32 @@ mod tests {
     }
 
     #[test]
+    fn rewrite_z6iii_menu_offset_afc_priority() {
+        let serial = 7u32;
+        let shutter = 99u32;
+        let mut plain = vec![0u8; 2200];
+        plain[0..4].copy_from_slice(b"0809");
+        plain[0x24..0x28].copy_from_slice(&1u32.to_le_bytes());
+        plain[0x28..0x2c].copy_from_slice(&200u32.to_le_bytes());
+        plain[144..148].copy_from_slice(&200u32.to_le_bytes());
+        let ranges = nikon_decrypt::nikon_offset_ranges_plain(&plain, 4, 0x24, false).unwrap();
+        let mut extra = plain.clone();
+        nikon_decrypt::apply_offset_ranges(&mut extra, serial, shutter, &ranges);
+        let mut g = Attrs::new();
+        g.set("AF-CPrioritySelection", AttrValue::Str("Focus".into()));
+        let write = ShotInfoWrite {
+            firmware_version: None,
+            vibration_reduction: None,
+            shutter_count: None,
+            custom_settings: vec![("CustomSettingsZ6III".into(), g)],
+        };
+        let out = rewrite_shot_info_full(&extra, serial, shutter, &write).unwrap();
+        let mut back = out;
+        nikon_decrypt::prepare_nikon_offsets(&mut back, 4, 0x24, false, serial, shutter).unwrap();
+        assert_eq!(back[200 + 1255 + 3], 3);
+    }
+
+    #[test]
     fn rewrite_color_balance_0205() {
         let serial = 7u32;
         let shutter = 99u32;

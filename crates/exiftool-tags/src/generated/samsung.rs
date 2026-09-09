@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Samsung::Main tags
 pub static SAMSUNG_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "MakerNoteVersion", values: None },
@@ -26,6 +36,12 @@ pub static SAMSUNG_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "PreviewImageStart", values: None },
     3u16 => TagDef { name: "PreviewImageLength", values: None },
 };
+
+/// Samsung::Main ProcessBinaryData integers (table FORMAT or int8u)
+pub static SAMSUNG_MAIN_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 4, signed: false, name: "PreviewImageStart", values: None },
+    BinDef { index: 3, width: 4, signed: false, name: "PreviewImageLength", values: None },
+];
 
 
 /// Look up a tag by ID in the main table.

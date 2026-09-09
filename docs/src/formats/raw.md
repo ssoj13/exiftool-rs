@@ -15,7 +15,7 @@ TIFF-family RAW and RAF are writable for standard EXIF (see `docs/src/writing.md
 
 | Format | Extension | Notes |
 |--------|-----------|-------|
-| NEF | .nef | TIFF-based; IFD0/Exif writable, SubIFD copied |
+| NEF | .nef | TIFF-based; IFD0/Exif writable, SubIFD copied; ShotInfo NikonCustom Mask/`_BIN` overlay after decrypt |
 | NRW | .nrw | Coolpix RAW; same writer as NEF |
 
 ## Sony
@@ -128,3 +128,5 @@ RAW files contain manufacturer-specific data in MakerNotes IFD. Supported vendor
 - Casio
 - Huawei
 - Xiaomi
+
+Field write overlays known layouts (see `writing.md`). NikonCustom Settings* use generated Mask slices and ProcessBinaryData `_BIN` integers (Z bodies via `MenuOffset`). Unknown magics stay blobs.

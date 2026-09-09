@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Pentax::AEInfo tags
 pub static PENTAX_AEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AEExposureTime", values: None },
@@ -43,6 +53,25 @@ pub static PENTAX_AEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static PENTAX_AEINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 13, mask: 0xf0, name: "AEWhiteBalance", values: Some(PENTAX_AEINFO_AEWHITEBALANCE_VALUES) },
     MaskDef { index: 13, mask: 0xf, name: "AEMeteringMode2", values: Some(PENTAX_AEINFO_AEMETERINGMODE2_VALUES) },
+];
+
+/// Pentax::AEInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "AEExposureTime", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "AEAperture", values: None },
+    BinDef { index: 10, width: 1, signed: false, name: "AEMaxAperture2", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "AEMinAperture", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "AEMeteringMode", values: Some(PENTAX_AEINFO_AEMETERINGMODE_VALUES) },
+    BinDef { index: 14, width: 1, signed: true, name: "FlashExposureCompSet", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "AE_ISO", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "LevelIndicator", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "AEXv", values: None },
+    BinDef { index: 4, width: 1, signed: true, name: "AEBXv", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AEMinExposureTime", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "AEProgramMode", values: Some(PENTAX_AEINFO_AEPROGRAMMODE_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "AEFlags", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "AEApertureSteps", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "AEMaxAperture", values: None },
 ];
 
 pub static PENTAX_AEINFO_AEMETERINGMODE_VALUES: &[(i64, &str)] = &[
@@ -114,6 +143,22 @@ pub static PENTAX_AEINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     8u16 => TagDef { name: "AEError", values: None },
 };
 
+/// Pentax::AEInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AEINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 11, width: 1, signed: false, name: "AEApertureSteps", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "SceneMode", values: Some(PENTAX_AEINFO2_SCENEMODE_VALUES) },
+    BinDef { index: 16, width: 1, signed: false, name: "AEMaxAperture", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "AEMaxAperture2", values: None },
+    BinDef { index: 18, width: 1, signed: false, name: "AEMinAperture", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "AEMinExposureTime", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "AEExposureTime", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "AEAperture", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "AE_ISO", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "AEXv", values: None },
+    BinDef { index: 6, width: 1, signed: true, name: "AEBXv", values: None },
+    BinDef { index: 8, width: 1, signed: true, name: "AEError", values: None },
+];
+
 pub static PENTAX_AEINFO2_SCENEMODE_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "HDR"),
@@ -151,6 +196,17 @@ pub static PENTAX_AEINFO3: phf::Map<u16, TagDef> = phf::phf_map! {
     31u16 => TagDef { name: "AEMinExposureTime", values: None },
 };
 
+/// Pentax::AEInfo3 ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AEINFO3_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: false, name: "AEExposureTime", values: None },
+    BinDef { index: 17, width: 1, signed: false, name: "AEAperture", values: None },
+    BinDef { index: 18, width: 1, signed: false, name: "AE_ISO", values: None },
+    BinDef { index: 28, width: 1, signed: false, name: "AEMaxAperture", values: None },
+    BinDef { index: 29, width: 1, signed: false, name: "AEMaxAperture2", values: None },
+    BinDef { index: 30, width: 1, signed: false, name: "AEMinAperture", values: None },
+    BinDef { index: 31, width: 1, signed: false, name: "AEMinExposureTime", values: None },
+];
+
 /// Pentax::AFInfo tags
 pub static PENTAX_AFINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "AFPointsUnknown1", values: Some(PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES) },
@@ -174,6 +230,20 @@ pub static PENTAX_AFINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 545, mask: 0x3, name: "AFCHold", values: Some(PENTAX_AFINFO_AFCHOLD_VALUES) },
     MaskDef { index: 545, mask: 0xc, name: "AFCPointTracking", values: Some(PENTAX_AFINFO_AFCPOINTTRACKING_VALUES) },
     MaskDef { index: 545, mask: 0x70, name: "AFCSensitivity", values: None },
+];
+
+/// Pentax::AFInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AFINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "AFPointsUnknown1", values: Some(PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES) },
+    BinDef { index: 11, width: 1, signed: false, name: "AFPointsInFocus", values: Some(PENTAX_AFINFO_AFPOINTSINFOCUS_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "AFPointsUnknown2", values: Some(PENTAX_AFINFO_AFPOINTSUNKNOWN2_VALUES) },
+    BinDef { index: 2400, width: 1, signed: false, name: "SubjectRecognition", values: Some(PENTAX_AFINFO_SUBJECTRECOGNITION_VALUES) },
+    BinDef { index: 4, width: 2, signed: true, name: "AFPredictor", values: None },
+    BinDef { index: 506, width: 1, signed: false, name: "LiveView", values: Some(PENTAX_AFINFO_LIVEVIEW_VALUES) },
+    BinDef { index: 509, width: 1, signed: false, name: "AFHold", values: Some(PENTAX_AFINFO_AFHOLD_VALUES) },
+    BinDef { index: 543, width: 1, signed: false, name: "FirstFrameActionInAFC", values: Some(PENTAX_AFINFO_FIRSTFRAMEACTIONINAFC_VALUES) },
+    BinDef { index: 544, width: 1, signed: false, name: "ActionInAFCCont", values: Some(PENTAX_AFINFO_ACTIONINAFCCONT_VALUES) },
+    BinDef { index: 7, width: 1, signed: false, name: "AFIntegrationTime", values: None },
 ];
 
 pub static PENTAX_AFINFO_AFPOINTSUNKNOWN1_VALUES: &[(i64, &str)] = &[
@@ -268,6 +338,13 @@ pub static PENTAX_AFINFOK3III_MASKS: &[MaskDef] = &[
     MaskDef { index: 7, mask: 0x0, name: "AFAreas", values: None },
 ];
 
+/// Pentax::AFInfoK3III ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AFINFOK3III_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 2, signed: false, name: "AFSelectionMode", values: Some(PENTAX_AFINFOK3III_AFSELECTIONMODE_VALUES) },
+    BinDef { index: 2, width: 2, signed: false, name: "MaxNumAFPoints", values: None },
+    BinDef { index: 3, width: 2, signed: false, name: "NumAFPoints", values: None },
+];
+
 pub static PENTAX_AFINFOK3III_AFMODE_VALUES: &[(i64, &str)] = &[
     (0, "Phase Detect"),
     (2, "Contrast Detect"),
@@ -310,11 +387,22 @@ pub static PENTAX_AFPOINTINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 4, mask: 0x0, name: "AFPointsSpecial", values: None },
 ];
 
+/// Pentax::AFPointInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AFPOINTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 2, signed: false, name: "NumAFPoints", values: None },
+];
+
 /// Pentax::AWBInfo tags
 pub static PENTAX_AWBINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "WhiteBalanceAutoAdjustment", values: Some(PENTAX_AWBINFO_WHITEBALANCEAUTOADJUSTMENT_VALUES) },
     1u16 => TagDef { name: "TungstenAWB", values: Some(PENTAX_AWBINFO_TUNGSTENAWB_VALUES) },
 };
+
+/// Pentax::AWBInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_AWBINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "WhiteBalanceAutoAdjustment", values: Some(PENTAX_AWBINFO_WHITEBALANCEAUTOADJUSTMENT_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "TungstenAWB", values: Some(PENTAX_AWBINFO_TUNGSTENAWB_VALUES) },
+];
 
 pub static PENTAX_AWBINFO_WHITEBALANCEAUTOADJUSTMENT_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -345,6 +433,19 @@ pub static PENTAX_BATTERYINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0xf0, name: "PowerAvailable", values: None },
     MaskDef { index: 1, mask: 0xf0, name: "BodyBatteryState", values: Some(PENTAX_BATTERYINFO_BODYBATTERYSTATE_VALUES) },
     MaskDef { index: 1, mask: 0xf, name: "GripBatteryState", values: Some(PENTAX_BATTERYINFO_GRIPBATTERYSTATE_VALUES) },
+];
+
+/// Pentax::BatteryInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_BATTERYINFO_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: false, name: "GripBatteryState", values: Some(PENTAX_BATTERYINFO_GRIPBATTERYSTATE_VALUES) },
+    BinDef { index: 17, width: 1, signed: false, name: "GripBatteryPercent", values: None },
+    BinDef { index: 18, width: 4, signed: false, name: "GripBatteryVoltage", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "BodyBatteryADNoLoad", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "BodyBatteryADLoad", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "GripBatteryADNoLoad", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "GripBatteryADLoad", values: None },
+    BinDef { index: 6, width: 2, signed: false, name: "BodyBatteryVoltage3", values: None },
+    BinDef { index: 8, width: 2, signed: false, name: "BodyBatteryVoltage4", values: None },
 ];
 
 pub static PENTAX_BATTERYINFO_POWERSOURCE_VALUES: &[(i64, &str)] = &[
@@ -380,12 +481,23 @@ pub static PENTAX_CAFPOINTINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 2, mask: 0x0, name: "CAFPointsSelected", values: None },
 ];
 
+/// Pentax::CAFPointInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_CAFPOINTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "NumCAFPoints", values: None },
+];
+
 /// Pentax::CameraInfo tags
 pub static PENTAX_CAMERAINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "PentaxModelID", values: Some(PENTAX_CAMERAINFO_PENTAXMODELID_VALUES) },
     1u16 => TagDef { name: "ManufactureDate", values: None },
     2u16 => TagDef { name: "ProductionCode", values: None },
 };
+
+/// Pentax::CameraInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_CAMERAINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 4, signed: false, name: "PentaxModelID", values: Some(PENTAX_CAMERAINFO_PENTAXMODELID_VALUES) },
+    BinDef { index: 1, width: 4, signed: false, name: "ManufactureDate", values: None },
+];
 
 pub static PENTAX_CAMERAINFO_PENTAXMODELID_VALUES: &[(i64, &str)] = &[
     (13, "Optio 330/430"),
@@ -577,6 +689,21 @@ pub static PENTAX_CAMERASETTINGS_MASKS: &[MaskDef] = &[
     MaskDef { index: 2, mask: 0xf, name: "MeteringMode2", values: Some(PENTAX_CAMERASETTINGS_METERINGMODE2_VALUES) },
     MaskDef { index: 3, mask: 0xf0, name: "AFPointMode", values: Some(PENTAX_CAMERASETTINGS_AFPOINTMODE_VALUES) },
     MaskDef { index: 3, mask: 0xf, name: "FocusMode2", values: Some(PENTAX_CAMERASETTINGS_FOCUSMODE2_VALUES) },
+];
+
+/// Pentax::CameraSettings ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_CAMERASETTINGS_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "PictureMode2", values: Some(PENTAX_CAMERASETTINGS_PICTUREMODE2_VALUES) },
+    BinDef { index: 13, width: 1, signed: false, name: "RawAndJpgRecording", values: Some(PENTAX_CAMERASETTINGS_RAWANDJPGRECORDING_VALUES) },
+    BinDef { index: 18, width: 1, signed: false, name: "TvExposureTimeSetting", values: None },
+    BinDef { index: 19, width: 1, signed: false, name: "AvApertureSetting", values: None },
+    BinDef { index: 20, width: 1, signed: false, name: "SvISOSetting", values: None },
+    BinDef { index: 21, width: 1, signed: false, name: "BaseExposureCompensation", values: None },
+    BinDef { index: 4, width: 2, signed: false, name: "AFPointSelected2", values: Some(PENTAX_CAMERASETTINGS_AFPOINTSELECTED2_VALUES) },
+    BinDef { index: 6, width: 1, signed: false, name: "ISOFloor", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "DriveMode2", values: Some(PENTAX_CAMERASETTINGS_DRIVEMODE2_VALUES) },
+    BinDef { index: 8, width: 1, signed: false, name: "ExposureBracketStepSize", values: Some(PENTAX_CAMERASETTINGS_EXPOSUREBRACKETSTEPSIZE_VALUES) },
+    BinDef { index: 9, width: 1, signed: false, name: "BracketShotNumber", values: Some(PENTAX_CAMERASETTINGS_BRACKETSHOTNUMBER_VALUES) },
 ];
 
 pub static PENTAX_CAMERASETTINGS_PICTUREMODE2_VALUES: &[(i64, &str)] = &[
@@ -779,12 +906,25 @@ pub static PENTAX_COLORINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     17u16 => TagDef { name: "WBShiftGM", values: None },
 };
 
+/// Pentax::ColorInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_COLORINFO_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 1, signed: true, name: "WBShiftAB", values: None },
+    BinDef { index: 17, width: 1, signed: true, name: "WBShiftGM", values: None },
+];
+
 /// Pentax::EVStepInfo tags
 pub static PENTAX_EVSTEPINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "EVSteps", values: Some(PENTAX_EVSTEPINFO_EVSTEPS_VALUES) },
     1u16 => TagDef { name: "SensitivitySteps", values: Some(PENTAX_EVSTEPINFO_SENSITIVITYSTEPS_VALUES) },
     3u16 => TagDef { name: "LiveView", values: Some(PENTAX_EVSTEPINFO_LIVEVIEW_VALUES) },
 };
+
+/// Pentax::EVStepInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_EVSTEPINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "EVSteps", values: Some(PENTAX_EVSTEPINFO_EVSTEPS_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "SensitivitySteps", values: Some(PENTAX_EVSTEPINFO_SENSITIVITYSTEPS_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "LiveView", values: Some(PENTAX_EVSTEPINFO_LIVEVIEW_VALUES) },
+];
 
 pub static PENTAX_EVSTEPINFO_EVSTEPS_VALUES: &[(i64, &str)] = &[
     (0, "1/2 EV Steps"),
@@ -806,6 +946,11 @@ pub static PENTAX_FACEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "FacesDetected", values: None },
     2u16 => TagDef { name: "FacePosition", values: None },
 };
+
+/// Pentax::FaceInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FACEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "FacesDetected", values: None },
+];
 
 /// Pentax::FaceInfoK3III tags
 pub static PENTAX_FACEINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -878,6 +1023,12 @@ pub static PENTAX_FACEINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
 /// Pentax::FaceInfoK3III Mask bitfields (ExifTool 0.1-style indices)
 pub static PENTAX_FACEINFOK3III_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0x0, name: "FaceInfoK3III", values: None },
+];
+
+/// Pentax::FaceInfoK3III ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FACEINFOK3III_BIN: &[BinDef] = &[
+    BinDef { index: 6, width: 4, signed: false, name: "FacesDetectedA", values: None },
+    BinDef { index: 8, width: 4, signed: false, name: "FacesDetectedB", values: None },
 ];
 
 /// Pentax::FacePos tags
@@ -977,6 +1128,12 @@ pub static PENTAX_FILTERINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     73u16 => TagDef { name: "DigitalFilter05", values: Some(PENTAX_FILTERINFO_DIGITALFILTER05_VALUES) },
     90u16 => TagDef { name: "DigitalFilter06", values: Some(PENTAX_FILTERINFO_DIGITALFILTER06_VALUES) },
 };
+
+/// Pentax::FilterInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FILTERINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "SourceDirectoryIndex", values: None },
+    BinDef { index: 2, width: 2, signed: false, name: "SourceFileIndex", values: None },
+];
 
 pub static PENTAX_FILTERINFO_DIGITALFILTER07_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
@@ -1553,6 +1710,16 @@ pub static PENTAX_FLASHINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 24, mask: 0x1f, name: "ExternalFlashGuideNumber", values: None },
 ];
 
+/// Pentax::FlashInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_FLASHINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "FlashStatus", values: Some(PENTAX_FLASHINFO_FLASHSTATUS_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "InternalFlashMode", values: Some(PENTAX_FLASHINFO_INTERNALFLASHMODE_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "ExternalFlashMode", values: Some(PENTAX_FLASHINFO_EXTERNALFLASHMODE_VALUES) },
+    BinDef { index: 25, width: 1, signed: false, name: "ExternalFlashExposureComp", values: Some(PENTAX_FLASHINFO_EXTERNALFLASHEXPOSURECOMP_VALUES) },
+    BinDef { index: 26, width: 1, signed: false, name: "ExternalFlashBounce", values: Some(PENTAX_FLASHINFO_EXTERNALFLASHBOUNCE_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "InternalFlashStrength", values: None },
+];
+
 pub static PENTAX_FLASHINFO_FLASHSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "Off (1)"),
@@ -1650,6 +1817,14 @@ pub static PENTAX_LENSCORR: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "DiffractionCorrection", values: Some(PENTAX_LENSCORR_DIFFRACTIONCORRECTION_VALUES) },
 };
 
+/// Pentax::LensCorr ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LENSCORR_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "DistortionCorrection", values: Some(PENTAX_LENSCORR_DISTORTIONCORRECTION_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "ChromaticAberrationCorrection", values: Some(PENTAX_LENSCORR_CHROMATICABERRATIONCORRECTION_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "PeripheralIlluminationCorr", values: Some(PENTAX_LENSCORR_PERIPHERALILLUMINATIONCORR_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "DiffractionCorrection", values: Some(PENTAX_LENSCORR_DIFFRACTIONCORRECTION_VALUES) },
+];
+
 pub static PENTAX_LENSCORR_DISTORTIONCORRECTION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -1700,6 +1875,23 @@ pub static PENTAX_LENSDATA_MASKS: &[MaskDef] = &[
     MaskDef { index: 14, mask: 0x7f, name: "MaxAperture", values: None },
     MaskDef { index: 3, mask: 0xf8, name: "MinFocusDistance", values: Some(PENTAX_LENSDATA_MINFOCUSDISTANCE_VALUES) },
     MaskDef { index: 3, mask: 0x7, name: "FocusRangeIndex", values: Some(PENTAX_LENSDATA_FOCUSRANGEINDEX_VALUES) },
+];
+
+/// Pentax::LensData ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LENSDATA_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "LensKind", values: None },
+    BinDef { index: 11, width: 1, signed: false, name: "LC10", values: None },
+    BinDef { index: 12, width: 1, signed: false, name: "LC11", values: None },
+    BinDef { index: 13, width: 1, signed: false, name: "LC12", values: None },
+    BinDef { index: 15, width: 1, signed: false, name: "LC14", values: None },
+    BinDef { index: 16, width: 1, signed: false, name: "LC15", values: None },
+    BinDef { index: 2, width: 1, signed: false, name: "LC1", values: None },
+    BinDef { index: 4, width: 1, signed: false, name: "LC3", values: None },
+    BinDef { index: 5, width: 1, signed: false, name: "LC4", values: None },
+    BinDef { index: 6, width: 1, signed: false, name: "LC5", values: None },
+    BinDef { index: 7, width: 1, signed: false, name: "LC6", values: None },
+    BinDef { index: 8, width: 1, signed: false, name: "LC7", values: None },
+    BinDef { index: 9, width: 1, signed: false, name: "LensFocalLength", values: None },
 ];
 
 pub static PENTAX_LENSDATA_AUTOAPERTURE_VALUES: &[(i64, &str)] = &[
@@ -1791,6 +1983,11 @@ pub static PENTAX_LENSREC: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "ExtenderStatus", values: Some(PENTAX_LENSREC_EXTENDERSTATUS_VALUES) },
 };
 
+/// Pentax::LensRec ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LENSREC_BIN: &[BinDef] = &[
+    BinDef { index: 3, width: 1, signed: false, name: "ExtenderStatus", values: Some(PENTAX_LENSREC_EXTENDERSTATUS_VALUES) },
+];
+
 pub static PENTAX_LENSREC_EXTENDERSTATUS_VALUES: &[(i64, &str)] = &[
     (0, "Not attached"),
     (1, "Attached"),
@@ -1810,6 +2007,15 @@ pub static PENTAX_LEVELINFO: phf::Map<u16, TagDef> = phf::phf_map! {
 pub static PENTAX_LEVELINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0xf, name: "LevelOrientation", values: Some(PENTAX_LEVELINFO_LEVELORIENTATION_VALUES) },
     MaskDef { index: 0, mask: 0xf0, name: "CompositionAdjust", values: Some(PENTAX_LEVELINFO_COMPOSITIONADJUST_VALUES) },
+];
+
+/// Pentax::LevelInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LEVELINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: true, name: "RollAngle", values: None },
+    BinDef { index: 2, width: 1, signed: true, name: "PitchAngle", values: None },
+    BinDef { index: 5, width: 1, signed: true, name: "CompositionAdjustX", values: None },
+    BinDef { index: 6, width: 1, signed: true, name: "CompositionAdjustY", values: None },
+    BinDef { index: 7, width: 1, signed: true, name: "CompositionAdjustRotation", values: None },
 ];
 
 pub static PENTAX_LEVELINFO_LEVELORIENTATION_VALUES: &[(i64, &str)] = &[
@@ -1839,6 +2045,13 @@ pub static PENTAX_LEVELINFOK3III: phf::Map<u16, TagDef> = phf::phf_map! {
     3u16 => TagDef { name: "RollAngle", values: None },
     5u16 => TagDef { name: "PitchAngle", values: None },
 };
+
+/// Pentax::LevelInfoK3III ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_LEVELINFOK3III_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: true, name: "CameraOrientation", values: Some(PENTAX_LEVELINFOK3III_CAMERAORIENTATION_VALUES) },
+    BinDef { index: 3, width: 2, signed: true, name: "RollAngle", values: None },
+    BinDef { index: 5, width: 2, signed: true, name: "PitchAngle", values: None },
+];
 
 pub static PENTAX_LEVELINFOK3III_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (0, "Horizontal (normal)"),
@@ -2697,6 +2910,11 @@ pub static PENTAX_PIXELSHIFTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "PixelShiftResolution", values: Some(PENTAX_PIXELSHIFTINFO_PIXELSHIFTRESOLUTION_VALUES) },
 };
 
+/// Pentax::PixelShiftInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_PIXELSHIFTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "PixelShiftResolution", values: Some(PENTAX_PIXELSHIFTINFO_PIXELSHIFTRESOLUTION_VALUES) },
+];
+
 pub static PENTAX_PIXELSHIFTINFO_PIXELSHIFTRESOLUTION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -2709,6 +2927,14 @@ pub static PENTAX_SRINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "SRHalfPressTime", values: None },
     3u16 => TagDef { name: "SRFocalLength", values: None },
 };
+
+/// Pentax::SRInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_SRINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SRResult", values: Some(PENTAX_SRINFO_SRRESULT_VALUES) },
+    BinDef { index: 1, width: 1, signed: false, name: "ShakeReduction", values: Some(PENTAX_SRINFO_SHAKEREDUCTION_VALUES) },
+    BinDef { index: 2, width: 1, signed: false, name: "SRHalfPressTime", values: None },
+    BinDef { index: 3, width: 1, signed: false, name: "SRFocalLength", values: None },
+];
 
 pub static PENTAX_SRINFO_SRRESULT_VALUES: &[(i64, &str)] = &[
     (0, "Not stabilized"),
@@ -2733,6 +2959,12 @@ pub static PENTAX_SRINFO2: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "ShakeReduction", values: Some(PENTAX_SRINFO2_SHAKEREDUCTION_VALUES) },
 };
 
+/// Pentax::SRInfo2 ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_SRINFO2_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 1, signed: false, name: "SRResult", values: None },
+    BinDef { index: 1, width: 1, signed: false, name: "ShakeReduction", values: Some(PENTAX_SRINFO2_SHAKEREDUCTION_VALUES) },
+];
+
 pub static PENTAX_SRINFO2_SHAKEREDUCTION_VALUES: &[(i64, &str)] = &[
     (0, "Off"),
     (1, "On"),
@@ -2753,6 +2985,11 @@ pub static PENTAX_SHOTINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     1u16 => TagDef { name: "CameraOrientation", values: Some(PENTAX_SHOTINFO_CAMERAORIENTATION_VALUES) },
 };
 
+/// Pentax::ShotInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_SHOTINFO_BIN: &[BinDef] = &[
+    BinDef { index: 1, width: 1, signed: false, name: "CameraOrientation", values: Some(PENTAX_SHOTINFO_CAMERAORIENTATION_VALUES) },
+];
+
 pub static PENTAX_SHOTINFO_CAMERAORIENTATION_VALUES: &[(i64, &str)] = &[
     (16, "Horizontal (normal)"),
     (32, "Rotate 180"),
@@ -2772,6 +3009,16 @@ pub static PENTAX_TEMPINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     42u16 => TagDef { name: "SensorTemperature", values: None },
 };
 
+/// Pentax::TempInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_TEMPINFO_BIN: &[BinDef] = &[
+    BinDef { index: 10, width: 1, signed: false, name: "ShotNumber", values: None },
+    BinDef { index: 12, width: 2, signed: true, name: "SensorTemperature", values: None },
+    BinDef { index: 14, width: 2, signed: true, name: "SensorTemperature2", values: None },
+    BinDef { index: 20, width: 2, signed: true, name: "CameraTemperature4", values: None },
+    BinDef { index: 22, width: 2, signed: true, name: "CameraTemperature5", values: None },
+    BinDef { index: 42, width: 2, signed: true, name: "SensorTemperature", values: None },
+];
+
 /// Pentax::TimeInfo tags
 pub static PENTAX_TIMEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     2u16 => TagDef { name: "HometownCity", values: Some(PENTAX_TIMEINFO_HOMETOWNCITY_VALUES) },
@@ -2783,6 +3030,12 @@ pub static PENTAX_TIMEINFO_MASKS: &[MaskDef] = &[
     MaskDef { index: 0, mask: 0x1, name: "WorldTimeLocation", values: Some(PENTAX_TIMEINFO_WORLDTIMELOCATION_VALUES) },
     MaskDef { index: 0, mask: 0x2, name: "HometownDST", values: Some(PENTAX_TIMEINFO_HOMETOWNDST_VALUES) },
     MaskDef { index: 0, mask: 0x4, name: "DestinationDST", values: Some(PENTAX_TIMEINFO_DESTINATIONDST_VALUES) },
+];
+
+/// Pentax::TimeInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PENTAX_TIMEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 2, width: 1, signed: false, name: "HometownCity", values: Some(PENTAX_TIMEINFO_HOMETOWNCITY_VALUES) },
+    BinDef { index: 3, width: 1, signed: false, name: "DestinationCity", values: Some(PENTAX_TIMEINFO_DESTINATIONCITY_VALUES) },
 ];
 
 pub static PENTAX_TIMEINFO_WORLDTIMELOCATION_VALUES: &[(i64, &str)] = &[

@@ -19,6 +19,16 @@ pub struct MaskDef {
     pub values: Option<&'static [(i64, &'static str)]>,
 }
 
+/// ProcessBinaryData integer index (ExifTool FORMAT, default int8u).
+#[derive(Debug, Clone, Copy)]
+pub struct BinDef {
+    pub index: u16,
+    pub width: u8,
+    pub signed: bool,
+    pub name: &'static str,
+    pub values: Option<&'static [(i64, &'static str)]>,
+}
+
 /// Panasonic::FaceDetInfo tags
 pub static PANASONIC_FACEDETINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "NumFacePositions", values: None },
@@ -28,6 +38,11 @@ pub static PANASONIC_FACEDETINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     5u16 => TagDef { name: "Face2Position", values: None },
     9u16 => TagDef { name: "Face3Position", values: None },
 };
+
+/// Panasonic::FaceDetInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_FACEDETINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "NumFacePositions", values: None },
+];
 
 /// Panasonic::FaceRecInfo tags
 pub static PANASONIC_FACERECINFO: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -42,6 +57,11 @@ pub static PANASONIC_FACERECINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     72u16 => TagDef { name: "RecognizedFace2Position", values: None },
     80u16 => TagDef { name: "RecognizedFace2Age", values: None },
 };
+
+/// Panasonic::FaceRecInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_FACERECINFO_BIN: &[BinDef] = &[
+    BinDef { index: 0, width: 2, signed: false, name: "FacesRecognized", values: None },
+];
 
 /// Panasonic::Main tags
 pub static PANASONIC_MAIN: phf::Map<u16, TagDef> = phf::phf_map! {
@@ -798,6 +818,11 @@ pub static PANASONIC_TIMEINFO: phf::Map<u16, TagDef> = phf::phf_map! {
     0u16 => TagDef { name: "PanasonicDateTime", values: None },
     16u16 => TagDef { name: "TimeLapseShotNumber", values: None },
 };
+
+/// Panasonic::TimeInfo ProcessBinaryData integers (table FORMAT or int8u)
+pub static PANASONIC_TIMEINFO_BIN: &[BinDef] = &[
+    BinDef { index: 16, width: 4, signed: false, name: "TimeLapseShotNumber", values: None },
+];
 
 
 /// Look up a tag by ID in the main table.
