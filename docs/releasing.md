@@ -1,7 +1,9 @@
 # Releasing the CLI
 
 Push a version tag to build CLI binaries and publish a GitHub Release. This
-workflow does not publish to crates.io or PyPI.
+workflow does not publish to crates.io or PyPI. See [CI/CD](src/ci-cd.md)
+for runner and toolchain policy and [dependency access](src/dependency-access.md)
+for credential setup.
 
 ## Prepare the repository
 
@@ -15,7 +17,8 @@ to all five repositories. The checkout's `GITHUB_TOKEN` cannot read other privat
 repositories. Fork pull requests do not receive this secret and cannot complete
 dependency-based checks while the dependencies remain private.
 
-Require all three **Test** checks and **Minimum Rust (1.96)** in branch protection
+Require all three **Test** checks, **Minimum Rust (1.96)**, and
+**Documentation book** in branch protection
 after the first successful run. Formatting, Clippy, and Rustdoc initially report
 existing baseline problems as advisory checks; resolve that baseline before
 making those checks release requirements.
@@ -52,7 +55,8 @@ four native builds and their smoke checks succeed.
 The release contains CLI archives for Linux x86_64, Windows x86_64, macOS
 x86_64, and macOS arm64, plus SHA-256 checksums. Each archive includes `exif`
 (`exif.exe` on Windows), `README.md`, `LICENSE`, `LICENSE-ARTISTIC`, and
-`LICENSE-GPL`. The Linux binary targets GNU/Linux; it is not a musl build.
+`LICENSE-GPL`. The Linux binary targets GNU/Linux and is built on Ubuntu 26.04; it is not a
+musl build. Compatibility with older glibc distributions needs separate validation.
 
 Download the archive for your platform, verify its checksum, extract it, and run
 `exif --version` and `exif --help`. On Windows, use `exif.exe`.

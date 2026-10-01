@@ -1,144 +1,98 @@
-# Writing Metadata
+# Writing metadata
 
-## Supported Formats
+Writing uses a format-specific writer and the original file. `is_writable()`
+indicates a supported format, not that every attribute in the map can be stored.
+Read the output back to verify the fields you changed.
 
-Writing is supported for:
+## Edit a JPEG and save a copy
 
-| Format | Extension | Notes |
-|--------|-----------|-------|
-| JPEG | .jpg, .jpeg | Full EXIF + XMP + IPTC |
-| PNG | .png | tEXt/iTXt chunks |
-| TIFF | .tif, .tiff | Full EXIF (classic + BigTIFF preserve rewrite) |
-| DNG | .dng | Full EXIF |
-| WebP | .webp | EXIF + XMP chunks |
-| HEIC/HEIF | .heic, .heif | EXIF in meta box (creates EXIF item if missing) |
-| EXR | .exr | Header attributes (`exr-core`) |
-| HDR | .hdr | Header comments |
-| GIF | .gif | Comment / metadata |
-| PNM | .pbm/.pgm/.ppm/.pam | Header comments |
-| JXL | .jxl | EXIF box |
-| RAF | .raf | Preview JPEG EXIF (WriteRAF); RAF directory + CFA copied from nextPtr at 0x5C |
-| CR3 | .cr3 | ISOBMFF: CMT1/2/4 TIFF rewrite, XMP UUID, CTBO + stco/co64 (ExifTool WriteQuickTime CR3 map) |
-| NEF / NRW | .nef, .nrw | TIFF rewrite: IFD0/Exif/GPS overlay; SubIFD + strips/tiles + MakerNotes blob copied |
-| CR2 / ARW / ORF / RW2 / … | TIFF-RAW | Preserves the TIFF-family structure, including camera-specific trailers |
-| MP4 / MOV | .mp4, .mov, … | XMP UUID box |
-| WAV / FLAC / MP3 | | Existing tag writers |
-
-Do not rebuild camera RAW with a short IFD0-only writer. MakerNotes field write overlays existing IFD tags (FujiFilm rebuild; other IFD vendors in-place using each parser's tag table, including phones, Phase One, Leica, Hasselblad, and DJI floats). Olympus and Pentax nested IFDs, Canon/Sony/Nikon index blobs (including Nikon AFInfo2 and BarometerInfo, Canon AFInfo2/FocalLength/HDRInfo/VignettingCorr2, Sony Tag9405a including CorrParams, FujiFilm AFCSettings including generated AF-C Masks), Panasonic FaceDetect FaceCount, and Kodak KDK Main scalars plus ValueConv (FNumber, ExposureTime, dates) overlay in place. Nikon ShotInfo / ColorBalance / LensData overlay after decrypt; GoPro GPMF same-size KLV leaves. NikonCustom Settings* `undef[N]` bitfields overlay from generated Mask, including ShotInfo `CustomSettingsOffset` and Z `MenuOffset` (`Start => $val`). Z Settings ProcessBinaryData integer indices overlay from generated `_BIN` (tag Format, else table FORMAT, else int8u).
-
-## Basic Writing
-
-```rust
-use exiftool_formats::{JpegWriter, build_exif_bytes};
-use std::fs::File;
-use std::io::{BufReader, BufWriter};
-
-// Read original
-let mut reader = BufReader::new(File::open("input.jpg")?);
-let registry = FormatRegistry::new();
-let mut metadata = registry.parse(&mut reader)?;
-
-// Modify tags
-metadata.exif.set("Artist", AttrValue::Str("John Doe".into()));
-metadata.exif.set("Copyright", AttrValue::Str("2024 John Doe".into()));
-
-// Build EXIF bytes
-let exif_bytes = build_exif_bytes(&metadata)?;
-
-// Write to new file
-reader.seek(SeekFrom::Start(0))?;
-let mut output = Vec::new();
-JpegWriter::write(&mut reader, &mut output, Some(&exif_bytes), None, None)?;
-
-std::fs::write("output.jpg", output)?;
-```
-
-## Modifying Tags
+With the [Rust dependencies](getting-started/installation.md) configured,
+run this program from the repository root:
 
 ```rust
 use exiftool_attrs::AttrValue;
+use exiftool_formats::{FormatRegistry, JpegWriter};
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
 
-// Set string
-metadata.exif.set("Artist", AttrValue::Str("Name".into()));
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let path = Path::new("crates/exiftool-formats/tests/testdata/Writer.jpg");
+    let registry = FormatRegistry::new();
+    let mut metadata = registry.parse_file(path)?;
+    metadata.exif.set("Artist", AttrValue::Str("Alex".into()));
 
-// Set integer
-metadata.exif.set("Orientation", AttrValue::UInt(1));
+    // Reopen the source so the writer starts at byte zero.
+    let mut input = BufReader::new(File::open(path)?);
+    let mut output = Vec::new();
+    JpegWriter::write_metadata(&mut input, &mut output, &metadata)?;
+    std::fs::write("output.jpg", &output)?;
 
-// Set rational (numerator, denominator)
-metadata.exif.set("ExposureTime", AttrValue::URational(1, 125));
-
-// Set list
-metadata.exif.set("Keywords", AttrValue::List(vec![
-    "landscape".into(),
-    "mountains".into(),
-]));
-
-// Remove tag
-metadata.exif.remove("GPSLatitude");
-
-// Clear all
-metadata.exif.clear();
-```
-
-## Format-Specific Writers
-
-Each writable format has its own writer:
-
-```rust
-// JPEG (exif, xmp, iptc)
-JpegWriter::write(&mut reader, &mut output, Some(&exif), Some(&xmp), Some(&iptc))?;
-
-// PNG  
-PngWriter::write(&mut reader, &mut output, &metadata)?;
-
-// TIFF
-TiffWriter::write(&mut reader, &mut output, &metadata)?;
-
-// WebP
-WebpWriter::write(&mut reader, &mut output, &metadata)?;
-
-// HEIC
-HeicWriter::write(&mut reader, &mut output, &metadata)?;
-
-// NEF/NRW (preserve SubIFD/raw)
-NefWriter::write(&mut reader, &mut output, &metadata)?;
-
-// CR2 / ORF (same preserve rewrite; CR2 keeps 16-byte header)
-Cr2Writer::write(&mut reader, &mut output, &metadata)?;
-
-// RAF (preview JPEG EXIF; CFA copied)
-RafWriter::write(&mut reader, &mut output, &metadata)?;
-```
-
-## XMP Writing
-
-```rust
-// Set raw XMP
-metadata.xmp = Some(r#"<?xpacket begin="..." ?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/">
-  ...
-</x:xmpmeta>
-<?xpacket end="w"?>"#.to_string());
-```
-
-## Preserving Original Data
-
-Writers preserve image data and non-EXIF chunks. Only metadata sections 
-are modified. The image pixels remain untouched.
-
-```rust
-// Original file structure is preserved
-// Only EXIF/XMP segments are replaced
-JpegWriter::write(&mut reader, &mut output, Some(&new_exif), None, None)?;
-```
-
-## Error Handling
-
-```rust
-match TiffWriter::write(&mut reader, &mut output, &metadata) {
-    Ok(()) => println!("Success"),
-    Err(Error::UnsupportedFormat) => println!("Format doesn't support writing"),
-    Err(Error::InvalidStructure(msg)) => println!("Corrupt file: {}", msg),
-    Err(e) => println!("Write error: {}", e),
+    let saved = registry.parse_file(Path::new("output.jpg"))?;
+    assert_eq!(saved.exif.get_str("Artist"), Some("Alex"));
+    Ok(())
 }
 ```
+
+`write_metadata` uses existing EXIF TIFF data for the preservation-oriented
+rewrite when available, builds EXIF for a file without it, supplies the current
+XMP, and builds IPTC APP13 from the attributes. JPEG image data is copied without
+recompression. This does not promise byte-for-byte preservation of every
+metadata block in every JPEG variant.
+
+## Replacement payloads and removal
+
+The lower-level `JpegWriter::write` takes five arguments:
+`input`, `output`, optional EXIF TIFF bytes, optional XMP text, and optional
+IPTC APP13 bytes. **`None` removes an existing recognized block; it does not
+mean preserve it.** Supply the payload when you want to keep it.
+
+`build_exif_bytes(&metadata)` builds a fresh TIFF EXIF payload for a supported
+set of fields. It is not a general serializer for every attribute or a
+replacement for preservation-oriented RAW rewriting.
+
+Clearing `metadata.exif` is different from clearing XMP and ICC fields, and
+writers may retain existing container structures. Use the CLI's explicit
+`--delete` operation for its supported removal behavior. Neither clearing a map
+nor a generic rewrite proves that all identifying information has disappeared.
+
+## Writable containers
+
+| Container family | Writer path | Scope |
+|------------------|-------------|-------|
+| JPEG | `JpegWriter` | EXIF, XMP, IPTC payloads |
+| PNG | `PngWriter` | EXIF and supported text/XML chunks |
+| TIFF / DNG | `TiffWriter` | Preserve and overlay supported IFD fields |
+| WebP | `WebpWriter` | EXIF / XMP chunks |
+| HEIC / HEIF / AVIF | `HeicWriter` | Metadata items in the ISOBMFF container |
+| EXR / HDR | `ExrWriter` / `HdrWriter` | Header attributes / comments |
+| GIF / PNM / JXL | Corresponding writers | Supported comments or metadata blocks |
+| TIFF-family RAW | Vendor writers / TIFF rewrite | IFD overlay with RAW structure preservation |
+| RAF | `RafWriter` | Preview JPEG EXIF with CFA data copied |
+| CR3 | `Cr3Writer` | CMT TIFF blocks, XMP UUID and affected offset tables |
+| MP4 / MOV family | `Mp4Writer` | XMP UUID metadata |
+| WAV / FLAC / MP3 | `WavWriter` / `FlacWriter` / `Id3Writer` | Supported container tags |
+
+Audio and video reading support is broader than these writing paths.
+Consult [formats](formats.md) and each writer's Rust API docs for exact signatures.
+
+## Camera RAW and MakerNotes
+
+Do not replace a RAW container with a fresh minimal TIFF/EXIF header. Use its
+writer so SubIFDs, strips/tiles, camera-specific trailers, and data offsets follow
+the appropriate preservation path.
+
+MakerNotes updates depend on known vendor layouts. Supported paths include
+IFD fields, selected indexed blobs, masks/bitfields, Nikon encrypted fields,
+FujiFilm rebuilding, and same-size GoPro GPMF leaves. Unknown structures may
+remain opaque blobs. A vendor name in a tag table is not a guarantee that all
+fields or camera variants can be edited.
+
+## Errors and resource use
+
+Writers can report malformed structures, I/O errors, oversized input, and
+metadata-standard errors. Several writers buffer the full input; the shared
+reader's limit is 100 MiB. See [performance](performance.md).
+
+For command-line editing use the [CLI guide](cli.md); for Python use
+[Python usage](python/usage.md).

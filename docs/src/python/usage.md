@@ -1,176 +1,91 @@
-# Python Usage
+# Python usage
 
-## Opening Files
+Install the extension using [Python installation](installation.md).
+The examples use the included JPEG fixture and run from the repository root.
 
-```python
-import exiftool_rs as exif
-
-# From file path
-img = exif.open("photo.jpg")
-
-# From bytes
-with open("photo.jpg", "rb") as f:
-    data = f.read()
-img = exif.Image.from_bytes(data)
-```
-
-## Reading Tags
-
-```python
-img = exif.open("photo.jpg")
-
-# Common properties
-print(img.format)           # "JPEG"
-print(img.make)             # "Canon"
-print(img.model)            # "EOS R5"
-print(img.width, img.height)  # 8192 5464
-
-# Date/time
-print(img.date_time_original)  # "2024:01:15 14:30:00"
-
-# Exposure settings
-print(img.iso)              # 400
-print(img.exposure_time)    # Rational(1, 125)
-print(img.fnumber)          # Rational(28, 10)
-print(img.focal_length)     # Rational(50, 1)
-
-# GPS
-if img.gps:
-    print(img.gps.latitude)   # 37.7749
-    print(img.gps.longitude)  # -122.4194
-    print(img.gps.altitude)   # 10.5
-```
-
-## Dict-Like Access
-
-```python
-# Get any tag
-print(img["Make"])          # "Canon"
-print(img["ISO"])           # 400
-
-# With default
-print(img.get("Rating", 0))  # 0
-
-# Check existence
-if "GPSLatitude" in img:
-    print("Has GPS")
-
-# Iterate
-for tag in img:
-    print(f"{tag}: {img[tag]}")
-
-# All keys/values
-print(img.keys())
-print(img.values())
-print(img.items())
-
-# Count
-print(len(img))  # number of tags
-```
-
-## Human-Readable Values
-
-```python
-# Raw value
-print(img["Orientation"])  # 6
-
-# Interpreted
-print(img.get_interpreted("Orientation"))  # "Rotate 90 CW"
-
-# With units
-print(img.get_display("FocalLength"))   # "50 mm"
-print(img.get_display("ExposureTime"))  # "1/125 sec"
-print(img.get_display("FNumber"))       # "f/2.8"
-```
-
-## Thumbnails and Previews
-
-```python
-# Small thumbnail
-if img.thumbnail:
-    with open("thumb.jpg", "wb") as f:
-        f.write(img.thumbnail)
-
-# Larger preview (RAW files)
-if img.preview:
-    with open("preview.jpg", "wb") as f:
-        f.write(img.preview)
-```
-
-## Modifying Tags
-
-```python
-img = exif.open("photo.jpg")
-
-# Set via property
-img.artist = "John Doe"
-img.copyright = "2024 John Doe"
-
-# Set via dict
-img["Software"] = "My App 1.0"
-img["Rating"] = 5
-
-# Delete
-del img["GPS:GPSLatitude"]
-
-# Clear all
-img.clear()
-```
-
-## Saving Changes
-
-```python
-# Overwrite original
-img.save()
-
-# Save to new file
-img.save("modified.jpg")
-```
-
-## Context Manager
-
-```python
-with exif.open("photo.jpg") as img:
-    print(img.make)
-    img.artist = "John Doe"
-    img.save()
-```
-
-## Batch Processing
+## Read a file or bytes
 
 ```python
 from pathlib import Path
+import exiftool_py as exif
 
-for path in Path("photos").glob("*.jpg"):
-    img = exif.open(str(path))
-    print(f"{path.name}: {img.make} {img.model}")
+path = "crates/exiftool-formats/tests/testdata/Writer.jpg"
+img = exif.open(path)
+print(img.format, img.make, img.model)
+print(img.get("Artist", "Unknown"))
+print(img.get_display("ExposureTime"))
+
+for name, value in img.items():
+    print(name, value)
+
+from_bytes = exif.Image.from_bytes(Path(path).read_bytes())
+print(from_bytes.format)
 ```
 
-## Multi-Page Files
+A file-backed image carries its source path. An image created from bytes has no
+source path, and saving requires source-file information in the current writer
+implementation. Use `open` for editing; see [API reference](api.md).
+
+## Save an edit and verify it
 
 ```python
-img = exif.open("multipage.tiff")
-
-print(img.page_count)      # 3
-print(img.is_multi_page)   # True
-
-for page in img.pages:
-    print(f"Page {page.index}: {page.width}x{page.height}")
-    print(f"  Thumbnail: {page.is_thumbnail}")
+img = exif.open("crates/exiftool-formats/tests/testdata/Writer.jpg")
+if img.is_writable:
+    img.artist = "Alex"
+    img["Copyright"] = "2026 Alex"
+    img.save("output.jpg")
+    saved = exif.open("output.jpg")
+    assert saved.artist == "Alex"
 ```
 
-## Error Handling
+`save()` without a path overwrites the original file. `clear()` clears the
+attribute map; `strip_metadata()` also clears payload fields in memory.
+Actual removal depends on the writer. Check the result rather than assuming
+that an empty map proves a file contains no identifying metadata.
+
+## Batch scans and errors
 
 ```python
-from exiftool_rs import FormatError, WriteError
-
-try:
-    img = exif.open("unknown.xyz")
-except FormatError as e:
-    print(f"Cannot parse: {e}")
-
-try:
-    img.save()
-except WriteError as e:
-    print(f"Cannot save: {e}")
+result = exif.scan("crates/exiftool-formats/tests/testdata/*.jpg", parallel=True)
+for img in result:
+    print(img.path, img.format, img.make)
+print("Parsed:", result.count, "Failed:", result.error_count)
+for error in result.errors:
+    print(error.path, error.error)
 ```
+
+`scan` accepts a glob, parses matching files, and returns a `ScanResult` iterator.
+All results are collected before the function returns. `scan_dir` is
+non-recursive and accepts an optional list of extensions.
+
+The `ignore_errors` argument currently does not make failed parses raise:
+failures are collected in `result.errors` in either case. Check `error_count`
+when a complete scan is required.
+
+## Async use
+
+Python 3.9+:
+
+```python
+import asyncio
+import exiftool_py as exif
+
+async def main():
+    img = await exif.open_async("crates/exiftool-formats/tests/testdata/Writer.jpg")
+    print(img.format, img.make)
+
+asyncio.run(main())
+```
+
+The helpers use `asyncio.to_thread`. They move the synchronous call into a
+worker thread; scan results still consume memory as described in
+[performance](../performance.md).
+
+## Payloads and other operations
+
+Read optional `thumbnail`, `preview`, `xmp`, and `icc` fields before using them.
+Binary previews should be identified before choosing an output file extension.
+The `Image` API also exposes time shifts, GPX geotagging, direct GPS setters,
+copying tags, ICC replacement, sidecars, composite tags, and validation.
+See the [API reference](api.md) for entry points and the
+[writing guide](../writing.md) for container limitations.

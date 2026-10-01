@@ -2,15 +2,16 @@
 
 ## JPEG
 
-The most common image format. Full EXIF and XMP support.
+JPEG stores EXIF and XMP in APP1 and IPTC in Photoshop APP13 segments.
+Support depends on the embedded fields and segment layout.
 
 | Feature | Support |
 |---------|---------|
 | Read | ✓ |
 | Write | ✓ |
-| EXIF | Full |
-| XMP | Full |
-| IPTC | Full |
+| EXIF | Supported fields |
+| XMP | Packet parsing / writing |
+| IPTC | Supported IPTC-IIM records |
 | Thumbnail | ✓ |
 
 **Extensions:** `.jpg`, `.jpeg`
@@ -38,7 +39,7 @@ Tagged Image File Format. Basis for many RAW formats.
 | Read | ✓ |
 | Write | ✓ |
 | EXIF | Native |
-| XMP | Full |
+| XMP | Packet parsing / writing |
 | Multi-page | ✓ |
 | BigTIFF | ✓ |
 
@@ -78,7 +79,7 @@ Graphics Interchange Format.
 | Feature | Support |
 |---------|---------|
 | Read | ✓ |
-| Write | ✗ |
+| Write | ✓ (supported comment metadata) |
 | Comments | ✓ |
 | Animation | Frame count |
 
@@ -112,3 +113,6 @@ Windows Bitmap.
 | JPEG XL | .jxl | Modern JPEG replacement |
 | JPEG 2000 | .jp2, .j2k | Wavelet compression |
 | SVG | .svg | Vector (XML metadata) |
+
+See [supported formats](../formats.md) and [writing metadata](../writing.md)
+for field support and resource limits.

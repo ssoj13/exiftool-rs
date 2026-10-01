@@ -1,12 +1,10 @@
-# Getting Started
+# Getting started
 
-This chapter covers installation and basic usage of exiftool-rs.
+Choose an interface, set up dependency access, then run the first example.
 
-Choose your path:
+- [Installation](getting-started/installation.md): requirements, local Rust dependencies, and CLI setup.
+- [Quick start](getting-started/quickstart.md): read an included fixture in Rust.
+- [Python installation](python/installation.md): build and install the extension.
+- [CLI guide](cli.md): inspect, export, and edit metadata.
 
-- **Rust developers** - Add the crate to your project
-- **Python developers** - Install via pip
-- **CLI users** - Build or download the binary
-
-The library is designed to be straightforward. Most operations are one or two 
-lines of code. No complex configuration, no runtime dependencies.
+For a source build, begin with [dependency access](dependency-access.md).

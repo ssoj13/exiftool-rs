@@ -2,457 +2,154 @@
 
 [![CI](https://github.com/ssoj13/exiftool-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ssoj13/exiftool-rs/actions/workflows/ci.yml)
 
-> **Note:** This is an experimental project implementing a small subset of [ExifTool](https://exiftool.org/) functionality in Rust. It is not intended to replace the original ExifTool, which remains the definitive tool for image metadata manipulation. Use this library for learning, experimentation, or when you need a lightweight pure-Rust solution for basic metadata operations.
+**Read and edit metadata directly in Rust — with a Python API and the `exif` CLI.**
 
-Fast, pure Rust library for reading and writing image metadata (EXIF, XMP, IPTC).
+EXIF, XMP, IPTC, ICC profiles, camera MakerNotes, and container metadata across
+images, camera RAW, audio, video, documents, and archives. No Perl interpreter or
+ExifTool executable is needed at runtime.
 
-A native Rust metadata library with no Perl runtime or external metadata executable. It parses metadata directly from bytes and includes generated tag definitions.
+> Experimental Rust port of a subset of [ExifTool](https://exiftool.org/).
+> Format detection, tag coverage, and writing support vary by format. ExifTool
+> remains the reference implementation; this project does not promise command-line
+> compatibility or complete metadata preservation for every file.
 
-## Features
+[Get started](docs/src/getting-started/installation.md) ·
+[Documentation](docs/index.md) ·
+[Formats](docs/src/formats.md) ·
+[Architecture](docs/src/architecture.md) ·
+[Contributing](docs/src/contributing.md)
 
-- **Read/Write EXIF** - Full IFD parsing with MakerNotes support (Canon, Nikon, Sony, Fujifilm, etc.)
-- **XMP Support** - Parse rdf:Bag, rdf:Seq, rdf:Alt structures
-- **90+ formats (read)** - JPEG, PNG, TIFF, DNG, HEIC/AVIF, camera RAW, EXR, HDR, audio/video, DICOM, FITS, ZIP/7z, …
-- **Write** - JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, TIFF-family RAW (NEF/CR2/ARW/ORF/…), RAF, MP4/MOV, WAV/FLAC/MP3
-- **No Perl** - Native Rust; no ExifTool binary at runtime (git deps: `exr-core`, `jpg-rs`, `jph-rs`)
-- **Fast** - Native code, ~10-100x faster than ExifTool for batch operations
-- **Type-Safe** - Strongly typed values (Rational, URational, DateTime, etc.)
-- **Geotagging** - Add GPS coordinates from GPX track files
-- **Time Shift** - Bulk adjust DateTime tags
-- **ICC Profiles** - Read/embed color profiles
+## Choose your interface
 
-## Quick Start
+| Interface | Entry point | Guide |
+|-----------|-------------|-------|
+| Rust | `exiftool_formats::FormatRegistry` | [Read](docs/src/reading.md) / [write](docs/src/writing.md) |
+| Python | `import exiftool_py` | [Installation](docs/src/python/installation.md) / [API](docs/src/python/api.md) |
+| Command line | `exif` | [CLI guide](docs/src/cli.md) |
 
-```rust
-use exiftool_formats::{FormatRegistry, Metadata};
-use std::fs::File;
-use std::io::BufReader;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Auto-detect format and parse
-    let registry = FormatRegistry::new();
-    let file = File::open("photo.jpg")?;
-    let metadata = registry.parse(&mut BufReader::new(file))?;
-
-    // Access EXIF data
-    println!("Format: {}", metadata.format);
-    println!("Make: {:?}", metadata.exif.get_str("Make"));
-    println!("Model: {:?}", metadata.exif.get_str("Model"));
-    println!("ISO: {:?}", metadata.exif.get_u32("ISO"));
-    
-    // Iterate all tags
-    for (tag, value) in metadata.exif.iter() {
-        println!("{}: {}", tag, value);
-    }
-
-    // XMP data (if present)
-    if let Some(xmp) = &metadata.xmp {
-        println!("XMP: {} bytes", xmp.len());
-    }
-
-    Ok(())
-}
+```mermaid
+flowchart LR
+    Rust["Rust application"] --> Library["exiftool-formats"]
+    CLI["exif CLI"] --> Library
+    Python["exiftool_py / PyO3"] --> Library
+    Library --> Detect["Detect container and parse metadata"]
+    Detect --> Data["Typed tags, XMP, ICC, previews"]
+    Data --> Read["Inspect and export"]
+    Data --> Write["Format-specific writers"]
 ```
 
-## Writing Metadata
+## Build and try the CLI
 
-```rust
-use exiftool_formats::{FormatRegistry, JpegWriter};
-use exiftool_attrs::AttrValue;
-use std::fs::File;
-use std::io::BufReader;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let registry = FormatRegistry::new();
-    let file = File::open("input.jpg")?;
-    let mut metadata = registry.parse(&mut BufReader::new(file))?;
-
-    // Modify metadata
-    metadata.exif.set("Artist", AttrValue::Str("John Doe".into()));
-    metadata.exif.set("Copyright", AttrValue::Str("2024 John Doe".into()));
-    metadata.exif.set("Software", AttrValue::Str("exiftool-rs".into()));
-
-    // Write to new file
-    let mut input = BufReader::new(File::open("input.jpg")?);
-    let mut output = Vec::new();
-    
-    // Build EXIF bytes and write
-    let exif_bytes = build_exif(&metadata)?; // see examples/
-    JpegWriter::write(&mut input, &mut output, Some(&exif_bytes), None)?;
-    
-    std::fs::write("output.jpg", output)?;
-    Ok(())
-}
-```
-
-## Python Bindings
+Use **Rust 1.96+**. The workspace fetches Git dependencies over SSH; you need
+access to them before building. See [dependency access](docs/src/dependency-access.md)
+for the complete list and CI configuration. Opening this repository alone does
+not make its dependencies public.
 
 ```bash
-pip install exiftool-py
+git clone https://github.com/ssoj13/exiftool-rs.git
+cd exiftool-rs
+cargo install --path crates/exiftool-cli --locked
+
+# Inspect a fixture included in the repository
+exif crates/exiftool-formats/tests/testdata/Writer.jpg
+exif -f json crates/exiftool-formats/tests/testdata/Writer.jpg
+
+# Edit a copy
+exif -w output.jpg -t Artist="Alex" crates/exiftool-formats/tests/testdata/Writer.jpg
+```
+
+Use `-p` explicitly for in-place edits. See the [CLI guide](docs/src/cli.md) for
+batch filtering, time shifts, GPX geotagging, copying tags, and exports.
+
+## Read metadata in Rust
+
+Use the crates from a local checkout as described in [installation](docs/src/getting-started/installation.md).
+This repository's CI and release workflows do not publish crates to crates.io.
+
+```rust
+use exiftool_formats::FormatRegistry;
+use std::path::Path;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let registry = FormatRegistry::new();
+    let metadata = registry.parse_file(Path::new(
+        "crates/exiftool-formats/tests/testdata/Writer.jpg",
+    ))?;
+
+    println!("Format: {}", metadata.format);
+    println!("Camera: {:?}", metadata.exif.get_str("Make"));
+    for (name, value) in metadata.exif.iter() {
+        println!("{name}: {value}");
+    }
+    Ok(())
+}
+```
+
+`parse_file` supplies the extension hint used to classify TIFF-family RAW.
+For bytes in memory, use `parse` with `std::io::Cursor`. See
+[reading metadata](docs/src/reading.md) for typed accessors and previews.
+
+## Use Python
+
+Build the package from this checkout; the release workflow publishes CLI
+archives rather than Python wheels. In an activated virtual environment:
+
+```bash
+python -m pip install maturin
+maturin develop --release --manifest-path crates/exiftool-py/Cargo.toml
 ```
 
 ```python
 import exiftool_py as exif
 
-# Open and read
-img = exif.open("photo.jpg")
-print(img.make, img.model)
-print(img.iso, img.fnumber, img.exposure_time)
-
-# Dict-like access
-print(img["Artist"])
-for tag in img:
-    print(f"{tag}: {img[tag]}")
-
-# Check if writable before modifying
+img = exif.open("crates/exiftool-formats/tests/testdata/Writer.jpg")
+print(img.format, img.make, img.model)
 if img.is_writable:
-    img.artist = "John Doe"
-    img.save()
-
-# Time shift (+2 hours)
-img.shift_time("+2:00")
-img.save()
-
-# Geotagging from GPX
-coords = img.geotag("track.gpx")
-if coords:
-    print(f"Geotagged to {coords}")
-img.save()
-
-# ICC profile
-img.set_icc_from_file("sRGB.icc")
-img.save()
-
-# Composite tags
-img.add_composite()
-print(img["ImageSize"], img["Megapixels"])
-
-# Detect camera RAW files  
-if img.is_camera_raw:
-    print(f"RAW file from {img.make}")
-
-# Parallel batch scan
-for img in exif.scan("photos/**/*.jpg", parallel=True):
-    print(img.path, img.make)
+    img.artist = "Alex"
+    img.save("output.jpg")
 ```
 
-## CLI Usage
+The distribution is named `exiftool-py`; the import is `exiftool_py`.
+See [Python installation](docs/src/python/installation.md) for virtual environments,
+wheel builds, and Python version requirements.
+
+## Coverage and limits
+
+- Reading spans images and RAW, audio/video containers, PDF, DICOM, FITS, and archives.
+- Writing is format-specific: JPEG, PNG, TIFF/DNG, WebP, HEIC/AVIF, EXR, HDR,
+  GIF, PNM, JXL, supported RAW, MP4/MOV-family containers, WAV, FLAC, and MP3.
+- MakerNotes use generated vendor tables; recognizing a format does not mean
+  every vendor field can be decoded or edited.
+- Several parsers and writers buffer the input. The shared reader enforces a
+  100 MiB limit; the library does not guarantee constant-memory streaming.
+- Numeric values may need `get_interpreted` or `get_display` for readable output.
+
+Use the [format reference](docs/src/formats.md), [writing guide](docs/src/writing.md),
+and [performance guide](docs/src/performance.md) for details. Performance depends
+on workload; no universal speedup over ExifTool is claimed.
+
+## Develop and document
 
 ```bash
-# Install
-cargo install --path crates/exiftool-cli
+cargo test --workspace --exclude exiftool-py --locked
+cargo check -p exiftool-py --locked
+cargo doc --workspace --exclude exiftool-py --no-deps
 
-# Read metadata
-exif photo.jpg                        # All tags
-exif -g Model photo.jpg               # Single tag (value only)
-exif -g Make -g Model *.jpg           # Multiple tags
-exif -g "Date*" photo.jpg             # Wildcard: all Date* tags
-exif -f json *.jpg                    # JSON output
-exif -f csv photos/*.png              # CSV for spreadsheets
-exif -f html *.jpg -o report.html     # HTML output
-exif -f json *.jpg -o meta.json       # Export to file
-
-# Write metadata
-exif -t Artist="John Doe" photo.jpg
-exif -t Make=Canon -t Model="EOS R5" photo.jpg
-exif -w output.jpg -t Copyright="2024" photo.jpg  # Write to new file
-exif -p -t Copyright="2024" photo.jpg             # In-place modify
-
-# Time shift
-exif --shift "+2:00" -p photo.jpg     # Add 2 hours
-exif --shift "-30" -p photo.jpg       # Subtract 30 minutes
-
-# Geotagging
-exif --geotag track.gpx -p photo.jpg  # Add GPS from GPX
-
-# Import from JSON/CSV
-exif --json=meta.json -p photo.jpg    # Import tags from JSON
-exif --csv=meta.csv -p *.jpg          # Batch import from CSV
-
-# Copy tags between files
-exif --tagsFromFile src.jpg -p dst.jpg  # Copy all tags
-exif --tagsFromFile src.jpg -t Make -t Model -p dst.jpg  # Copy specific
-
-# Batch rename with templates
-exif --rename "$Make_$Model_%Y%m%d" -p *.jpg  # Canon_EOS R5_20240115.jpg
-exif --rename "%Y/%m/%d/$filename" -p *.jpg   # Organize by date folders
-
-# Strip all metadata (privacy)
-exif --delete -p photo.jpg            # Remove EXIF, XMP, IPTC, ICC
-exif --delete -r -p photos/           # Strip entire directory
-
-# Validate metadata
-exif --validate photo.jpg             # Check for issues
-exif --validate -r photos/            # Validate directory
-
-# Conditional processing
-exif -if "Make eq Canon" -r photos/   # Only Canon files
-exif -if "ISO gt 800" *.jpg            # High ISO photos
-exif -if "Model contains R5" *.jpg     # Model contains "R5"
-
-# File analysis
-exif -htmlDump photo.jpg -o dump.html  # Hex dump + structure
-exif -htmlDump -r photos/              # Analyze multiple files
-
-# Find duplicates
-exif -duplicates hash -r photos/       # Exact duplicates (content hash)
-exif -duplicates datetime -r photos/   # Same capture time
-exif -duplicates metadata -r photos/   # Same Make/Model/DateTime/Size
-
-# ICC profile
-exif --icc sRGB.icc -p photo.jpg      # Embed color profile
-
-# File filtering
-exif -r photos/                       # Recursive scan
-exif -r -e jpg,png photos/            # Filter by extension
-exif -r -x "*_thumb*" photos/         # Exclude pattern
-exif -r --newer 2024-01-01 photos/    # Date filter
-exif -r --minsize 1M photos/          # Size filter
-
-# Thumbnail/preview extraction
-exif -T photo.jpg                     # Extract thumbnail
-exif -P photo.cr2                     # Extract RAW preview
-
-# Supported formats
-exif image.{jpg,png,tiff,dng,heic,avif,cr2,cr3,nef,arw,orf,rw2,pef,raf,webp,exr,hdr}
+# Build the documentation book with Mermaid diagrams
+cargo install mdbook --locked
+cargo install mdbook-mermaid --locked
+mdbook build docs
 ```
 
-## Crate Structure
+[Building](docs/src/building.md) covers the bootstrap commands and code generation.
+[CI/CD](docs/src/ci-cd.md) explains checks and runner updates.
+[Releasing](docs/releasing.md) covers tagged CLI releases.
 
-```
-exiftool-rs/
-  crates/
-    exiftool-core/      # IFD reader/writer, byte order, raw values
-    exiftool-attrs/     # Typed attribute storage (Attrs, AttrValue)
-    exiftool-tags/      # Auto-generated tag tables (~2500+ tags)
-    exiftool-formats/   # Format parsers and writers
-    exiftool-xmp/       # XMP parser (rdf:Bag/Seq/Alt)
-    exiftool-cli/       # Command-line tool
-    exiftool-py/        # Python bindings (PyO3)
-```
+## License and attribution
 
-## Architecture: Why / What / How / Where
+Licensed under the [Perl Artistic License](LICENSE-ARTISTIC) **or** the
+[GNU GPL, version 1 or later](LICENSE-GPL), matching ExifTool and Perl:
+`Artistic-1.0-Perl OR GPL-1.0-or-later`. See [LICENSE](LICENSE).
 
-### Format Parsers (`exiftool-formats`)
-
-| Component | Why it exists | What it does | How it works | Where used |
-|-----------|---------------|--------------|--------------|------------|
-| **parsers.rs** | One place to add/remove formats | `default_parsers()` returns all parsers; `parse_with()` for custom list | List of `Box<dyn FormatParser>`, order = detection priority | `FormatRegistry::new()`, minimal builds |
-| **registry.rs** | Auto-detect format from bytes | `FormatRegistry` picks parser by magic bytes | Reads 16 bytes → first `can_parse()` match → `parse()` | CLI, Python, direct library use |
-| **FormatParser** trait | Uniform interface for 60+ formats | `can_parse(header)`, `parse(reader)` → `Metadata` | Each format implements trait; TIFF-based share `parse_tiff_exif` | All parsers (jpeg.rs, tiff.rs, …) |
-| **utils::parse_tiff_exif** | Single source for EXIF in containers | Parse TIFF bytes → `Metadata.exif` | Shared by JPEG, PNG, WebP, HEIC, JXL, AVI | jpeg.rs, png.rs, webp.rs, heic.rs, … |
-| **utils::entry_to_attr** | Consistent IFD entry → AttrValue | `IfdEntry` → `AttrValue` | Switch on type, handle rationals, strings, etc. | All TIFF-based parsers |
-
-### Data Flow
-
-```
-File → FormatRegistry::parse() → detect(header) → Parser::parse()
-  → Metadata { exif: Attrs, xmp, thumbnail, pages }
-  → CLI / Python / user code
-```
-
-### Adding a New Format
-
-1. Create `src/xxx.rs` implementing `FormatParser`
-2. Add `mod xxx;` to `lib.rs`
-3. Add `Box::new(XxxParser)` to `parsers::default_parsers()` (place by detection order)
-4. Re-export in `lib.rs` if needed
-
-## Supported Formats
-
-| Format | Read | Write | Notes |
-|--------|------|-------|-------|
-| JPEG   | Yes  | Yes   | APP1 EXIF, APP1 XMP, APP12 Ducky, APP13 IPTC |
-| PNG    | Yes  | Yes   | eXIf chunk, tEXt, iTXt, zTXt |
-| TIFF   | Yes  | Yes   | Full IFD chain |
-| DNG    | Yes  | Yes   | Via TIFF parser, DNGVersion detection |
-| HEIC   | Yes  | Yes   | ISOBMFF with EXIF item extraction |
-| AVIF   | Yes  | Yes   | Via HEIC parser |
-| CR2    | Yes  | Yes   | Canon RAW; 16-byte header preserved (`WriteCR2`) |
-| CR3    | Yes  | Yes   | Canon RAW (ISOBMFF); CMT1/2/4 + XMP UUID, CTBO/stco/co64 |
-| NEF    | Yes  | Yes   | Nikon RAW; IFD0/Exif overlay, SubIFD/raw copied |
-| ARW    | Yes  | Yes   | Sony RAW with TIFF-family trailer preservation |
-| ORF    | Yes  | Yes   | Olympus RAW (IIRO magic + strip padding) |
-| RW2    | Yes  | Yes   | Panasonic RAW |
-| PEF    | Yes  | Yes   | Pentax RAW |
-| RAF    | Yes  | Yes   | Fujifilm RAW; preview JPEG EXIF, CFA copied |
-| WebP   | Yes  | Yes   | Google WebP (VP8/VP8L/VP8X) |
-| EXR    | Yes  | Yes   | OpenEXR attributes |
-| HDR    | Yes  | Yes   | Radiance RGBE |
-
-## AttrValue Types
-
-```rust
-pub enum AttrValue {
-    Bool(bool),
-    Str(String),
-    Int(i32),
-    UInt(u32),
-    Float(f32),
-    Double(f64),
-    Rational(i32, i32),     // Signed rational (num/den)
-    URational(u32, u32),    // Unsigned rational
-    Bytes(Vec<u8>),         // Binary data
-    DateTime(NaiveDateTime),
-    List(Vec<AttrValue>),
-    Map(HashMap<String, AttrValue>),
-    // ...and more
-}
-```
-
-## MakerNotes Support
-
-Vendor-specific MakerNotes are parsed using auto-generated tables:
-
-- **Canon** - Camera settings, lens info, AF points
-- **Nikon** - Shot info, lens data, NEF settings  
-- **Sony** - Camera settings, lens info
-- **Fujifilm** - Film simulation, dynamic range
-- **Olympus** - Camera settings, equipment
-- **Panasonic** - Shooting mode, lens info
-- **Pentax** - Camera settings
-- **Samsung** - Device info
-- **Apple** - HDR info, burst mode
-
-## Tag Database
-
-Tags are auto-generated from ExifTool's Perl source using `cargo xtask dump` then `codegen` (including Mask/`0.1` and ProcessBinaryData `_BIN`):
-
-```rust
-// ~2500 EXIF/TIFF/DNG tags available
-use exiftool_tags::generated::exif::EXIF_MAIN;
-
-if let Some(tag_def) = EXIF_MAIN.get(&0x010F) {
-    println!("Tag name: {}", tag_def.name); // "Make"
-}
-```
-
-## Performance
-
-Benchmarks vs ExifTool (reading 1000 JPEGs):
-
-| Tool | Time | Memory |
-|------|------|--------|
-| exiftool-rs | ~0.8s | ~15MB |
-| ExifTool | ~45s | ~120MB |
-
-*Note: ExifTool is more feature-complete. This comparison is for simple read operations.*
-
-## Building
-
-See [Releasing the CLI](docs/releasing.md) for tagged GitHub releases and CI setup.
-
-```bash
-# Build all crates (release)
-python bootstrap.py b
-
-# Debug build
-python bootstrap.py b -d
-
-# Tests / fmt+clippy / install CLI `exif`
-python bootstrap.py t
-python bootstrap.py c
-python bootstrap.py i
-
-# Python wheel / editable / pip install
-python bootstrap.py p b
-python bootstrap.py p d
-python bootstrap.py p i
-
-# Docs book
-python bootstrap.py m b
-
-# Tag tables from ExifTool
-python bootstrap.py codegen
-```
-
-## Fuzz Testing
-
-Fuzz testing helps find crashes, panics, and edge cases by feeding random/mutated data to parsers. This project includes fuzz targets for all major format parsers.
-
-### Prerequisites
-
-```bash
-# Install cargo-fuzz (requires nightly Rust)
-rustup install nightly
-cargo +nightly install cargo-fuzz
-```
-
-### Available Targets
-
-| Target | Description |
-|--------|-------------|
-| `fuzz_jpeg` | JPEG parser with APP segments |
-| `fuzz_png` | PNG parser with chunks |
-| `fuzz_tiff` | TIFF/DNG IFD parser |
-| `fuzz_webp` | WebP container parser |
-| `fuzz_heic` | HEIC/AVIF ISOBMFF parser |
-| `fuzz_cr3` | Canon CR3 parser |
-| `fuzz_registry` | Auto-detection across all formats |
-
-### Running Fuzz Tests
-
-```bash
-# From repository root (cargo-fuzz expects ./fuzz here)
-cargo +nightly fuzz run fuzz_jpeg -- crates/exiftool-formats/tests/testdata
-
-# Time limit (e.g. 60 seconds)
-cargo +nightly fuzz run fuzz_jpeg -- crates/exiftool-formats/tests/testdata -max_total_time=60
-
-# Iteration cap
-cargo +nightly fuzz run fuzz_jpeg -- crates/exiftool-formats/tests/testdata -runs=10000
-
-# Smoke all targets
-for target in fuzz_jpeg fuzz_png fuzz_tiff fuzz_webp fuzz_heic fuzz_cr3 fuzz_registry; do
-    cargo +nightly fuzz run $target -- crates/exiftool-formats/tests/testdata -max_total_time=30
-done
-```
-
-### What to Expect
-
-- **Normal output**: Lines showing `#12345` (iteration count), `cov:` (coverage), `ft:` (features)
-- **No crashes = good**: Parsers handle malformed input gracefully
-- **Crash found**: Fuzzer saves crashing input to `fuzz/artifacts/<target>/`
-- **Slow start**: First run builds corpus; subsequent runs are faster
-
-### Reproducing Crashes
-
-If a crash is found:
-
-```bash
-# Reproduce crash
-cargo +nightly fuzz run fuzz_jpeg fuzz/artifacts/fuzz_jpeg/crash-xxxxx
-
-# Minimize crash input
-cargo +nightly fuzz tmin fuzz_jpeg fuzz/artifacts/fuzz_jpeg/crash-xxxxx
-```
-
-### Corpus
-
-Fuzzer mutates interesting inputs under `fuzz/corpus/<target>/` (gitignored). Seed from files already in the repo — do not copy:
-
-```bash
-cargo +nightly fuzz run fuzz_jpeg -- crates/exiftool-formats/tests/testdata
-```
-
-## Known Limitations
-
-Current version (0.1.0) has some documented limitations:
-
-- **BigTIFF rewrite**: IFD overlay uses the same preserve path as classic TIFF (16-byte header, 20-byte entries, LONG8 pointers). Files >4GB are still not loaded (max 100MB).
-- **NEF/RAF/CR3 write**: standard EXIF plus MakerNotes field overlay where `rewrite_blob` knows the layout (FujiFilm rebuild; IFD vendors in-place including DJI floats; Nikon ShotInfo / ColorBalance / LensData encrypted fields including NikonCustom Mask bitfields and ProcessBinaryData `_BIN` integers via `CustomSettingsOffset` / Z `MenuOffset`; Canon/Sony/Nikon index blobs; Sony Tag9405a; Kodak KDK; GoPro GPMF same-size leaves). Unknown magics stay blobs. CR3 rewrites CMT1/2/4 and XMP UUID (`Cr3Writer`), then patches CTBO and stco/co64. Other TIFF-RAW uses the same preserve rewrite (`TiffWriter::write`). Sony A100-style files preserve their MRW and CFA trailers.
-- **7z**: encoded header (id 23) LZMA via `lzma-rs`. AES-encrypted headers warn. LZMA2-encoded headers are not decoded (ExifTool `7Z.pm` is LZMA1-only).
-- **Value interpretation**: many enums still returned as numbers unless `get_interpreted` is used.
-
-See the [architecture guide](docs/src/architecture.md) for an overview of the workspace.
-
-## License
-
-exiftool-rs is licensed under the same terms as ExifTool and Perl itself: either the [Perl Artistic License](LICENSE-ARTISTIC) or the [GNU General Public License](LICENSE-GPL), version 1 or later (`Artistic-1.0-Perl OR GPL-1.0-or-later`). See [LICENSE](LICENSE).
-
-## Copyright and acknowledgments
-
-- Original work: [ExifTool](https://exiftool.org/), Copyright © 2003–2026 Phil Harvey.
-- Derivative work (Rust port): Copyright © 2026 Alex Khalyavin.
-
-See [NOTICE.md](NOTICE.md) for attribution details.
+Original work: ExifTool, Copyright © 2003–2026 Phil Harvey.
+Rust port: Copyright © 2026 Alex Khalyavin. See [NOTICE.md](NOTICE.md).

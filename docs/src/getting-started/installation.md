@@ -1,59 +1,64 @@
 # Installation
 
-## Rust
+## Requirements
 
-Add to your `Cargo.toml`:
+- Rust **1.96 or later**, with Cargo and a native linker.
+- Git and access to the [Git dependencies](../dependency-access.md).
+- Python **3.8+** for bindings, plus a Python version supported by the pinned PyO3
+  dependency. Async wrappers use `asyncio.to_thread`, which requires Python 3.9+.
+- Python 3 for the optional `bootstrap.py` helper.
 
-```toml
-[dependencies]
-exiftool-formats = "0.1"
-```
+The CI/release workflows publish neither crates.io packages nor PyPI wheels.
+The instructions below use a source checkout.
 
-For just the core EXIF parsing (smaller dependency footprint):
-
-```toml
-[dependencies]
-exiftool-core = "0.1"
-```
-
-## Python
+## Clone and check access
 
 ```bash
-pip install exiftool-rs
+git clone https://github.com/ssoj13/exiftool-rs.git
+cd exiftool-rs
+cargo fetch --locked
 ```
 
-Requires Python 3.8+. Wheels are provided for:
-- Linux (x86_64, aarch64)
-- macOS (x86_64, arm64)
-- Windows (x86_64)
+A fetch failure mentioning authentication or a missing Git revision can mean
+that the dependency is private. Follow [dependency access](../dependency-access.md)
+before changing the lockfile.
 
 ## CLI
 
-Build from source:
+From the repository root:
 
 ```bash
-cargo install --path crates/exiftool-cli
+cargo install --path crates/exiftool-cli --locked
+exif --version
+exif --help
 ```
 
-Or download pre-built binaries from the releases page.
+Cargo installs `exif` into its binary directory (`~/.cargo/bin` by default).
+On Windows the executable is `exif.exe`.
 
-## Building from Source
+For tagged releases, see the repository's
+[GitHub Releases](https://github.com/ssoj13/exiftool-rs/releases).
+Availability depends on successful release builds; see [CI/CD](../ci-cd.md).
 
-Requirements:
-- Rust 1.70+
-- For Python bindings: Python 3.8+ with maturin
+## Rust library
 
-```bash
-git clone https://github.com/ssoj13/exiftool-rs
-cd exiftool-rs
+For a Rust application next to your `exiftool-rs` checkout, add local dependencies:
 
-# Build everything
-cargo build --release
-
-# Run tests
-cargo test --workspace
-
-# Build Python wheel
-cd crates/exiftool-py
-maturin build --release
+```toml
+[dependencies]
+exiftool-formats = { path = "../exiftool-rs/crates/exiftool-formats" }
+exiftool-attrs = { path = "../exiftool-rs/crates/exiftool-attrs" }
 ```
+
+Adjust the relative paths to your checkout. `exiftool-formats` provides
+`FormatRegistry`, `Metadata`, and format-specific parsers/writers.
+`exiftool-attrs` provides `AttrValue` for editing typed values.
+Use `exiftool-core` directly only when you need low-level TIFF/IFD primitives.
+
+Continue with the [quick start](quickstart.md).
+
+## Python and development builds
+
+Follow [Python installation](../python/installation.md) for virtual environments
+and maturin, or [building from source](../building.md) for workspace commands,
+Rust API docs, and the documentation book.

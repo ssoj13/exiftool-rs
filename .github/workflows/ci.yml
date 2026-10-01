@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-15]
+        os: [ubuntu-26.04, windows-2025-vs2026, macos-26]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -39,7 +39,8 @@ jobs:
           toolchain: stable
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.12'
+          python-version: '3.x'
+          check-latest: true
       - uses: ./.github/actions/fetch-dependencies
         with:
           token: ${{ secrets.DEPENDENCIES_TOKEN }}
@@ -61,7 +62,7 @@ jobs:
 
   msrv:
     name: Minimum Rust (1.96)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -72,15 +73,32 @@ jobs:
           toolchain: '1.96.0'
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.12'
+          python-version: '3.x'
+          check-latest: true
       - uses: ./.github/actions/fetch-dependencies
         with:
           token: ${{ secrets.DEPENDENCIES_TOKEN }}
       - run: cargo check --workspace --locked --offline
 
+  docs:
+    name: Documentation book
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+      - name: Install current documentation tools
+        run: cargo install mdbook mdbook-mermaid --locked
+      - name: Build book with Mermaid diagrams
+        run: mdbook build docs
+
   quality:
     name: Quality (advisory during baseline cleanup)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
