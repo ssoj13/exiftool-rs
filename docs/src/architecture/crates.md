@@ -1,144 +1,54 @@
-# Crate Structure
+# Crate structure
 
-## Dependency Graph
+Arrows show internal dependency direction. The graph summarizes the shared
+library layers; the CLI and Python extension also depend directly on some of
+these layers for editing and presentation.
 
-```
-exiftool-cli ─────┐
-                  ▼
-exiftool-py ──► exiftool-formats
-                  │
-        ┌─────────┼─────────┬─────────┐
-        ▼         ▼         ▼         ▼
-   exiftool-  exiftool-  exiftool-  exiftool-
-     xmp       iptc       icc       tags
-        │         │                   │
-        └─────────┴─────────┬─────────┘
-                            ▼
-                      exiftool-core
-                            │
-                            ▼
-                      exiftool-attrs
-```
-
-## exiftool-attrs
-
-Foundation crate. Defines `Attrs` (attribute map) and `AttrValue` (typed values).
-
-```rust
-use exiftool_attrs::{Attrs, AttrValue};
-
-let mut attrs = Attrs::new();
-attrs.set("Make", AttrValue::Str("Canon".into()));
-attrs.set("ISO", AttrValue::UInt(400));
+```mermaid
+flowchart TD
+    CLI["exiftool-cli"] --> Formats["exiftool-formats"]
+    Python["exiftool-py"] --> Formats
+    Formats --> Core["exiftool-core"]
+    Formats --> Attrs["exiftool-attrs"]
+    Formats --> Tags["exiftool-tags"]
+    Formats --> XMP["exiftool-xmp"]
+    Formats --> IPTC["exiftool-iptc"]
+    Formats --> ICC["exiftool-icc"]
+    Tags --> Core
+    XMP --> Attrs
+    IPTC --> Attrs
+    ICC --> Attrs
 ```
 
-**Key types:**
-- `Attrs` - HashMap-like container with typed accessors
-- `AttrValue` - Enum of possible value types (Str, Int, UInt, Float, Rational, List, Bytes)
+## Workspace members
 
-## exiftool-core
+| Crate | Responsibility | Main entry points |
+|-------|----------------|-------------------|
+| `exiftool-formats` | Container detection, parsers, writers, MakerNotes | `FormatRegistry`, `FormatParser`, `Metadata`, `JpegWriter` and other writers |
+| `exiftool-core` | Byte order, TIFF/IFD structures and raw values | `ByteOrder`, `IfdReader`, `ExifWriter`, `WriteEntry` |
+| `exiftool-attrs` | Typed attribute storage, schema and dirty tracking | `Attrs`, `AttrValue` |
+| `exiftool-tags` | Generated tag definitions and interpretation | `generated`, `interp` |
+| `exiftool-xmp` | XMP XML parsing, writing and sidecars | `XmpParser`, `XmpWriter` |
+| `exiftool-iptc` | IPTC-IIM parsing and serialization | `IptcParser`, `IptcWriter` |
+| `exiftool-icc` | ICC profiles and tag interpretation | Profile parsing APIs |
+| `exiftool-cli` | Filtering, export, editing and file operations | `exif` executable |
+| `exiftool-py` | Python object model and parallel scans through PyO3 | `exiftool_py.Image`, `open`, `scan`, `scan_dir` |
+| `xtask` | Tag extraction, code generation and parity tooling | `cargo xtask` commands |
 
-Low-level TIFF/EXIF primitives.
+`exiftool-core` does not depend on `exiftool-attrs`; the conversion between raw
+IFD entries and typed attributes happens in the formats layer.
 
-```rust
-use exiftool_core::{ByteOrder, IfdReader};
+## External Git dependencies
 
-let reader = IfdReader::new(data, ByteOrder::LittleEndian);
-let ifd_offset = reader.parse_header()?;
-let (entries, next_ifd) = reader.read_ifd(ifd_offset)?;
-```
+`exiftool-formats` depends on `exr-core`, `jpg-rs`, and `jph-rs`. Their transitive
+Git dependencies are part of source builds too. See
+[dependency access](../dependency-access.md) for repositories and credentials.
 
-**Key types:**
-- `IfdReader` - Parse IFD structures from bytes
-- `ExifWriter` - Build EXIF byte streams
-- `ByteOrder` - Big/Little endian handling
-- `IfdEntry`, `RawValue` - Parsed IFD data
+## Choose a layer
 
-## exiftool-tags
+Use `exiftool-formats` for normal file operations. Use `exiftool-attrs` when
+constructing or editing values. Choose `exiftool-core` for direct TIFF/IFD work,
+or a metadata-standard crate when you already have an extracted XMP, IPTC,
+or ICC payload.
 
-Tag definitions and value interpretation.
-
-```rust
-use exiftool_tags::interp;
-
-// Interpret numeric values
-interp::interpret_value("Orientation", 6)  // "Rotate 90 CW"
-
-// Format with units
-interp::format_focal_length(50.0)  // "50 mm"
-interp::format_fnumber(2.8)        // "f/2.8"
-```
-
-**Features:**
-- Tag ID to name mapping
-- Value interpretation (enums, bitfields)
-- Display formatting
-
-## exiftool-formats
-
-All format parsers and writers. This is the main crate most users need.
-
-```rust
-use exiftool_formats::{FormatRegistry, FormatParser, JpegWriter};
-
-let registry = FormatRegistry::new();
-let metadata = registry.parse(&mut reader)?;
-```
-
-**Key types:**
-- `FormatRegistry` - Auto-detect and parse any format
-- `FormatParser` trait - Common interface for all parsers
-- `Metadata` - Parsed result with EXIF, XMP, thumbnails
-- `*Parser` - Format-specific parsers (JpegParser, etc.)
-- `*Writer` - Format-specific writers
-
-## exiftool-xmp
-
-XMP (XML) metadata parsing and writing.
-
-```rust
-use exiftool_xmp::{parse_xmp, XmpWriter};
-
-let attrs = parse_xmp(xml_string)?;
-let xml = XmpWriter::build(&attrs)?;
-```
-
-## exiftool-iptc
-
-IPTC-IIM metadata for JPEG APP13 segments.
-
-```rust
-use exiftool_iptc::{IptcParser, IptcWriter};
-
-let attrs = IptcParser::parse(data)?;
-let bytes = IptcWriter::build(&attrs);
-```
-
-## exiftool-icc
-
-ICC color profile parsing.
-
-```rust
-use exiftool_icc::parse_icc_profile;
-
-let attrs = parse_icc_profile(data)?;
-// ProfileDescription, ColorSpace, etc.
-```
-
-## exiftool-py
-
-Python bindings via PyO3.
-
-```python
-import exiftool_rs as exif
-img = exif.open("photo.jpg")
-```
-
-## exiftool-cli
-
-Command-line tool.
-
-```bash
-exif photo.jpg
-exif -j *.jpg
-```
+See [architecture](../architecture.md) and [parser design](parsers.md).

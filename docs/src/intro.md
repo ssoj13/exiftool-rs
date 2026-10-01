@@ -1,68 +1,47 @@
 # exiftool-rs
 
-A fast, dependency-light image metadata library written in Rust.
+Read and edit file metadata through a native Rust library, Python bindings,
+or the `exif` command-line tool. The project parses files directly rather than
+starting an ExifTool subprocess.
 
-## Why Another EXIF Library?
+This is an experimental port of a subset of [ExifTool](https://exiftool.org/).
+Support depends on the container, tag, and camera model. Use the
+[format reference](formats.md) to choose a parser and the
+[writing guide](writing.md) to understand edit behavior.
 
-The Perl-based ExifTool is the gold standard for metadata extraction. It handles 
-every obscure format and camera quirk accumulated over 20+ years. But sometimes 
-you need something different:
+## Start here
 
-- **Embeddable** - A library you can link into your app without spawning processes
-- **Fast** - Native code that doesn't spin up an interpreter
-- **Portable** - Rust compiles to pretty much anything: WASM, mobile, embedded
-- **Polyglot** - Rust's FFI means free bindings to Python, Ruby, Node, etc.
+| Goal | Guide |
+|------|-------|
+| Install or build | [Installation](getting-started/installation.md) |
+| Read your first file in Rust | [Quick start](getting-started/quickstart.md) |
+| Inspect and batch-edit files | [CLI](cli.md) |
+| Integrate with Python | [Python](python.md) |
+| Understand the internals | [Architecture](architecture.md) |
+| Contribute a parser or fix | [Contributing](contributing.md) |
 
-This library doesn't aim to replace ExifTool. It covers the common cases - the 
-formats and tags you'll actually encounter - with clean, maintainable code.
+## Before building
 
-## What You Get
+The workspace requires Rust 1.96+ and access to its Git dependencies.
+The Python distribution is `exiftool-py`, imported as `exiftool_py`.
+GitHub release automation builds CLI archives; it does not publish Rust crates
+or Python wheels. Follow [dependency access](dependency-access.md) before a first
+source build.
 
-- **90+ formats (read)** - JPEG, PNG, TIFF, HEIC/AVIF, WebP, RAW, EXR, HDR, audio/video, DICOM, FITS, ZIP/7z, …
-- **Write** - JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, TIFF-family RAW, RAF, MP4/MOV, WAV/FLAC/MP3
-- **Python bindings** - `pip install exiftool-py` and you're done
-- **CLI tool** - Drop-in for basic ExifTool usage
-- **Zero unsafe** - Pure Rust, no C dependencies (except optional Python bindings)
+## What the library returns
 
-## Quick Example
+`FormatRegistry` detects a container and returns `Metadata`: typed attributes,
+raw XMP, optional ICC data, thumbnails, previews, and TIFF page information.
+The attribute map is named `exif`, but can also contain non-EXIF container tags.
 
-**Rust:**
-```rust
-use exiftool_formats::{FormatRegistry, FormatParser};
-use std::fs::File;
-use std::io::BufReader;
-
-let file = File::open("photo.jpg")?;
-let mut reader = BufReader::new(file);
-
-let registry = FormatRegistry::new();
-let metadata = registry.parse(&mut reader)?;
-
-println!("Camera: {:?}", metadata.exif.get("Make"));
-println!("Date: {:?}", metadata.exif.get("DateTimeOriginal"));
-```
-
-**Python:**
-```python
-import exiftool_rs as exif
-
-img = exif.open("photo.jpg")
-print(f"Camera: {img.make}")
-print(f"Date: {img.date_time_original}")
-
-# Modify and save
-img.artist = "John Doe"
-img.save()
-```
-
-## Project Status
-
-Production-ready for common use cases. The library handles the formats and tags 
-you'll encounter in real-world applications. Edge cases and exotic formats may 
-need work - contributions welcome.
+Reading support is broader than writing support. A writer dispatches according
+to the parsed format; changing an attribute in memory alone does not write it
+to disk. See [reading](reading.md) and [writing](writing.md).
 
 ## License
 
-Licensed under the same terms as ExifTool and Perl itself: either the Perl Artistic License or the GNU General Public License, version 1 or later (`Artistic-1.0-Perl OR GPL-1.0-or-later`).
-
-ExifTool is Copyright © 2003–2026 Phil Harvey (original work); exiftool-rs is Copyright © 2026 Alex Khalyavin (derivative work).
+The project uses the same licensing choice as ExifTool and Perl:
+`Artistic-1.0-Perl OR GPL-1.0-or-later`.
+ExifTool is Copyright © 2003–2026 Phil Harvey; the Rust port is
+Copyright © 2026 Alex Khalyavin. Attribution and license texts are included at
+the repository root.

@@ -4,6 +4,11 @@ The `exif` command-line tool provides quick access to image metadata.
 
 ## Installation
 
+Build prerequisites and Git dependency access are described in
+[installation](getting-started/installation.md) and
+[dependency access](dependency-access.md).
+
+
 ```bash
 cargo install --path crates/exiftool-cli
 ```
@@ -286,11 +291,11 @@ exif --rename "%Y%m%d_%H%M%S" -p *.jpg
 # Result: 20240115_143000.jpg
 
 # Combined template
-exif --rename "$Make_$Model_%Y%m%d" -p *.jpg
+exif --rename '$Make_$Model_%Y%m%d' -p *.jpg
 # Result: Canon_EOS R5_20240115.jpg
 
 # Directory organization
-exif --rename "%Y/%m/%d/$filename" -p *.jpg
+exif --rename '%Y/%m/%d/$filename' -p *.jpg
 # Result: 2024/01/15/photo.jpg (creates directories)
 ```
 
@@ -504,7 +509,7 @@ exif -r --newer 2024-01-01 --minsize 5M -f csv photos/ -o large_2024.csv
 exif --geotag vacation.gpx -p photos/*.jpg
 
 # Organize photos by date
-exif --rename "%Y/%m/$Make_%Y%m%d_%H%M%S" -p photos/*.jpg
+exif --rename '%Y/%m/$Make_%Y%m%d_%H%M%S' -p photos/*.jpg
 
 # Import metadata from spreadsheet
 exif --csv=metadata.csv -p *.jpg
@@ -512,3 +517,8 @@ exif --csv=metadata.csv -p *.jpg
 # Copy EXIF from original to edited
 exif --tagsFromFile original.jpg -p edited.jpg
 ```
+
+The shell examples above use Bash syntax. Keep rename templates in single quotes
+so the shell does not expand `$Make`, `$Model`, or `$filename` before `exif`
+receives them. In PowerShell, prefer recursive directory scanning with `-r`
+when processing a batch.

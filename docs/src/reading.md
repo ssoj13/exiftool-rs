@@ -1,126 +1,89 @@
-# Reading Metadata
+# Reading metadata
 
-## Basic Reading
+Set up [local Rust dependencies](getting-started/installation.md) first.
+Reuse a `FormatRegistry` across files. Prefer `parse_file` when you have a path
+so TIFF-family classification receives the extension hint.
 
-```rust
-use exiftool_formats::{FormatRegistry, Metadata};
-use std::fs::File;
-use std::io::BufReader;
-
-let file = File::open("image.jpg")?;
-let mut reader = BufReader::new(file);
-
-let registry = FormatRegistry::new();
-let metadata = registry.parse(&mut reader)?;
-```
-
-## Accessing Values
-
-The `Attrs` struct provides typed accessors:
+## Files and bytes
 
 ```rust
-// String values
-let make: Option<&str> = metadata.exif.get_str("Make");
+use exiftool_formats::FormatRegistry;
+use std::io::Cursor;
+use std::path::Path;
 
-// Integer values
-let iso: Option<u32> = metadata.exif.get_u32("ISO");
-let width: Option<i32> = metadata.exif.get_i32("ImageWidth");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let path = Path::new("crates/exiftool-formats/tests/testdata/Writer.jpg");
+    let registry = FormatRegistry::new();
+    let metadata = registry.parse_file(path)?;
+    println!("{}: {} tags", metadata.format, metadata.exif.len());
 
-// Float values  
-let fnumber: Option<f64> = metadata.exif.get_f64("FNumber");
-
-// Rational values (numerator, denominator)
-let exposure: Option<(u32, u32)> = metadata.exif.get_urational("ExposureTime");
-// Returns (1, 125) for 1/125 sec
-
-// Raw value with full type info
-let value: Option<&AttrValue> = metadata.exif.get("CustomTag");
+    let bytes = std::fs::read(path)?;
+    let mut reader = Cursor::new(bytes);
+    let from_bytes = registry.parse(&mut reader)?;
+    println!("From bytes: {}", from_bytes.format);
+    Ok(())
+}
 ```
 
-## Human-Readable Values
+`parse` starts detection at the reader's current position and then rewinds to
+zero; provide a reader positioned at the start of the file. If you have bytes
+and know the extension, call `parse_with_hint(&mut reader, Some("nef"))`.
 
-Some tags store numeric codes. Get interpreted values:
+## Typed and formatted values
+
+Given the `metadata` returned above:
 
 ```rust
-// Raw value
-metadata.exif.get_u32("Orientation")  // 6
+let make = metadata.exif.get_str("Make");
+let iso = metadata.exif.get_u32("ISO");
+let fnumber = metadata.exif.get_f64("FNumber");
+let exposure = metadata.exif.get_urational("ExposureTime");
+let raw_value = metadata.exif.get("Orientation");
 
-// Human-readable
-metadata.get_interpreted("Orientation")  // "Rotate 90 CW"
-
-// With units
-metadata.get_display("FocalLength")  // "50 mm"
-metadata.get_display("ExposureTime")  // "1/125 sec"
-metadata.get_display("FNumber")  // "f/2.8"
+println!("{make:?}, ISO {iso:?}, f-number {fnumber:?}");
+println!("Exposure fraction: {exposure:?}, orientation: {raw_value:?}");
+println!("Orientation: {:?}", metadata.get_interpreted("Orientation"));
+println!("Exposure: {:?}", metadata.get_display("ExposureTime"));
 ```
 
-## XMP Data
+These accessors return `Option`: absence of a field is normal.
+`get_interpreted` handles selected numeric enums and stored strings; not every
+numeric tag has an interpretation. `get_display` adds formatting for selected
+exposure, focal-length, and GPS fields.
 
-XMP is returned as raw XML string:
+## Metadata payloads
+
+`metadata.xmp` holds raw XML. To decode an extracted packet, use `XmpParser`
+from `exiftool-xmp`. `metadata.icc` contains profile bytes when extracted.
+The attribute map named `exif` also contains container tags and IPTC attributes.
 
 ```rust
 if let Some(xmp) = &metadata.xmp {
-    println!("XMP length: {} bytes", xmp.len());
-    // Parse with your preferred XML library
+    println!("XMP: {} bytes", xmp.len());
+}
+if let Some(icc) = &metadata.icc {
+    println!("ICC profile: {} bytes", icc.len());
 }
 ```
 
-## Thumbnails and Previews
+## Previews and pages
 
-Many formats embed preview images:
+Thumbnails and previews are optional byte vectors; their presence and encoding
+depend on the format. Check the payload before choosing an output extension.
+TIFF pages carry dimensions, compression, and subfile flags.
 
 ```rust
-// Small thumbnail (typically 160x120, JPEG)
-if let Some(thumb) = &metadata.thumbnail {
-    std::fs::write("thumb.jpg", thumb)?;
+if let Some(thumbnail) = &metadata.thumbnail {
+    println!("Thumbnail: {} bytes", thumbnail.len());
 }
-
-// Larger preview (RAW files often have full-size JPEG)
 if let Some(preview) = &metadata.preview {
-    std::fs::write("preview.jpg", preview)?;
+    println!("Preview: {} bytes", preview.len());
 }
+for page in &metadata.pages {
+    println!("Page {}: {}x{}", page.index, page.width, page.height);
+}
+println!("RAW: {}, writable: {}", metadata.is_camera_raw(), metadata.is_writable());
 ```
 
-## Multi-Page Files
-
-TIFF files can have multiple pages:
-
-```rust
-if metadata.is_multi_page() {
-    println!("Pages: {}", metadata.page_count());
-    
-    for page in &metadata.pages {
-        println!("Page {}: {}x{}", page.index, page.width, page.height);
-        if page.is_thumbnail() {
-            println!("  (thumbnail)");
-        }
-    }
-}
-```
-
-## RAW File Detection
-
-```rust
-if metadata.is_camera_raw() && !metadata.is_writable() {
-    println!("This RAW type is read-only");
-} else if metadata.is_writable() {
-    println!("Can modify this file");
-}
-```
-
-## Iterating Tags
-
-```rust
-// All tags
-for (name, value) in metadata.exif.iter() {
-    println!("{}: {}", name, value);
-}
-
-// Check existence
-if metadata.exif.contains("GPSLatitude") {
-    println!("Has GPS data");
-}
-
-// Count
-println!("Total tags: {}", metadata.exif.len());
-```
+See [writing](writing.md) for saving edits, [formats](formats.md) for coverage,
+and [performance](performance.md) for resource limits.
