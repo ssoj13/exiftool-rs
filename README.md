@@ -1,5 +1,7 @@
 # exiftool-rs
 
+[![CI](https://github.com/ssoj13/exiftool-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ssoj13/exiftool-rs/actions/workflows/ci.yml)
+
 > **Note:** This is an experimental project implementing a small subset of [ExifTool](https://exiftool.org/) functionality in Rust. It is not intended to replace the original ExifTool, which remains the definitive tool for image metadata manipulation. Use this library for learning, experimentation, or when you need a lightweight pure-Rust solution for basic metadata operations.
 
 Fast, pure Rust library for reading and writing image metadata (EXIF, XMP, IPTC).
@@ -337,6 +339,8 @@ Benchmarks vs ExifTool (reading 1000 JPEGs):
 *Note: ExifTool is more feature-complete. This comparison is for simple read operations.*
 
 ## Building
+
+See [Releasing the CLI](docs/releasing.md) for tagged GitHub releases and CI setup.
 
 ```bash
 # Build all crates (release)

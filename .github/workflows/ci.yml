@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      DEPENDENCIES_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: '1'
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - uses: ./.github/actions/fetch-dependencies
+        with:
+          token: ${{ secrets.DEPENDENCIES_TOKEN }}
+      - name: Unit, integration, and documentation tests
+        run: cargo test --workspace --exclude exiftool-py --locked --offline
+      - name: Check all Rust targets
+        run: cargo check --workspace --exclude exiftool-py --all-targets --locked --offline
+      - name: Check Python extension
+        run: cargo check -p exiftool-py --locked --offline
+      - name: Build CLI
+        run: cargo build -p exiftool-cli --locked --offline
+      - name: CLI smoke test
+        shell: bash
+        run: |
+          ./target/debug/exif --version
+          ./target/debug/exif --help
+      - name: Release script tests
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py'
+
+  msrv:
+    name: Minimum Rust (1.96)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: '1.96.0'
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - uses: ./.github/actions/fetch-dependencies
+        with:
+          token: ${{ secrets.DEPENDENCIES_TOKEN }}
+      - run: cargo check --workspace --locked --offline
+
+  quality:
+    name: Quality (advisory during baseline cleanup)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: ./.github/actions/fetch-dependencies
+        with:
+          token: ${{ secrets.DEPENDENCIES_TOKEN }}
+      - name: Formatting
+        id: fmt
+        continue-on-error: true
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        id: clippy
+        continue-on-error: true
+        run: cargo clippy --workspace --exclude exiftool-py --all-targets --locked --offline -- -D warnings
+      - name: Rustdoc
+        id: doc
+        continue-on-error: true
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --exclude exiftool-py --no-deps --locked --offline
+      - name: Report quality baseline
+        if: always()
+        shell: bash
+        env:
+          FMT: ${{ steps.fmt.outcome }}
+          CLIPPY: ${{ steps.clippy.outcome }}
+          DOC: ${{ steps.doc.outcome }}
+        run: |
+          printf '### Quality baseline (advisory)\n\nFormatting: %s\n\nClippy: %s\n\nRustdoc: %s\n\nRemove continue-on-error after baseline cleanup.\n' "$FMT" "$CLIPPY" "$DOC" >> "$GITHUB_STEP_SUMMARY"
