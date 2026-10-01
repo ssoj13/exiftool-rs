@@ -1,0 +1,34 @@
+/target
+docs/book/
+
+# cargo-fuzz (generated; seed from tests/ instead of copying)
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/
+
+# Python
+*.pyd
+*.so
+__pycache__/
+*.egg-info/
+dist/
+*.whl
+
+# Local environments, caches, logs, and editor/OS files
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+/build/
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+*.rej
+.DS_Store
+Thumbs.db
+
+# oh-my-harness tool state
+.omh/

@@ -1,0 +1,14 @@
+[package]
+name = "exiftool-attrs"
+description = "Attribute storage system for metadata"
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+thiserror.workspace = true

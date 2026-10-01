@@ -1,0 +1,15 @@
+[package]
+name = "exiftool-icc"
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+edition.workspace = true
+description = "ICC Profile parser and writer for exiftool-rs"
+repository.workspace = true
+
+[dependencies]
+exiftool-attrs = { workspace = true }
+thiserror = { workspace = true }
+phf = { workspace = true }
+
+[dev-dependencies]

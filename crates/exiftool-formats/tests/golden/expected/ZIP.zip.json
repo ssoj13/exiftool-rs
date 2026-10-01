@@ -1,0 +1,17 @@
+{
+  "exif": {
+    "Zip:BitFlag": "0",
+    "Zip:CRC": "0x6e17461a",
+    "Zip:CompressedSize": "19",
+    "Zip:Compression": "None",
+    "Zip:FileName": "test.txt",
+    "Zip:ModifyDate": "2008:08:28 09:54:46",
+    "Zip:UncompressedSize": "19",
+    "ZipFiles": "test.txt",
+    "ZipMemberCount": "1"
+  },
+  "format": "ZIP",
+  "has_preview": false,
+  "has_thumbnail": false,
+  "has_xmp": false
+}

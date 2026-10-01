@@ -1,0 +1,30 @@
+[package]
+name = "exiftool-formats"
+description = "File format parsers (JPEG, TIFF, PNG, RAW)"
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+exiftool-core.workspace = true
+exiftool-attrs.workspace = true
+exiftool-tags.workspace = true
+exiftool-xmp.workspace = true
+exiftool-iptc.workspace = true
+exiftool-icc.workspace = true
+thiserror.workspace = true
+exr-core.workspace = true
+jpg-rs.workspace = true
+jph-rs.workspace = true
+flate2.workspace = true
+lzma-rs.workspace = true
+
+[dev-dependencies]
+proptest = "1.9"
+criterion = { version = "0.5", features = ["html_reports"] }
+serde_json = "1.0"
+
+[[bench]]
+name = "parser_bench"
+harness = false
