@@ -20,3 +20,12 @@ It is licensed under the same terms as the original work.
 Most fixtures in `crates/exiftool-formats/tests/testdata` are byte-identical copies of files from ExifTool 13.59 (`t/images`), distributed with ExifTool.
 Any file-specific copyright remains with the respective rights holders; see the [test-data README](crates/exiftool-formats/tests/testdata/README.md).
 The two small 7z archives there are synthetic files created for this project.
+
+## Documentation assets
+
+The documentation includes a Mermaid JavaScript bundle supplied by
+[mdbook-mermaid](https://github.com/badboy/mdbook-mermaid). Mermaid is distributed
+under the [MIT License](https://github.com/mermaid-js/mermaid/blob/develop/LICENSE);
+the bundle retains its upstream copyright and license notice.
+The accompanying `docs/mermaid-init.js` is distributed under the Mozilla Public
+License 2.0, as stated in its source header.

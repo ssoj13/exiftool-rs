@@ -1,20 +1,26 @@
 [book]
 title = "exiftool-rs"
 authors = ["exiftool-rs contributors"]
-description = "Fast image metadata library for Rust with Python bindings"
+description = "Read and edit metadata with Rust, Python, and the exif CLI"
 language = "en"
 src = "src"
 
 [build]
 build-dir = "book"
-create-missing = true
+create-missing = false
 
 [output.html]
 default-theme = "light"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/ssoj13/exiftool-rs"
-edit-url-template = "https://github.com/ssoj13/exiftool-rs/edit/main/docs/book/{path}"
+edit-url-template = "https://github.com/ssoj13/exiftool-rs/edit/main/docs/src/{path}"
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
 
 [output.html.fold]
 enable = true
 level = 1
+
+[preprocessor]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"

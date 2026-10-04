@@ -1,0 +1,30 @@
+name: Fetch Cargo dependencies
+description: Fetch locked dependencies over HTTPS, optionally authenticating private repositories
+inputs:
+  token:
+    description: Read-only token for private git dependencies; unnecessary when dependencies are public
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Fetch locked dependencies
+      shell: bash
+      env:
+        DEPENDENCIES_TOKEN: ${{ inputs.token }}
+        CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+        GIT_TERMINAL_PROMPT: '0'
+      run: |
+        # Process-scoped configuration: credentials never persist in the checkout.
+        export GIT_CONFIG_COUNT=2
+        export GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf
+        export GIT_CONFIG_VALUE_0=ssh://git@github.com/
+        export GIT_CONFIG_KEY_1=url.https://github.com/.insteadOf
+        export GIT_CONFIG_VALUE_1=git@github.com:
+        if [[ -n "$DEPENDENCIES_TOKEN" ]]; then
+          auth=$(printf 'x-access-token:%s' "$DEPENDENCIES_TOKEN" | base64 | tr -d '\r\n')
+          echo "::add-mask::$auth"
+          export GIT_CONFIG_COUNT=3
+          export GIT_CONFIG_KEY_2=http.https://github.com/.extraheader
+          export GIT_CONFIG_VALUE_2="AUTHORIZATION: basic $auth"
+        fi
+        cargo fetch --locked

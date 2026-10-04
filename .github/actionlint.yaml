@@ -1,0 +1,5 @@
+# actionlint 1.7.12 predates this generally available hosted runner label.
+# Remove this addition when actionlint recognizes Ubuntu 26.04 itself.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

@@ -1,66 +1,43 @@
 # exiftool-py
 
-Fast image metadata library for Python, built in Rust.
+Python bindings for the Rust metadata library. Distribution name: `exiftool-py`.
+Import name: `exiftool_py`.
 
-## Installation
+## Install from this checkout
+
+Use Rust 1.96+, Python, an activated virtual environment, and access to the
+[Git dependencies](../../docs/src/dependency-access.md). From the repository root:
 
 ```bash
-pip install exiftool-py
+python -m pip install maturin
+maturin develop --release --manifest-path crates/exiftool-py/Cargo.toml
 ```
 
-## Usage
+See [Python installation](../../docs/src/python/installation.md) for environment
+activation and wheel builds. The repository's release workflow publishes CLI
+archives rather than Python wheels.
+
+## Read and edit
+
+Run from the repository root:
 
 ```python
 import exiftool_py as exif
 
-# Open image
-img = exif.open("photo.jpg")
-
-# Read common properties
-print(img.make, img.model)
-print(img.iso, img.fnumber)
-
-# GPS (if available)
-if img.gps:
-    print(img.gps.latitude, img.gps.longitude)
-
-# Dict-like access
-print(img["Artist"])
-for tag in img:
-    print(f"{tag}: {img[tag]}")
-
-# Convert to dict
-d = dict(img)
-
-# Check format capabilities
+img = exif.open("crates/exiftool-formats/tests/testdata/Writer.jpg")
+print(img.format, img.make, img.model)
+print(img.get("Artist", "Unknown"))
 if img.is_writable:
-    img.artist = "John Doe"
-    img.save()
-else:
-    print(f"Cannot write: {img.format} is read-only")
-
-# Detect camera RAW files
-if img.is_camera_raw:
-    print(f"RAW file from {img.make}")
-
-# Parallel batch processing
-for img in exif.scan("photos/**/*.jpg", parallel=True):
-    print(img.path, img.make)
+    img.artist = "Alex"
+    img.save("output.jpg")
 ```
 
-## Supported Formats
-
-- JPEG, PNG, TIFF, DNG, WebP
-- HEIC, AVIF
-- Canon CR2, CR3
-- Nikon NEF
-- Sony ARW
-- Olympus ORF
-- Panasonic RW2
-- Pentax PEF
-- Fujifilm RAF
-- OpenEXR, Radiance HDR
+`save()` without an output path overwrites the original file. Writing support
+varies by container and tag. See [usage](../../docs/src/python/usage.md),
+[API reference](../../docs/src/python/api.md), and
+[formats](../../docs/src/formats.md).
 
 ## License
 
-Licensed under the same terms as ExifTool and Perl itself: either the Perl Artistic License or the GNU General Public License, version 1 or later (`Artistic-1.0-Perl OR GPL-1.0-or-later`). See [LICENSE](../../LICENSE) and [NOTICE.md](../../NOTICE.md).
+`Artistic-1.0-Perl OR GPL-1.0-or-later`, matching ExifTool and Perl.
+See [LICENSE](../../LICENSE) and [NOTICE.md](../../NOTICE.md).

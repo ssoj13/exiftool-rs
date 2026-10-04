@@ -1,203 +1,96 @@
-# Python API Reference
+# Python API reference
 
-## Module Functions
+Import the public package with `import exiftool_py as exif`.
+This page describes the shipped wrapper and extension; the typing stub can
+contain declarations beyond what is exported by the public package.
 
-### `open(path: str) -> Image`
+## Module functions
 
-Open an image file and parse metadata.
+| Function | Result | Behavior |
+|----------|--------|----------|
+| `open(path)` | `Image` | Open a string path and parse metadata |
+| `scan(pattern, parallel=True, ignore_errors=True)` | `ScanResult` | Parse files matching a glob; failures are collected |
+| `scan_dir(directory, extensions=None, parallel=True)` | `ScanResult` | Scan one directory, non-recursively |
+| `await open_async(path)` | `Image` | Run `open` in a Python worker thread |
+| `await scan_async(pattern, parallel=True, ignore_errors=True)` | `ScanResult` | Run `scan` in a worker thread |
+| `await scan_dir_async(directory, extensions=None, parallel=True)` | `ScanResult` | Run `scan_dir` in a worker thread |
 
-```python
-img = exif.open("photo.jpg")
-```
+Use strings for file paths in the native functions. Async helpers require
+Python 3.9+. `scan` currently collects errors for both values of `ignore_errors`.
 
-**Raises:** `FormatError` if file cannot be parsed.
+## Image
 
-### `scan(path: str) -> ScanResult`
+Create an image with `exif.open(path)` or `exif.Image.from_bytes(data)`.
+`from_bytes` parses without a filename extension hint and has no source path.
+The current `save` implementation needs a source path to read the original
+container, even when an output path is provided.
 
-Quick scan of a file without full parsing.
+| Property | Purpose |
+|----------|---------|
+| `format`, `path` | Parsed format and optional source path |
+| `make`, `model`, `software`, `artist`, `copyright`, `description` | Common editable string fields |
+| `iso`, `exposure_time`, `fnumber`, `focal_length`, `focal_length_35mm` | Capture settings, if present |
+| `date_time_original`, `orientation`, `width`, `height` | Capture date and image geometry |
+| `gps` | Optional `GPS` value |
+| `xmp`, `icc`, `thumbnail`, `preview` | Optional text or binary payloads |
+| `page_count`, `is_multi_page`, `pages`, `exif_offset` | TIFF/page information and EXIF location |
+| `is_camera_raw`, `is_writable` | Format classification and writer availability |
 
-### `scan_dir(path: str) -> List[ScanResult]`
+Properties for absent metadata return `None` where applicable. The value type
+of a tag depends on how it was stored and decoded.
 
-Scan all supported files in a directory.
+| Method | Purpose |
+|--------|---------|
+| `get(key, default=None)` | Read a tag with a default |
+| `get_interpreted(key)`, `get_display(key)` | Selected enum interpretation / formatted values |
+| `keys()`, `values()`, `items()`, `to_dict()` | Attribute map views/copy |
+| `clear()` | Clear the attribute map |
+| `strip_metadata()` | Clear attributes and metadata payloads in memory |
+| `save(path=None)` | Write using the original file; no path means overwrite it |
+| `copy_tags(source, tags=None)` | Copy all or selected attributes from an `Image` |
+| `shift_time(offset)` | Shift supported datetime attributes |
+| `geotag(gpx_path)` | Assign coordinates from a GPX track |
+| `set_gps(lat, lon, alt=None)` | Set GPS coordinates |
+| `set_icc_from_file(path)` | Load ICC bytes |
+| `add_composite()` | Add computed attributes |
+| `validate()` | Return validation issues |
+| `has_sidecar()`, `sidecar_path()`, `load_sidecar()`, `save_sidecar(path=None)` | Work with XMP sidecars |
 
----
+`img[key]`, assignment, deletion, membership, `len(img)`, and iteration over tag
+names are supported. Use `img.items()` for `(name, value)` pairs.
+Writable formats and individual writable fields differ; see [writing](../writing.md).
 
-## Image Class
+## ScanResult
 
-Main class for image metadata.
+| Member | Meaning |
+|--------|---------|
+| Iteration | Successfully parsed `Image` objects |
+| `count`, `len(result)` | Number of successfully parsed images |
+| `errors` | Objects with `path` and `error` strings |
+| `error_count` | Number of failed parses |
+| `to_list()` | Copy successfully parsed images to a list |
 
-### Constructor
+Scanning is eager. A large result retains metadata payloads for all successful
+files. See [performance](../performance.md).
 
-#### `Image.from_bytes(data: bytes) -> Image`
+## Supporting values
 
-Create Image from raw bytes.
+- `Rational(num, den)` exposes **`num`** and **`den`**. Use `float(value)` or
+  `int(value)` for conversion. The current implementation returns zero for a
+  zero denominator during these conversions.
+- `GPS` exposes latitude, longitude, optional altitude, and coordinate helpers.
+- `img.pages` contains page objects with `index`, `width`, `height`,
+  `bits_per_sample`, `compression`, `subfile_type`, `is_thumbnail`, and `is_page`.
+- `ValidationIssue` is exported by the package for validation results.
 
-```python
-img = exif.Image.from_bytes(jpeg_bytes)
-```
-
-### Properties (Read-Only)
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `format` | `str` | File format ("JPEG", "PNG", etc.) |
-| `path` | `str \| None` | File path if opened from file |
-| `xmp` | `str \| None` | Raw XMP data |
-| `thumbnail` | `bytes \| None` | Embedded thumbnail |
-| `preview` | `bytes \| None` | Larger preview image |
-| `page_count` | `int` | Number of pages |
-| `is_multi_page` | `bool` | True if multiple pages |
-| `is_camera_raw` | `bool` | True if RAW format |
-| `is_writable` | `bool` | True for JPEG, PNG, TIFF, DNG, WebP, HEIC, EXR, HDR, GIF, PNM, JXL, TIFF-family RAW, RAF, CR3, MP4/MOV, WAV/FLAC/MP3 |
-| `pages` | `List[PageInfo]` | Page info for multi-page files |
-| `exif_offset` | `int \| None` | EXIF data offset in file |
-
-### Properties (Read-Write)
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `make` | `str \| None` | Camera make |
-| `model` | `str \| None` | Camera model |
-| `software` | `str \| None` | Software used |
-| `artist` | `str \| None` | Artist/author |
-| `copyright` | `str \| None` | Copyright notice |
-| `description` | `str \| None` | Image description |
-
-### Properties (Read-Only, Capture Info)
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `iso` | `int \| None` | ISO sensitivity |
-| `exposure_time` | `Rational \| None` | Exposure time |
-| `fnumber` | `Rational \| None` | F-number |
-| `focal_length` | `Rational \| None` | Focal length |
-| `focal_length_35mm` | `int \| None` | 35mm equivalent |
-| `date_time_original` | `str \| None` | Capture date/time |
-| `orientation` | `int \| None` | Orientation (1-8) |
-| `width` | `int \| None` | Image width |
-| `height` | `int \| None` | Image height |
-| `gps` | `GPS \| None` | GPS coordinates |
-
-### Methods
-
-#### `get(key: str, default=None) -> Any`
-
-Get tag value with optional default.
-
-#### `get_interpreted(key: str) -> str | None`
-
-Get human-readable interpretation of tag value.
-
-#### `get_display(key: str) -> str | None`
-
-Get formatted display value with units.
-
-#### `keys() -> List[str]`
-
-Get all tag names.
-
-#### `values() -> List[Any]`
-
-Get all tag values.
-
-#### `items() -> List[Tuple[str, Any]]`
-
-Get all (key, value) pairs.
-
-#### `clear()`
-
-Remove all EXIF tags.
-
-#### `to_dict() -> dict`
-
-Convert metadata to dictionary.
-
-#### `save(path: str = None)`
-
-Save metadata to file.
-
-- If `path` is None, overwrites original file
-- Raises `WriteError` on failure
-
-### Dict-Like Operations
-
-```python
-img["Tag"]           # Get tag
-img["Tag"] = value   # Set tag
-del img["Tag"]       # Delete tag
-"Tag" in img         # Check existence
-len(img)             # Tag count
-for tag in img:      # Iterate tags
-```
-
----
-
-## PageInfo Class
-
-Information about a page in multi-page files.
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `index` | `int` | Page index (0-based) |
-| `width` | `int` | Width in pixels |
-| `height` | `int` | Height in pixels |
-| `bits_per_sample` | `int` | Bits per sample |
-| `compression` | `int` | Compression type |
-| `subfile_type` | `int` | Subfile type flags |
-| `is_thumbnail` | `bool` | True if reduced resolution |
-| `is_page` | `bool` | True if document page |
-
----
-
-## Rational Class
-
-Represents a rational number (fraction).
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `numerator` | `int` | Numerator |
-| `denominator` | `int` | Denominator |
-
-### Methods
-
-#### `to_float() -> float`
-
-Convert to floating point.
-
----
-
-## GPS Class
-
-GPS coordinates.
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `latitude` | `float` | Latitude in degrees |
-| `longitude` | `float` | Longitude in degrees |
-| `altitude` | `float \| None` | Altitude in meters |
-
----
+`GpxTrack`, `TrackPoint`, and `PageInfo` are not exported at the top level by
+`exiftool_py.__init__`. Use `Image.geotag` for the public GPX operation and
+`img.pages` for page information.
 
 ## Exceptions
 
-### `ExifError`
+`ExifError`, `FormatError`, `WriteError`, and `TagError` are exported by the
+package. Filesystem failures may also map to Python built-in exceptions.
+Catch the error appropriate to the operation and inspect its message.
 
-Base exception for all errors.
-
-### `FormatError`
-
-Raised when file format cannot be parsed.
-
-### `WriteError`
-
-Raised when writing fails.
-
-### `TagError`
-
-Raised for tag-related errors.
+See [installation](installation.md) and [usage](usage.md).

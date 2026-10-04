@@ -1,96 +1,59 @@
-# Performance
+# Performance and resource use
 
-## Why It's Fast
+Native parsing avoids starting a metadata subprocess. Actual latency and memory
+use depend on file size, container structure, preview extraction, storage,
+registry setup, and the tags requested. This guide describes measurement and
+resource behavior rather than promising a fixed speedup over ExifTool.
 
-1. **Native code** - No interpreter overhead
-2. **Zero-copy parsing** - Work directly with byte slices where possible
-3. **Lazy loading** - Don't read image data, just metadata
-4. **Streaming** - Process files larger than RAM
+## Memory behavior
 
-## Typical Performance
+The API accepts `Read + Seek`, but some parsers and writers buffer entire files.
+`read_with_limit` uses `MAX_FILE_SIZE`, currently **100 MiB**. Such operations
+can reject larger inputs with `Error::FileTooLarge`; a recognized format does
+not guarantee that every file size is supported.
 
-On a modern machine (M1/Ryzen), expect:
+Thumbnails, previews, profiles, and parsed values are owned allocations.
+Ignoring a returned preview does not undo the work or allocation used to extract
+it. Batch scans in Python collect parsed images and errors before returning a
+`ScanResult`; iteration does not make that scan a lazy file stream.
 
-| Operation | Time |
-|-----------|------|
-| Parse JPEG EXIF | ~50-200 µs |
-| Parse RAW file | ~200-500 µs |
-| Parse MP4 metadata | ~100-300 µs |
-| Write JPEG EXIF | ~500 µs - 2 ms |
+## Reuse the registry
 
-Batch processing thousands of files is typically I/O bound, not CPU bound.
-
-## Comparison with ExifTool (Perl)
-
-For single files, the difference is startup time:
-- ExifTool: ~100-200ms (Perl startup + module loading)
-- exiftool-rs: ~1ms
-
-For batch processing 1000 JPEGs:
-- ExifTool: ~15-30 seconds
-- exiftool-rs: ~1-3 seconds
-
-The gap widens with more files due to eliminated process spawn overhead.
-
-## Memory Usage
-
-Memory is proportional to metadata size, not image size:
-
-- Typical JPEG: ~10-50 KB for metadata parsing
-- RAW with large preview: ~1-5 MB (if extracting preview)
-- Without preview extraction: ~50-100 KB
-
-## Optimization Tips
-
-### Batch Processing
+Construct a registry once for a sequential batch. Drop each result after
+processing if you do not need to retain its payloads.
 
 ```rust
-// Reuse registry across files
-let registry = FormatRegistry::new();
+use exiftool_formats::FormatRegistry;
+use std::path::Path;
 
-for path in files {
-    let file = File::open(path)?;
-    let mut reader = BufReader::new(file);
-    let metadata = registry.parse(&mut reader)?;
-    // process...
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let registry = FormatRegistry::new();
+    for file in std::env::args().skip(1) {
+        let metadata = registry.parse_file(Path::new(&file))?;
+        println!("{file}: {} tags", metadata.exif.len());
+    }
+    Ok(())
 }
 ```
 
-### Skip Unnecessary Data
+Parallel scans can improve throughput, but multiply active parser allocations
+and increase I/O contention. Measure representative batches before increasing
+concurrency.
 
-```rust
-// If you don't need thumbnails, they're still parsed but 
-// you can ignore them - no extra cost
-let _ = metadata.thumbnail;  // Already parsed, just don't use it
-```
-
-### Parallel Processing
-
-```rust
-use rayon::prelude::*;
-
-let results: Vec<_> = files
-    .par_iter()
-    .map(|path| {
-        let registry = FormatRegistry::new();
-        let file = File::open(path)?;
-        let mut reader = BufReader::new(file);
-        registry.parse(&mut reader)
-    })
-    .collect();
-```
-
-## Benchmarking
-
-Run benchmarks with:
+## Run the included benchmarks
 
 ```bash
-cargo bench
+cargo bench -p exiftool-formats --bench parser_bench
 ```
 
-Profile with:
+The Criterion harness includes small in-memory parser inputs and registry
+measurements. It does not establish end-to-end throughput for real camera files
+or equivalence with ExifTool's full extraction behavior.
 
-```bash
-cargo build --release
-samply record ./target/release/exif large_file.jpg
-```
+For comparisons, record the tool versions, command options, file corpus,
+hardware, warm/cold cache conditions, elapsed time, and peak memory. Distinguish
+ExifTool process startup from a persistent/batch invocation, and compare the
+same metadata operations. Keep measured results in benchmark artifacts or
+release discussions rather than presenting estimated timings as a guarantee.
+
+See [architecture](architecture.md) and [reading](reading.md).

@@ -1,153 +1,75 @@
-# Parser Design
+# Parser design
 
-## FormatParser Trait
+Every container parser implements `FormatParser: Send + Sync`. The trait exposes
+`can_parse`, `format_name`, `extensions`, `parse`, and `parse_with_hint`.
+`ReadSeek` is the object-safe wrapper for `Read + Seek`.
 
-All parsers implement a common trait:
+## Detection and dispatch
 
-```rust
-pub trait FormatParser {
-    /// Check if this parser can handle the data (from header bytes).
-    fn can_parse(&self, header: &[u8]) -> bool;
-    
-    /// Human-readable format name.
-    fn format_name(&self) -> &'static str;
-    
-    /// Supported file extensions.
-    fn extensions(&self) -> &'static [&'static str];
-    
-    /// Parse metadata from reader.
-    fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata>;
-}
+`default_parsers()` in `crates/exiftool-formats/src/parsers.rs` is the central
+registration list. `FormatRegistry` selects the first parser whose `can_parse`
+accepts the header. Order is part of detection behavior.
+
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant Registry as FormatRegistry
+    participant Input as Buffered file
+    participant Parser as Selected parser
+    App->>Registry: parse_file(path)
+    Registry->>Input: read up to DETECT_HEADER_LEN (132)
+    Registry->>Input: seek to offset 0
+    Registry->>Registry: detect(header), first match
+    alt Matching parser
+        Registry->>Parser: parse_with_hint(input, extension)
+        Parser-->>Registry: Metadata or parsing error
+        Registry-->>App: Result of parsing
+    else No matching parser
+        Registry-->>App: Error::UnsupportedFormat
+    end
 ```
 
-## Format Detection
+The 132-byte header allows DICOM detection after its 128-byte preamble.
+`detect(header)` only examines the bytes supplied by the caller.
 
-The registry tests each parser's `can_parse()` against file headers:
+## TIFF-family classification
 
-```rust
-impl FormatRegistry {
-    pub fn detect(&self, header: &[u8]) -> Option<&dyn FormatParser> {
-        self.parsers.iter()
-            .find(|p| p.can_parse(header))
-            .map(|p| p.as_ref())
-    }
-}
-```
+CR2, ORF, and RW2 have distinctive header signatures and dedicated detection
+before generic TIFF. Other TIFF-family RAW wrappers are available through
+`get` and `by_extension`, while automatic detection uses `TiffParser` followed
+by TIFF-family classification. `parse_file` supplies the filename extension;
+`parse` on anonymous bytes cannot supply that hint, though metadata such as
+`Make` and `DNGVersion` can help classify the result.
 
-Detection is based on magic bytes, not file extensions:
+Extensions therefore help classify a valid container rather than bypassing
+magic-byte detection.
 
-| Format | Magic Bytes |
-|--------|-------------|
-| JPEG | `FF D8 FF` |
-| PNG | `89 50 4E 47 0D 0A 1A 0A` |
-| TIFF LE | `49 49 2A 00` |
-| TIFF BE | `4D 4D 00 2A` |
-| HEIC | `....ftyp` + brand check |
-| MP4 | `....ftyp` + brand check |
-| GIF | `GIF87a` or `GIF89a` |
+## A custom registry
 
-## Parser Implementation Pattern
-
-Typical parser structure:
+A custom parser list changes detection and dispatch. It does not remove
+Cargo dependencies or provide feature-based minimal builds.
 
 ```rust
-pub struct JpegParser;
+use exiftool_formats::{FormatParser, FormatRegistry, JpegParser, PngParser};
 
-impl FormatParser for JpegParser {
-    fn can_parse(&self, header: &[u8]) -> bool {
-        header.len() >= 3 && header[0..2] == [0xFF, 0xD8]
-    }
-    
-    fn format_name(&self) -> &'static str { "JPEG" }
-    
-    fn extensions(&self) -> &'static [&'static str] {
-        &["jpg", "jpeg"]
-    }
-    
-    fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
-        let mut metadata = Metadata::new("JPEG");
-        
-        // Parse APP1 (EXIF)
-        if let Some(exif_data) = self.find_app1(reader)? {
-            self.parse_exif(&exif_data, &mut metadata)?;
-        }
-        
-        // Parse APP13 (IPTC)
-        // Parse XMP
-        // Extract thumbnail
-        
-        Ok(metadata)
-    }
-}
+let parsers: Vec<Box<dyn FormatParser>> = vec![
+    Box::new(JpegParser),
+    Box::new(PngParser),
+];
+let registry = FormatRegistry::with_parsers(parsers);
+assert!(registry.detect(&[0xff, 0xd8, 0xff]).is_some());
 ```
 
-## TIFF-Based Formats
+## Shared metadata parsing
 
-Many formats are TIFF variants (CR2, NEF, DNG, etc.):
+Containers with TIFF-formatted EXIF use `utils::parse_tiff_exif`.
+`entry_to_attr` converts raw IFD values into `AttrValue`.
+Tag lookup and MakerNotes decoding use the generated tables and vendor modules.
+Container-specific parsers retain their own structural rules and error handling.
 
-```rust
-pub struct Cr2Parser;
+Malformed files can produce `InvalidStructure`, `MissingSegment`, `Io`,
+`FileTooLarge`, or nested metadata-standard errors. Some parsers recover partial
+data, but callers should handle an error rather than assume every parser always
+returns a partial result.
 
-impl FormatParser for Cr2Parser {
-    fn can_parse(&self, header: &[u8]) -> bool {
-        // TIFF + CR2 magic at offset 8
-        TiffParser::is_tiff(header) && 
-        header.len() >= 10 && 
-        &header[8..10] == b"CR"
-    }
-    
-    fn parse(&self, reader: &mut dyn ReadSeek) -> Result<Metadata> {
-        // Use TiffParser for structure, add CR2-specific handling
-        let mut metadata = TiffParser::parse_internal(reader)?;
-        metadata.format = "CR2";
-        
-        // Parse Canon MakerNotes
-        self.parse_makernotes(&mut metadata)?;
-        
-        Ok(metadata)
-    }
-}
-```
-
-## Streaming Design
-
-Parsers accept `&mut dyn ReadSeek`, allowing:
-
-- Files via `BufReader<File>`
-- Memory via `Cursor<&[u8]>`
-- Network streams (with buffering)
-- Memory-mapped files
-
-```rust
-// From file
-let file = File::open("photo.jpg")?;
-let mut reader = BufReader::new(file);
-let metadata = parser.parse(&mut reader)?;
-
-// From bytes
-let mut cursor = Cursor::new(&data);
-let metadata = parser.parse(&mut cursor)?;
-```
-
-## Error Handling
-
-Parsers return `Result<Metadata, Error>`:
-
-```rust
-pub enum Error {
-    Io(std::io::Error),
-    UnsupportedFormat,
-    InvalidStructure(String),
-    // ...
-}
-```
-
-Partial parsing is preferred - extract what's possible, skip corrupt sections:
-
-```rust
-// Don't fail on bad MakerNotes
-if let Ok(maker) = self.parse_makernotes(data) {
-    metadata.exif.merge(maker);
-}
-// Continue even if MakerNotes failed
-```
+For adding a parser, see [contributing](../contributing.md).

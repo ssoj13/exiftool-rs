@@ -1,130 +1,91 @@
-# Building from Source
+# Building from source
 
-## Requirements
+## Prepare the environment
 
-- Rust 1.70 or later
-- For Python bindings: Python 3.8+ and maturin
-
-## Clone and Build
+Use Rust **1.96+**, Cargo, Git, and a native linker. Bindings also need Python and
+maturin; see [Python installation](python/installation.md).
+Complete [dependency access](dependency-access.md) before the first Cargo fetch.
 
 ```bash
-git clone https://github.com/ssoj13/exiftool-rs
+git clone https://github.com/ssoj13/exiftool-rs.git
 cd exiftool-rs
-
-# Debug build
-cargo build
-
-# Release build (optimized)
-cargo build --release
+cargo fetch --locked
+cargo build -p exiftool-cli --release --locked
 ```
 
-## Build Specific Crates
+The CLI is `target/release/exif` (`exif.exe` on Windows).
+
+## Build and check the workspace
 
 ```bash
-# Just the core library
-cargo build -p exiftool-formats
-
-# Just the CLI
-cargo build -p exiftool-cli --release
-
-# Just Python bindings
-cd crates/exiftool-py
-maturin build --release
+cargo build --workspace --all-targets --locked
+cargo test --workspace --exclude exiftool-py --locked
+cargo check -p exiftool-py --locked
+cargo fmt --all -- --check
+cargo clippy --workspace --exclude exiftool-py --all-targets --locked -- -D warnings
 ```
 
-## Run Tests
+The ordinary Rust test suite excludes `exiftool-py`, whose library is a Python
+extension. Check it separately and use maturin for a Python runtime build.
+CI currently treats formatting, Clippy, and Rustdoc findings as advisory while
+the existing baseline is cleaned up. See [CI/CD](ci-cd.md).
 
-```bash
-# All tests
-cargo test --workspace
+## Bootstrap helper
 
-# With verbose output
-cargo test --workspace -- --nocapture
+The optional Python 3 helper runs commands from the repository root:
 
-# Specific test
-cargo test -p exiftool-formats jpeg
-```
+| Command | Operation |
+|---------|-----------|
+| `python bootstrap.py b` | Release workspace build, including all targets |
+| `python bootstrap.py b -d` | Debug workspace build |
+| `python bootstrap.py t` | Workspace tests, including the Python crate |
+| `python bootstrap.py c` | Formatting check and strict workspace Clippy |
+| `python bootstrap.py i` | Install `exif` |
+| `python bootstrap.py p b` | Build Python wheel |
+| `python bootstrap.py p d` | Editable Python install |
+| `python bootstrap.py p i` | Build/install Python package |
+| `python bootstrap.py m b` | Build the documentation book |
+| `python bootstrap.py m s` | Serve the documentation book |
 
-## Python Bindings
-
-```bash
-# Install maturin
-pip install maturin
-
-# Build wheel
-cd crates/exiftool-py
-maturin build --release
-
-# Install locally for development
-maturin develop
-
-# Build and install
-pip install .
-```
+The helper's broad workspace checks are not identical to the CI commands above.
 
 ## Documentation
 
 ```bash
-# Rust API docs
-cargo doc --workspace --open
-
-# mdbook
-cd docs/book
-mdbook build
-mdbook serve  # Local server at localhost:3000
+cargo doc --workspace --exclude exiftool-py --no-deps --locked
+cargo install mdbook --locked
+cargo install mdbook-mermaid --locked
+mdbook build docs
+mdbook serve docs
 ```
 
-## Cross-Compilation
+The book configuration is `docs/book.toml`, sources are under `docs/src`, and
+HTML output goes to `docs/book`. Mermaid assets are included in the repository;
+the `mdbook-mermaid` preprocessor must be on `PATH`. Do not run
+`mdbook-mermaid install` again for an ordinary book build.
 
-Rust makes cross-compilation straightforward:
+## Generated tag tables
+
+Tag extraction needs Perl and an ExifTool source tree. The CLI itself does not
+need either at runtime. Inspect available xtask options before regenerating:
 
 ```bash
-# Add target
-rustup target add aarch64-unknown-linux-gnu
-
-# Build
-cargo build --release --target aarch64-unknown-linux-gnu
+cargo xtask --help
+python bootstrap.py codegen
 ```
 
-## Workspace Structure
-
-```
-exiftool-rs/
-├── Cargo.toml           # Workspace root
-├── crates/
-│   ├── exiftool-attrs/  # Attribute types
-│   ├── exiftool-core/   # TIFF/IFD primitives
-│   ├── exiftool-tags/   # Tag definitions
-│   ├── exiftool-formats/# All format parsers
-│   ├── exiftool-xmp/    # XMP handling
-│   ├── exiftool-iptc/   # IPTC handling
-│   ├── exiftool-icc/    # ICC profiles
-│   ├── exiftool-py/     # Python bindings
-│   └── exiftool-cli/    # CLI tool
-├── docs/
-│   └── src/             # mdbook source
-└── crates/exiftool-formats/tests/  # Integration tests and fixtures
-```
+Review generated diffs along with parser changes, and keep ExifTool attribution.
 
 ## Troubleshooting
 
-### Compilation Errors
+| Symptom | Check |
+|---------|-------|
+| Dependency fetch authentication error | Access to every Git repository in [dependency access](dependency-access.md) |
+| Unsupported Rust syntax or MSRV error | `rustc --version` and Rust 1.96+ |
+| `exif` is not found after install | Cargo's binary directory on `PATH` |
+| Python extension does not import | Active environment, maturin build, and `exiftool_py` import name |
+| Book cannot find `mdbook-mermaid` | Install the preprocessor and verify `PATH` |
 
-Make sure you have the latest Rust:
-
-```bash
-rustup update
-```
-
-### Python Binding Issues
-
-Ensure maturin matches your Python version:
-
-```bash
-pip install --upgrade maturin
-maturin build --release
-```
-
-### Missing Features
-
-Some features require specific dependencies. Check `Cargo.toml` for feature flags.
+For cross-compilation you also need the target linker and any target-specific
+system dependencies; installing a Rust target alone does not provide them.
+See [contributing](contributing.md) and [releasing](../releasing.md).

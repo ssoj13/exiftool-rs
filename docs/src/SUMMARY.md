@@ -31,4 +31,6 @@
 
 - [Contributing](./contributing.md)
 - [Building from Source](./building.md)
+- [Dependency Access](./dependency-access.md)
+- [CI and Releases](./ci-cd.md)
 - [Fuzz Testing](./fuzz-testing.md)
