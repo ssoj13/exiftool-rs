@@ -388,7 +388,7 @@ dependencies = [
  "exr-core",
  "flate2",
  "jpg-rs",
- "jph-rs 0.2.0 (git+ssh://git@github.com/ssoj13/jph-rs.git)",
+ "jph-rs",
  "lzma-rs",
  "proptest",
  "serde_json",
@@ -452,7 +452,7 @@ dependencies = [
  "codec-simd",
  "deflate-rs",
  "imath-rs",
- "jph-rs 0.2.0 (git+ssh://git@github.com/ssoj13/jph-rs.git?branch=main)",
+ "jph-rs",
  "log",
  "murmur3",
  "rayon",
@@ -571,8 +571,9 @@ checksum = "7ee5b5339afb4c41626dde77b7a611bd4f2c202b897852b4bcf5d03eddc61010"
 [[package]]
 name = "jpg-rs"
 version = "0.1.0"
-source = "git+ssh://git@github.com/ssoj13/jpg-rs.git#a0d9294f07657a34d6059f273e381b5464960c81"
+source = "git+ssh://git@github.com/ssoj13/jpg-rs.git?branch=main#36691c10c71cfab4cada3a426ab1d8ed6433096a"
 dependencies = [
+ "codec-simd",
  "thiserror",
 ]
 
@@ -580,11 +581,6 @@ dependencies = [
 name = "jph-rs"
 version = "0.2.0"
 source = "git+ssh://git@github.com/ssoj13/jph-rs.git?branch=main#a1bf2dbbe6c3e000d67063ce2bb5aff4bd6f1b13"
-
-[[package]]
-name = "jph-rs"
-version = "0.2.0"
-source = "git+ssh://git@github.com/ssoj13/jph-rs.git#7f7b1518cb927437bf2aa19ad76687aae4cd4e67"
 
 [[package]]
 name = "js-sys"

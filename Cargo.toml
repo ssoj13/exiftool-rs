@@ -60,8 +60,8 @@ uuid = { version = "1.19", features = ["v4", "serde"] }
 # Our GitHub repos: git = "ssh://git@github.com/ssoj13/<repo>.git"
 # Public crates: crates.io (or https git). Never path= to a sibling clone.
 exr-core = { git = "ssh://git@github.com/ssoj13/exr-rs.git", branch = "main" }
-jpg-rs = { git = "ssh://git@github.com/ssoj13/jpg-rs.git" }
-jph-rs = { git = "ssh://git@github.com/ssoj13/jph-rs.git" }
+jpg-rs = { git = "ssh://git@github.com/ssoj13/jpg-rs.git", branch = "main" }
+jph-rs = { git = "ssh://git@github.com/ssoj13/jph-rs.git", branch = "main" }
 
 # Compression
 flate2 = "1.1"
