@@ -11,6 +11,7 @@ name = "exif"
 path = "src/main.rs"
 
 [dependencies]
+crashdump.workspace = true
 exiftool-core.workspace = true
 exiftool-attrs.workspace = true
 exiftool-formats.workspace = true

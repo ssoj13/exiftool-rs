@@ -19,6 +19,7 @@ use std::env;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
+    let _crash_guard = crashdump::init!();
     if let Err(e) = run() {
         // Print error chain without backtrace
         eprintln!("Error: {:#}", e);
