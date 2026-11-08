@@ -171,11 +171,27 @@ impl FormatParser for HeicParser {
             reader.seek(SeekFrom::Start(pos + box_size))?;
         }
 
+        let ispe_w = metadata.exif.get_u32("ImageWidth");
+        let ispe_h = metadata.exif.get_u32("ImageHeight");
+        let irot_deg = metadata.exif.get_u32("Rotation").unwrap_or(0);
+
         // Now extract EXIF if we found its location
         if let Some(exif_item_id) = state.exif_item_id {
             if let Some(loc) = state.item_locations.get(&exif_item_id) {
                 self.extract_exif(reader, loc, &state, &mut metadata)?;
             }
+        }
+
+        // Authoritative HEIF/AVIF container `ispe` (+ `irot`) dimensions must take precedence
+        // over embedded EXIF `ImageWidth`/`ImageHeight` (where iOS records uncropped 4:3 sensor dims).
+        if let (Some(w), Some(h)) = (ispe_w, ispe_h) {
+            let (out_w, out_h) = if matches!(irot_deg, 90 | 270) {
+                (h, w)
+            } else {
+                (w, h)
+            };
+            metadata.exif.set("ImageWidth", AttrValue::UInt(out_w));
+            metadata.exif.set("ImageHeight", AttrValue::UInt(out_h));
         }
 
         // Extract XMP if we found its location (mime item application/rdf+xml)
@@ -746,8 +762,25 @@ impl HeicParser {
                     reader.read_exact(&mut dim)?;
                     let width = u32::from_be_bytes([dim[4], dim[5], dim[6], dim[7]]);
                     let height = u32::from_be_bytes([dim[8], dim[9], dim[10], dim[11]]);
-                    metadata.exif.set("ImageWidth", AttrValue::UInt(width));
-                    metadata.exif.set("ImageHeight", AttrValue::UInt(height));
+                    let prev_area = u64::from(metadata.exif.get_u32("ImageWidth").unwrap_or(0))
+                        * u64::from(metadata.exif.get_u32("ImageHeight").unwrap_or(0));
+                    if u64::from(width) * u64::from(height) >= prev_area {
+                        metadata.exif.set("ImageWidth", AttrValue::UInt(width));
+                        metadata.exif.set("ImageHeight", AttrValue::UInt(height));
+                    }
+                }
+                b"irot" => {
+                    let mut rot_byte = [0u8; 1];
+                    if reader.read_exact(&mut rot_byte).is_ok() {
+                        // ISO/IEC 23008-12: angle * 90 deg CCW -> convert to CW degrees
+                        let deg = match rot_byte[0] & 0x03 {
+                            1 => 270u32,
+                            2 => 180,
+                            3 => 90,
+                            _ => 0,
+                        };
+                        metadata.exif.set("Rotation", AttrValue::UInt(deg));
+                    }
                 }
                 b"pixi" => {
                     let mut pixi = [0u8; 5];

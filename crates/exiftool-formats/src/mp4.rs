@@ -434,40 +434,61 @@ impl Mp4Parser {
         reader.read_exact(&mut vf)?;
         let version = vf[0];
 
-        if version == 0 {
-            // Skip timestamps and other fields to get to dimensions
-            // creation (4) + modification (4) + track_id (4) + reserved (4) + duration (4) = 20
-            // + reserved (8) + layer (2) + alternate_group (2) + volume (2) + reserved (2) = 16
-            let mut skip = [0u8; 68];
-            reader.read_exact(&mut skip)?;
-
-            // Matrix (36 bytes) already skipped in skip buffer
-            // Width and height at offset 76 from start (fixed point 16.16)
-            let width = u32::from_be_bytes([skip[60], skip[61], skip[62], skip[63]]);
-            let height = u32::from_be_bytes([skip[64], skip[65], skip[66], skip[67]]);
-
-            let width_px = width >> 16;
-            let height_px = height >> 16;
-
-            if width_px > 0 && height_px > 0 {
-                metadata.exif.set("TrackWidth", AttrValue::UInt(width_px));
-                metadata.exif.set("TrackHeight", AttrValue::UInt(height_px));
-            }
+        let (matrix_off, width_off, total_len) = if version == 0 {
+            // creation(4) + modification(4) + track_id(4) + reserved(4) + duration(4) = 20
+            // + reserved(8) + layer(2) + alternate_group(2) + volume(2) + reserved(2) = 16 -> matrix at 36
+            // + matrix(36) = 72 -> width(4) + height(4) = 80
+            (36usize, 72usize, 80usize)
         } else {
-            // Version 1: 64-bit timestamps
-            let mut skip = [0u8; 80];
-            reader.read_exact(&mut skip)?;
+            // Version 1: 64-bit timestamps/duration (32 + 16 = 48 -> matrix at 48, width at 84, total 92)
+            (48usize, 84usize, 92usize)
+        };
+        let mut skip = vec![0u8; total_len];
+        reader.read_exact(&mut skip)?;
 
-            let width = u32::from_be_bytes([skip[72], skip[73], skip[74], skip[75]]);
-            let height = u32::from_be_bytes([skip[76], skip[77], skip[78], skip[79]]);
+        let width = u32::from_be_bytes([
+            skip[width_off],
+            skip[width_off + 1],
+            skip[width_off + 2],
+            skip[width_off + 3],
+        ]);
+        let height = u32::from_be_bytes([
+            skip[width_off + 4],
+            skip[width_off + 5],
+            skip[width_off + 6],
+            skip[width_off + 7],
+        ]);
+        let width_px = width >> 16;
+        let height_px = height >> 16;
 
-            let width_px = width >> 16;
-            let height_px = height >> 16;
-
-            if width_px > 0 && height_px > 0 {
-                metadata.exif.set("TrackWidth", AttrValue::UInt(width_px));
-                metadata.exif.set("TrackHeight", AttrValue::UInt(height_px));
-            }
+        if width_px > 0 && height_px > 0 {
+            metadata.exif.set("TrackWidth", AttrValue::UInt(width_px));
+            metadata.exif.set("TrackHeight", AttrValue::UInt(height_px));
+            let a = i32::from_be_bytes([
+                skip[matrix_off],
+                skip[matrix_off + 1],
+                skip[matrix_off + 2],
+                skip[matrix_off + 3],
+            ]) as f64
+                / 65536.0;
+            let b = i32::from_be_bytes([
+                skip[matrix_off + 4],
+                skip[matrix_off + 5],
+                skip[matrix_off + 6],
+                skip[matrix_off + 7],
+            ]) as f64
+                / 65536.0;
+            let angle = b.atan2(a).to_degrees().rem_euclid(360.0);
+            let rot = if (angle - 90.0).abs() < 15.0 {
+                90u32
+            } else if (angle - 180.0).abs() < 15.0 {
+                180
+            } else if (angle - 270.0).abs() < 15.0 {
+                270
+            } else {
+                0
+            };
+            metadata.exif.set("Rotation", AttrValue::UInt(rot));
         }
 
         Ok(())
